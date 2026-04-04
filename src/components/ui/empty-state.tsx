@@ -3,7 +3,7 @@ import { Icon } from "@/src/components/ui/icon";
 
 import { cn } from "@/src/lib/utils/cn";
 import type { LucideIcon } from "lucide-react-native";
-import { Text, View } from "react-native";
+import { ScrollView, Text } from "react-native";
 
 interface EmptyStateAction {
   label: string;
@@ -26,9 +26,16 @@ export function EmptyState({
   className,
 }: EmptyStateProps) {
   return (
-    <View className={cn("flex-1 items-center justify-center px-8", className)}>
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ flexGrow: 1 }}
+      contentContainerClassName={cn(
+        "items-center justify-center px-8",
+        className,
+      )}
+    >
       {icon ? (
-        <Icon icon={icon} className="fill-muted-foreground" size={48} />
+        <Icon icon={icon} className="text-muted-foreground" size={48} />
       ) : null}
       <Text
         className={cn("text-h3 text-foreground text-center", icon && "mt-4")}
@@ -45,6 +52,6 @@ export function EmptyState({
           {action.label}
         </Button>
       ) : null}
-    </View>
+    </ScrollView>
   );
 }
