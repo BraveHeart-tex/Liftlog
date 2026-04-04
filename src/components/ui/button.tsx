@@ -88,6 +88,8 @@ export function Button({
           pressed && !isBlocked && "opacity-80",
           className,
         )}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: isBlocked, busy: loading }}
         disabled={isBlocked}
         onPress={onPress}
         onPressIn={() => {
