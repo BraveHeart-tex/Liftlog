@@ -14,7 +14,7 @@ import {
   type ComponentRef,
   type ReactNode,
 } from "react";
-import { Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
 type BottomSheetComponentProps = {
   isOpen: boolean;
@@ -77,13 +77,12 @@ export function BottomSheet({
         {...props}
         appearsOnIndex={0}
         disappearsOnIndex={-1}
-        onPress={onClose}
         opacity={0.72}
         pressBehavior="close"
         style={[props.style, { backgroundColor: colors.background }]}
       />
     ),
-    [onClose],
+    [],
   );
 
   return (
@@ -135,5 +134,9 @@ export function BottomSheetContent({
   children,
   className,
 }: BottomSheetSectionProps) {
-  return <View className={cn("px-4 pb-8", className)}>{children}</View>;
+  return (
+    <ScrollView contentContainerClassName={cn("px-4 pb-8", className)}>
+      {children}
+    </ScrollView>
+  );
 }
