@@ -1,5 +1,49 @@
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/preflight.css" layer(base);
 @import "tailwindcss/utilities.css";
-
 @import "nativewind/theme";
+
+@theme {
+  --color-background: #09090b;
+  --color-foreground: #fafafa;
+  --color-card: #111113;
+  --color-card-foreground: #fafafa;
+  --color-popover: #18181b;
+  --color-popover-foreground: #fafafa;
+  --color-primary: #3b82f6;
+  --color-primary-foreground: #f8fafc;
+  --color-secondary: #18181b;
+  --color-secondary-foreground: #e4e4e7;
+  --color-muted: #27272a;
+  --color-muted-foreground: #a1a1aa;
+  --color-accent: #22c55e;
+  --color-accent-foreground: #052e16;
+  --color-border: #27272a;
+  --color-input: #18181b;
+  --color-ring: #3b82f6;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #38bdf8;
+  --color-progress-up: #22c55e;
+  --color-progress-same: #a1a1aa;
+  --color-progress-down: #f97316;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --text-h1: 30px;
+  --text-h1--font-weight: 700;
+  --text-h2: 24px;
+  --text-h2--font-weight: 700;
+  --text-h3: 20px;
+  --text-h3--font-weight: 600;
+  --text-body: 16px;
+  --text-body--font-weight: 400;
+  --text-body-medium: 16px;
+  --text-body-medium--font-weight: 500;
+  --text-small: 14px;
+  --text-small--font-weight: 400;
+  --text-caption: 12px;
+  --text-caption--font-weight: 500;
+}
