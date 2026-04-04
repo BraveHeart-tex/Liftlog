@@ -5,22 +5,18 @@ import {
   SettingsIcon,
   UserRoundIcon,
 } from "lucide-react-native";
-
-const TAB_BACKGROUND = "#111113";
-const TAB_BORDER = "#27272A";
-const TAB_COLOR = "#3B82F6";
-const TAB_INACTIVE_COLOR = "#A1A1AA";
+import { tabBarTheme } from "../../theme/tokens";
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: TAB_COLOR,
-        tabBarInactiveTintColor: TAB_INACTIVE_COLOR,
+        tabBarActiveTintColor: tabBarTheme.activeTintColor,
+        tabBarInactiveTintColor: tabBarTheme.inactiveTintColor,
         tabBarStyle: {
-          backgroundColor: TAB_BACKGROUND,
-          borderTopColor: TAB_BORDER,
+          backgroundColor: tabBarTheme.backgroundColor,
+          borderTopColor: tabBarTheme.borderColor,
           height: 72,
           paddingTop: 8,
           paddingBottom: 8,
@@ -30,7 +26,7 @@ export default function TabLayout() {
           fontWeight: "600",
         },
         sceneStyle: {
-          backgroundColor: "#09090B",
+          backgroundColor: tabBarTheme.sceneBackgroundColor,
         },
       }}
     >
