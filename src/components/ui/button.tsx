@@ -1,6 +1,12 @@
 import { joinClassNames } from "@/src/lib/utils/joinClassNames";
 import { useRef, useState, type ReactNode } from "react";
-import { Animated, Pressable, Text, View } from "react-native";
+import {
+  Animated,
+  Pressable,
+  Text,
+  View,
+  type GestureResponderEvent,
+} from "react-native";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive";
 type ButtonSize = "sm" | "md" | "lg" | "icon";
@@ -15,7 +21,7 @@ export type ButtonProps = {
   className?: string;
   textClassName?: string;
   children: ReactNode;
-  onPress?: () => void;
+  onPress?: (event: GestureResponderEvent) => void;
 };
 
 const baseClassName = "flex-row items-center justify-center rounded-lg";
