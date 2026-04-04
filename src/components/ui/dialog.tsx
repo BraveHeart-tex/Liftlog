@@ -12,6 +12,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   Text,
   View,
 } from "react-native";
@@ -117,7 +118,7 @@ export function Dialog({
             }}
           />
 
-          <View className="absolute inset-0 bg-black/35" />
+          <View className="absolute inset-0 bg-background/35" />
         </Animated.View>
 
         <Pressable
@@ -127,7 +128,7 @@ export function Dialog({
 
         <Animated.View
           className={cn(
-            "w-[90%] rounded-xl border border-border bg-card",
+            "max-h-[85%] w-[90%] rounded-xl border border-border bg-card",
             className,
           )}
           style={{
@@ -180,7 +181,15 @@ export function DialogContent({
   children,
   className,
 }: DialogSectionProps) {
-  return <View className={cn("px-4 pb-2", className)}>{children}</View>;
+  return (
+    <ScrollView
+      className="shrink"
+      contentContainerClassName={cn("px-4 pb-2", className)}
+      showsVerticalScrollIndicator={false}
+    >
+      {children}
+    </ScrollView>
+  );
 }
 
 export function DialogFooter({
