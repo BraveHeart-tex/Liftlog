@@ -1,9 +1,12 @@
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { Text, View } from "react-native";
 import { joinClassNames } from "@/src/lib/utils/joinClassNames";
 
-type CardProps = {
-  children: ReactNode;
+type TextChild = string | number | ReactElement<unknown, typeof Text>;
+type TextChildren = TextChild | TextChild[];
+
+type CardProps<TChildren = ReactNode> = {
+  children: TChildren;
   className?: string;
 };
 
@@ -24,7 +27,11 @@ export function CardHeader({ children, className }: CardProps) {
   return <View className={joinClassNames("p-4 pb-0", className)}>{children}</View>;
 }
 
-export function CardTitle({ children, className }: CardProps) {
+/**
+ * Expects text-only children: strings, numbers, or nested <Text> elements.
+ * Prevents passing Views or other non-text content into React Native Text.
+ */
+export function CardTitle({ children, className }: CardProps<TextChildren>) {
   return (
     <Text className={joinClassNames("text-h3 text-foreground", className)}>
       {children}
@@ -32,7 +39,11 @@ export function CardTitle({ children, className }: CardProps) {
   );
 }
 
-export function CardDescription({ children, className }: CardProps) {
+/**
+ * Expects text-only children: strings, numbers, or nested <Text> elements.
+ * Prevents passing Views or other non-text content into React Native Text.
+ */
+export function CardDescription({ children, className }: CardProps<TextChildren>) {
   return (
     <Text
       className={joinClassNames(
