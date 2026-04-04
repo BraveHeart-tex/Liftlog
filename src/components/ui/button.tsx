@@ -1,4 +1,4 @@
-import { joinClassNames } from "@/src/lib/utils/joinClassNames";
+import { cn } from "@/src/lib/utils/cn";
 import { useRef, useState, type ReactNode } from "react";
 import {
   Animated,
@@ -80,7 +80,7 @@ export function Button({
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
       <Pressable
-        className={joinClassNames(
+        className={cn(
           baseClassName,
           sizeClassNames[size],
           variantClassNames[variant],
@@ -103,7 +103,7 @@ export function Button({
       >
         {loading ? (
           <Text
-            className={joinClassNames(textClassNames[variant], textClassName)}
+            className={cn(textClassNames[variant], textClassName)}
           >
             Loading...
           </Text>
@@ -112,7 +112,7 @@ export function Button({
             {leftIcon}
             {label !== null ? (
               <Text
-                className={joinClassNames(
+                className={cn(
                   textClassNames[variant],
                   isIconButton && "text-h3",
                   textClassName,
