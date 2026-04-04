@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { Text, View } from "react-native";
-import { joinClassNames } from "@/src/lib/utils/joinClassNames";
+import { cn } from "@/src/lib/utils/cn";
 
 type TextChild = string | number | ReactElement<unknown, typeof Text>;
 type TextChildren = TextChild | TextChild[];
@@ -13,7 +13,7 @@ type CardProps<TChildren = ReactNode> = {
 export function Card({ children, className }: CardProps) {
   return (
     <View
-      className={joinClassNames(
+      className={cn(
         "rounded-lg border border-border bg-card",
         className,
       )}
@@ -24,7 +24,7 @@ export function Card({ children, className }: CardProps) {
 }
 
 export function CardHeader({ children, className }: CardProps) {
-  return <View className={joinClassNames("p-4 pb-0", className)}>{children}</View>;
+  return <View className={cn("p-4 pb-0", className)}>{children}</View>;
 }
 
 /**
@@ -33,7 +33,7 @@ export function CardHeader({ children, className }: CardProps) {
  */
 export function CardTitle({ children, className }: CardProps<TextChildren>) {
   return (
-    <Text className={joinClassNames("text-h3 text-foreground", className)}>
+    <Text className={cn("text-h3 text-foreground", className)}>
       {children}
     </Text>
   );
@@ -46,7 +46,7 @@ export function CardTitle({ children, className }: CardProps<TextChildren>) {
 export function CardDescription({ children, className }: CardProps<TextChildren>) {
   return (
     <Text
-      className={joinClassNames(
+      className={cn(
         "mt-1 text-small text-muted-foreground",
         className,
       )}
@@ -57,13 +57,13 @@ export function CardDescription({ children, className }: CardProps<TextChildren>
 }
 
 export function CardContent({ children, className }: CardProps) {
-  return <View className={joinClassNames("p-4", className)}>{children}</View>;
+  return <View className={cn("p-4", className)}>{children}</View>;
 }
 
 export function CardFooter({ children, className }: CardProps) {
   return (
     <View
-      className={joinClassNames("p-4 pt-0 flex-row items-center", className)}
+      className={cn("p-4 pt-0 flex-row items-center", className)}
     >
       {children}
     </View>

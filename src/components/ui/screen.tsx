@@ -1,3 +1,4 @@
+import { cn } from "@/src/lib/utils/cn";
 import type { ReactNode } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView, type Edge } from "react-native-safe-area-context";
@@ -15,10 +16,6 @@ type ScreenProps = {
 
 const SCREEN_PADDING_CLASS_NAME = "px-4 py-6";
 
-function joinClassNames(...classNames: (string | false | null | undefined)[]) {
-  return classNames.filter(Boolean).join(" ");
-}
-
 export function Screen({
   children,
   className,
@@ -29,20 +26,20 @@ export function Screen({
   footer,
   keyboardShouldPersistTaps = "handled",
 }: ScreenProps) {
-  const sharedContentClassName = joinClassNames(
+  const sharedContentClassName = cn(
     withPadding && SCREEN_PADDING_CLASS_NAME,
     contentClassName,
   );
 
   const content = !scroll ? (
-    <View className={joinClassNames("flex-1", sharedContentClassName)}>
+    <View className={cn("flex-1", sharedContentClassName)}>
       {children}
     </View>
   ) : footer ? (
     <ScrollView
       style={{ flex: 1 }}
       contentContainerStyle={{ flexGrow: 1 }}
-      contentContainerClassName={joinClassNames(sharedContentClassName, "pb-4")}
+      contentContainerClassName={cn(sharedContentClassName, "pb-4")}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps}
     >
       {children}
@@ -61,7 +58,7 @@ export function Screen({
   return (
     <SafeAreaView
       style={{ flex: 1 }}
-      className={joinClassNames("bg-background", className)}
+      className={cn("bg-background", className)}
       edges={edges}
     >
       {content}

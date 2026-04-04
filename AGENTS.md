@@ -37,6 +37,8 @@ This project is a mobile application built with:
 ### Styling
 
 - Use **NativeWind className** as the default
+- Use the shared `cn` helper from `@/src/lib/utils/cn` for conditional or composed class names
+- Do NOT create local `joinClassNames`/`cn` helpers inside components; keep class merging centralized through the shared utility
 - Do NOT use inline styles for core RN components unless debugging
 - **EXCEPTION: Always use inline `style` prop for layout-critical properties on external/third-party components** (e.g. `SafeAreaView` from `react-native-safe-area-context`, `ScrollView` when flex behaviour is load-bearing)
 

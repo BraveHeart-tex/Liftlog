@@ -1,4 +1,5 @@
 import { colors } from "@/src/theme/tokens";
+import { cn } from "@/src/lib/utils/cn";
 import {
   forwardRef,
   useState,
@@ -23,10 +24,6 @@ export type InputProps = NativeTextInputProps & {
   errorClassName?: string;
   disabled?: boolean;
 };
-
-function joinClassNames(...values: (string | false | null | undefined)[]) {
-  return values.filter(Boolean).join(" ");
-}
 
 export const Input = forwardRef<TextInput, InputProps>(function Input(
   {
@@ -55,10 +52,10 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
   const isEditable = editable ?? !disabled;
 
   return (
-    <View className={joinClassNames("w-full", className)}>
+    <View className={cn("w-full", className)}>
       {label ? (
         <Text
-          className={joinClassNames(
+          className={cn(
             "text-small text-foreground",
             labelClassName,
           )}
@@ -68,7 +65,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
       ) : null}
 
       <View
-        className={joinClassNames(
+        className={cn(
           "mt-2 flex-row items-center rounded-lg border border-border bg-input px-4 py-3",
           focused && !hasError && "border-ring",
           hasError && "border-danger",
@@ -82,7 +79,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
 
         <TextInput
           ref={ref}
-          className={joinClassNames(
+          className={cn(
             "flex-1 text-body text-foreground",
             inputClassName,
           )}
@@ -107,7 +104,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
 
       {error ? (
         <Text
-          className={joinClassNames(
+          className={cn(
             "mt-2 text-caption text-danger",
             errorClassName,
           )}
@@ -116,7 +113,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         </Text>
       ) : hint ? (
         <Text
-          className={joinClassNames(
+          className={cn(
             "mt-2 text-caption text-muted-foreground",
             hintClassName,
           )}
