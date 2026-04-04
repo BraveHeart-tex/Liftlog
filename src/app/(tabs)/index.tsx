@@ -40,7 +40,9 @@ export default function HomeScreen() {
         </View>
 
         <Pressable className="mt-6 items-center rounded-lg bg-primary px-4 py-4">
-          <Text className="text-body-medium text-white">+ Add Exercise</Text>
+          <Text className="text-body-medium text-primary-foreground">
+            + Add Exercise
+          </Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
