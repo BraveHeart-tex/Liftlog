@@ -49,6 +49,8 @@ export function Screen({
     </ScrollView>
   ) : (
     <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ flexGrow: 1 }}
       contentContainerClassName={sharedContentClassName}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps}
     >
