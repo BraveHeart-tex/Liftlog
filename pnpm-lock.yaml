@@ -26,12 +26,6 @@ importers:
       '@react-navigation/native':
         specifier: ^7.1.8
         version: 7.2.2(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
-      babel-plugin-inline-import:
-        specifier: 3.0.0
-        version: 3.0.0
-      babel-preset-expo:
-        specifier: 55.0.15
-        version: 55.0.15(@babel/core@7.29.0)(@babel/runtime@7.29.2)(expo@54.0.33)(react-refresh@0.14.2)
       clsx:
         specifier: 2.1.1
         version: 2.1.1
@@ -123,6 +117,12 @@ importers:
       '@types/react':
         specifier: ~19.1.0
         version: 19.1.17
+      babel-plugin-inline-import:
+        specifier: 3.0.0
+        version: 3.0.0
+      babel-preset-expo:
+        specifier: 55.0.15
+        version: 55.0.15(@babel/core@7.29.0)(@babel/runtime@7.29.2)(expo@54.0.33)(react-refresh@0.14.2)
       drizzle-kit:
         specifier: 0.31.10
         version: 0.31.10
