@@ -1,5 +1,5 @@
+import { Screen } from "@/src/components/ui/screen";
 import { Pressable, Text, View } from "react-native";
-import { Screen } from "../../components/ui/screen";
 
 export default function HomeScreen() {
   return (
