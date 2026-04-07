@@ -40,7 +40,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="exercises/index"
+        name="exercises"
         options={{
           title: "Exercises",
           tabBarIcon: ({ color, size }) => (
@@ -49,7 +49,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="programs/index"
+        name="programs"
         options={{
           title: "Programs",
           tabBarIcon: ({ color, size }) => (
@@ -58,7 +58,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="history/index"
+        name="history"
         options={{
           title: "History",
           tabBarIcon: ({ color, size }) => (
