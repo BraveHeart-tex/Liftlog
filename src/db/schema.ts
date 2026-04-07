@@ -11,6 +11,11 @@ export const users = sqliteTable("users", {
     .$defaultFn(() => Date.now()),
 });
 
+export const appMeta = sqliteTable("app_meta", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+});
+
 export const exercises = sqliteTable("exercises", {
   id: text("id")
     .primaryKey()
@@ -146,6 +151,9 @@ export const personalRecords = sqliteTable("personal_records", {
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+
+export type AppMeta = typeof appMeta.$inferSelect;
+export type NewAppMeta = typeof appMeta.$inferInsert;
 
 export type Exercise = typeof exercises.$inferSelect;
 export type NewExercise = typeof exercises.$inferInsert;
