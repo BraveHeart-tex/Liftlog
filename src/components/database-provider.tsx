@@ -35,13 +35,21 @@ function DrizzleProvider({ children }: PropsWithChildren) {
 }
 
 async function migrateAsync(db: SQLiteDatabase) {
+  let drizzleDb: DrizzleDb;
+
   try {
     configureDatabase(db);
-    const drizzleDb = createDrizzleDb(db);
+    drizzleDb = createDrizzleDb(db);
     await migrate(drizzleDb, migrations);
-    runSeedIfNeeded(drizzleDb);
   } catch (error) {
     console.error("Database migration failed", error);
+    throw error;
+  }
+
+  try {
+    runSeedIfNeeded(drizzleDb);
+  } catch (error) {
+    console.error("Database seed failed", error);
     throw error;
   }
 }
