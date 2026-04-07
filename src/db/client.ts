@@ -1,12 +1,22 @@
-import { drizzle } from "drizzle-orm/expo-sqlite";
-import { openDatabaseSync } from "expo-sqlite";
+import { drizzle, ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite";
+import { SQLiteDatabase, SQLiteOpenOptions } from "expo-sqlite";
 import * as schema from "./schema";
 
-export const client = openDatabaseSync("workout.db", {
+export { schema };
+
+export const databaseName = "workout.db";
+
+export const databaseOptions: SQLiteOpenOptions = {
   enableChangeListener: true,
-});
+};
 
-client.execSync("PRAGMA journal_mode=WAL");
-client.execSync("PRAGMA foreign_keys=ON");
+export type DrizzleDb = ExpoSQLiteDatabase<typeof schema>;
 
-export const db = drizzle(client, { schema });
+export function configureDatabase(client: SQLiteDatabase) {
+  client.execSync("PRAGMA journal_mode=WAL");
+  client.execSync("PRAGMA foreign_keys=ON");
+}
+
+export function createDrizzleDb(client: SQLiteDatabase): DrizzleDb {
+  return drizzle(client, { schema });
+}

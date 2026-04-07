@@ -15,7 +15,7 @@ export const exercises = sqliteTable("exercises", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => generateUuid()),
-  userId: text("user_id").references(() => users.id),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   category: text("category").notNull(),
   primaryMuscles: text("primary_muscles").notNull().default("[]"),
@@ -33,7 +33,7 @@ export const programs = sqliteTable("programs", {
     .$defaultFn(() => generateUuid()),
   userId: text("user_id")
     .notNull()
-    .references(() => users.id),
+    .references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   description: text("description"),
   isArchived: integer("is_archived").notNull().default(0),
@@ -51,7 +51,7 @@ export const programDays = sqliteTable("program_days", {
     .$defaultFn(() => generateUuid()),
   programId: text("program_id")
     .notNull()
-    .references(() => programs.id),
+    .references(() => programs.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   order: integer("order").notNull(),
 });
@@ -62,10 +62,10 @@ export const programExercises = sqliteTable("program_exercises", {
     .$defaultFn(() => generateUuid()),
   programDayId: text("program_day_id")
     .notNull()
-    .references(() => programDays.id),
+    .references(() => programDays.id, { onDelete: "cascade" }),
   exerciseId: text("exercise_id")
     .notNull()
-    .references(() => exercises.id),
+    .references(() => exercises.id, { onDelete: "restrict" }),
   order: integer("order").notNull(),
   targetSets: integer("target_sets").notNull(),
   targetReps: text("target_reps").notNull(),
@@ -80,9 +80,13 @@ export const workouts = sqliteTable("workouts", {
     .$defaultFn(() => generateUuid()),
   userId: text("user_id")
     .notNull()
-    .references(() => users.id),
-  programId: text("program_id").references(() => programs.id),
-  programDayId: text("program_day_id").references(() => programDays.id),
+    .references(() => users.id, { onDelete: "cascade" }),
+  programId: text("program_id").references(() => programs.id, {
+    onDelete: "set null",
+  }),
+  programDayId: text("program_day_id").references(() => programDays.id, {
+    onDelete: "set null",
+  }),
   name: text("name").notNull(),
   status: text("status").notNull().default("in_progress"),
   startedAt: integer("started_at")
@@ -98,10 +102,10 @@ export const workoutExercises = sqliteTable("workout_exercises", {
     .$defaultFn(() => generateUuid()),
   workoutId: text("workout_id")
     .notNull()
-    .references(() => workouts.id),
+    .references(() => workouts.id, { onDelete: "cascade" }),
   exerciseId: text("exercise_id")
     .notNull()
-    .references(() => exercises.id),
+    .references(() => exercises.id, { onDelete: "restrict" }),
   order: integer("order").notNull(),
   notes: text("notes"),
 });
@@ -112,7 +116,7 @@ export const sets = sqliteTable("sets", {
     .$defaultFn(() => generateUuid()),
   workoutExerciseId: text("workout_exercise_id")
     .notNull()
-    .references(() => workoutExercises.id),
+    .references(() => workoutExercises.id, { onDelete: "cascade" }),
   order: integer("order").notNull(),
   weightKg: real("weight_kg").notNull(),
   reps: integer("reps").notNull(),
@@ -127,13 +131,13 @@ export const personalRecords = sqliteTable("personal_records", {
     .$defaultFn(() => generateUuid()),
   userId: text("user_id")
     .notNull()
-    .references(() => users.id),
+    .references(() => users.id, { onDelete: "cascade" }),
   exerciseId: text("exercise_id")
     .notNull()
-    .references(() => exercises.id),
+    .references(() => exercises.id, { onDelete: "restrict" }),
   setId: text("set_id")
     .notNull()
-    .references(() => sets.id),
+    .references(() => sets.id, { onDelete: "cascade" }),
   weightKg: real("weight_kg").notNull(),
   reps: integer("reps").notNull(),
   estimated1rm: real("estimated_1rm").notNull(),
