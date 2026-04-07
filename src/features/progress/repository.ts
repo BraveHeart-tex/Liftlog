@@ -11,7 +11,7 @@ import {
   type User,
   type Workout,
 } from "@/src/db/schema";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
 const MAX_EXERCISE_HISTORY_WORKOUTS = 20;
 
@@ -105,23 +105,42 @@ export function getExerciseHistory(
     }
   }
 
+  if (workoutHistory.length === 0) {
+    return [];
+  }
+
+  const workoutIds = workoutHistory.map((workout) => workout.id);
+  const setRows = db
+    .select({
+      workoutId: workoutExercises.workoutId,
+      set: sets,
+    })
+    .from(sets)
+    .innerJoin(workoutExercises, eq(sets.workoutExerciseId, workoutExercises.id))
+    .where(
+      and(
+        inArray(workoutExercises.workoutId, workoutIds),
+        eq(workoutExercises.exerciseId, exerciseId),
+      ),
+    )
+    .orderBy(asc(workoutExercises.order), asc(sets.order))
+    .all();
+
+  const setsByWorkoutId = new Map<Workout["id"], Set[]>();
+
+  for (const row of setRows) {
+    const existingSets = setsByWorkoutId.get(row.workoutId);
+
+    if (existingSets) {
+      existingSets.push(row.set);
+      continue;
+    }
+
+    setsByWorkoutId.set(row.workoutId, [row.set]);
+  }
+
   return workoutHistory.map((workout) => {
-    const setsForWorkout = db
-      .select({ set: sets })
-      .from(sets)
-      .innerJoin(
-        workoutExercises,
-        eq(sets.workoutExerciseId, workoutExercises.id),
-      )
-      .where(
-        and(
-          eq(workoutExercises.workoutId, workout.id),
-          eq(workoutExercises.exerciseId, exerciseId),
-        ),
-      )
-      .orderBy(asc(workoutExercises.order), asc(sets.order))
-      .all()
-      .map((row) => row.set);
+    const setsForWorkout = setsByWorkoutId.get(workout.id) ?? [];
 
     return {
       workout,
