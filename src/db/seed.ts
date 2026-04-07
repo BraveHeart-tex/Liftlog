@@ -3,7 +3,8 @@ import { appMeta, exercises, type NewExercise } from "@/src/db/schema";
 import { generateUuid } from "@/src/lib/utils/uuid";
 import { eq } from "drizzle-orm";
 
-const HAS_SEEDED_KEY = "has_seeded";
+const EXERCISE_SEED_VERSION_KEY = "exercise_seed_version";
+const CURRENT_EXERCISE_SEED_VERSION = 1;
 
 const MUSCLE_GROUP = {
   abs: "abs",
@@ -420,19 +421,35 @@ const SEEDED_EXERCISES: NewExercise[] = [
 ];
 
 export function seedDatabase(db: DrizzleDb): void {
-  const hasSeeded = db
+  const storedVersionValue = db
     .select()
     .from(appMeta)
-    .where(eq(appMeta.key, HAS_SEEDED_KEY))
+    .where(eq(appMeta.key, EXERCISE_SEED_VERSION_KEY))
     .get();
 
-  if (hasSeeded) {
+  const storedVersion = storedVersionValue
+    ? Number.parseInt(storedVersionValue.value, 10)
+    : 0;
+
+  if (storedVersion >= CURRENT_EXERCISE_SEED_VERSION) {
     return;
   }
 
   db.transaction((tx) => {
     tx.insert(exercises).values(SEEDED_EXERCISES).run();
-    tx.insert(appMeta).values({ key: HAS_SEEDED_KEY, value: "true" }).run();
+    tx
+      .insert(appMeta)
+      .values({
+        key: EXERCISE_SEED_VERSION_KEY,
+        value: String(CURRENT_EXERCISE_SEED_VERSION),
+      })
+      .onConflictDoUpdate({
+        target: appMeta.key,
+        set: {
+          value: String(CURRENT_EXERCISE_SEED_VERSION),
+        },
+      })
+      .run();
   });
 }
 
