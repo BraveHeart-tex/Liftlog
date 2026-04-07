@@ -1,17 +1,20 @@
 import migrations from "@/src/db/migrations/migrations";
+import * as schema from "@/src/db/schema";
 import { drizzle, ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite";
 import { migrate } from "drizzle-orm/expo-sqlite/migrator";
 import {
-    SQLiteDatabase,
-    SQLiteProvider,
-    SQLiteProviderProps,
-    useSQLiteContext,
+  SQLiteDatabase,
+  SQLiteProvider,
+  SQLiteProviderProps,
+  useSQLiteContext,
 } from "expo-sqlite";
 import { createContext, PropsWithChildren, useContext, useMemo } from "react";
 
 const databaseName = "workout.db";
 
-const DrizzleContext = createContext<ExpoSQLiteDatabase | null>(null);
+type DrizzleDb = ExpoSQLiteDatabase<typeof schema>;
+
+const DrizzleContext = createContext<DrizzleDb | null>(null);
 
 export function useDrizzle() {
   const context = useContext(DrizzleContext);
@@ -26,7 +29,7 @@ function DrizzleProvider({ children }: PropsWithChildren) {
 
   const db = useMemo(() => {
     console.info("Creating Drizzle instance");
-    return drizzle(sqliteDb);
+    return drizzle(sqliteDb, { schema });
   }, [sqliteDb]);
 
   return (
