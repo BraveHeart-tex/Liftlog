@@ -103,6 +103,7 @@ export function updateProgram(
   id: Program["id"],
   data: Partial<NewProgram>,
 ): Program | undefined {
+  // Empty updates still bump `updatedAt` by design.
   return db
     .update(programs)
     .set({

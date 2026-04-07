@@ -7,6 +7,10 @@ import {
 } from "@/src/db/schema";
 import { and, asc, eq, isNull, like, or } from "drizzle-orm";
 
+function escapeLikePattern(value: string): string {
+  return value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
+}
+
 function getExerciseRecordById(
   db: DrizzleDb,
   id: Exercise["id"],
@@ -32,6 +36,7 @@ export function getExerciseById(
   db: DrizzleDb,
   id: Exercise["id"],
 ): Exercise | undefined {
+  // Archived exercises remain addressable by id for edit/archive workflows.
   return getExerciseRecordById(db, id);
 }
 
@@ -39,7 +44,14 @@ export function createExercise(
   db: DrizzleDb,
   data: NewExercise,
 ): Exercise {
-  return db.insert(exercises).values(data).returning().get();
+  return db
+    .insert(exercises)
+    .values({
+      ...data,
+      isArchived: 0,
+    })
+    .returning()
+    .get();
 }
 
 export function updateExercise(
@@ -72,6 +84,29 @@ export function searchExercises(
   userId: User["id"],
   query: string,
 ): Exercise[] {
+  const exercisesForUser = db
+    .select()
+    .from(exercises)
+    .where(
+      and(
+        or(eq(exercises.userId, userId), isNull(exercises.userId)),
+        eq(exercises.isArchived, 0),
+      ),
+    )
+    .orderBy(asc(exercises.name))
+    .all();
+
+  // SQLite `LIKE` needs an explicit escape clause for literal `%` / `_`.
+  // Keep the normal query-builder path for common input and fall back to a
+  // literal substring match only when the query contains wildcard characters.
+  if (query.includes("%") || query.includes("_") || query.includes("\\")) {
+    const normalizedQuery = query.toLocaleLowerCase();
+
+    return exercisesForUser.filter((exercise) =>
+      exercise.name.toLocaleLowerCase().includes(normalizedQuery),
+    );
+  }
+
   return db
     .select()
     .from(exercises)
@@ -79,7 +114,7 @@ export function searchExercises(
       and(
         or(eq(exercises.userId, userId), isNull(exercises.userId)),
         eq(exercises.isArchived, 0),
-        like(exercises.name, `%${query}%`),
+        like(exercises.name, `%${escapeLikePattern(query)}%`),
       ),
     )
     .orderBy(asc(exercises.name))
