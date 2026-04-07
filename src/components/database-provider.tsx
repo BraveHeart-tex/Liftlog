@@ -6,12 +6,9 @@ import {
   DrizzleDb,
 } from "@/src/db/client";
 import migrations from "@/src/db/migrations/migrations";
+import { runSeedIfNeeded } from "@/src/db/seed";
 import { migrate } from "drizzle-orm/expo-sqlite/migrator";
-import {
-  SQLiteDatabase,
-  SQLiteProvider,
-  useSQLiteContext,
-} from "expo-sqlite";
+import { SQLiteDatabase, SQLiteProvider, useSQLiteContext } from "expo-sqlite";
 import { createContext, PropsWithChildren, useContext, useMemo } from "react";
 
 const DrizzleContext = createContext<DrizzleDb | null>(null);
@@ -42,6 +39,7 @@ async function migrateAsync(db: SQLiteDatabase) {
     configureDatabase(db);
     const drizzleDb = createDrizzleDb(db);
     await migrate(drizzleDb, migrations);
+    runSeedIfNeeded(drizzleDb);
   } catch (error) {
     console.error("Database migration failed", error);
     throw error;
