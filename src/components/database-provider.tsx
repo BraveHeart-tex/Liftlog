@@ -1,3 +1,4 @@
+import { DatabaseErrorBoundary } from "@/src/components/database-error-boundary";
 import {
   configureDatabase,
   createDrizzleDb,
@@ -9,7 +10,14 @@ import migrations from "@/src/db/migrations/migrations";
 import { runSeedIfNeeded } from "@/src/db/seed";
 import { migrate } from "drizzle-orm/expo-sqlite/migrator";
 import { SQLiteDatabase, SQLiteProvider, useSQLiteContext } from "expo-sqlite";
-import { createContext, PropsWithChildren, useContext, useMemo } from "react";
+import {
+  createContext,
+  PropsWithChildren,
+  Suspense,
+  useContext,
+  useMemo,
+} from "react";
+import { Text, View } from "react-native";
 
 const DrizzleContext = createContext<DrizzleDb | null>(null);
 
@@ -53,13 +61,25 @@ async function migrateAsync(db: SQLiteDatabase) {
 
 export function DatabaseProvider({ children }: PropsWithChildren) {
   return (
-    <SQLiteProvider
-      databaseName={databaseName}
-      onError={console.error}
-      onInit={migrateAsync}
-      options={databaseOptions}
-    >
-      <DrizzleProvider>{children}</DrizzleProvider>
-    </SQLiteProvider>
+    <DatabaseErrorBoundary>
+      <Suspense
+        fallback={
+          <View className="flex-1 items-center justify-center bg-background">
+            <Text className="text-small text-muted-foreground">
+              Initializing database...
+            </Text>
+          </View>
+        }
+      >
+        <SQLiteProvider
+          databaseName={databaseName}
+          onInit={migrateAsync}
+          options={databaseOptions}
+          useSuspense
+        >
+          <DrizzleProvider>{children}</DrizzleProvider>
+        </SQLiteProvider>
+      </Suspense>
+    </DatabaseErrorBoundary>
   );
 }
