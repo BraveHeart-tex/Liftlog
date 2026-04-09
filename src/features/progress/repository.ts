@@ -8,57 +8,40 @@ import {
   type NewPersonalRecord,
   type PersonalRecord,
   type Set,
-  type User,
   type Workout,
 } from "@/src/db/schema";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
 const MAX_EXERCISE_HISTORY_WORKOUTS = 20;
 
-export function getPersonalRecords(
-  db: DrizzleDb,
-  userId: User["id"],
-): PersonalRecord[] {
+export function getPersonalRecords(db: DrizzleDb): PersonalRecord[] {
   return db
     .select()
     .from(personalRecords)
-    .where(eq(personalRecords.userId, userId))
     .orderBy(desc(personalRecords.achievedAt))
     .all();
 }
 
 export function getPersonalRecordsByExercise(
   db: DrizzleDb,
-  userId: User["id"],
   exerciseId: Exercise["id"],
 ): PersonalRecord[] {
   return db
     .select()
     .from(personalRecords)
-    .where(
-      and(
-        eq(personalRecords.userId, userId),
-        eq(personalRecords.exerciseId, exerciseId),
-      ),
-    )
+    .where(eq(personalRecords.exerciseId, exerciseId))
     .orderBy(desc(personalRecords.achievedAt))
     .all();
 }
 
 export function getLatestPersonalRecord(
   db: DrizzleDb,
-  userId: User["id"],
   exerciseId: Exercise["id"],
 ): PersonalRecord | undefined {
   return db
     .select()
     .from(personalRecords)
-    .where(
-      and(
-        eq(personalRecords.userId, userId),
-        eq(personalRecords.exerciseId, exerciseId),
-      ),
-    )
+    .where(eq(personalRecords.exerciseId, exerciseId))
     .orderBy(desc(personalRecords.achievedAt))
     .get();
 }
@@ -72,7 +55,6 @@ export function createPersonalRecord(
 
 export function getExerciseHistory(
   db: DrizzleDb,
-  userId: User["id"],
   exerciseId: Exercise["id"],
 ): { workout: Workout; sets: Set[] }[] {
   const workoutRows = db
@@ -81,7 +63,6 @@ export function getExerciseHistory(
     .innerJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
     .where(
       and(
-        eq(workouts.userId, userId),
         eq(workouts.status, "completed"),
         eq(workoutExercises.exerciseId, exerciseId),
       ),

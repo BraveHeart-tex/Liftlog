@@ -9,9 +9,8 @@ import {
   type Program,
   type ProgramDay,
   type ProgramExercise,
-  type User,
 } from "@/src/db/schema";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 
 function getProgramRecordById(
   db: DrizzleDb,
@@ -38,11 +37,11 @@ function getProgramExerciseRecordById(
     .get();
 }
 
-export function getPrograms(db: DrizzleDb, userId: User["id"]): Program[] {
+export function getPrograms(db: DrizzleDb): Program[] {
   return db
     .select()
     .from(programs)
-    .where(and(eq(programs.userId, userId), eq(programs.isArchived, 0)))
+    .where(eq(programs.isArchived, 0))
     .orderBy(desc(programs.updatedAt))
     .all();
 }
