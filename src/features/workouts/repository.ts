@@ -1,4 +1,4 @@
-import type { DrizzleDb } from "@/src/db/client";
+import type { DrizzleDb } from '@/src/db/client';
 import {
   sets,
   workoutExercises,
@@ -8,20 +8,20 @@ import {
   type NewWorkoutExercise,
   type Set,
   type Workout,
-  type WorkoutExercise,
-} from "@/src/db/schema";
-import { asc, desc, eq } from "drizzle-orm";
+  type WorkoutExercise
+} from '@/src/db/schema';
+import { asc, desc, eq } from 'drizzle-orm';
 
 function getWorkoutRecordById(
   db: DrizzleDb,
-  id: Workout["id"],
+  id: Workout['id']
 ): Workout | undefined {
   return db.select().from(workouts).where(eq(workouts.id, id)).get();
 }
 
 function getWorkoutExerciseRecordById(
   db: DrizzleDb,
-  id: WorkoutExercise["id"],
+  id: WorkoutExercise['id']
 ): WorkoutExercise | undefined {
   return db
     .select()
@@ -30,7 +30,7 @@ function getWorkoutExerciseRecordById(
     .get();
 }
 
-function getSetRecordById(db: DrizzleDb, id: Set["id"]): Set | undefined {
+function getSetRecordById(db: DrizzleDb, id: Set['id']): Set | undefined {
   return db.select().from(sets).where(eq(sets.id, id)).get();
 }
 
@@ -38,7 +38,7 @@ export function getWorkouts(db: DrizzleDb): Workout[] {
   return db
     .select()
     .from(workouts)
-    .where(eq(workouts.status, "completed"))
+    .where(eq(workouts.status, 'completed'))
     .orderBy(desc(workouts.startedAt))
     .all();
 }
@@ -47,21 +47,21 @@ export function getActiveWorkout(db: DrizzleDb): Workout | undefined {
   return db
     .select()
     .from(workouts)
-    .where(eq(workouts.status, "in_progress"))
+    .where(eq(workouts.status, 'in_progress'))
     .orderBy(desc(workouts.startedAt))
     .get();
 }
 
 export function getWorkoutById(
   db: DrizzleDb,
-  id: Workout["id"],
+  id: Workout['id']
 ): Workout | undefined {
   return getWorkoutRecordById(db, id);
 }
 
 export function getWorkoutWithExercises(
   db: DrizzleDb,
-  id: Workout["id"],
+  id: Workout['id']
 ): { workout: Workout; exercises: WorkoutExercise[] } | undefined {
   const workout = getWorkoutRecordById(db, id);
 
@@ -81,7 +81,7 @@ export function getWorkoutWithExercises(
 
 export function getWorkoutExerciseWithSets(
   db: DrizzleDb,
-  workoutExerciseId: WorkoutExercise["id"],
+  workoutExerciseId: WorkoutExercise['id']
 ): { workoutExercise: WorkoutExercise; sets: Set[] } | undefined {
   const workoutExercise = getWorkoutExerciseRecordById(db, workoutExerciseId);
 
@@ -105,8 +105,8 @@ export function createWorkout(db: DrizzleDb, data: NewWorkout): Workout {
 
 export function updateWorkout(
   db: DrizzleDb,
-  id: Workout["id"],
-  data: Partial<NewWorkout>,
+  id: Workout['id'],
+  data: Partial<NewWorkout>
 ): Workout | undefined {
   if (Object.keys(data).length === 0) {
     return getWorkoutRecordById(db, id);
@@ -120,23 +120,21 @@ export function updateWorkout(
     .get();
 }
 
-export function completeWorkout(db: DrizzleDb, id: Workout["id"]): void {
-  db
-    .update(workouts)
+export function completeWorkout(db: DrizzleDb, id: Workout['id']): void {
+  db.update(workouts)
     .set({
-      status: "completed",
-      completedAt: Date.now(),
+      status: 'completed',
+      completedAt: Date.now()
     })
     .where(eq(workouts.id, id))
     .run();
 }
 
-export function cancelWorkout(db: DrizzleDb, id: Workout["id"]): void {
-  db
-    .update(workouts)
+export function cancelWorkout(db: DrizzleDb, id: Workout['id']): void {
+  db.update(workouts)
     .set({
-      status: "cancelled",
-      completedAt: Date.now(),
+      status: 'cancelled',
+      completedAt: Date.now()
     })
     .where(eq(workouts.id, id))
     .run();
@@ -144,14 +142,14 @@ export function cancelWorkout(db: DrizzleDb, id: Workout["id"]): void {
 
 export function createWorkoutExercise(
   db: DrizzleDb,
-  data: NewWorkoutExercise,
+  data: NewWorkoutExercise
 ): WorkoutExercise {
   return db.insert(workoutExercises).values(data).returning().get();
 }
 
 export function deleteWorkoutExercise(
   db: DrizzleDb,
-  id: WorkoutExercise["id"],
+  id: WorkoutExercise['id']
 ): void {
   db.delete(workoutExercises).where(eq(workoutExercises.id, id)).run();
 }
@@ -162,31 +160,25 @@ export function createSet(db: DrizzleDb, data: NewSet): Set {
 
 export function updateSet(
   db: DrizzleDb,
-  id: Set["id"],
-  data: Partial<NewSet>,
+  id: Set['id'],
+  data: Partial<NewSet>
 ): Set | undefined {
   if (Object.keys(data).length === 0) {
     return getSetRecordById(db, id);
   }
 
-  return db
-    .update(sets)
-    .set(data)
-    .where(eq(sets.id, id))
-    .returning()
-    .get();
+  return db.update(sets).set(data).where(eq(sets.id, id)).returning().get();
 }
 
-export function deleteSet(db: DrizzleDb, id: Set["id"]): void {
+export function deleteSet(db: DrizzleDb, id: Set['id']): void {
   db.delete(sets).where(eq(sets.id, id)).run();
 }
 
-export function completeSet(db: DrizzleDb, id: Set["id"]): void {
-  db
-    .update(sets)
+export function completeSet(db: DrizzleDb, id: Set['id']): void {
+  db.update(sets)
     .set({
-      status: "completed",
-      completedAt: Date.now(),
+      status: 'completed',
+      completedAt: Date.now()
     })
     .where(eq(sets.id, id))
     .run();

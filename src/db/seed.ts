@@ -1,391 +1,391 @@
-import { DrizzleDb } from "@/src/db";
-import { appMeta, exercises, type NewExercise } from "@/src/db/schema";
-import { eq } from "drizzle-orm";
+import { DrizzleDb } from '@/src/db';
+import { appMeta, exercises, type NewExercise } from '@/src/db/schema';
+import { eq } from 'drizzle-orm';
 
-const HAS_SEEDED_KEY = "has_seeded";
-const LEGACY_EXERCISE_SEED_VERSION_KEY = "exercise_seed_version";
+const HAS_SEEDED_KEY = 'has_seeded';
+const LEGACY_EXERCISE_SEED_VERSION_KEY = 'exercise_seed_version';
 
 const MUSCLE_GROUP = {
-  abs: "abs",
-  adductors: "adductors",
-  biceps: "biceps",
-  brachialis: "brachialis",
-  calves: "calves",
-  chest: "chest",
-  forearms: "forearms",
-  frontDelts: "front delts",
-  glutes: "glutes",
-  grip: "grip",
-  hamstrings: "hamstrings",
-  hipFlexors: "hip flexors",
-  lats: "lats",
-  lowerBack: "lower back",
-  obliques: "obliques",
-  quads: "quads",
-  rearDelts: "rear delts",
-  rotatorCuff: "rotator cuff",
-  shoulders: "shoulders",
-  sideDelts: "side delts",
-  triceps: "triceps",
-  upperBack: "upper back",
-  upperChest: "upper chest",
-  upperTraps: "upper traps",
+  abs: 'abs',
+  adductors: 'adductors',
+  biceps: 'biceps',
+  brachialis: 'brachialis',
+  calves: 'calves',
+  chest: 'chest',
+  forearms: 'forearms',
+  frontDelts: 'front delts',
+  glutes: 'glutes',
+  grip: 'grip',
+  hamstrings: 'hamstrings',
+  hipFlexors: 'hip flexors',
+  lats: 'lats',
+  lowerBack: 'lower back',
+  obliques: 'obliques',
+  quads: 'quads',
+  rearDelts: 'rear delts',
+  rotatorCuff: 'rotator cuff',
+  shoulders: 'shoulders',
+  sideDelts: 'side delts',
+  triceps: 'triceps',
+  upperBack: 'upper back',
+  upperChest: 'upper chest',
+  upperTraps: 'upper traps'
 } as const;
 
 const createSeedExercises = (): NewExercise[] => [
   {
-    name: "Bench Press",
-    category: "barbell",
+    name: 'Bench Press',
+    category: 'barbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.chest]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.frontDelts,
-      MUSCLE_GROUP.triceps,
+      MUSCLE_GROUP.triceps
     ]),
-    instructions: "Lower the bar to the mid chest, then press to lockout.",
+    instructions: 'Lower the bar to the mid chest, then press to lockout.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Incline Bench Press",
-    category: "barbell",
+    name: 'Incline Bench Press',
+    category: 'barbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.upperChest]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.frontDelts,
-      MUSCLE_GROUP.triceps,
+      MUSCLE_GROUP.triceps
     ]),
     instructions:
-      "Press from an incline bench with the bar over the upper chest.",
+      'Press from an incline bench with the bar over the upper chest.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Overhead Press",
-    category: "barbell",
+    name: 'Overhead Press',
+    category: 'barbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.shoulders]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.triceps,
-      MUSCLE_GROUP.upperChest,
+      MUSCLE_GROUP.upperChest
     ]),
     instructions:
-      "Press the bar overhead from shoulder height without leaning back.",
+      'Press the bar overhead from shoulder height without leaning back.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Dumbbell Shoulder Press",
-    category: "dumbbell",
+    name: 'Dumbbell Shoulder Press',
+    category: 'dumbbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.shoulders]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.triceps]),
     instructions:
-      "Press both dumbbells overhead with control through the full range.",
+      'Press both dumbbells overhead with control through the full range.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Lateral Raise",
-    category: "dumbbell",
+    name: 'Lateral Raise',
+    category: 'dumbbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.sideDelts]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.upperTraps]),
     instructions:
-      "Raise dumbbells out to the sides to shoulder height with soft elbows.",
+      'Raise dumbbells out to the sides to shoulder height with soft elbows.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Tricep Pushdown",
-    category: "cable",
+    name: 'Tricep Pushdown',
+    category: 'cable',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.triceps]),
     secondaryMuscles: JSON.stringify([]),
     instructions:
-      "Keep elbows pinned and extend the handle until the arms are straight.",
+      'Keep elbows pinned and extend the handle until the arms are straight.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Skull Crushers",
-    category: "barbell",
+    name: 'Skull Crushers',
+    category: 'barbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.triceps]),
     secondaryMuscles: JSON.stringify([]),
     instructions:
-      "Lower the bar toward the forehead, then extend the elbows to finish.",
+      'Lower the bar toward the forehead, then extend the elbows to finish.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Barbell Row",
-    category: "barbell",
+    name: 'Barbell Row',
+    category: 'barbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.upperBack, MUSCLE_GROUP.lats]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.biceps,
-      MUSCLE_GROUP.rearDelts,
+      MUSCLE_GROUP.rearDelts
     ]),
     instructions:
-      "Row the bar to the lower ribs while keeping the torso braced.",
+      'Row the bar to the lower ribs while keeping the torso braced.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Dumbbell Row",
-    category: "dumbbell",
+    name: 'Dumbbell Row',
+    category: 'dumbbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.lats]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.biceps,
-      MUSCLE_GROUP.rearDelts,
+      MUSCLE_GROUP.rearDelts
     ]),
     instructions:
-      "Row the dumbbell toward the hip with the chest supported or braced.",
+      'Row the dumbbell toward the hip with the chest supported or braced.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Pull Up",
-    category: "bodyweight",
+    name: 'Pull Up',
+    category: 'bodyweight',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.lats]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.biceps,
-      MUSCLE_GROUP.upperBack,
+      MUSCLE_GROUP.upperBack
     ]),
-    instructions: "Pull from a dead hang until the chin clears the bar.",
+    instructions: 'Pull from a dead hang until the chin clears the bar.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Lat Pulldown",
-    category: "machine",
+    name: 'Lat Pulldown',
+    category: 'machine',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.lats]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.biceps,
-      MUSCLE_GROUP.upperBack,
+      MUSCLE_GROUP.upperBack
     ]),
     instructions:
-      "Pull the handle to the upper chest while keeping the torso stable.",
+      'Pull the handle to the upper chest while keeping the torso stable.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Face Pull",
-    category: "cable",
+    name: 'Face Pull',
+    category: 'cable',
     primaryMuscles: JSON.stringify([
       MUSCLE_GROUP.rearDelts,
-      MUSCLE_GROUP.upperBack,
+      MUSCLE_GROUP.upperBack
     ]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.rotatorCuff]),
     instructions:
-      "Pull the rope toward the face with elbows high and hands apart.",
+      'Pull the rope toward the face with elbows high and hands apart.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Bicep Curl",
-    category: "barbell",
+    name: 'Bicep Curl',
+    category: 'barbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.biceps]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.forearms]),
-    instructions: "Curl the weight without swinging the torso.",
+    instructions: 'Curl the weight without swinging the torso.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Hammer Curl",
-    category: "dumbbell",
+    name: 'Hammer Curl',
+    category: 'dumbbell',
     primaryMuscles: JSON.stringify([
       MUSCLE_GROUP.biceps,
-      MUSCLE_GROUP.brachialis,
+      MUSCLE_GROUP.brachialis
     ]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.forearms]),
     instructions:
-      "Curl with a neutral grip and keep the elbows close to the body.",
+      'Curl with a neutral grip and keep the elbows close to the body.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Chest-Supported Row",
-    category: "machine",
+    name: 'Chest-Supported Row',
+    category: 'machine',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.upperBack, MUSCLE_GROUP.lats]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.biceps,
-      MUSCLE_GROUP.rearDelts,
+      MUSCLE_GROUP.rearDelts
     ]),
     instructions:
-      "Pull the handles toward the torso while staying glued to the pad.",
+      'Pull the handles toward the torso while staying glued to the pad.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Seated Cable Row",
-    category: "cable",
+    name: 'Seated Cable Row',
+    category: 'cable',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.upperBack, MUSCLE_GROUP.lats]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.biceps]),
-    instructions: "Row the handle to the mid torso without rocking backward.",
+    instructions: 'Row the handle to the mid torso without rocking backward.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Dips",
-    category: "bodyweight",
+    name: 'Dips',
+    category: 'bodyweight',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.chest, MUSCLE_GROUP.triceps]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.frontDelts]),
     instructions:
-      "Lower until the shoulders are below the elbows, then press up strongly.",
+      'Lower until the shoulders are below the elbows, then press up strongly.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Back Squat",
-    category: "barbell",
+    name: 'Back Squat',
+    category: 'barbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.quads, MUSCLE_GROUP.glutes]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.adductors,
-      MUSCLE_GROUP.lowerBack,
+      MUSCLE_GROUP.lowerBack
     ]),
     instructions:
-      "Sit down between the hips and stand up with the bar over midfoot.",
+      'Sit down between the hips and stand up with the bar over midfoot.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Front Squat",
-    category: "barbell",
+    name: 'Front Squat',
+    category: 'barbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.quads]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.glutes,
-      MUSCLE_GROUP.upperBack,
+      MUSCLE_GROUP.upperBack
     ]),
-    instructions: "Keep elbows high, stay upright, and squat to full depth.",
+    instructions: 'Keep elbows high, stay upright, and squat to full depth.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Deadlift",
-    category: "barbell",
+    name: 'Deadlift',
+    category: 'barbell',
     primaryMuscles: JSON.stringify([
       MUSCLE_GROUP.glutes,
-      MUSCLE_GROUP.hamstrings,
+      MUSCLE_GROUP.hamstrings
     ]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.lowerBack,
-      MUSCLE_GROUP.upperBack,
+      MUSCLE_GROUP.upperBack
     ]),
     instructions:
-      "Push the floor away and lock out with the bar close to the legs.",
+      'Push the floor away and lock out with the bar close to the legs.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Romanian Deadlift",
-    category: "barbell",
+    name: 'Romanian Deadlift',
+    category: 'barbell',
     primaryMuscles: JSON.stringify([
       MUSCLE_GROUP.hamstrings,
-      MUSCLE_GROUP.glutes,
+      MUSCLE_GROUP.glutes
     ]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.lowerBack]),
     instructions:
-      "Hinge at the hips, lower to a stretch, and stand back up under control.",
+      'Hinge at the hips, lower to a stretch, and stand back up under control.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Hip Thrust",
-    category: "barbell",
+    name: 'Hip Thrust',
+    category: 'barbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.glutes]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.hamstrings]),
-    instructions: "Drive the hips up until the torso is parallel to the floor.",
+    instructions: 'Drive the hips up until the torso is parallel to the floor.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Leg Press",
-    category: "machine",
+    name: 'Leg Press',
+    category: 'machine',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.quads]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.glutes,
-      MUSCLE_GROUP.hamstrings,
+      MUSCLE_GROUP.hamstrings
     ]),
     instructions:
-      "Lower the sled under control and press through the full foot.",
+      'Lower the sled under control and press through the full foot.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Leg Extension",
-    category: "machine",
+    name: 'Leg Extension',
+    category: 'machine',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.quads]),
     secondaryMuscles: JSON.stringify([]),
-    instructions: "Extend the knees fully and pause briefly at the top.",
+    instructions: 'Extend the knees fully and pause briefly at the top.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Leg Curl",
-    category: "machine",
+    name: 'Leg Curl',
+    category: 'machine',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.hamstrings]),
     secondaryMuscles: JSON.stringify([]),
-    instructions: "Curl the pad toward the glutes without lifting the hips.",
+    instructions: 'Curl the pad toward the glutes without lifting the hips.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Walking Lunges",
-    category: "dumbbell",
+    name: 'Walking Lunges',
+    category: 'dumbbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.quads, MUSCLE_GROUP.glutes]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.hamstrings,
-      MUSCLE_GROUP.adductors,
+      MUSCLE_GROUP.adductors
     ]),
-    instructions: "Step long, descend under control, and keep the torso tall.",
+    instructions: 'Step long, descend under control, and keep the torso tall.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Calf Raise",
-    category: "machine",
+    name: 'Calf Raise',
+    category: 'machine',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.calves]),
     secondaryMuscles: JSON.stringify([]),
     instructions:
-      "Rise onto the toes, pause at the top, and lower to a full stretch.",
+      'Rise onto the toes, pause at the top, and lower to a full stretch.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Bulgarian Split Squat",
-    category: "dumbbell",
+    name: 'Bulgarian Split Squat',
+    category: 'dumbbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.quads, MUSCLE_GROUP.glutes]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.adductors]),
     instructions:
-      "Drop straight down with the rear foot elevated and drive through the front foot.",
+      'Drop straight down with the rear foot elevated and drive through the front foot.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Plank",
-    category: "bodyweight",
+    name: 'Plank',
+    category: 'bodyweight',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.abs]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.glutes,
-      MUSCLE_GROUP.obliques,
+      MUSCLE_GROUP.obliques
     ]),
     instructions:
-      "Brace hard and keep a straight line from shoulders to ankles.",
+      'Brace hard and keep a straight line from shoulders to ankles.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Hanging Leg Raise",
-    category: "bodyweight",
+    name: 'Hanging Leg Raise',
+    category: 'bodyweight',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.abs, MUSCLE_GROUP.hipFlexors]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.grip]),
-    instructions: "Lift the legs without swinging and lower with control.",
+    instructions: 'Lift the legs without swinging and lower with control.',
     isCustom: 0,
-    isArchived: 0,
+    isArchived: 0
   },
   {
-    name: "Cable Crunch",
-    category: "cable",
+    name: 'Cable Crunch',
+    category: 'cable',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.abs]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.obliques]),
-    instructions: "Curl the torso down by driving the ribs toward the hips.",
+    instructions: 'Curl the torso down by driving the ribs toward the hips.',
     isCustom: 0,
-    isArchived: 0,
-  },
+    isArchived: 0
+  }
 ];
 
 export function seedDatabase(db: DrizzleDb): void {
@@ -400,7 +400,7 @@ export function seedDatabase(db: DrizzleDb): void {
     .where(eq(appMeta.key, LEGACY_EXERCISE_SEED_VERSION_KEY))
     .get();
 
-  if (hasSeeded?.value === "true") {
+  if (hasSeeded?.value === 'true') {
     return;
   }
 
@@ -408,31 +408,31 @@ export function seedDatabase(db: DrizzleDb): void {
     db.insert(appMeta)
       .values({
         key: HAS_SEEDED_KEY,
-        value: "true",
+        value: 'true'
       })
       .onConflictDoUpdate({
         target: appMeta.key,
         set: {
-          value: "true",
-        },
+          value: 'true'
+        }
       })
       .run();
 
     return;
   }
 
-  db.transaction((tx) => {
+  db.transaction(tx => {
     tx.insert(exercises).values(createSeedExercises()).run();
     tx.insert(appMeta)
       .values({
         key: HAS_SEEDED_KEY,
-        value: "true",
+        value: 'true'
       })
       .onConflictDoUpdate({
         target: appMeta.key,
         set: {
-          value: "true",
-        },
+          value: 'true'
+        }
       })
       .run();
   });

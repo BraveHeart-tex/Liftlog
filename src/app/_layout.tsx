@@ -1,6 +1,6 @@
-import "@/global.css";
-import { CommonProviders } from "@/src/components/common-providers";
-import { Stack } from "expo-router";
+import '@/global.css';
+import { CommonProviders } from '@/src/components/common-providers';
+import { Stack } from 'expo-router';
 
 export default function RootLayout() {
   return (

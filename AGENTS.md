@@ -47,7 +47,7 @@ Why: NativeWind processes classNames asynchronously. On external components this
 Allowed for core RN components:
 
 ```tsx
-<View className="bg-card border border-border p-4 rounded-lg" />
+<View className="bg-card border-border rounded-lg border p-4" />
 ```
 
 Required for external components with layout-critical flex:
@@ -60,7 +60,7 @@ Required for external components with layout-critical flex:
 Avoid:
 
 ```tsx
-<View style={{ backgroundColor: "#111" }} />
+<View style={{ backgroundColor: '#111' }} />
 ```
 
 ---
@@ -151,7 +151,7 @@ This applies any time a `ScrollView` needs to fill available space, especially w
 When a screen has a footer (e.g. a CTA button), the ScrollView must use inline flex styles or content will be hidden:
 
 ```tsx
-<SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top"]}>
+<SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
   <ScrollView
     style={{ flex: 1 }}
     contentContainerStyle={{ flexGrow: 1 }}
@@ -159,7 +159,7 @@ When a screen has a footer (e.g. a CTA button), the ScrollView must use inline f
   >
     {children}
   </ScrollView>
-  <View className="border-t border-border bg-background px-4 py-4">
+  <View className="border-border bg-background border-t px-4 py-4">
     {footer}
   </View>
 </SafeAreaView>
@@ -255,7 +255,7 @@ Prefer simple reusable primitives:
 ### Button
 
 ```tsx
-<Pressable className="rounded-lg bg-primary px-4 py-4 items-center">
+<Pressable className="bg-primary items-center rounded-lg px-4 py-4">
   <Text className="text-body-medium text-white">Action</Text>
 </Pressable>
 ```

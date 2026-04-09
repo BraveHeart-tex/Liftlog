@@ -1,10 +1,10 @@
-import { cn } from "@/src/lib/utils/cn";
-import { colors } from "@/src/theme/tokens";
+import { cn } from '@/src/lib/utils/cn';
+import { colors } from '@/src/theme/tokens';
 import GorhomBottomSheet, {
   BottomSheetBackdrop,
   type BottomSheetBackdropProps,
-  type BottomSheetBackgroundProps,
-} from "@gorhom/bottom-sheet";
+  type BottomSheetBackgroundProps
+} from '@gorhom/bottom-sheet';
 import {
   memo,
   useCallback,
@@ -12,9 +12,9 @@ import {
   useMemo,
   useRef,
   type ComponentRef,
-  type ReactNode,
-} from "react";
-import { ScrollView, Text, View } from "react-native";
+  type ReactNode
+} from 'react';
+import { ScrollView, Text, View } from 'react-native';
 
 type BottomSheetComponentProps = {
   isOpen: boolean;
@@ -29,17 +29,17 @@ type BottomSheetSectionProps = {
   className?: string;
 };
 
-const DEFAULT_SNAP_POINTS = ["50%", "90%"];
+const DEFAULT_SNAP_POINTS = ['50%', '90%'];
 
 const SheetBackground = memo(function SheetBackground({
   pointerEvents,
-  style,
+  style
 }: BottomSheetBackgroundProps) {
   return (
     <View
       pointerEvents={pointerEvents}
       style={style}
-      className="rounded-t-xl bg-card"
+      className="bg-card rounded-t-xl"
     />
   );
 });
@@ -47,7 +47,7 @@ const SheetBackground = memo(function SheetBackground({
 const SheetHandle = memo(function SheetHandle() {
   return (
     <View className="items-center pt-3 pb-1">
-      <View className="h-1.5 w-12 rounded-full bg-muted" />
+      <View className="bg-muted h-1.5 w-12 rounded-full" />
     </View>
   );
 });
@@ -57,7 +57,7 @@ export function BottomSheet({
   onClose,
   snapPoints = DEFAULT_SNAP_POINTS,
   children,
-  className,
+  className
 }: BottomSheetComponentProps) {
   const sheetRef = useRef<ComponentRef<typeof GorhomBottomSheet>>(null);
   const resolvedSnapPoints = useMemo(() => snapPoints, [snapPoints]);
@@ -82,7 +82,7 @@ export function BottomSheet({
         style={[props.style, { backgroundColor: colors.background }]}
       />
     ),
-    [],
+    []
   );
 
   return (
@@ -105,26 +105,26 @@ export function BottomSheet({
 
 export function BottomSheetHeader({
   children,
-  className,
+  className
 }: BottomSheetSectionProps) {
-  return <View className={cn("px-4 pt-4 pb-2", className)}>{children}</View>;
+  return <View className={cn('px-4 pt-4 pb-2', className)}>{children}</View>;
 }
 
 export function BottomSheetTitle({
   children,
-  className,
+  className
 }: BottomSheetSectionProps) {
   return (
-    <Text className={cn("text-h3 text-foreground", className)}>{children}</Text>
+    <Text className={cn('text-h3 text-foreground', className)}>{children}</Text>
   );
 }
 
 export function BottomSheetDescription({
   children,
-  className,
+  className
 }: BottomSheetSectionProps) {
   return (
-    <Text className={cn("mt-1 text-small text-muted-foreground", className)}>
+    <Text className={cn('text-small text-muted-foreground mt-1', className)}>
       {children}
     </Text>
   );
@@ -132,10 +132,10 @@ export function BottomSheetDescription({
 
 export function BottomSheetContent({
   children,
-  className,
+  className
 }: BottomSheetSectionProps) {
   return (
-    <ScrollView contentContainerClassName={cn("px-4 pb-8", className)}>
+    <ScrollView contentContainerClassName={cn('px-4 pb-8', className)}>
       {children}
     </ScrollView>
   );

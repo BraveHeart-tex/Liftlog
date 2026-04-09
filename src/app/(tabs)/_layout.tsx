@@ -1,11 +1,11 @@
-import { tabBarTheme } from "@/src/theme/tokens";
-import { Tabs } from "expo-router";
+import { tabBarTheme } from '@/src/theme/tokens';
+import { Tabs } from 'expo-router';
 import {
   DumbbellIcon,
   ListIcon,
   NotebookTabsIcon,
-  PlaySquareIcon,
-} from "lucide-react-native";
+  PlaySquareIcon
+} from 'lucide-react-native';
 
 export default function TabLayout() {
   return (
@@ -19,51 +19,51 @@ export default function TabLayout() {
           borderTopColor: tabBarTheme.borderColor,
           height: 72,
           paddingTop: 8,
-          paddingBottom: 8,
+          paddingBottom: 8
         },
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: "600",
+          fontWeight: '600'
         },
         sceneStyle: {
-          backgroundColor: tabBarTheme.sceneBackgroundColor,
-        },
+          backgroundColor: tabBarTheme.sceneBackgroundColor
+        }
       }}
     >
       <Tabs.Screen
         name="workout"
         options={{
-          title: "Workout",
+          title: 'Workout',
           tabBarIcon: ({ color, size }) => (
             <DumbbellIcon color={color} size={size} />
-          ),
+          )
         }}
       />
       <Tabs.Screen
         name="exercises/index"
         options={{
-          title: "Exercises",
+          title: 'Exercises',
           tabBarIcon: ({ color, size }) => (
             <ListIcon color={color} size={size} />
-          ),
+          )
         }}
       />
       <Tabs.Screen
         name="programs"
         options={{
-          title: "Programs",
+          title: 'Programs',
           tabBarIcon: ({ color, size }) => (
             <NotebookTabsIcon color={color} size={size} />
-          ),
+          )
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
-          title: "History",
+          title: 'History',
           tabBarIcon: ({ color, size }) => (
             <PlaySquareIcon color={color} size={size} />
-          ),
+          )
         }}
       />
     </Tabs>

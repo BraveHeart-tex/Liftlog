@@ -1,30 +1,30 @@
-import { DatabaseErrorBoundary } from "@/src/components/database-error-boundary";
+import { DatabaseErrorBoundary } from '@/src/components/database-error-boundary';
 import {
   configureDatabase,
   createDrizzleDb,
   databaseName,
   databaseOptions,
-  DrizzleDb,
-} from "@/src/db/client";
-import migrations from "@/src/db/migrations/migrations";
-import { runSeedIfNeeded } from "@/src/db/seed";
-import { migrate } from "drizzle-orm/expo-sqlite/migrator";
-import { SQLiteDatabase, SQLiteProvider, useSQLiteContext } from "expo-sqlite";
+  DrizzleDb
+} from '@/src/db/client';
+import migrations from '@/src/db/migrations/migrations';
+import { runSeedIfNeeded } from '@/src/db/seed';
+import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
+import { SQLiteDatabase, SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import {
   createContext,
   PropsWithChildren,
   Suspense,
   useContext,
-  useMemo,
-} from "react";
-import { Text, View } from "react-native";
+  useMemo
+} from 'react';
+import { Text, View } from 'react-native';
 
 const DrizzleContext = createContext<DrizzleDb | null>(null);
 
 export function useDrizzle() {
   const context = useContext(DrizzleContext);
   if (!context) {
-    throw new Error("useDrizzle must be used within a DrizzleProvider");
+    throw new Error('useDrizzle must be used within a DrizzleProvider');
   }
   return context;
 }
@@ -47,14 +47,14 @@ async function migrateAsync(db: SQLiteDatabase) {
     drizzleDb = createDrizzleDb(db);
     await migrate(drizzleDb, migrations);
   } catch (error) {
-    console.error("Database migration failed", error);
+    console.error('Database migration failed', error);
     throw error;
   }
 
   try {
     runSeedIfNeeded(drizzleDb);
   } catch (error) {
-    console.error("Database seed failed", error);
+    console.error('Database seed failed', error);
     throw error;
   }
 }
@@ -64,7 +64,7 @@ export function DatabaseProvider({ children }: PropsWithChildren) {
     <DatabaseErrorBoundary>
       <Suspense
         fallback={
-          <View className="flex-1 items-center justify-center bg-background">
+          <View className="bg-background flex-1 items-center justify-center">
             <Text className="text-small text-muted-foreground">
               Initializing database...
             </Text>
