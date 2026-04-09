@@ -2,6 +2,7 @@ import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
 import { type Exercise } from '@/src/db/schema';
 import { useExercises } from '@/src/features/exercises/hooks';
+import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -124,7 +125,15 @@ export default function ExercisesScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <Pressable className="border-border bg-card mt-3 rounded-lg border p-4">
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: '/(tabs)/exercises/[id]',
+                params: { id: item.id }
+              })
+            }
+            className="border-border bg-card mt-3 rounded-lg border p-4"
+          >
             <Text variant="bodyMedium">{item.name}</Text>
             <Text variant="small" tone="muted" className="mt-1">
               {toTitleCase(getPrimaryMuscleLabel(item.primaryMuscles))}
