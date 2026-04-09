@@ -76,6 +76,13 @@
     "tailwindcss": "^4.2.2",
     "typescript": "~5.9.2"
   },
+  "lint-staged": {
+    "**/*.{ts,tsx,js}": [
+      "pnpm exec eslint --fix",
+      "pnpm exec prettier --write"
+    ],
+    "**/*.{md,json}": "pnpm exec prettier --write"
+  },
   "pnpm": {
     "overrides": {
       "lightningcss": "1.30.1"
