@@ -7,11 +7,10 @@ import {
   type NewWorkout,
   type NewWorkoutExercise,
   type Set,
-  type User,
   type Workout,
   type WorkoutExercise,
 } from "@/src/db/schema";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 
 function getWorkoutRecordById(
   db: DrizzleDb,
@@ -35,25 +34,20 @@ function getSetRecordById(db: DrizzleDb, id: Set["id"]): Set | undefined {
   return db.select().from(sets).where(eq(sets.id, id)).get();
 }
 
-export function getWorkouts(db: DrizzleDb, userId: User["id"]): Workout[] {
+export function getWorkouts(db: DrizzleDb): Workout[] {
   return db
     .select()
     .from(workouts)
-    .where(and(eq(workouts.userId, userId), eq(workouts.status, "completed")))
+    .where(eq(workouts.status, "completed"))
     .orderBy(desc(workouts.startedAt))
     .all();
 }
 
-export function getActiveWorkout(
-  db: DrizzleDb,
-  userId: User["id"],
-): Workout | undefined {
+export function getActiveWorkout(db: DrizzleDb): Workout | undefined {
   return db
     .select()
     .from(workouts)
-    .where(
-      and(eq(workouts.userId, userId), eq(workouts.status, "in_progress")),
-    )
+    .where(eq(workouts.status, "in_progress"))
     .orderBy(desc(workouts.startedAt))
     .get();
 }

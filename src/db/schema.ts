@@ -1,16 +1,6 @@
 import { generateUuid } from "@/src/lib/utils/uuid";
 import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
-export const users = sqliteTable("users", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => generateUuid()),
-  settings: text("settings").notNull().default("{}"),
-  createdAt: integer("created_at")
-    .notNull()
-    .$defaultFn(() => Date.now()),
-});
-
 export const appMeta = sqliteTable("app_meta", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
@@ -20,12 +10,12 @@ export const exercises = sqliteTable("exercises", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => generateUuid()),
-  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   category: text("category").notNull(),
   primaryMuscles: text("primary_muscles").notNull().default("[]"),
   secondaryMuscles: text("secondary_muscles").notNull().default("[]"),
   instructions: text("instructions"),
+  isCustom: integer("is_custom").notNull().default(0),
   isArchived: integer("is_archived").notNull().default(0),
   createdAt: integer("created_at")
     .notNull()
@@ -36,9 +26,6 @@ export const programs = sqliteTable("programs", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => generateUuid()),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   description: text("description"),
   isArchived: integer("is_archived").notNull().default(0),
@@ -83,9 +70,6 @@ export const workouts = sqliteTable("workouts", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => generateUuid()),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
   programId: text("program_id").references(() => programs.id, {
     onDelete: "set null",
   }),
@@ -134,9 +118,6 @@ export const personalRecords = sqliteTable("personal_records", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => generateUuid()),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
   exerciseId: text("exercise_id")
     .notNull()
     .references(() => exercises.id, { onDelete: "restrict" }),
@@ -148,9 +129,6 @@ export const personalRecords = sqliteTable("personal_records", {
   estimated1rm: real("estimated_1rm").notNull(),
   achievedAt: integer("achieved_at").notNull(),
 });
-
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
 
 export type AppMeta = typeof appMeta.$inferSelect;
 export type NewAppMeta = typeof appMeta.$inferInsert;
