@@ -2,9 +2,14 @@ import { useDrizzle } from '@/src/components/database-provider';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Text } from '@/src/components/ui/text';
 import { type Exercise, type Set } from '@/src/db/schema';
-import { getExerciseById } from '@/src/features/exercises/repository';
-import { getExerciseHistory } from '@/src/features/progress/repository';
+import { getExerciseByIdQuery } from '@/src/features/exercises/repository';
+import {
+  buildExerciseHistory,
+  getExerciseHistorySetsQuery,
+  getExerciseHistoryWorkoutsQuery
+} from '@/src/features/progress/repository';
 import { useLocalSearchParams } from 'expo-router';
+import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -54,16 +59,30 @@ function formatWeight(weightKg: number) {
   return weightKg.toFixed(1);
 }
 
-function getLastCompletedSet(sets: Set[]) {
-  for (let index = sets.length - 1; index >= 0; index -= 1) {
-    const set = sets[index];
+function getCompletedSets(sets: Set[]) {
+  return sets.filter(set => set.status === 'completed');
+}
 
-    if (set.status === 'completed') {
-      return set;
-    }
+function formatCompletedSets(sets: Set[]) {
+  if (sets.length === 0) {
+    return undefined;
   }
 
-  return undefined;
+  return sets
+    .reduce<string[]>((parts, set, index) => {
+      const previousSet = index > 0 ? sets[index - 1] : undefined;
+      const hasSameWeightAsPrevious =
+        previousSet && previousSet.weightKg === set.weightKg;
+
+      if (hasSameWeightAsPrevious) {
+        parts.push(String(set.reps));
+        return parts;
+      }
+
+      parts.push(`${formatWeight(set.weightKg)} x ${set.reps}`);
+      return parts;
+    }, [])
+    .join(', ');
 }
 
 function formatWorkoutDate(timestamp: number) {
@@ -79,7 +98,22 @@ export default function ExerciseDetailScreen() {
   const db = useDrizzle();
 
   const exerciseId = getRouteParamId(id);
-  const exercise = exerciseId ? getExerciseById(db, exerciseId) : undefined;
+  const { data: exerciseRows = [] } = useLiveQuery(
+    getExerciseByIdQuery(db, exerciseId ?? ''),
+    [db, exerciseId]
+  );
+  const exercise = exerciseRows[0];
+  const { data: workoutRows = [] } = useLiveQuery(
+    getExerciseHistoryWorkoutsQuery(db, exerciseId ?? ''),
+    [db, exerciseId]
+  );
+  const workoutIds = Array.from(
+    new Set(workoutRows.map(row => row.workout.id))
+  ).slice(0, 20);
+  const { data: setRows = [] } = useLiveQuery(
+    getExerciseHistorySetsQuery(db, exerciseId ?? '', workoutIds),
+    [db, exerciseId, workoutIds.join(',')]
+  );
 
   if (!exercise) {
     return (
@@ -104,10 +138,11 @@ export default function ExerciseDetailScreen() {
   const secondaryMuscles = parseMuscleList(exercise.secondaryMuscles);
   const instructions = exercise.instructions?.trim();
 
-  const mostRecentHistory = getExerciseHistory(db, exercise.id)[0];
-  const lastCompletedSet = mostRecentHistory
-    ? getLastCompletedSet(mostRecentHistory.sets)
-    : undefined;
+  const mostRecentHistory = buildExerciseHistory(workoutRows, setRows)[0];
+  const completedSets = mostRecentHistory
+    ? getCompletedSets(mostRecentHistory.sets)
+    : [];
+  const completedSetSummary = formatCompletedSets(completedSets);
 
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
@@ -171,12 +206,9 @@ export default function ExerciseDetailScreen() {
               Last performed
             </Text>
 
-            {mostRecentHistory && lastCompletedSet ? (
+            {mostRecentHistory && completedSetSummary ? (
               <View className="mt-4">
-                <Text variant="h3">
-                  {formatWeight(lastCompletedSet.weightKg)} x{' '}
-                  {lastCompletedSet.reps}
-                </Text>
+                <Text variant="h3">{completedSetSummary}</Text>
                 <Text variant="small" tone="muted" className="mt-2">
                   {formatWorkoutDate(mostRecentHistory.workout.startedAt)}
                 </Text>
