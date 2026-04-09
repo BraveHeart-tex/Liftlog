@@ -1,12 +1,12 @@
-import { Screen } from "@/src/components/ui/screen";
-import { Text, View } from "react-native";
+import { Screen } from '@/src/components/ui/screen';
+import { Text, View } from 'react-native';
 
 export default function HistoryScreen() {
   return (
     <Screen scroll>
-      <View className="rounded-lg border border-border bg-card p-4">
+      <View className="border-border bg-card rounded-lg border p-4">
         <Text className="text-h2 text-foreground">History</Text>
-        <Text className="mt-2 text-body text-muted-foreground">
+        <Text className="text-body text-muted-foreground mt-2">
           Logged workouts, previous sessions, and progress review will live
           here.
         </Text>

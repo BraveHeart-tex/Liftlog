@@ -1,9 +1,9 @@
-import { Button } from "@/src/components/ui/button";
-import { Icon } from "@/src/components/ui/icon";
+import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
 
-import { cn } from "@/src/lib/utils/cn";
-import type { LucideIcon } from "lucide-react-native";
-import { ScrollView, Text } from "react-native";
+import { cn } from '@/src/lib/utils/cn';
+import type { LucideIcon } from 'lucide-react-native';
+import { ScrollView, Text } from 'react-native';
 
 interface EmptyStateAction {
   label: string;
@@ -23,27 +23,27 @@ export function EmptyState({
   title,
   description,
   action,
-  className,
+  className
 }: EmptyStateProps) {
   return (
     <ScrollView
       style={{ flex: 1 }}
       contentContainerStyle={{ flexGrow: 1 }}
       contentContainerClassName={cn(
-        "items-center justify-center px-8",
-        className,
+        'items-center justify-center px-8',
+        className
       )}
     >
       {icon ? (
         <Icon icon={icon} className="text-muted-foreground" size={48} />
       ) : null}
       <Text
-        className={cn("text-h3 text-foreground text-center", icon && "mt-4")}
+        className={cn('text-h3 text-foreground text-center', icon && 'mt-4')}
       >
         {title}
       </Text>
       {description ? (
-        <Text className="mt-2 text-small text-muted-foreground text-center">
+        <Text className="text-small text-muted-foreground mt-2 text-center">
           {description}
         </Text>
       ) : null}
