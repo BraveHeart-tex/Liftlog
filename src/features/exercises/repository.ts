@@ -16,6 +16,10 @@ function getExerciseRecordById(
   return db.select().from(exercises).where(eq(exercises.id, id)).get();
 }
 
+export function getExerciseByIdQuery(db: DrizzleDb, id: Exercise['id']) {
+  return db.select().from(exercises).where(eq(exercises.id, id));
+}
+
 export function getExercisesQuery(db: DrizzleDb) {
   return db
     .select()
@@ -33,7 +37,7 @@ export function getExerciseById(
   id: Exercise['id']
 ): Exercise | undefined {
   // Archived exercises remain addressable by id for edit/archive workflows.
-  return getExerciseRecordById(db, id);
+  return getExerciseByIdQuery(db, id).get();
 }
 
 export function createExercise(db: DrizzleDb, data: NewExercise): Exercise {

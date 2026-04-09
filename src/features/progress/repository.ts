@@ -53,11 +53,11 @@ export function createPersonalRecord(
   return db.insert(personalRecords).values(data).returning().get();
 }
 
-export function getExerciseHistory(
+export function getExerciseHistoryWorkoutsQuery(
   db: DrizzleDb,
   exerciseId: Exercise['id']
-): { workout: Workout; sets: Set[] }[] {
-  const workoutRows = db
+) {
+  return db
     .select({ workout: workouts })
     .from(workouts)
     .innerJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
@@ -67,9 +67,51 @@ export function getExerciseHistory(
         eq(workoutExercises.exerciseId, exerciseId)
       )
     )
-    .orderBy(desc(workouts.startedAt))
-    .all();
+    .orderBy(desc(workouts.startedAt));
+}
 
+export function getExerciseHistorySetsQuery(
+  db: DrizzleDb,
+  exerciseId: Exercise['id'],
+  workoutIds: Workout['id'][]
+) {
+  if (workoutIds.length === 0) {
+    return db
+      .select({
+        workoutId: workoutExercises.workoutId,
+        set: sets
+      })
+      .from(sets)
+      .innerJoin(
+        workoutExercises,
+        eq(sets.workoutExerciseId, workoutExercises.id)
+      )
+      .where(eq(workoutExercises.id, ''));
+  }
+
+  return db
+    .select({
+      workoutId: workoutExercises.workoutId,
+      set: sets
+    })
+    .from(sets)
+    .innerJoin(
+      workoutExercises,
+      eq(sets.workoutExerciseId, workoutExercises.id)
+    )
+    .where(
+      and(
+        inArray(workoutExercises.workoutId, workoutIds),
+        eq(workoutExercises.exerciseId, exerciseId)
+      )
+    )
+    .orderBy(asc(workoutExercises.order), asc(sets.order));
+}
+
+export function buildExerciseHistory(
+  workoutRows: { workout: Workout }[],
+  setRows: { workoutId: Workout['id']; set: Set }[]
+): { workout: Workout; sets: Set[] }[] {
   const seenWorkoutIds = new Set<Workout['id']>();
   const workoutHistory: Workout[] = [];
 
@@ -90,29 +132,14 @@ export function getExerciseHistory(
     return [];
   }
 
-  const workoutIds = workoutHistory.map(workout => workout.id);
-  const setRows = db
-    .select({
-      workoutId: workoutExercises.workoutId,
-      set: sets
-    })
-    .from(sets)
-    .innerJoin(
-      workoutExercises,
-      eq(sets.workoutExerciseId, workoutExercises.id)
-    )
-    .where(
-      and(
-        inArray(workoutExercises.workoutId, workoutIds),
-        eq(workoutExercises.exerciseId, exerciseId)
-      )
-    )
-    .orderBy(asc(workoutExercises.order), asc(sets.order))
-    .all();
-
+  const limitedWorkoutIds = new Set(workoutHistory.map(workout => workout.id));
   const setsByWorkoutId = new Map<Workout['id'], Set[]>();
 
   for (const row of setRows) {
+    if (!limitedWorkoutIds.has(row.workoutId)) {
+      continue;
+    }
+
     const existingSets = setsByWorkoutId.get(row.workoutId);
 
     if (existingSets) {
@@ -131,6 +158,19 @@ export function getExerciseHistory(
       sets: setsForWorkout
     };
   });
+}
+
+export function getExerciseHistory(
+  db: DrizzleDb,
+  exerciseId: Exercise['id']
+): { workout: Workout; sets: Set[] }[] {
+  const workoutRows = getExerciseHistoryWorkoutsQuery(db, exerciseId).all();
+  const workoutIds = Array.from(
+    new Set(workoutRows.map(row => row.workout.id))
+  ).slice(0, MAX_EXERCISE_HISTORY_WORKOUTS);
+  const setRows = getExerciseHistorySetsQuery(db, exerciseId, workoutIds).all();
+
+  return buildExerciseHistory(workoutRows, setRows);
 }
 
 export function computeEstimated1RM(weightKg: number, reps: number): number {
