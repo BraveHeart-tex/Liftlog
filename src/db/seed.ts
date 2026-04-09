@@ -3,6 +3,7 @@ import { appMeta, exercises, type NewExercise } from "@/src/db/schema";
 import { eq } from "drizzle-orm";
 
 const HAS_SEEDED_KEY = "has_seeded";
+const LEGACY_EXERCISE_SEED_VERSION_KEY = "exercise_seed_version";
 
 const MUSCLE_GROUP = {
   abs: "abs",
@@ -393,8 +394,30 @@ export function seedDatabase(db: DrizzleDb): void {
     .from(appMeta)
     .where(eq(appMeta.key, HAS_SEEDED_KEY))
     .get();
+  const legacySeedMarker = db
+    .select()
+    .from(appMeta)
+    .where(eq(appMeta.key, LEGACY_EXERCISE_SEED_VERSION_KEY))
+    .get();
 
   if (hasSeeded?.value === "true") {
+    return;
+  }
+
+  if (legacySeedMarker) {
+    db.insert(appMeta)
+      .values({
+        key: HAS_SEEDED_KEY,
+        value: "true",
+      })
+      .onConflictDoUpdate({
+        target: appMeta.key,
+        set: {
+          value: "true",
+        },
+      })
+      .run();
+
     return;
   }
 
