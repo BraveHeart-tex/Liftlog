@@ -98,10 +98,8 @@ export default function ExerciseDetailScreen() {
   const db = useDrizzle();
 
   const exerciseId = getRouteParamId(id);
-  const { data: exerciseRows = [] } = useLiveQuery(
-    getExerciseByIdQuery(db, exerciseId ?? ''),
-    [db, exerciseId]
-  );
+  const { data: exerciseRows = [], updatedAt: exerciseUpdatedAt } =
+    useLiveQuery(getExerciseByIdQuery(db, exerciseId ?? ''), [db, exerciseId]);
   const exercise = exerciseRows[0];
   const { data: workoutRows = [] } = useLiveQuery(
     getExerciseHistoryWorkoutsQuery(db, exerciseId ?? ''),
@@ -114,6 +112,10 @@ export default function ExerciseDetailScreen() {
     getExerciseHistorySetsQuery(db, exerciseId ?? '', workoutIds),
     [db, exerciseId, workoutIds.join(',')]
   );
+
+  if (exerciseId && !exerciseUpdatedAt) {
+    return <SafeAreaView style={{ flex: 1 }} className="bg-background" />;
+  }
 
   if (!exercise) {
     return (
@@ -138,7 +140,9 @@ export default function ExerciseDetailScreen() {
   const secondaryMuscles = parseMuscleList(exercise.secondaryMuscles);
   const instructions = exercise.instructions?.trim();
 
-  const mostRecentHistory = buildExerciseHistory(workoutRows, setRows)[0];
+  const mostRecentHistory = buildExerciseHistory(workoutRows, setRows).find(
+    historyEntry => getCompletedSets(historyEntry.sets).length > 0
+  );
   const completedSets = mostRecentHistory
     ? getCompletedSets(mostRecentHistory.sets)
     : [];
