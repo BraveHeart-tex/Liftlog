@@ -1,5 +1,5 @@
 export async function guardAsync<T, E = Error>(
-  promise: Promise<T>,
+  promise: Promise<T>
 ): Promise<[T, null] | [null, E]> {
   try {
     return [await promise, null];

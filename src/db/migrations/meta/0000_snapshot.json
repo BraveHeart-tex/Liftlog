@@ -164,12 +164,8 @@
           "name": "personal_records_exercise_id_exercises_id_fk",
           "tableFrom": "personal_records",
           "tableTo": "exercises",
-          "columnsFrom": [
-            "exercise_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["exercise_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -177,12 +173,8 @@
           "name": "personal_records_set_id_sets_id_fk",
           "tableFrom": "personal_records",
           "tableTo": "sets",
-          "columnsFrom": [
-            "set_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["set_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -229,12 +221,8 @@
           "name": "program_days_program_id_programs_id_fk",
           "tableFrom": "program_days",
           "tableTo": "programs",
-          "columnsFrom": [
-            "program_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["program_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -316,12 +304,8 @@
           "name": "program_exercises_program_day_id_program_days_id_fk",
           "tableFrom": "program_exercises",
           "tableTo": "program_days",
-          "columnsFrom": [
-            "program_day_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["program_day_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -329,12 +313,8 @@
           "name": "program_exercises_exercise_id_exercises_id_fk",
           "tableFrom": "program_exercises",
           "tableTo": "exercises",
-          "columnsFrom": [
-            "exercise_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["exercise_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -463,12 +443,8 @@
           "name": "sets_workout_exercise_id_workout_exercises_id_fk",
           "tableFrom": "sets",
           "tableTo": "workout_exercises",
-          "columnsFrom": [
-            "workout_exercise_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["workout_exercise_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -522,12 +498,8 @@
           "name": "workout_exercises_workout_id_workouts_id_fk",
           "tableFrom": "workout_exercises",
           "tableTo": "workouts",
-          "columnsFrom": [
-            "workout_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["workout_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -535,12 +507,8 @@
           "name": "workout_exercises_exercise_id_exercises_id_fk",
           "tableFrom": "workout_exercises",
           "tableTo": "exercises",
-          "columnsFrom": [
-            "exercise_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["exercise_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -616,12 +584,8 @@
           "name": "workouts_program_id_programs_id_fk",
           "tableFrom": "workouts",
           "tableTo": "programs",
-          "columnsFrom": [
-            "program_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["program_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -629,12 +593,8 @@
           "name": "workouts_program_day_id_program_days_id_fk",
           "tableFrom": "workouts",
           "tableTo": "program_days",
-          "columnsFrom": [
-            "program_day_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["program_day_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }

@@ -1,5 +1,5 @@
-import type { LucideIcon, LucideProps } from "lucide-react-native";
-import { styled } from "nativewind";
+import type { LucideIcon, LucideProps } from 'lucide-react-native';
+import { styled } from 'nativewind';
 
 type IconComponent = LucideIcon & {
   defaultProps?: Partial<LucideProps>;
@@ -19,23 +19,23 @@ function createStyledIcon(Icon: IconComponent): StyledIconComponent {
 
   const StyledIcon = styled(Icon as any, {
     className: {
-      target: "style",
+      target: 'style',
       nativeStyleToProp: {
-        color: "color",
-        width: "size",
-        height: "size",
-        strokeWidth: "strokeWidth",
-        fill: "fill",
-        stroke: "stroke",
-      },
-    },
+        color: 'color',
+        width: 'size',
+        height: 'size',
+        strokeWidth: 'strokeWidth',
+        fill: 'fill',
+        stroke: 'stroke'
+      }
+    }
   }) as StyledIconComponent;
   styledIconCache.set(Icon, StyledIcon);
 
   return StyledIcon;
 }
 
-export type AppIconProps = Omit<LucideProps, "ref"> & {
+export type AppIconProps = Omit<LucideProps, 'ref'> & {
   icon: IconComponent;
   className?: string;
 };

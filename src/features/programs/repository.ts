@@ -1,4 +1,4 @@
-import type { DrizzleDb } from "@/src/db/client";
+import type { DrizzleDb } from '@/src/db/client';
 import {
   programDays,
   programExercises,
@@ -8,27 +8,27 @@ import {
   type NewProgramExercise,
   type Program,
   type ProgramDay,
-  type ProgramExercise,
-} from "@/src/db/schema";
-import { asc, desc, eq } from "drizzle-orm";
+  type ProgramExercise
+} from '@/src/db/schema';
+import { asc, desc, eq } from 'drizzle-orm';
 
 function getProgramRecordById(
   db: DrizzleDb,
-  id: Program["id"],
+  id: Program['id']
 ): Program | undefined {
   return db.select().from(programs).where(eq(programs.id, id)).get();
 }
 
 function getProgramDayRecordById(
   db: DrizzleDb,
-  id: ProgramDay["id"],
+  id: ProgramDay['id']
 ): ProgramDay | undefined {
   return db.select().from(programDays).where(eq(programDays.id, id)).get();
 }
 
 function getProgramExerciseRecordById(
   db: DrizzleDb,
-  id: ProgramExercise["id"],
+  id: ProgramExercise['id']
 ): ProgramExercise | undefined {
   return db
     .select()
@@ -48,14 +48,14 @@ export function getPrograms(db: DrizzleDb): Program[] {
 
 export function getProgramById(
   db: DrizzleDb,
-  id: Program["id"],
+  id: Program['id']
 ): Program | undefined {
   return getProgramRecordById(db, id);
 }
 
 export function getProgramWithDays(
   db: DrizzleDb,
-  id: Program["id"],
+  id: Program['id']
 ): { program: Program; days: ProgramDay[] } | undefined {
   const program = getProgramRecordById(db, id);
 
@@ -75,7 +75,7 @@ export function getProgramWithDays(
 
 export function getProgramDayWithExercises(
   db: DrizzleDb,
-  dayId: ProgramDay["id"],
+  dayId: ProgramDay['id']
 ): { day: ProgramDay; exercises: ProgramExercise[] } | undefined {
   const day = getProgramDayRecordById(db, dayId);
 
@@ -99,36 +99,36 @@ export function createProgram(db: DrizzleDb, data: NewProgram): Program {
 
 export function updateProgram(
   db: DrizzleDb,
-  id: Program["id"],
-  data: Partial<NewProgram>,
+  id: Program['id'],
+  data: Partial<NewProgram>
 ): Program | undefined {
   // Empty updates still bump `updatedAt` by design.
   return db
     .update(programs)
     .set({
       ...data,
-      updatedAt: Date.now(),
+      updatedAt: Date.now()
     })
     .where(eq(programs.id, id))
     .returning()
     .get();
 }
 
-export function archiveProgram(db: DrizzleDb, id: Program["id"]): void {
+export function archiveProgram(db: DrizzleDb, id: Program['id']): void {
   db.update(programs).set({ isArchived: 1 }).where(eq(programs.id, id)).run();
 }
 
 export function createProgramDay(
   db: DrizzleDb,
-  data: NewProgramDay,
+  data: NewProgramDay
 ): ProgramDay {
   return db.insert(programDays).values(data).returning().get();
 }
 
 export function updateProgramDay(
   db: DrizzleDb,
-  id: ProgramDay["id"],
-  data: Partial<NewProgramDay>,
+  id: ProgramDay['id'],
+  data: Partial<NewProgramDay>
 ): ProgramDay | undefined {
   if (Object.keys(data).length === 0) {
     return getProgramDayRecordById(db, id);
@@ -142,21 +142,21 @@ export function updateProgramDay(
     .get();
 }
 
-export function deleteProgramDay(db: DrizzleDb, id: ProgramDay["id"]): void {
+export function deleteProgramDay(db: DrizzleDb, id: ProgramDay['id']): void {
   db.delete(programDays).where(eq(programDays.id, id)).run();
 }
 
 export function createProgramExercise(
   db: DrizzleDb,
-  data: NewProgramExercise,
+  data: NewProgramExercise
 ): ProgramExercise {
   return db.insert(programExercises).values(data).returning().get();
 }
 
 export function updateProgramExercise(
   db: DrizzleDb,
-  id: ProgramExercise["id"],
-  data: Partial<NewProgramExercise>,
+  id: ProgramExercise['id'],
+  data: Partial<NewProgramExercise>
 ): ProgramExercise | undefined {
   if (Object.keys(data).length === 0) {
     return getProgramExerciseRecordById(db, id);
@@ -172,7 +172,7 @@ export function updateProgramExercise(
 
 export function deleteProgramExercise(
   db: DrizzleDb,
-  id: ProgramExercise["id"],
+  id: ProgramExercise['id']
 ): void {
   db.delete(programExercises).where(eq(programExercises.id, id)).run();
 }

@@ -1,12 +1,12 @@
-import { colors } from "@/src/theme/tokens";
-import { cn } from "@/src/lib/utils/cn";
+import { colors } from '@/src/theme/tokens';
+import { cn } from '@/src/lib/utils/cn';
 import {
   forwardRef,
   useState,
   type ComponentPropsWithoutRef,
-  type ReactNode,
-} from "react";
-import { Text, TextInput, View } from "react-native";
+  type ReactNode
+} from 'react';
+import { Text, TextInput, View } from 'react-native';
 
 type NativeTextInputProps = ComponentPropsWithoutRef<typeof TextInput>;
 
@@ -45,32 +45,27 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
     placeholderTextColor,
     ...props
   },
-  ref,
+  ref
 ) {
   const [focused, setFocused] = useState(false);
   const hasError = Boolean(error);
   const isEditable = editable ?? !disabled;
 
   return (
-    <View className={cn("w-full", className)}>
+    <View className={cn('w-full', className)}>
       {label ? (
-        <Text
-          className={cn(
-            "text-small text-foreground",
-            labelClassName,
-          )}
-        >
+        <Text className={cn('text-small text-foreground', labelClassName)}>
           {label}
         </Text>
       ) : null}
 
       <View
         className={cn(
-          "mt-2 flex-row items-center rounded-lg border border-border bg-input px-4 py-3",
-          focused && !hasError && "border-ring",
-          hasError && "border-danger",
-          disabled && "opacity-50",
-          containerClassName,
+          'border-border bg-input mt-2 flex-row items-center rounded-lg border px-4 py-3',
+          focused && !hasError && 'border-ring',
+          hasError && 'border-danger',
+          disabled && 'opacity-50',
+          containerClassName
         )}
       >
         {leftIcon ? (
@@ -79,16 +74,13 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
 
         <TextInput
           ref={ref}
-          className={cn(
-            "flex-1 text-body text-foreground",
-            inputClassName,
-          )}
+          className={cn('text-body text-foreground flex-1', inputClassName)}
           editable={isEditable}
-          onBlur={(event) => {
+          onBlur={event => {
             setFocused(false);
             onBlur?.(event);
           }}
-          onFocus={(event) => {
+          onFocus={event => {
             setFocused(true);
             onFocus?.(event);
           }}
@@ -103,19 +95,14 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
       </View>
 
       {error ? (
-        <Text
-          className={cn(
-            "mt-2 text-caption text-danger",
-            errorClassName,
-          )}
-        >
+        <Text className={cn('text-caption text-danger mt-2', errorClassName)}>
           {error}
         </Text>
       ) : hint ? (
         <Text
           className={cn(
-            "mt-2 text-caption text-muted-foreground",
-            hintClassName,
+            'text-caption text-muted-foreground mt-2',
+            hintClassName
           )}
         >
           {hint}
