@@ -8,7 +8,10 @@ import {
 import { and, asc, eq, isNull, like, or } from "drizzle-orm";
 
 function escapeLikePattern(value: string): string {
-  return value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
+  return value
+    .replaceAll("\\", "\\\\")
+    .replaceAll("%", "\\%")
+    .replaceAll("_", "\\_");
 }
 
 function getExerciseRecordById(
@@ -18,7 +21,7 @@ function getExerciseRecordById(
   return db.select().from(exercises).where(eq(exercises.id, id)).get();
 }
 
-export function getExercises(db: DrizzleDb, userId: User["id"]): Exercise[] {
+export function getExercises(db: DrizzleDb, userId: User["id"]) {
   return db
     .select()
     .from(exercises)
@@ -28,8 +31,7 @@ export function getExercises(db: DrizzleDb, userId: User["id"]): Exercise[] {
         eq(exercises.isArchived, 0),
       ),
     )
-    .orderBy(asc(exercises.name))
-    .all();
+    .orderBy(asc(exercises.name));
 }
 
 export function getExerciseById(
@@ -40,10 +42,7 @@ export function getExerciseById(
   return getExerciseRecordById(db, id);
 }
 
-export function createExercise(
-  db: DrizzleDb,
-  data: NewExercise,
-): Exercise {
+export function createExercise(db: DrizzleDb, data: NewExercise): Exercise {
   return db
     .insert(exercises)
     .values({
@@ -72,11 +71,7 @@ export function updateExercise(
 }
 
 export function archiveExercise(db: DrizzleDb, id: Exercise["id"]): void {
-  db
-    .update(exercises)
-    .set({ isArchived: 1 })
-    .where(eq(exercises.id, id))
-    .run();
+  db.update(exercises).set({ isArchived: 1 }).where(eq(exercises.id, id)).run();
 }
 
 export function searchExercises(
