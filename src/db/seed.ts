@@ -1,6 +1,5 @@
 import { DrizzleDb } from "@/src/db";
 import { appMeta, exercises, type NewExercise } from "@/src/db/schema";
-import { generateUuid } from "@/src/lib/utils/uuid";
 import { eq } from "drizzle-orm";
 
 const HAS_SEEDED_KEY = "has_seeded";
@@ -32,9 +31,8 @@ const MUSCLE_GROUP = {
   upperTraps: "upper traps",
 } as const;
 
-const SEEDED_EXERCISES: NewExercise[] = [
+const createSeedExercises = (): NewExercise[] => [
   {
-    id: generateUuid(),
     name: "Bench Press",
     category: "barbell",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.chest]),
@@ -47,7 +45,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Incline Bench Press",
     category: "barbell",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.upperChest]),
@@ -61,7 +58,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Overhead Press",
     category: "barbell",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.shoulders]),
@@ -75,7 +71,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Dumbbell Shoulder Press",
     category: "dumbbell",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.shoulders]),
@@ -86,7 +81,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Lateral Raise",
     category: "dumbbell",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.sideDelts]),
@@ -97,7 +91,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Tricep Pushdown",
     category: "cable",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.triceps]),
@@ -108,7 +101,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Skull Crushers",
     category: "barbell",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.triceps]),
@@ -119,7 +111,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Barbell Row",
     category: "barbell",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.upperBack, MUSCLE_GROUP.lats]),
@@ -133,7 +124,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Dumbbell Row",
     category: "dumbbell",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.lats]),
@@ -147,7 +137,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Pull Up",
     category: "bodyweight",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.lats]),
@@ -160,7 +149,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Lat Pulldown",
     category: "machine",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.lats]),
@@ -174,7 +162,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Face Pull",
     category: "cable",
     primaryMuscles: JSON.stringify([
@@ -188,7 +175,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Bicep Curl",
     category: "barbell",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.biceps]),
@@ -198,7 +184,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Hammer Curl",
     category: "dumbbell",
     primaryMuscles: JSON.stringify([
@@ -212,7 +197,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Chest-Supported Row",
     category: "machine",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.upperBack, MUSCLE_GROUP.lats]),
@@ -226,7 +210,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Seated Cable Row",
     category: "cable",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.upperBack, MUSCLE_GROUP.lats]),
@@ -236,7 +219,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Dips",
     category: "bodyweight",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.chest, MUSCLE_GROUP.triceps]),
@@ -247,7 +229,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Back Squat",
     category: "barbell",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.quads, MUSCLE_GROUP.glutes]),
@@ -261,7 +242,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Front Squat",
     category: "barbell",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.quads]),
@@ -274,7 +254,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Deadlift",
     category: "barbell",
     primaryMuscles: JSON.stringify([
@@ -291,7 +270,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Romanian Deadlift",
     category: "barbell",
     primaryMuscles: JSON.stringify([
@@ -305,7 +283,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Hip Thrust",
     category: "barbell",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.glutes]),
@@ -315,7 +292,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Leg Press",
     category: "machine",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.quads]),
@@ -329,7 +305,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Leg Extension",
     category: "machine",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.quads]),
@@ -339,7 +314,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Leg Curl",
     category: "machine",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.hamstrings]),
@@ -349,7 +323,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Walking Lunges",
     category: "dumbbell",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.quads, MUSCLE_GROUP.glutes]),
@@ -362,7 +335,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Calf Raise",
     category: "machine",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.calves]),
@@ -373,7 +345,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Bulgarian Split Squat",
     category: "dumbbell",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.quads, MUSCLE_GROUP.glutes]),
@@ -384,7 +355,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Plank",
     category: "bodyweight",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.abs]),
@@ -398,7 +368,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Hanging Leg Raise",
     category: "bodyweight",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.abs, MUSCLE_GROUP.hipFlexors]),
@@ -408,7 +377,6 @@ const SEEDED_EXERCISES: NewExercise[] = [
     isArchived: 0,
   },
   {
-    id: generateUuid(),
     name: "Cable Crunch",
     category: "cable",
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.abs]),
@@ -431,9 +399,8 @@ export function seedDatabase(db: DrizzleDb): void {
   }
 
   db.transaction((tx) => {
-    tx.insert(exercises).values(SEEDED_EXERCISES).run();
-    tx
-      .insert(appMeta)
+    tx.insert(exercises).values(createSeedExercises()).run();
+    tx.insert(appMeta)
       .values({
         key: HAS_SEEDED_KEY,
         value: "true",
