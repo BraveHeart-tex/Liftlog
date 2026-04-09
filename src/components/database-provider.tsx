@@ -24,10 +24,7 @@ export function useDrizzle() {
 function DrizzleProvider({ children }: PropsWithChildren) {
   const sqliteDb = useSQLiteContext();
 
-  const db = useMemo(() => {
-    console.info("Creating Drizzle instance");
-    return createDrizzleDb(sqliteDb);
-  }, [sqliteDb]);
+  const db = useMemo(() => createDrizzleDb(sqliteDb), [sqliteDb]);
 
   return (
     <DrizzleContext.Provider value={db}>{children}</DrizzleContext.Provider>
