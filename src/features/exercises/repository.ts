@@ -1,11 +1,6 @@
 import type { DrizzleDb } from "@/src/db/client";
-import {
-  exercises,
-  type Exercise,
-  type NewExercise,
-  type User,
-} from "@/src/db/schema";
-import { and, asc, eq, isNull, like, or } from "drizzle-orm";
+import { exercises, type Exercise, type NewExercise } from "@/src/db/schema";
+import { and, asc, eq, like } from "drizzle-orm";
 
 function escapeLikePattern(value: string): string {
   return value
@@ -21,17 +16,16 @@ function getExerciseRecordById(
   return db.select().from(exercises).where(eq(exercises.id, id)).get();
 }
 
-export function getExercises(db: DrizzleDb, userId: User["id"]) {
+export function getExercisesQuery(db: DrizzleDb) {
   return db
     .select()
     .from(exercises)
-    .where(
-      and(
-        or(eq(exercises.userId, userId), isNull(exercises.userId)),
-        eq(exercises.isArchived, 0),
-      ),
-    )
+    .where(eq(exercises.isArchived, 0))
     .orderBy(asc(exercises.name));
+}
+
+export function getExercises(db: DrizzleDb): Exercise[] {
+  return getExercisesQuery(db).all();
 }
 
 export function getExerciseById(
@@ -47,6 +41,7 @@ export function createExercise(db: DrizzleDb, data: NewExercise): Exercise {
     .insert(exercises)
     .values({
       ...data,
+      isCustom: 1,
       isArchived: 0,
     })
     .returning()
@@ -76,20 +71,9 @@ export function archiveExercise(db: DrizzleDb, id: Exercise["id"]): void {
 
 export function searchExercises(
   db: DrizzleDb,
-  userId: User["id"],
   query: string,
 ): Exercise[] {
-  const exercisesForUser = db
-    .select()
-    .from(exercises)
-    .where(
-      and(
-        or(eq(exercises.userId, userId), isNull(exercises.userId)),
-        eq(exercises.isArchived, 0),
-      ),
-    )
-    .orderBy(asc(exercises.name))
-    .all();
+  const exerciseRecords = getExercises(db);
 
   // SQLite `LIKE` needs an explicit escape clause for literal `%` / `_`.
   // Keep the normal query-builder path for common input and fall back to a
@@ -97,7 +81,7 @@ export function searchExercises(
   if (query.includes("%") || query.includes("_") || query.includes("\\")) {
     const normalizedQuery = query.toLocaleLowerCase();
 
-    return exercisesForUser.filter((exercise) =>
+    return exerciseRecords.filter((exercise) =>
       exercise.name.toLocaleLowerCase().includes(normalizedQuery),
     );
   }
@@ -107,7 +91,6 @@ export function searchExercises(
     .from(exercises)
     .where(
       and(
-        or(eq(exercises.userId, userId), isNull(exercises.userId)),
         eq(exercises.isArchived, 0),
         like(exercises.name, `%${escapeLikePattern(query)}%`),
       ),

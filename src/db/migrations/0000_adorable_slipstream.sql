@@ -1,26 +1,28 @@
+CREATE TABLE `app_meta` (
+	`key` text PRIMARY KEY NOT NULL,
+	`value` text NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE `exercises` (
 	`id` text PRIMARY KEY NOT NULL,
-	`user_id` text,
 	`name` text NOT NULL,
 	`category` text NOT NULL,
 	`primary_muscles` text DEFAULT '[]' NOT NULL,
 	`secondary_muscles` text DEFAULT '[]' NOT NULL,
 	`instructions` text,
+	`is_custom` integer DEFAULT 0 NOT NULL,
 	`is_archived` integer DEFAULT 0 NOT NULL,
-	`created_at` integer NOT NULL,
-	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
+	`created_at` integer NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE `personal_records` (
 	`id` text PRIMARY KEY NOT NULL,
-	`user_id` text NOT NULL,
 	`exercise_id` text NOT NULL,
 	`set_id` text NOT NULL,
 	`weight_kg` real NOT NULL,
 	`reps` integer NOT NULL,
 	`estimated_1rm` real NOT NULL,
 	`achieved_at` integer NOT NULL,
-	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`exercise_id`) REFERENCES `exercises`(`id`) ON UPDATE no action ON DELETE restrict,
 	FOREIGN KEY (`set_id`) REFERENCES `sets`(`id`) ON UPDATE no action ON DELETE cascade
 );
@@ -49,13 +51,11 @@ CREATE TABLE `program_exercises` (
 --> statement-breakpoint
 CREATE TABLE `programs` (
 	`id` text PRIMARY KEY NOT NULL,
-	`user_id` text NOT NULL,
 	`name` text NOT NULL,
 	`description` text,
 	`is_archived` integer DEFAULT 0 NOT NULL,
 	`created_at` integer NOT NULL,
-	`updated_at` integer NOT NULL,
-	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
+	`updated_at` integer NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE `sets` (
@@ -70,12 +70,6 @@ CREATE TABLE `sets` (
 	FOREIGN KEY (`workout_exercise_id`) REFERENCES `workout_exercises`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `users` (
-	`id` text PRIMARY KEY NOT NULL,
-	`settings` text DEFAULT '{}' NOT NULL,
-	`created_at` integer NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE `workout_exercises` (
 	`id` text PRIMARY KEY NOT NULL,
 	`workout_id` text NOT NULL,
@@ -88,7 +82,6 @@ CREATE TABLE `workout_exercises` (
 --> statement-breakpoint
 CREATE TABLE `workouts` (
 	`id` text PRIMARY KEY NOT NULL,
-	`user_id` text NOT NULL,
 	`program_id` text,
 	`program_day_id` text,
 	`name` text NOT NULL,
@@ -96,7 +89,6 @@ CREATE TABLE `workouts` (
 	`started_at` integer NOT NULL,
 	`completed_at` integer,
 	`notes` text,
-	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`program_id`) REFERENCES `programs`(`id`) ON UPDATE no action ON DELETE set null,
 	FOREIGN KEY (`program_day_id`) REFERENCES `program_days`(`id`) ON UPDATE no action ON DELETE set null
 );
