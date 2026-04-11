@@ -1,10 +1,10 @@
 import { tabBarTheme } from '@/src/theme/tokens';
 import { Tabs } from 'expo-router';
 import {
+  ClockIcon,
   DumbbellIcon,
   ListIcon,
-  NotebookTabsIcon,
-  PlaySquareIcon
+  SettingsIcon
 } from 'lucide-react-native';
 
 export default function TabLayout() {
@@ -49,20 +49,20 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="programs"
-        options={{
-          title: 'Programs',
-          tabBarIcon: ({ color, size }) => (
-            <NotebookTabsIcon color={color} size={size} />
-          )
-        }}
-      />
-      <Tabs.Screen
         name="history"
         options={{
           title: 'History',
           tabBarIcon: ({ color, size }) => (
-            <PlaySquareIcon color={color} size={size} />
+            <ClockIcon color={color} size={size} />
+          )
+        }}
+      />
+      <Tabs.Screen
+        name="settings/index"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color, size }) => (
+            <SettingsIcon color={color} size={size} />
           )
         }}
       />
