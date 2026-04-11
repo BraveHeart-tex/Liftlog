@@ -1,0 +1,185 @@
+import { useDrizzle } from '@/src/components/database-provider';
+import { Button } from '@/src/components/ui/button';
+import { Text } from '@/src/components/ui/text';
+import { exercises, sets, type Exercise } from '@/src/db/schema';
+import { getExercises } from '@/src/features/exercises/repository';
+import { ExerciseHistoryTab } from '@/src/features/workouts/components/exercise-history-tab';
+import { ExerciseTrackTab } from '@/src/features/workouts/components/exercise-track-tab';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
+import { createLiveQuery } from '@/src/features/workouts/live-query';
+import { getWorkoutExerciseWithSets } from '@/src/features/workouts/repository';
+import { cn } from '@/src/lib/utils/cn';
+import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useMemo, useRef, useState } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  useWindowDimensions,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+type ExerciseDetailTab = 'track' | 'history';
+
+const tabs: ExerciseDetailTab[] = ['track', 'history'];
+
+function getRouteParamId(value: string | string[] | undefined) {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+
+  return value;
+}
+
+export default function ActiveWorkoutExerciseScreen() {
+  const localParams = useLocalSearchParams();
+
+  const db = useDrizzle();
+  const workoutExerciseId = getRouteParamId(localParams.workoutExerciseId);
+
+  const [selectedTab, setSelectedTab] = useState<ExerciseDetailTab>('track');
+  const scrollRef = useRef<ScrollView>(null);
+  const { width } = useWindowDimensions();
+
+  const { data: workoutExerciseWithSetsData } = useLiveQuery(
+    createLiveQuery(sets, () => {
+      if (!workoutExerciseId) {
+        return undefined;
+      }
+
+      return getWorkoutExerciseWithSets(db, workoutExerciseId);
+    }),
+    [db, workoutExerciseId]
+  );
+  const workoutExerciseWithSets = Array.isArray(workoutExerciseWithSetsData)
+    ? undefined
+    : workoutExerciseWithSetsData;
+  const { data: exerciseRows = [] } = useLiveQuery(
+    createLiveQuery(exercises, () => getExercises(db)),
+    [db]
+  );
+  const exerciseById = useMemo(
+    () =>
+      new Map<Exercise['id'], Exercise>(
+        exerciseRows.map(exercise => [exercise.id, exercise])
+      ),
+    [exerciseRows]
+  );
+
+  const item = useMemo<WorkoutExerciseWithSets | undefined>(() => {
+    if (!workoutExerciseWithSets) {
+      return undefined;
+    }
+
+    return {
+      workoutExercise: workoutExerciseWithSets.workoutExercise,
+      exercise: exerciseById.get(
+        workoutExerciseWithSets.workoutExercise.exerciseId
+      ),
+      sets: workoutExerciseWithSets.sets
+    };
+  }, [exerciseById, workoutExerciseWithSets]);
+
+  const handleSelectTab = (tab: ExerciseDetailTab) => {
+    const tabIndex = tabs.indexOf(tab);
+
+    setSelectedTab(tab);
+    scrollRef.current?.scrollTo({
+      x: tabIndex * width,
+      animated: true
+    });
+  };
+
+  const handleMomentumScrollEnd = (
+    event: NativeSyntheticEvent<NativeScrollEvent>
+  ) => {
+    const pageIndex = Math.round(event.nativeEvent.contentOffset.x / width);
+
+    setSelectedTab(tabs[pageIndex] ?? 'track');
+  };
+
+  if (!item) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1 }}
+        className="bg-background"
+        edges={['top']}
+      >
+        <View className="flex-1 items-center justify-center px-6">
+          <Text variant="h3" className="text-center">
+            Exercise not found
+          </Text>
+          <Button className="mt-4" onPress={() => router.back()}>
+            Go back
+          </Button>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
+      <View className="px-4 pt-4 pb-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="self-start"
+          onPress={() => router.back()}
+        >
+          Back
+        </Button>
+
+        <Text variant="h2" className="mt-3">
+          {item.exercise?.name ?? 'Unknown exercise'}
+        </Text>
+      </View>
+
+      <View className="border-border flex-row border-b px-4">
+        {tabs.map(tab => {
+          const isSelected = selectedTab === tab;
+
+          return (
+            <Pressable
+              key={tab}
+              onPress={() => handleSelectTab(tab)}
+              className={cn(
+                'flex-1 items-center py-3',
+                isSelected && 'border-primary border-b-2'
+              )}
+            >
+              <Text
+                variant="bodyMedium"
+                tone={isSelected ? 'default' : 'muted'}
+              >
+                {tab === 'track' ? 'Track' : 'History'}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={handleMomentumScrollEnd}
+        style={{ flex: 1 }}
+        scrollEventThrottle={16}
+      >
+        <View className="w-screen flex-1">
+          <ExerciseTrackTab db={db} item={item} />
+        </View>
+        <View className="w-screen flex-1">
+          <ExerciseHistoryTab
+            db={db}
+            exerciseId={item.workoutExercise.exerciseId}
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}

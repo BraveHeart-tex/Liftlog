@@ -4,13 +4,15 @@ import { Text } from '@/src/components/ui/text';
 import type { Set } from '@/src/db/schema';
 import { colors } from '@/src/theme/tokens';
 import { PlusIcon } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
-import { Alert, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Pressable, TextInput, View } from 'react-native';
 import type { SetValues } from './types';
 import { formatInputNumber } from './utils';
 
-const inputClassName =
-  'text-body text-foreground border-border w-full rounded-lg border px-3 py-2';
+const inputClassName = 'text-body-medium text-foreground flex-1 px-3 py-3';
+
+const stepperButtonClassName =
+  'bg-secondary border-border h-14 w-14 items-center justify-center rounded-lg border';
 
 type SetFormProps = {
   editingSet: Set | undefined;
@@ -29,6 +31,8 @@ export function SetForm({
 }: SetFormProps) {
   const [weightValue, setWeightValue] = useState('');
   const [repsValue, setRepsValue] = useState('');
+  const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const repeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isEditing = Boolean(editingSet);
 
   useEffect(() => {
@@ -41,6 +45,53 @@ export function SetForm({
     setWeightValue('');
     setRepsValue('');
   }, [editingSet]);
+
+  useEffect(() => {
+    return () => {
+      stopRepeatingStep();
+    };
+  }, []);
+
+  const stopRepeatingStep = () => {
+    if (holdTimeoutRef.current) {
+      clearTimeout(holdTimeoutRef.current);
+      holdTimeoutRef.current = null;
+    }
+
+    if (repeatIntervalRef.current) {
+      clearInterval(repeatIntervalRef.current);
+      repeatIntervalRef.current = null;
+    }
+  };
+
+  const startRepeatingStep = (onStep: () => void) => {
+    stopRepeatingStep();
+    onStep();
+
+    holdTimeoutRef.current = setTimeout(() => {
+      repeatIntervalRef.current = setInterval(onStep, 120);
+    }, 300);
+  };
+
+  const updateWeightValue = (delta: number) => {
+    setWeightValue(currentValue => {
+      const parsedValue = Number(currentValue.trim().replace(',', '.'));
+      const currentWeight = Number.isFinite(parsedValue) ? parsedValue : 0;
+      const nextWeight = Math.max(0, currentWeight + delta);
+
+      return formatInputNumber(Math.round(nextWeight * 10) / 10);
+    });
+  };
+
+  const updateRepsValue = (delta: number) => {
+    setRepsValue(currentValue => {
+      const parsedValue = Number(currentValue.trim());
+      const currentReps = Number.isFinite(parsedValue) ? parsedValue : 0;
+      const nextReps = Math.max(1, Math.round(currentReps) + delta);
+
+      return String(nextReps);
+    });
+  };
 
   const handleClear = () => {
     setWeightValue('');
@@ -90,45 +141,83 @@ export function SetForm({
 
   return (
     <View>
-      <Text variant="caption" tone="muted">
-        {isEditing ? 'Edit set' : 'Next set'}
-      </Text>
-
-      <View className="mt-2 flex-row items-end gap-3">
-        <View className="flex-1">
+      <View className="mt-2 gap-4">
+        <View>
           <Text variant="caption" tone="muted" className="mb-1">
             Weight (kg)
           </Text>
-          <TextInput
-            value={weightValue}
-            onChangeText={setWeightValue}
-            keyboardType="decimal-pad"
-            placeholder="kg"
-            placeholderTextColor={colors.mutedForeground}
-            selectionColor={colors.primary}
-            accessibilityLabel="Next set weight in kilograms"
-            className={inputClassName}
-          />
+          <View className="flex-row items-center gap-2">
+            <StepperButton
+              label="-"
+              accessibilityLabel="Decrease weight"
+              onStep={() => updateWeightValue(-2.5)}
+              onStartRepeating={startRepeatingStep}
+              onStopRepeating={stopRepeatingStep}
+            />
+
+            <View className="border-border min-h-14 flex-1 flex-row items-center rounded-lg border">
+              <TextInput
+                value={weightValue}
+                onChangeText={setWeightValue}
+                keyboardType="decimal-pad"
+                placeholder="0"
+                placeholderTextColor={colors.mutedForeground}
+                selectionColor={colors.primary}
+                accessibilityLabel="Next set weight in kilograms"
+                className={inputClassName}
+              />
+              <Text variant="bodyMedium" tone="muted" className="pr-3">
+                kg
+              </Text>
+            </View>
+
+            <StepperButton
+              label="+"
+              accessibilityLabel="Increase weight"
+              onStep={() => updateWeightValue(2.5)}
+              onStartRepeating={startRepeatingStep}
+              onStopRepeating={stopRepeatingStep}
+            />
+          </View>
         </View>
 
-        <Text variant="caption" tone="muted" className="pb-3">
-          x
-        </Text>
-
-        <View className="flex-1">
+        <View>
           <Text variant="caption" tone="muted" className="mb-1">
             Reps
           </Text>
-          <TextInput
-            value={repsValue}
-            onChangeText={setRepsValue}
-            keyboardType="number-pad"
-            placeholder="reps"
-            placeholderTextColor={colors.mutedForeground}
-            selectionColor={colors.primary}
-            accessibilityLabel="Next set reps"
-            className={inputClassName}
-          />
+          <View className="flex-row items-center gap-2">
+            <StepperButton
+              label="-"
+              accessibilityLabel="Decrease reps"
+              onStep={() => updateRepsValue(-1)}
+              onStartRepeating={startRepeatingStep}
+              onStopRepeating={stopRepeatingStep}
+            />
+
+            <View className="border-border min-h-14 flex-1 flex-row items-center rounded-lg border">
+              <TextInput
+                value={repsValue}
+                onChangeText={setRepsValue}
+                keyboardType="number-pad"
+                placeholder="0"
+                placeholderTextColor={colors.mutedForeground}
+                selectionColor={colors.primary}
+                accessibilityLabel="Next set reps"
+                className={inputClassName}
+              />
+              <Text variant="bodyMedium" tone="muted" className="pr-3">
+                reps
+              </Text>
+            </View>
+
+            <StepperButton
+              label="+"
+              accessibilityLabel="Increase reps"
+              onStep={() => updateRepsValue(1)}
+              onStartRepeating={startRepeatingStep}
+              onStopRepeating={stopRepeatingStep}
+            />
+          </View>
         </View>
       </View>
 
@@ -181,5 +270,33 @@ export function SetForm({
         </View>
       </View>
     </View>
+  );
+}
+
+type StepperButtonProps = {
+  label: string;
+  accessibilityLabel: string;
+  onStep: () => void;
+  onStartRepeating: (onStep: () => void) => void;
+  onStopRepeating: () => void;
+};
+
+function StepperButton({
+  label,
+  accessibilityLabel,
+  onStep,
+  onStartRepeating,
+  onStopRepeating
+}: StepperButtonProps) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      onPressIn={() => onStartRepeating(onStep)}
+      onPressOut={onStopRepeating}
+      className={stepperButtonClassName}
+    >
+      <Text variant="h3">{label}</Text>
+    </Pressable>
   );
 }

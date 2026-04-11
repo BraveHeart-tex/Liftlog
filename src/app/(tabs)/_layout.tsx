@@ -31,18 +31,12 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="workout/index"
+        name="workout"
         options={{
           title: 'Workout',
           tabBarIcon: ({ color, size }) => (
             <DumbbellIcon color={color} size={size} />
           )
-        }}
-      />
-      <Tabs.Screen
-        name="workout/active"
-        options={{
-          href: null
         }}
       />
       <Tabs.Screen
