@@ -10,6 +10,7 @@ import type { Exercise } from '@/src/db/schema';
 import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCategoryLabel } from './utils';
 
 type ExercisePickerSheetProps = {
@@ -26,6 +27,7 @@ export function ExercisePickerSheet({
   onSelectExercise
 }: ExercisePickerSheetProps) {
   const [query, setQuery] = useState('');
+  const insets = useSafeAreaInsets();
 
   const filteredExercises = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -62,7 +64,8 @@ export function ExercisePickerSheet({
       <BottomSheetFlatList
         data={filteredExercises}
         keyExtractor={(item: Exercise) => item.id}
-        contentContainerClassName="px-4 pb-8"
+        contentContainerClassName="px-4"
+        contentContainerStyle={{ paddingBottom: insets.bottom + 112 }}
         keyboardShouldPersistTaps="handled"
         renderItem={({ item }: { item: Exercise }) => (
           <Pressable
