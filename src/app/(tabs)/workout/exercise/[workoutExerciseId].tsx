@@ -3,13 +3,15 @@ import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import { exercises, sets, type Exercise } from '@/src/db/schema';
-import { getExercises } from '@/src/features/exercises/repository';
+import { type Exercise } from '@/src/db/schema';
+import { getExercisesQuery } from '@/src/features/exercises/repository';
 import { ExerciseHistoryTab } from '@/src/features/workouts/components/exercise-history-tab';
 import { ExerciseTrackTab } from '@/src/features/workouts/components/exercise-track-tab';
 import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
-import { createLiveQuery } from '@/src/features/workouts/live-query';
-import { getWorkoutExerciseWithSets } from '@/src/features/workouts/repository';
+import {
+  getSetsByWorkoutExerciseIdQuery,
+  getWorkoutExerciseByIdQuery
+} from '@/src/features/workouts/repository';
 import { cn } from '@/src/lib/utils/cn';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -46,23 +48,19 @@ export default function ActiveWorkoutExerciseScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const { width } = useWindowDimensions();
 
-  const { data: workoutExerciseWithSetsData } = useLiveQuery(
-    createLiveQuery(sets, () => {
-      if (!workoutExerciseId) {
-        return undefined;
-      }
-
-      return getWorkoutExerciseWithSets(db, workoutExerciseId);
-    }),
+  const {
+    data: workoutExerciseRows = [],
+    updatedAt: workoutExerciseUpdatedAt
+  } = useLiveQuery(getWorkoutExerciseByIdQuery(db, workoutExerciseId ?? ''), [
+    db,
+    workoutExerciseId
+  ]);
+  const workoutExercise = workoutExerciseRows[0];
+  const { data: setRows = [], updatedAt: setsUpdatedAt } = useLiveQuery(
+    getSetsByWorkoutExerciseIdQuery(db, workoutExerciseId ?? ''),
     [db, workoutExerciseId]
   );
-  const workoutExerciseWithSets = Array.isArray(workoutExerciseWithSetsData)
-    ? undefined
-    : workoutExerciseWithSetsData;
-  const { data: exerciseRows = [] } = useLiveQuery(
-    createLiveQuery(exercises, () => getExercises(db)),
-    [db]
-  );
+  const { data: exerciseRows = [] } = useLiveQuery(getExercisesQuery(db), [db]);
   const exerciseById = useMemo(
     () =>
       new Map<Exercise['id'], Exercise>(
@@ -72,18 +70,16 @@ export default function ActiveWorkoutExerciseScreen() {
   );
 
   const item = useMemo<WorkoutExerciseWithSets | undefined>(() => {
-    if (!workoutExerciseWithSets) {
+    if (!workoutExercise) {
       return undefined;
     }
 
     return {
-      workoutExercise: workoutExerciseWithSets.workoutExercise,
-      exercise: exerciseById.get(
-        workoutExerciseWithSets.workoutExercise.exerciseId
-      ),
-      sets: workoutExerciseWithSets.sets
+      workoutExercise,
+      exercise: exerciseById.get(workoutExercise.exerciseId),
+      sets: setRows
     };
-  }, [exerciseById, workoutExerciseWithSets]);
+  }, [exerciseById, setRows, workoutExercise]);
 
   const handleSelectTab = (tab: ExerciseDetailTab) => {
     const tabIndex = tabs.indexOf(tab);
@@ -102,6 +98,10 @@ export default function ActiveWorkoutExerciseScreen() {
 
     setSelectedTab(tabs[pageIndex] ?? 'track');
   };
+
+  if (workoutExerciseId && (!workoutExerciseUpdatedAt || !setsUpdatedAt)) {
+    return <Screen withPadding={false}>{null}</Screen>;
+  }
 
   if (!item) {
     return (
