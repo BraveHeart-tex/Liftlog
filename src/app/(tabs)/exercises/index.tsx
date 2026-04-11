@@ -1,5 +1,6 @@
 import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
+import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { type Exercise } from '@/src/db/schema';
 import {
@@ -12,7 +13,6 @@ import { cn } from '@/src/lib/utils/cn';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 function getPrimaryMuscleLabel(primaryMuscles: Exercise['primaryMuscles']) {
   try {
@@ -55,7 +55,7 @@ export default function ExercisesScreen() {
   }, [exercises, query, selectedCategory]);
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
+    <Screen withPadding={false}>
       <FlatList
         data={filteredExercises}
         keyExtractor={item => item.id}
@@ -165,6 +165,6 @@ export default function ExercisesScreen() {
         exercises={exercises}
         onClose={() => setIsCreateSheetOpen(false)}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }
