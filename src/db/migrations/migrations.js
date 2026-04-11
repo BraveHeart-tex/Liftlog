@@ -2,10 +2,12 @@
 
 import journal from './meta/_journal.json';
 import m0000 from './0000_adorable_slipstream.sql';
+import m0001 from './0001_pretty_diamondback.sql';
 
 export default {
   journal,
   migrations: {
-    m0000
+    m0000,
+    m0001
   }
 };

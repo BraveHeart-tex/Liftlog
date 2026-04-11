@@ -22,60 +22,10 @@ export const exercises = sqliteTable('exercises', {
     .$defaultFn(() => Date.now())
 });
 
-export const programs = sqliteTable('programs', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => generateUuid()),
-  name: text('name').notNull(),
-  description: text('description'),
-  isArchived: integer('is_archived').notNull().default(0),
-  createdAt: integer('created_at')
-    .notNull()
-    .$defaultFn(() => Date.now()),
-  updatedAt: integer('updated_at')
-    .notNull()
-    .$defaultFn(() => Date.now())
-});
-
-export const programDays = sqliteTable('program_days', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => generateUuid()),
-  programId: text('program_id')
-    .notNull()
-    .references(() => programs.id, { onDelete: 'cascade' }),
-  name: text('name').notNull(),
-  order: integer('order').notNull()
-});
-
-export const programExercises = sqliteTable('program_exercises', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => generateUuid()),
-  programDayId: text('program_day_id')
-    .notNull()
-    .references(() => programDays.id, { onDelete: 'cascade' }),
-  exerciseId: text('exercise_id')
-    .notNull()
-    .references(() => exercises.id, { onDelete: 'restrict' }),
-  order: integer('order').notNull(),
-  targetSets: integer('target_sets').notNull(),
-  targetReps: text('target_reps').notNull(),
-  targetRpe: integer('target_rpe'),
-  restSeconds: integer('rest_seconds'),
-  notes: text('notes')
-});
-
 export const workouts = sqliteTable('workouts', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => generateUuid()),
-  programId: text('program_id').references(() => programs.id, {
-    onDelete: 'set null'
-  }),
-  programDayId: text('program_day_id').references(() => programDays.id, {
-    onDelete: 'set null'
-  }),
   name: text('name').notNull(),
   status: text('status').notNull().default('in_progress'),
   startedAt: integer('started_at')
@@ -135,15 +85,6 @@ export type NewAppMeta = typeof appMeta.$inferInsert;
 
 export type Exercise = typeof exercises.$inferSelect;
 export type NewExercise = typeof exercises.$inferInsert;
-
-export type Program = typeof programs.$inferSelect;
-export type NewProgram = typeof programs.$inferInsert;
-
-export type ProgramDay = typeof programDays.$inferSelect;
-export type NewProgramDay = typeof programDays.$inferInsert;
-
-export type ProgramExercise = typeof programExercises.$inferSelect;
-export type NewProgramExercise = typeof programExercises.$inferInsert;
 
 export type Workout = typeof workouts.$inferSelect;
 export type NewWorkout = typeof workouts.$inferInsert;
