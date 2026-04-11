@@ -9,9 +9,9 @@ import {
   getWorkouts
 } from '@/src/features/workouts/repository';
 import { cn } from '@/src/lib/utils/cn';
-import { router, type Href } from 'expo-router';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import type { AnySQLiteSelect } from 'drizzle-orm/sqlite-core';
+import { router, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -145,7 +145,7 @@ export default function WorkoutStartScreen() {
         ) : (
           <>
             <Button className="mt-6 w-full" onPress={handleStartWorkout}>
-              Start empty workout
+              Start Workout
             </Button>
 
             <View className="mt-8">
