@@ -1,71 +1,51 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import {
-  sets,
-  workoutExercises,
-  type Exercise,
-  type Set,
-  type Workout,
-  type WorkoutExercise
-} from '@/src/db/schema';
-import { createLiveQuery } from '@/src/features/workouts/live-query';
-import {
-  getWorkoutExerciseWithSets,
-  getWorkoutWithExercises
-} from '@/src/features/workouts/repository';
+import { type Exercise, type Set, type WorkoutExercise } from '@/src/db/schema';
+import { getSetsForWorkoutExercisesQuery } from '@/src/features/workouts/repository';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useMemo } from 'react';
 import { ExerciseCard } from './exercise-card';
 import type { WorkoutExerciseWithSets } from './types';
 
 type ActiveWorkoutExerciseListProps = {
-  workout: Workout;
+  workoutExercises: WorkoutExercise[];
   exerciseById: Map<Exercise['id'], Exercise>;
 };
 
 export function ActiveWorkoutExerciseList({
-  workout,
+  workoutExercises,
   exerciseById
 }: ActiveWorkoutExerciseListProps) {
   const db = useDrizzle();
-  const { data: workoutWithExercises } = useLiveQuery(
-    createLiveQuery(workoutExercises, () =>
-      getWorkoutWithExercises(db, workout.id)
-    ),
-    [db, workout.id]
+  const workoutExerciseIds = workoutExercises.map(
+    workoutExercise => workoutExercise.id
+  );
+  const workoutExerciseIdKey = workoutExerciseIds.join(',');
+
+  const { data: setRows = [] } = useLiveQuery(
+    getSetsForWorkoutExercisesQuery(db, workoutExerciseIds),
+    [db, workoutExerciseIdKey]
   );
 
-  const workoutExerciseRows = workoutWithExercises?.exercises ?? [];
-  const workoutExerciseIds = workoutExerciseRows
-    .map(workoutExercise => workoutExercise.id)
-    .join(',');
+  const workoutExercisesWithSets = useMemo<WorkoutExerciseWithSets[]>(() => {
+    const setsByWorkoutExerciseId = new Map<WorkoutExercise['id'], Set[]>();
 
-  const { data: workoutExerciseSetRows = [] } = useLiveQuery(
-    createLiveQuery(sets, () =>
-      workoutExerciseRows
-        .map(workoutExercise =>
-          getWorkoutExerciseWithSets(db, workoutExercise.id)
-        )
-        .filter(
-          (
-            workoutExerciseWithSets
-          ): workoutExerciseWithSets is {
-            workoutExercise: WorkoutExercise;
-            sets: Set[];
-          } => Boolean(workoutExerciseWithSets)
-        )
-    ),
-    [db, workoutExerciseIds]
-  );
+    for (const set of setRows) {
+      const existingSets = setsByWorkoutExerciseId.get(set.workoutExerciseId);
 
-  const workoutExercisesWithSets = useMemo<WorkoutExerciseWithSets[]>(
-    () =>
-      workoutExerciseSetRows.map(row => ({
-        workoutExercise: row.workoutExercise,
-        exercise: exerciseById.get(row.workoutExercise.exerciseId),
-        sets: row.sets
-      })),
-    [exerciseById, workoutExerciseSetRows]
-  );
+      if (existingSets) {
+        existingSets.push(set);
+        continue;
+      }
+
+      setsByWorkoutExerciseId.set(set.workoutExerciseId, [set]);
+    }
+
+    return workoutExercises.map(workoutExercise => ({
+      workoutExercise,
+      exercise: exerciseById.get(workoutExercise.exerciseId),
+      sets: setsByWorkoutExerciseId.get(workoutExercise.id) ?? []
+    }));
+  }, [exerciseById, setRows, workoutExercises]);
 
   return (
     <>
