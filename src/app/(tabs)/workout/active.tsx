@@ -3,22 +3,16 @@ import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import {
-  exercises,
-  workoutExercises,
-  workouts,
-  type Exercise
-} from '@/src/db/schema';
-import { getExercises } from '@/src/features/exercises/repository';
+import { type Exercise } from '@/src/db/schema';
+import { getExercisesQuery } from '@/src/features/exercises/repository';
 import { ActiveWorkoutExerciseList } from '@/src/features/workouts/components/active-workout-exercise-list';
 import { EmptyExerciseState } from '@/src/features/workouts/components/empty-exercise-state';
 import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise-picker-sheet';
-import { createLiveQuery } from '@/src/features/workouts/live-query';
 import {
   completeWorkout,
   createWorkoutExercise,
-  getActiveWorkout,
-  getWorkoutWithExercises
+  getActiveWorkoutQuery,
+  getWorkoutExercisesQuery
 } from '@/src/features/workouts/repository';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router } from 'expo-router';
@@ -40,28 +34,23 @@ export default function ActiveWorkoutScreen() {
   const db = useDrizzle();
   const [now, setNow] = useState(() => Date.now());
   const [isExercisePickerOpen, setIsExercisePickerOpen] = useState(false);
-  const { data: activeWorkoutData } = useLiveQuery(
-    createLiveQuery(workouts, () => getActiveWorkout(db)),
-    [db]
-  );
-  const activeWorkout = Array.isArray(activeWorkoutData)
-    ? undefined
-    : activeWorkoutData;
-  const activeWorkoutId = activeWorkout?.id;
-  const { data: workoutWithExercises } = useLiveQuery(
-    createLiveQuery(workoutExercises, () => {
-      if (!activeWorkoutId) {
-        return undefined;
-      }
 
-      return getWorkoutWithExercises(db, activeWorkoutId);
-    }),
-    [db, activeWorkoutId]
-  );
-  const workoutExerciseRows = workoutWithExercises?.exercises ?? [];
-  const { data: exerciseRows = [] } = useLiveQuery(
-    createLiveQuery(exercises, () => getExercises(db)),
-    [db]
+  const { data: activeWorkoutRows = [], updatedAt: activeWorkoutUpdatedAt } =
+    useLiveQuery(getActiveWorkoutQuery(db), [db]);
+  const activeWorkout = activeWorkoutRows[0];
+  const activeWorkoutId = activeWorkout?.id ?? '';
+
+  const {
+    data: workoutExerciseRows = [],
+    updatedAt: workoutExercisesUpdatedAt
+  } = useLiveQuery(getWorkoutExercisesQuery(db, activeWorkoutId), [
+    db,
+    activeWorkoutId
+  ]);
+  const { data: exerciseRows = [] } = useLiveQuery(getExercisesQuery(db), [db]);
+
+  const isLoadingWorkoutExercises = Boolean(
+    activeWorkout && !workoutExercisesUpdatedAt
   );
 
   const exerciseById = useMemo(
@@ -111,6 +100,10 @@ export default function ActiveWorkoutScreen() {
     setIsExercisePickerOpen(false);
   };
 
+  if (!activeWorkoutUpdatedAt) {
+    return <Screen withPadding={false}>{null}</Screen>;
+  }
+
   if (!activeWorkout) {
     return (
       <Screen
@@ -140,7 +133,9 @@ export default function ActiveWorkoutScreen() {
         <Button
           variant="secondary"
           size="sm"
-          disabled={workoutExerciseRows.length === 0}
+          disabled={
+            isLoadingWorkoutExercises || workoutExerciseRows.length === 0
+          }
           onPress={handleFinishWorkout}
         >
           Finish
@@ -160,9 +155,9 @@ export default function ActiveWorkoutScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {workoutExerciseRows.length > 0 ? (
+        {isLoadingWorkoutExercises ? null : workoutExerciseRows.length > 0 ? (
           <ActiveWorkoutExerciseList
-            workout={activeWorkout}
+            workoutExercises={workoutExerciseRows}
             exerciseById={exerciseById}
           />
         ) : (

@@ -10,7 +10,7 @@ import {
   type Workout,
   type WorkoutExercise
 } from '@/src/db/schema';
-import { asc, desc, eq } from 'drizzle-orm';
+import { asc, desc, eq, inArray } from 'drizzle-orm';
 
 function getWorkoutRecordById(
   db: DrizzleDb,
@@ -23,33 +23,35 @@ function getWorkoutExerciseRecordById(
   db: DrizzleDb,
   id: WorkoutExercise['id']
 ): WorkoutExercise | undefined {
-  return db
-    .select()
-    .from(workoutExercises)
-    .where(eq(workoutExercises.id, id))
-    .get();
+  return getWorkoutExerciseByIdQuery(db, id).get();
 }
 
 function getSetRecordById(db: DrizzleDb, id: Set['id']): Set | undefined {
   return db.select().from(sets).where(eq(sets.id, id)).get();
 }
 
-export function getWorkouts(db: DrizzleDb): Workout[] {
+export function getWorkoutsQuery(db: DrizzleDb) {
   return db
     .select()
     .from(workouts)
     .where(eq(workouts.status, 'completed'))
-    .orderBy(desc(workouts.startedAt))
-    .all();
+    .orderBy(desc(workouts.startedAt));
 }
 
-export function getActiveWorkout(db: DrizzleDb): Workout | undefined {
+export function getWorkouts(db: DrizzleDb): Workout[] {
+  return getWorkoutsQuery(db).all();
+}
+
+export function getActiveWorkoutQuery(db: DrizzleDb) {
   return db
     .select()
     .from(workouts)
     .where(eq(workouts.status, 'in_progress'))
-    .orderBy(desc(workouts.startedAt))
-    .get();
+    .orderBy(desc(workouts.startedAt));
+}
+
+export function getActiveWorkout(db: DrizzleDb): Workout | undefined {
+  return getActiveWorkoutQuery(db).get();
 }
 
 export function getWorkoutById(
@@ -69,14 +71,57 @@ export function getWorkoutWithExercises(
     return undefined;
   }
 
-  const exercisesForWorkout = db
-    .select()
-    .from(workoutExercises)
-    .where(eq(workoutExercises.workoutId, id))
-    .orderBy(asc(workoutExercises.order))
-    .all();
+  const exercisesForWorkout = getWorkoutExercisesQuery(db, id).all();
 
   return { workout, exercises: exercisesForWorkout };
+}
+
+export function getWorkoutExercisesQuery(
+  db: DrizzleDb,
+  workoutId: Workout['id']
+) {
+  return db
+    .select()
+    .from(workoutExercises)
+    .where(eq(workoutExercises.workoutId, workoutId))
+    .orderBy(asc(workoutExercises.order));
+}
+
+export function getWorkoutExerciseByIdQuery(
+  db: DrizzleDb,
+  id: WorkoutExercise['id']
+) {
+  return db.select().from(workoutExercises).where(eq(workoutExercises.id, id));
+}
+
+export function getSetsByWorkoutExerciseIdQuery(
+  db: DrizzleDb,
+  workoutExerciseId: WorkoutExercise['id']
+) {
+  return db
+    .select()
+    .from(sets)
+    .where(eq(sets.workoutExerciseId, workoutExerciseId))
+    .orderBy(asc(sets.order));
+}
+
+export function getSetsForWorkoutExercisesQuery(
+  db: DrizzleDb,
+  workoutExerciseIds: WorkoutExercise['id'][]
+) {
+  if (workoutExerciseIds.length === 0) {
+    return db
+      .select()
+      .from(sets)
+      .where(eq(sets.workoutExerciseId, ''))
+      .orderBy(asc(sets.order));
+  }
+
+  return db
+    .select()
+    .from(sets)
+    .where(inArray(sets.workoutExerciseId, workoutExerciseIds))
+    .orderBy(asc(sets.order));
 }
 
 export function getWorkoutExerciseWithSets(
@@ -89,12 +134,10 @@ export function getWorkoutExerciseWithSets(
     return undefined;
   }
 
-  const setsForExercise = db
-    .select()
-    .from(sets)
-    .where(eq(sets.workoutExerciseId, workoutExerciseId))
-    .orderBy(asc(sets.order))
-    .all();
+  const setsForExercise = getSetsByWorkoutExerciseIdQuery(
+    db,
+    workoutExerciseId
+  ).all();
 
   return { workoutExercise, sets: setsForExercise };
 }
