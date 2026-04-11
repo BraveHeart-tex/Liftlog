@@ -118,6 +118,10 @@ export function archiveProgram(db: DrizzleDb, id: Program['id']): void {
   db.update(programs).set({ isArchived: 1 }).where(eq(programs.id, id)).run();
 }
 
+export function deleteProgram(db: DrizzleDb, id: Program['id']): void {
+  db.delete(programs).where(eq(programs.id, id)).run();
+}
+
 export function createProgramDay(
   db: DrizzleDb,
   data: NewProgramDay
