@@ -1,6 +1,7 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
+import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import {
   exercises,
@@ -24,7 +25,6 @@ import { router } from 'expo-router';
 import { PlusIcon } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 function formatDuration(startedAt: number, now = Date.now()) {
   const durationMinutes = Math.round((now - startedAt) / 60000);
@@ -113,28 +113,25 @@ export default function ActiveWorkoutScreen() {
 
   if (!activeWorkout) {
     return (
-      <SafeAreaView
-        style={{ flex: 1 }}
-        className="bg-background"
-        edges={['top']}
+      <Screen
+        withPadding={false}
+        contentClassName="items-center justify-center px-6"
       >
-        <View className="flex-1 items-center justify-center px-6">
-          <Text variant="h3" className="text-center">
-            No active workout
-          </Text>
-          <Button
-            className="mt-4"
-            onPress={() => router.replace('/(tabs)/workout')}
-          >
-            Go back
-          </Button>
-        </View>
-      </SafeAreaView>
+        <Text variant="h3" className="text-center">
+          No active workout
+        </Text>
+        <Button
+          className="mt-4"
+          onPress={() => router.replace('/(tabs)/workout')}
+        >
+          Go back
+        </Button>
+      </Screen>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
+    <Screen withPadding={false} edges={['top', 'bottom']}>
       <View className="flex-row items-center justify-between gap-4 px-4 pt-4 pb-2">
         <Text variant="h2" className="flex-1">
           {activeWorkout.name}
@@ -175,20 +172,18 @@ export default function ActiveWorkoutScreen() {
         )}
       </ScrollView>
 
-      <SafeAreaView className="bg-background" edges={['bottom']}>
-        <View className="border-border bg-background border-t px-4 py-4">
-          <Button
-            variant="secondary"
-            className="w-full"
-            leftIcon={
-              <Icon icon={PlusIcon} size={16} className="text-foreground" />
-            }
-            onPress={() => setIsExercisePickerOpen(true)}
-          >
-            Add exercise
-          </Button>
-        </View>
-      </SafeAreaView>
+      <View className="border-border bg-background border-t px-4 py-4">
+        <Button
+          variant="secondary"
+          className="w-full"
+          leftIcon={
+            <Icon icon={PlusIcon} size={16} className="text-foreground" />
+          }
+          onPress={() => setIsExercisePickerOpen(true)}
+        >
+          Add exercise
+        </Button>
+      </View>
 
       <ExercisePickerSheet
         isOpen={isExercisePickerOpen}
@@ -196,6 +191,6 @@ export default function ActiveWorkoutScreen() {
         onClose={() => setIsExercisePickerOpen(false)}
         onSelectExercise={handleSelectExercise}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }

@@ -1,6 +1,7 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
+import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { exercises, sets, type Exercise } from '@/src/db/schema';
 import { getExercises } from '@/src/features/exercises/repository';
@@ -22,7 +23,6 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 type ExerciseDetailTab = 'track' | 'history';
 
@@ -105,25 +105,22 @@ export default function ActiveWorkoutExerciseScreen() {
 
   if (!item) {
     return (
-      <SafeAreaView
-        style={{ flex: 1 }}
-        className="bg-background"
-        edges={['top']}
+      <Screen
+        withPadding={false}
+        contentClassName="items-center justify-center px-6"
       >
-        <View className="flex-1 items-center justify-center px-6">
-          <Text variant="h3" className="text-center">
-            Exercise not found
-          </Text>
-          <Button className="mt-4" onPress={() => router.back()}>
-            Go back
-          </Button>
-        </View>
-      </SafeAreaView>
+        <Text variant="h3" className="text-center">
+          Exercise not found
+        </Text>
+        <Button className="mt-4" onPress={() => router.back()}>
+          Go back
+        </Button>
+      </Screen>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
+    <Screen withPadding={false}>
       <View className="px-4 pt-4 pb-3">
         <View className="flex-row items-center gap-3">
           <Pressable
@@ -188,6 +185,6 @@ export default function ActiveWorkoutExerciseScreen() {
           />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }
