@@ -3,10 +3,16 @@
 This project is a mobile application built with:
 
 - Expo (React Native)
+- Expo Router
 - TypeScript
 - NativeWind (Tailwind CSS v4, CSS-first via global.css)
 - React Native Safe Area Context
-  The app is a progressive overload workout tracker focused on:
+- Expo SQLite + Drizzle ORM
+- Gorhom Bottom Sheet
+- Lucide React Native icons
+
+The app is a progressive overload workout tracker focused on:
+
 - fast workout logging
 - minimal friction UX
 - clean, dark-mode UI
@@ -39,8 +45,9 @@ This project is a mobile application built with:
 - Use **NativeWind className** as the default
 - Use the shared `cn` helper from `@/src/lib/utils/cn` for conditional or composed class names
 - Do NOT create local `joinClassNames`/`cn` helpers inside components; keep class merging centralized through the shared utility
-- Do NOT use inline styles for core RN components unless debugging
+- Do NOT use inline styles for core RN components unless debugging or using a native API that requires raw values
 - **EXCEPTION: Always use inline `style` prop for layout-critical properties on external/third-party components** (e.g. `SafeAreaView` from `react-native-safe-area-context`, `ScrollView` when flex behaviour is load-bearing)
+- **EXCEPTION: Use raw values from `@/src/theme/tokens` for native/third-party props that cannot consume NativeWind classes** (e.g. React Navigation tab options, `TextInput` placeholder/selection colors, bottom-sheet backdrop styles, animated transforms)
 
 Why: NativeWind processes classNames asynchronously. On external components this means styles may not be applied on the first layout pass, causing broken layouts. Inline `style` is synchronous and guaranteed.
 
@@ -67,15 +74,32 @@ Avoid:
 
 ### Theme Tokens
 
-Use semantic tokens only:
+Use semantic tokens only. For className styling, prefer tokens defined in `global.css`.
 
 - Colors:
   - bg-background
   - bg-card
+  - bg-primary
+  - bg-secondary
+  - bg-muted
+  - bg-input
+  - bg-success
+  - bg-warning
+  - bg-danger
+  - bg-info
   - text-foreground
+  - text-primary-foreground
+  - text-secondary-foreground
   - text-muted-foreground
+  - text-accent-foreground
+  - text-success
+  - text-warning
+  - text-danger
   - text-progress-up
+  - text-progress-same
+  - text-progress-down
   - border-border
+  - border-ring
 - Typography:
   - text-h1
   - text-h2
@@ -105,6 +129,8 @@ Use semantic tokens only:
 
 ### 1. Always use SafeAreaView at screen root
 
+Prefer the shared `Screen` primitive from `@/src/components/ui/screen` for standard screens. It already handles `SafeAreaView`, optional vertical scrolling, padding, keyboard taps, and sticky footer layout.
+
 Use inline style for flex, className for theming:
 
 ```tsx
@@ -124,6 +150,8 @@ Always set `style={{ flex: 1 }}` via inline style, not className:
 
 NEVER rely on View for scrollable layouts.
 
+For long or dynamic data lists, use `FlatList` or `SectionList` instead of mapping inside a `ScrollView`. If the list must fill available space, use inline `style={{ flex: 1 }}` on the list rather than `className="flex-1"`.
+
 ---
 
 ### 3. ScrollView flex must use inline style
@@ -142,7 +170,7 @@ Good:
 <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
 ```
 
-This applies any time a `ScrollView` needs to fill available space, especially when used alongside a sticky footer.
+This applies any time a `ScrollView` needs to fill available space, especially when used alongside a sticky footer. Apply the same rule to `FlatList` and `SectionList` when their fill behavior is layout-critical.
 
 ---
 
@@ -205,8 +233,13 @@ Prefer simple reusable primitives:
 - Button
 - Input
 - Badge
-- ExerciseCard
-  Do NOT create deep abstraction layers early.
+- Text
+- Dialog
+- BottomSheet
+- EmptyState
+- Icon
+
+Do NOT create deep abstraction layers early.
 
 ---
 
@@ -256,7 +289,7 @@ Prefer simple reusable primitives:
 
 ```tsx
 <Pressable className="bg-primary items-center rounded-lg px-4 py-4">
-  <Text className="text-body-medium text-white">Action</Text>
+  <Text className="text-body-medium text-primary-foreground">Action</Text>
 </Pressable>
 ```
 
@@ -264,8 +297,10 @@ Prefer simple reusable primitives:
 
 ## Data Display Rules
 
-- Always show **last workout**
-- Always show **progress indicator**
+For workout, progress, and exercise-summary surfaces:
+
+- Show **last workout**
+- Show **progress indicator**
 - Keep numbers readable:
   - "60 × 8, 8, 7"
   - "+2 reps"
@@ -289,7 +324,7 @@ Leads to content being hidden off-screen
 
 ### NativeWind className on external components for layout
 
-`flex-1` via className on `ScrollView` or `SafeAreaView` (from `react-native-safe-area-context`) is applied asynchronously and may be missing on the first layout pass. This causes the component to collapse to zero height, hiding all content. Always use `style={{ flex: 1 }}` inline for these components.
+`flex-1` via className on `ScrollView`, `FlatList`, `SectionList`, or `SafeAreaView` (from `react-native-safe-area-context`) is applied asynchronously and may be missing on the first layout pass. This can cause the component to collapse to zero height, hiding all content. Always use `style={{ flex: 1 }}` inline for layout-critical fill behavior on these components.
 
 ### Using line-height globally
 
@@ -313,12 +348,18 @@ Slows down development
 
 ```
 src/
-  screens/
+  app/
+    (tabs)/
   components/
     ui/
+  db/
   features/
     exercises/
+    programs/
+    progress/
     workouts/
+  lib/
+    utils/
   theme/
 ```
 
@@ -330,11 +371,11 @@ The agent MUST:
 
 1. Use NativeWind classes for theming and spacing
 2. Respect theme tokens
-3. Use ScrollView for vertical layouts
-4. Use SafeAreaView at root
+3. Use ScrollView for vertical layouts, or FlatList/SectionList for long dynamic lists
+4. Use SafeAreaView at root, preferably through the shared Screen primitive
 5. Keep components simple
 6. Avoid unnecessary libraries
-7. Avoid inline styles for core RN components **except** for layout-critical flex on external components
+7. Avoid inline styles for core RN components **except** for layout-critical flex on external components or native APIs that require raw values from `@/src/theme/tokens`
 8. Avoid web-only assumptions
 
 ---
