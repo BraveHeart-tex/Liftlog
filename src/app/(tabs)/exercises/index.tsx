@@ -1,22 +1,18 @@
+import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
 import { type Exercise } from '@/src/db/schema';
+import {
+  CATEGORY_FILTERS,
+  type CategoryFilter
+} from '@/src/features/exercises/constants';
+import { CreateExerciseSheet } from '@/src/features/exercises/components/create-exercise-sheet';
 import { useExercises } from '@/src/features/exercises/hooks';
+import { cn } from '@/src/lib/utils/cn';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-const CATEGORY_FILTERS = [
-  { label: 'All', value: 'all' },
-  { label: 'Barbell', value: 'barbell' },
-  { label: 'Dumbbell', value: 'dumbbell' },
-  { label: 'Machine', value: 'machine' },
-  { label: 'Cable', value: 'cable' },
-  { label: 'Bodyweight', value: 'bodyweight' }
-] as const;
-
-type CategoryFilter = (typeof CATEGORY_FILTERS)[number]['value'];
 
 function getPrimaryMuscleLabel(primaryMuscles: Exercise['primaryMuscles']) {
   try {
@@ -39,6 +35,7 @@ export default function ExercisesScreen() {
   const [query, setQuery] = useState('');
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryFilter>('all');
+  const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
 
   const exercises = useExercises();
 
@@ -62,16 +59,28 @@ export default function ExercisesScreen() {
       <FlatList
         data={filteredExercises}
         keyExtractor={item => item.id}
-        className="flex-1"
+        style={{ flex: 1 }}
         contentContainerClassName="px-4 py-6"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View>
-            <Text variant="h1">Exercises</Text>
-            <Text variant="small" tone="muted" className="mt-2">
-              Browse and search your exercise library
-            </Text>
+            <View className="flex-row items-center justify-between gap-4">
+              <View className="flex-1">
+                <Text variant="h1">Exercises</Text>
+                <Text variant="small" tone="muted" className="mt-2">
+                  Browse and search your exercise library
+                </Text>
+              </View>
+
+              <Button
+                variant="secondary"
+                size="sm"
+                onPress={() => setIsCreateSheetOpen(true)}
+              >
+                Add
+              </Button>
+            </View>
 
             <Input
               value={query}
@@ -96,17 +105,16 @@ export default function ExercisesScreen() {
                   <Pressable
                     key={category.value}
                     onPress={() => setSelectedCategory(category.value)}
-                    className={
-                      isSelected
-                        ? 'border-border bg-card rounded-full border px-4 py-3'
-                        : 'border-border bg-background rounded-full border px-4 py-3'
-                    }
+                    className={cn(
+                      'border-border rounded-full border px-4 py-3',
+                      isSelected ? 'bg-card' : 'bg-background'
+                    )}
                   >
                     <Text
                       variant="small"
-                      className={
+                      className={cn(
                         isSelected ? 'text-foreground' : 'text-muted-foreground'
-                      }
+                      )}
                     >
                       {category.label}
                     </Text>
@@ -150,6 +158,12 @@ export default function ExercisesScreen() {
             </Text>
           </View>
         }
+      />
+
+      <CreateExerciseSheet
+        isOpen={isCreateSheetOpen}
+        exercises={exercises}
+        onClose={() => setIsCreateSheetOpen(false)}
       />
     </SafeAreaView>
   );
