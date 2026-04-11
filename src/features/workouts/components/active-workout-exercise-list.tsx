@@ -1,4 +1,4 @@
-import type { DrizzleDb } from '@/src/db/client';
+import { useDrizzle } from '@/src/components/database-provider';
 import {
   sets,
   workoutExercises,
@@ -18,16 +18,15 @@ import { ExerciseCard } from './exercise-card';
 import type { WorkoutExerciseWithSets } from './types';
 
 type ActiveWorkoutExerciseListProps = {
-  db: DrizzleDb;
   workout: Workout;
   exerciseById: Map<Exercise['id'], Exercise>;
 };
 
 export function ActiveWorkoutExerciseList({
-  db,
   workout,
   exerciseById
 }: ActiveWorkoutExerciseListProps) {
+  const db = useDrizzle();
   const { data: workoutWithExercises } = useLiveQuery(
     createLiveQuery(workoutExercises, () =>
       getWorkoutWithExercises(db, workout.id)
@@ -73,7 +72,6 @@ export function ActiveWorkoutExerciseList({
       {workoutExercisesWithSets.map(workoutExercise => (
         <ExerciseCard
           key={workoutExercise.workoutExercise.id}
-          db={db}
           item={workoutExercise}
           className="mt-4"
         />
