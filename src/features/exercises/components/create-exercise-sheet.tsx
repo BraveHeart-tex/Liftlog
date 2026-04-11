@@ -99,9 +99,9 @@ export function CreateExerciseSheet({
   };
 
   const trimmedName = name.trim();
+  const normalizedName = trimmedName.toLowerCase();
   const hasDuplicateName = exercises.some(
-    exercise =>
-      exercise.name.toLocaleLowerCase() === trimmedName.toLocaleLowerCase()
+    exercise => exercise.name.trim().toLowerCase() === normalizedName
   );
   const shouldShowNameError = attemptedSubmit && trimmedName.length === 0;
   const shouldShowDuplicateError =
