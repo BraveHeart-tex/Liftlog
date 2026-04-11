@@ -1,5 +1,6 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { exercises, sets, type Exercise } from '@/src/db/schema';
 import { getExercises } from '@/src/features/exercises/repository';
@@ -11,6 +12,7 @@ import { getWorkoutExerciseWithSets } from '@/src/features/workouts/repository';
 import { cn } from '@/src/lib/utils/cn';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
+import { ChevronLeftIcon } from 'lucide-react-native';
 import { useMemo, useRef, useState } from 'react';
 import {
   Pressable,
@@ -123,18 +125,24 @@ export default function ActiveWorkoutExerciseScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
       <View className="px-4 pt-4 pb-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="self-start"
-          onPress={() => router.back()}
-        >
-          Back
-        </Button>
+        <View className="flex-row items-center gap-3">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            onPress={() => router.back()}
+            className="border-border bg-card h-11 w-11 items-center justify-center rounded-lg border"
+          >
+            <Icon
+              icon={ChevronLeftIcon}
+              size={20}
+              className="text-foreground"
+            />
+          </Pressable>
 
-        <Text variant="h2" className="mt-3">
-          {item.exercise?.name ?? 'Unknown exercise'}
-        </Text>
+          <Text variant="h2" className="flex-1" numberOfLines={1}>
+            {item.exercise?.name ?? 'Unknown exercise'}
+          </Text>
+        </View>
       </View>
 
       <View className="border-border flex-row border-b px-4">
