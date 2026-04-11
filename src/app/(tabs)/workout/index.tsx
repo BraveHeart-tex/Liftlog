@@ -3,44 +3,18 @@ import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import { workouts, type Workout } from '@/src/db/schema';
 import {
   createWorkout,
-  getActiveWorkout,
-  getWorkouts
+  getActiveWorkoutQuery,
+  getWorkoutsQuery
 } from '@/src/features/workouts/repository';
 import { cn } from '@/src/lib/utils/cn';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import type { AnySQLiteSelect } from 'drizzle-orm/sqlite-core';
 import { router, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-type WorkoutLiveQuery<TData> = Pick<AnySQLiteSelect, '_' | 'then'> & {
-  config: {
-    table: typeof workouts;
-  };
-  then<TResult1 = TData, TResult2 = never>(
-    onfulfilled?: ((value: TData) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
-  ): Promise<TResult1 | TResult2>;
-};
-
 const activeWorkoutRoute = '/(tabs)/workout/active' as Href;
-
-function createWorkoutLiveQuery<TData>(
-  getData: () => TData
-): WorkoutLiveQuery<TData> {
-  return {
-    _: undefined as unknown as AnySQLiteSelect['_'],
-    config: {
-      table: workouts
-    },
-    then(onfulfilled, onrejected) {
-      return Promise.resolve().then(getData).then(onfulfilled, onrejected);
-    }
-  };
-}
 
 function formatWorkoutName(date: Date): string {
   return `${date.toLocaleDateString(undefined, { weekday: 'long' })} workout`;
@@ -68,18 +42,15 @@ function formatDuration(startedAt: number, completedAt: number | null): string {
 export default function WorkoutStartScreen() {
   const db = useDrizzle();
   const [now, setNow] = useState(() => Date.now());
-  const { data: activeWorkoutData } = useLiveQuery(
-    createWorkoutLiveQuery<Workout | undefined>(() => getActiveWorkout(db)),
+  const { data: activeWorkoutRows = [] } = useLiveQuery(
+    getActiveWorkoutQuery(db),
     [db]
   );
-  const { data: completedWorkouts = [] } = useLiveQuery(
-    createWorkoutLiveQuery<Workout[]>(() => getWorkouts(db)),
-    [db]
-  );
+  const { data: completedWorkouts = [] } = useLiveQuery(getWorkoutsQuery(db), [
+    db
+  ]);
 
-  const activeWorkout = Array.isArray(activeWorkoutData)
-    ? undefined
-    : activeWorkoutData;
+  const activeWorkout = activeWorkoutRows[0];
   const recentWorkouts = completedWorkouts.slice(0, 5);
 
   useEffect(() => {
