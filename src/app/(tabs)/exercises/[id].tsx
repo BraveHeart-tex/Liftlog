@@ -1,5 +1,6 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import { Card, CardContent } from '@/src/components/ui/card';
+import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { type Exercise, type Set } from '@/src/db/schema';
 import { getExerciseByIdQuery } from '@/src/features/exercises/repository';
@@ -8,10 +9,9 @@ import {
   getExerciseHistorySetsQuery,
   getExerciseHistoryWorkoutsQuery
 } from '@/src/features/progress/repository';
-import { useLocalSearchParams } from 'expo-router';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams } from 'expo-router';
+import { View } from 'react-native';
 
 function getRouteParamId(value: string | string[] | undefined) {
   if (Array.isArray(value)) {
@@ -114,25 +114,22 @@ export default function ExerciseDetailScreen() {
   );
 
   if (exerciseId && !exerciseUpdatedAt) {
-    return <SafeAreaView style={{ flex: 1 }} className="bg-background" />;
+    return <Screen withPadding={false}>{null}</Screen>;
   }
 
   if (!exercise) {
     return (
-      <SafeAreaView
-        style={{ flex: 1 }}
-        className="bg-background"
-        edges={['top']}
+      <Screen
+        withPadding={false}
+        contentClassName="items-center justify-center px-6"
       >
-        <View className="flex-1 items-center justify-center px-6">
-          <Text variant="h3" className="text-center">
-            Exercise not found
-          </Text>
-          <Text variant="small" tone="muted" className="mt-2 text-center">
-            The exercise you&apos;re looking for doesn&apos;t exist.
-          </Text>
-        </View>
-      </SafeAreaView>
+        <Text variant="h3" className="text-center">
+          Exercise not found
+        </Text>
+        <Text variant="small" tone="muted" className="mt-2 text-center">
+          The exercise you&apos;re looking for doesn&apos;t exist.
+        </Text>
+      </Screen>
     );
   }
 
@@ -149,85 +146,78 @@ export default function ExerciseDetailScreen() {
   const completedSetSummary = formatCompletedSets(completedSets);
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1 }}
-        contentContainerClassName="px-4 py-6"
-        showsVerticalScrollIndicator={false}
-      >
-        <View>
-          <Text variant="h1">{exercise.name}</Text>
-          <Text variant="small" tone="muted" className="mt-2">
-            {toTitleCase(exercise.category)}
+    <Screen scroll>
+      <View>
+        <Text variant="h1">{exercise.name}</Text>
+        <Text variant="small" tone="muted" className="mt-2">
+          {toTitleCase(exercise.category)}
+        </Text>
+      </View>
+
+      <Card className="mt-6">
+        <CardContent>
+          <Text variant="caption" tone="muted">
+            Muscle groups
           </Text>
-        </View>
 
-        <Card className="mt-6">
-          <CardContent>
-            <Text variant="caption" tone="muted">
-              Muscle groups
+          <View className="mt-4">
+            <Text variant="small" tone="muted">
+              Primary
             </Text>
+            <Text variant="body" className="mt-1">
+              {formatMuscleList(primaryMuscles)}
+            </Text>
+          </View>
 
+          {secondaryMuscles.length > 0 ? (
             <View className="mt-4">
               <Text variant="small" tone="muted">
-                Primary
+                Secondary
               </Text>
               <Text variant="body" className="mt-1">
-                {formatMuscleList(primaryMuscles)}
+                {formatMuscleList(secondaryMuscles)}
               </Text>
             </View>
+          ) : null}
+        </CardContent>
+      </Card>
 
-            {secondaryMuscles.length > 0 ? (
-              <View className="mt-4">
-                <Text variant="small" tone="muted">
-                  Secondary
-                </Text>
-                <Text variant="body" className="mt-1">
-                  {formatMuscleList(secondaryMuscles)}
-                </Text>
-              </View>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        {instructions ? (
-          <Card className="mt-4">
-            <CardContent>
-              <Text variant="caption" tone="muted">
-                Instructions
-              </Text>
-              <Text variant="body" className="mt-4">
-                {instructions}
-              </Text>
-            </CardContent>
-          </Card>
-        ) : null}
-
+      {instructions ? (
         <Card className="mt-4">
           <CardContent>
             <Text variant="caption" tone="muted">
-              Last performed
+              Instructions
             </Text>
-
-            {mostRecentHistory && completedSetSummary ? (
-              <View className="mt-4">
-                <Text variant="h3">{completedSetSummary}</Text>
-                <Text variant="small" tone="muted" className="mt-2">
-                  {formatWorkoutDate(mostRecentHistory.workout.startedAt)}
-                </Text>
-              </View>
-            ) : (
-              <View className="mt-4">
-                <Text variant="h3">No history yet</Text>
-                <Text variant="small" tone="muted" className="mt-2">
-                  Log a workout to see stats
-                </Text>
-              </View>
-            )}
+            <Text variant="body" className="mt-4">
+              {instructions}
+            </Text>
           </CardContent>
         </Card>
-      </ScrollView>
-    </SafeAreaView>
+      ) : null}
+
+      <Card className="mt-4">
+        <CardContent>
+          <Text variant="caption" tone="muted">
+            Last performed
+          </Text>
+
+          {mostRecentHistory && completedSetSummary ? (
+            <View className="mt-4">
+              <Text variant="h3">{completedSetSummary}</Text>
+              <Text variant="small" tone="muted" className="mt-2">
+                {formatWorkoutDate(mostRecentHistory.workout.startedAt)}
+              </Text>
+            </View>
+          ) : (
+            <View className="mt-4">
+              <Text variant="h3">No history yet</Text>
+              <Text variant="small" tone="muted" className="mt-2">
+                Log a workout to see stats
+              </Text>
+            </View>
+          )}
+        </CardContent>
+      </Card>
+    </Screen>
   );
 }
