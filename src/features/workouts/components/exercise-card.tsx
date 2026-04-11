@@ -2,7 +2,9 @@ import { useDrizzle } from '@/src/components/database-provider';
 import { Card, CardContent, CardHeader } from '@/src/components/ui/card';
 import { Text } from '@/src/components/ui/text';
 import { deleteWorkoutExercise } from '@/src/features/workouts/repository';
+import { cn } from '@/src/lib/utils/cn';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 import type { WorkoutExerciseWithSets } from './types';
 import { formatInputNumber } from './utils';
@@ -14,25 +16,41 @@ type ExerciseCardProps = {
 
 export function ExerciseCard({ item, className }: ExerciseCardProps) {
   const db = useDrizzle();
+  const [isSelected, setIsSelected] = useState(false);
   const completedSets = item.sets.filter(set => set.status === 'completed');
-  const hasCompletedSets = completedSets.length > 0;
 
   const handleRemoveExercise = () => {
-    if (hasCompletedSets) {
-      return;
-    }
+    const exerciseName = item.exercise?.name ?? 'Unknown exercise';
+    const setCount = item.sets.length;
+    const completedSetCount = completedSets.length;
+    const selectedDetails =
+      setCount > 0
+        ? `${exerciseName}\n${setCount} sets logged, ${completedSetCount} completed.`
+        : `${exerciseName}\nNo sets logged yet.`;
+
+    setIsSelected(true);
 
     Alert.alert(
       'Remove exercise?',
-      'This will delete all sets for this exercise.',
+      `${selectedDetails}\n\nThis will delete all sets for this exercise.`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: () => setIsSelected(false)
+        },
         {
           text: 'Remove',
           style: 'destructive',
-          onPress: () => deleteWorkoutExercise(db, item.workoutExercise.id)
+          onPress: () => {
+            setIsSelected(false);
+            deleteWorkoutExercise(db, item.workoutExercise.id);
+          }
         }
-      ]
+      ],
+      {
+        onDismiss: () => setIsSelected(false)
+      }
     );
   };
 
@@ -47,7 +65,7 @@ export function ExerciseCard({ item, className }: ExerciseCardProps) {
       onLongPress={handleRemoveExercise}
       className={className}
     >
-      <Card>
+      <Card className={cn(isSelected && 'border-primary bg-muted/50')}>
         <CardHeader className="flex-row items-center justify-between gap-3">
           <Text variant="bodyMedium" className="flex-1">
             {item.exercise?.name ?? 'Unknown exercise'}
