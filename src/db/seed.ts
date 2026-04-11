@@ -1,36 +1,10 @@
 import { DrizzleDb } from '@/src/db';
 import { appMeta, exercises, type NewExercise } from '@/src/db/schema';
+import { MUSCLE_GROUP } from '@/src/features/exercises/constants';
 import { eq } from 'drizzle-orm';
 
 const HAS_SEEDED_KEY = 'has_seeded';
 const LEGACY_EXERCISE_SEED_VERSION_KEY = 'exercise_seed_version';
-
-const MUSCLE_GROUP = {
-  abs: 'abs',
-  adductors: 'adductors',
-  biceps: 'biceps',
-  brachialis: 'brachialis',
-  calves: 'calves',
-  chest: 'chest',
-  forearms: 'forearms',
-  frontDelts: 'front delts',
-  glutes: 'glutes',
-  grip: 'grip',
-  hamstrings: 'hamstrings',
-  hipFlexors: 'hip flexors',
-  lats: 'lats',
-  lowerBack: 'lower back',
-  obliques: 'obliques',
-  quads: 'quads',
-  rearDelts: 'rear delts',
-  rotatorCuff: 'rotator cuff',
-  shoulders: 'shoulders',
-  sideDelts: 'side delts',
-  triceps: 'triceps',
-  upperBack: 'upper back',
-  upperChest: 'upper chest',
-  upperTraps: 'upper traps'
-} as const;
 
 const createSeedExercises = (): NewExercise[] => [
   {
