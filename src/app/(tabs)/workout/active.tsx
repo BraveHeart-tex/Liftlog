@@ -165,7 +165,6 @@ export default function ActiveWorkoutScreen() {
       >
         {workoutExerciseRows.length > 0 ? (
           <ActiveWorkoutExerciseList
-            db={db}
             workout={activeWorkout}
             exerciseById={exerciseById}
           />
