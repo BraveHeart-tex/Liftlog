@@ -26,7 +26,7 @@ export type ButtonProps = {
   onPress?: (event: GestureResponderEvent) => void;
 };
 
-const baseClassName = 'flex-row items-center justify-center rounded-lg';
+const baseClassName = 'flex-row items-center justify-center rounded-lg border';
 
 const sizeClassNames: Record<ButtonSize, string> = {
   sm: 'min-h-11 px-3 py-3',

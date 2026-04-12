@@ -1,7 +1,7 @@
+import { StyledTextInput } from '@/src/components/styled/text-input';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
-import { StyledTextInput } from '@/src/components/styled/text-input';
 import type { Set } from '@/src/db/schema';
 import { PlusIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
@@ -264,7 +264,7 @@ export function SetForm({
           <Button
             variant={isEditing ? 'destructive' : 'secondary'}
             size="sm"
-            className="w-full"
+            className={isEditing ? 'border-danger w-full border' : 'w-full'}
             onPress={isEditing ? handleDelete : handleClear}
           >
             {isEditing ? 'Delete' : 'Clear'}
