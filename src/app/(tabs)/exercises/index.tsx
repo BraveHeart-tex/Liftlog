@@ -20,6 +20,7 @@ import { Pressable, View } from 'react-native';
 function getPrimaryMuscleLabel(primaryMuscles: Exercise['primaryMuscles']) {
   try {
     const parsed = JSON.parse(primaryMuscles) as string[];
+
     return parsed[0] ?? 'Unspecified';
   } catch {
     return 'Unspecified';

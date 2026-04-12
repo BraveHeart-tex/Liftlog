@@ -63,10 +63,12 @@ function formatCompletedSets(sets: Set[]) {
 
       if (hasSameWeightAsPrevious) {
         parts.push(String(set.reps));
+
         return parts;
       }
 
       parts.push(`${formatWeight(set.weightKg)} x ${set.reps}`);
+
       return parts;
     }, [])
     .join(', ');

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
+
 type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
 export type ButtonProps = {

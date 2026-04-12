@@ -27,9 +27,11 @@ const DrizzleContext = createContext<DrizzleDb | null>(null);
 
 export function useDrizzle() {
   const context = useContext(DrizzleContext);
+
   if (!context) {
     throw new Error('useDrizzle must be used within a DrizzleProvider');
   }
+
   return context;
 }
 
@@ -52,6 +54,7 @@ async function migrateAsync(db: SQLiteDatabase) {
     await migrate(drizzleDb, migrations);
   } catch (error) {
     console.error('Database migration failed', error);
+
     throw error;
   }
 
@@ -59,6 +62,7 @@ async function migrateAsync(db: SQLiteDatabase) {
     runSeedIfNeeded(drizzleDb);
   } catch (error) {
     console.error('Database seed failed', error);
+
     throw error;
   }
 }

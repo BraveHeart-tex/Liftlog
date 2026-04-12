@@ -39,6 +39,7 @@ export function SetForm({
     if (editingSet) {
       setWeightValue(formatInputNumber(editingSet.weightKg));
       setRepsValue(String(editingSet.reps));
+
       return;
     }
 
@@ -248,6 +249,7 @@ export function SetForm({
                   setId: editingSet.id,
                   ...data
                 });
+
                 return;
               }
 

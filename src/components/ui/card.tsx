@@ -3,6 +3,7 @@ import { Text, View } from 'react-native';
 import { cn } from '@/src/lib/utils/cn';
 
 type TextChild = string | number | ReactElement<unknown, typeof Text>;
+
 type TextChildren = TextChild | TextChild[];
 
 type CardProps<TChildren = ReactNode> = {

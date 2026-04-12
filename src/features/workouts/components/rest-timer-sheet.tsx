@@ -148,6 +148,7 @@ export function RestTimerSheet({
   useEffect(() => {
     const id = setInterval(() => {
       const remaining = getSecondsRemaining();
+
       setSecondsRemaining(remaining);
 
       if (timerRef.isRunning && remaining <= 0) {
@@ -205,6 +206,7 @@ export function RestTimerSheet({
 
   useEffect(() => {
     const didOpen = isOpen && !wasOpenRef.current;
+
     wasOpenRef.current = isOpen;
 
     if (!didOpen) {
@@ -227,6 +229,7 @@ export function RestTimerSheet({
   const handleInputChange = (value: string) => {
     if (value.trim().length === 0) {
       setInputValue(0);
+
       return;
     }
 
@@ -234,6 +237,7 @@ export function RestTimerSheet({
 
     if (digits.length === 0) {
       setInputValue(0);
+
       return;
     }
 
@@ -241,6 +245,7 @@ export function RestTimerSheet({
 
     if (!Number.isFinite(parsed) || parsed <= 0) {
       setInputValue(0);
+
       return;
     }
 
@@ -250,6 +255,7 @@ export function RestTimerSheet({
   const handleInputBlur = () => {
     if (!Number.isFinite(inputValue) || inputValue <= 0) {
       setPausedInputValue(DEFAULT_DURATION_SECONDS);
+
       return;
     }
 
