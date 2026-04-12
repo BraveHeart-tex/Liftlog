@@ -1,6 +1,7 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
+import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { type Exercise } from '@/src/db/schema';
@@ -100,7 +101,11 @@ export default function ActiveWorkoutExerciseScreen() {
   };
 
   if (workoutExerciseId && (!workoutExerciseUpdatedAt || !setsUpdatedAt)) {
-    return <Screen withPadding={false}>{null}</Screen>;
+    return (
+      <Screen withPadding={false}>
+        <LoadingState label="Loading exercise..." />
+      </Screen>
+    );
   }
 
   if (!item) {

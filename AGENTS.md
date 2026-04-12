@@ -241,6 +241,10 @@ Prefer simple reusable primitives:
 
 Do NOT create deep abstraction layers early.
 
+Prefer one component per file when practical. If a component grows beyond a tiny private helper, move it into its own file near the feature or UI primitive it belongs to.
+
+Do not keep generic utility functions inside component files. If a helper is reusable outside that component or not tightly coupled to its render logic, move it under `src/lib/utils`.
+
 ---
 
 ## Example Patterns
