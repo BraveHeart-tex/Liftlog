@@ -42,42 +42,44 @@ export default function ExercisesScreen() {
 
   return (
     <Screen withPadding={false}>
+      <View className="px-4 pt-6">
+        <View className="flex-row items-center justify-between gap-4">
+          <View className="flex-1">
+            <Text variant="h1">Exercises</Text>
+            <Text variant="small" tone="muted" className="mt-2">
+              Browse and search your exercise library
+            </Text>
+          </View>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onPress={() => setIsCreateSheetOpen(true)}
+          >
+            Add
+          </Button>
+        </View>
+
+        <Input
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search exercises"
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="search"
+          className="mt-4 mb-2"
+        />
+      </View>
+
       <StyledFlatList
         data={filteredExercises}
         keyExtractor={item => item.id}
         className="flex-1"
-        contentContainerClassName="px-4 py-6"
+        contentContainerClassName="px-4 pb-6"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View>
-            <View className="flex-row items-center justify-between gap-4">
-              <View className="flex-1">
-                <Text variant="h1">Exercises</Text>
-                <Text variant="small" tone="muted" className="mt-2">
-                  Browse and search your exercise library
-                </Text>
-              </View>
-
-              <Button
-                variant="secondary"
-                size="sm"
-                onPress={() => setIsCreateSheetOpen(true)}
-              >
-                Add
-              </Button>
-            </View>
-
-            <Input
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Search exercises"
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="search"
-              className="mt-4"
-            />
-
             <StyledScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -109,7 +111,7 @@ export default function ExercisesScreen() {
               })}
             </StyledScrollView>
 
-            <View className="mt-6">
+            <View className="mt-4">
               {filteredExercises.length > 0 && (
                 <Text variant="caption" tone="muted">
                   {filteredExercises.length} exercises
