@@ -1,5 +1,6 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import { Card, CardContent } from '@/src/components/ui/card';
+import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { type Exercise, type Set } from '@/src/db/schema';
@@ -114,7 +115,11 @@ export default function ExerciseDetailScreen() {
   );
 
   if (exerciseId && !exerciseUpdatedAt) {
-    return <Screen withPadding={false}>{null}</Screen>;
+    return (
+      <Screen withPadding={false}>
+        <LoadingState label="Loading exercise..." />
+      </Screen>
+    );
   }
 
   if (!exercise) {

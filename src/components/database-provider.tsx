@@ -1,4 +1,5 @@
 import { DatabaseErrorBoundary } from '@/src/components/database-error-boundary';
+import { LoadingState } from '@/src/components/ui/loading-state';
 import {
   configureDatabase,
   createDrizzleDb,
@@ -17,7 +18,6 @@ import {
   useContext,
   useMemo
 } from 'react';
-import { Text, View } from 'react-native';
 
 const DrizzleContext = createContext<DrizzleDb | null>(null);
 
@@ -64,11 +64,10 @@ export function DatabaseProvider({ children }: PropsWithChildren) {
     <DatabaseErrorBoundary>
       <Suspense
         fallback={
-          <View className="bg-background flex-1 items-center justify-center">
-            <Text className="text-small text-muted-foreground">
-              Initializing database...
-            </Text>
-          </View>
+          <LoadingState
+            label="Initializing database..."
+            className="bg-background"
+          />
         }
       >
         <SQLiteProvider
