@@ -69,7 +69,7 @@ export function RestTimerSheet({
   );
   const [inputValue, setInputValue] = useState(timerRef.durationSeconds);
   const wasOpenRef = useRef(false);
-  const hasFiredHaptics = useRef(timerRef.hasCompleted);
+  const statusRef = useRef(status);
   const player = useAudioPlayer(
     require('@/src/assets/sounds/rest-complete.mp3'),
     {
@@ -94,7 +94,6 @@ export function RestTimerSheet({
     timerRef.pausedRemaining = null;
     timerRef.isRunning = true;
     timerRef.hasCompleted = false;
-    hasFiredHaptics.current = false;
 
     setSecondsRemaining(totalSeconds);
     setStatus('running');
@@ -143,13 +142,19 @@ export function RestTimerSheet({
   }, []);
 
   useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
+  useEffect(() => {
     const id = setInterval(() => {
       const remaining = getSecondsRemaining();
       setSecondsRemaining(remaining);
 
       if (timerRef.isRunning && remaining <= 0) {
+        const shouldPlayCompletionFeedback = !timerRef.hasCompleted;
+
         timerRef.isRunning = false;
-        timerRef.hasCompleted = false;
+        timerRef.hasCompleted = true;
         timerRef.endTime = null;
         timerRef.pausedRemaining = null;
 
@@ -159,10 +164,24 @@ export function RestTimerSheet({
         setActiveDuration(previousDuration);
         setInputValue(previousDuration);
         setStatus('idle');
+        statusRef.current = 'idle';
 
-        if (!hasFiredHaptics.current) {
-          hasFiredHaptics.current = true;
+        if (shouldPlayCompletionFeedback) {
           playCompletionFeedback();
+        }
+
+        return;
+      }
+
+      const nextStatus = deriveStatus();
+
+      if (nextStatus !== statusRef.current) {
+        statusRef.current = nextStatus;
+        setStatus(nextStatus);
+
+        if (nextStatus === 'idle') {
+          setActiveDuration(timerRef.durationSeconds);
+          setInputValue(timerRef.durationSeconds);
         }
       }
     }, 500);
@@ -172,7 +191,7 @@ export function RestTimerSheet({
 
   useEffect(() => {
     if (durationSeconds && durationSeconds !== timerRef.durationSeconds) {
-      if (!timerRef.isRunning) {
+      if (!timerRef.isRunning && timerRef.pausedRemaining === null) {
         timerRef.durationSeconds = durationSeconds;
         timerRef.pausedRemaining = null;
         timerRef.hasCompleted = false;
@@ -305,7 +324,6 @@ export function RestTimerSheet({
     timerRef.pausedRemaining = null;
     timerRef.isRunning = true;
     timerRef.hasCompleted = false;
-    hasFiredHaptics.current = false;
 
     setInputValue(resumeSeconds);
     setSecondsRemaining(resumeSeconds);
