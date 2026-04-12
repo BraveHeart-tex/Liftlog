@@ -2,7 +2,8 @@ import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { cn } from '@/src/lib/utils/cn';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
-import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
+import { SafeAreaView } from './safe-area-view';
+import type { Edge } from 'react-native-safe-area-context';
 
 type ScreenProps = {
   children: ReactNode;
