@@ -135,7 +135,10 @@ export function BottomSheetContent({
   className
 }: BottomSheetSectionProps) {
   return (
-    <ScrollView contentContainerClassName={cn('px-4 pb-8', className)}>
+    <ScrollView
+      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
+      contentContainerClassName={className}
+    >
       {children}
     </ScrollView>
   );

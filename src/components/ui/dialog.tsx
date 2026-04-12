@@ -152,7 +152,8 @@ export function DialogContent({ children, className }: DialogSectionProps) {
   return (
     <ScrollView
       className="shrink"
-      contentContainerClassName={cn('px-4 pb-2', className)}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 8 }}
+      contentContainerClassName={className}
       showsVerticalScrollIndicator={false}
     >
       {children}

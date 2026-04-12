@@ -1,6 +1,6 @@
 import { cn } from '@/src/lib/utils/cn';
 import type { ReactNode } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, type StyleProp, View, type ViewStyle } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
 type ScreenProps = {
@@ -14,7 +14,16 @@ type ScreenProps = {
   keyboardShouldPersistTaps?: 'always' | 'never' | 'handled';
 };
 
-const SCREEN_PADDING_CLASS_NAME = 'px-4 py-6';
+const SCREEN_CONTENT_PADDING_STYLE = {
+  paddingHorizontal: 16,
+  paddingVertical: 24
+} satisfies ViewStyle;
+
+const SCREEN_FOOTER_CONTENT_PADDING_STYLE = {
+  paddingHorizontal: 16,
+  paddingTop: 24,
+  paddingBottom: 16
+} satisfies ViewStyle;
 
 export function Screen({
   children,
@@ -27,17 +36,24 @@ export function Screen({
   keyboardShouldPersistTaps = 'handled'
 }: ScreenProps) {
   const sharedContentClassName = cn(
-    withPadding && SCREEN_PADDING_CLASS_NAME,
+    !scroll && withPadding && 'px-4 py-6',
     contentClassName
   );
+  const scrollContentStyle: StyleProp<ViewStyle> = [
+    { flexGrow: 1 },
+    withPadding &&
+      (footer
+        ? SCREEN_FOOTER_CONTENT_PADDING_STYLE
+        : SCREEN_CONTENT_PADDING_STYLE)
+  ];
 
   const content = !scroll ? (
     <View className={cn('flex-1', sharedContentClassName)}>{children}</View>
   ) : footer ? (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ flexGrow: 1 }}
-      contentContainerClassName={cn(sharedContentClassName, 'pb-4')}
+      contentContainerStyle={scrollContentStyle}
+      contentContainerClassName={sharedContentClassName}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps}
     >
       {children}
@@ -45,7 +61,7 @@ export function Screen({
   ) : (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ flexGrow: 1 }}
+      contentContainerStyle={scrollContentStyle}
       contentContainerClassName={sharedContentClassName}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps}
     >
