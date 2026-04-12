@@ -10,17 +10,10 @@ import {
   getExerciseHistorySetsQuery,
   getExerciseHistoryWorkoutsQuery
 } from '@/src/features/progress/repository';
+import { getRouteParamId } from '@/src/lib/utils/route';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
-
-function getRouteParamId(value: string | string[] | undefined) {
-  if (Array.isArray(value)) {
-    return value[0];
-  }
-
-  return value;
-}
 
 function parseMuscleList(value: Exercise['primaryMuscles']): string[] {
   try {
@@ -95,13 +88,15 @@ function formatWorkoutDate(timestamp: number) {
 }
 
 export default function ExerciseDetailScreen() {
-  const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const db = useDrizzle();
 
+  const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const exerciseId = getRouteParamId(id);
+
   const { data: exerciseRows = [], updatedAt: exerciseUpdatedAt } =
     useLiveQuery(getExerciseByIdQuery(db, exerciseId ?? ''), [db, exerciseId]);
   const exercise = exerciseRows[0];
+
   const { data: workoutRows = [] } = useLiveQuery(
     getExerciseHistoryWorkoutsQuery(db, exerciseId ?? ''),
     [db, exerciseId]

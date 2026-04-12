@@ -16,36 +16,31 @@ import {
   getWorkoutExerciseByIdQuery
 } from '@/src/features/workouts/repository';
 import { cn } from '@/src/lib/utils/cn';
+import { getRouteParamId } from '@/src/lib/utils/route';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronLeftIcon } from 'lucide-react-native';
 import { useMemo, useRef, useState } from 'react';
 import {
   Pressable,
-  type ScrollView,
   useWindowDimensions,
   View,
   type NativeScrollEvent,
-  type NativeSyntheticEvent
+  type NativeSyntheticEvent,
+  type ScrollView
 } from 'react-native';
 
 type ExerciseDetailTab = 'track' | 'history';
 
 const tabs: ExerciseDetailTab[] = ['track', 'history'];
 
-function getRouteParamId(value: string | string[] | undefined) {
-  if (Array.isArray(value)) {
-    return value[0];
-  }
-
-  return value;
-}
-
 export default function ActiveWorkoutExerciseScreen() {
-  const localParams = useLocalSearchParams();
-
   const db = useDrizzle();
-  const workoutExerciseId = getRouteParamId(localParams.workoutExerciseId);
+
+  const { workoutExerciseId: rawId } = useLocalSearchParams<{
+    workoutExerciseId: string | string[];
+  }>();
+  const workoutExerciseId = getRouteParamId(rawId);
 
   const [selectedTab, setSelectedTab] = useState<ExerciseDetailTab>('track');
   const [isRestTimerOpen, setIsRestTimerOpen] = useState(false);
