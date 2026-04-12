@@ -1,7 +1,7 @@
 import { Text } from '@/src/components/ui/text';
+import { StyledActivityIndicator } from '@/src/components/styled/activity-indicator';
 import { cn } from '@/src/lib/utils/cn';
-import { colors } from '@/src/theme/tokens';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 
 type LoadingStateProps = {
   label?: string;
@@ -20,7 +20,7 @@ export function LoadingState({
       accessibilityRole="progressbar"
       className={cn('flex-1 items-center justify-center px-6 py-10', className)}
     >
-      <ActivityIndicator color={colors.primary} size={size} />
+      <StyledActivityIndicator className="text-primary" size={size} />
       {label ? (
         <Text variant="small" tone="muted" className="mt-3 text-center">
           {label}

@@ -1,4 +1,5 @@
 import { useDrizzle } from '@/src/components/database-provider';
+import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
@@ -17,7 +18,7 @@ import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router } from 'expo-router';
 import { PlusIcon } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 
 type ActiveWorkoutContentProps = {
   activeWorkout: Workout;
@@ -116,13 +117,9 @@ export function ActiveWorkoutContent({
         </Text>
       </View>
 
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{
-          flexGrow: 1,
-          paddingHorizontal: 16,
-          paddingBottom: 24
-        }}
+      <StyledScrollView
+        className="flex-1"
+        contentContainerClassName="flex-grow px-4 pb-6"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -138,7 +135,7 @@ export function ActiveWorkoutContent({
             onAddExercise={() => setIsExercisePickerOpen(true)}
           />
         )}
-      </ScrollView>
+      </StyledScrollView>
 
       <View className="border-border bg-background border-t px-4 py-4">
         <Button

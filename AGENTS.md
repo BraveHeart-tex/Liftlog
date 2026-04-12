@@ -46,10 +46,13 @@ The app is a progressive overload workout tracker focused on:
 - Use the shared `cn` helper from `@/src/lib/utils/cn` for conditional or composed class names
 - Do NOT create local `joinClassNames`/`cn` helpers inside components; keep class merging centralized through the shared utility
 - Do NOT use inline styles for core RN components unless debugging or using a native API that requires raw values
-- **EXCEPTION: Always use inline `style` prop for layout-critical properties on external/third-party components** (e.g. `SafeAreaView` from `react-native-safe-area-context`, `ScrollView` when flex behaviour is load-bearing)
+- For third-party components with multiple style props, use the colocated styled wrappers in `@/src/components/styled` instead of direct imports. These wrappers map `className`, `contentContainerClassName`, etc. to the underlying style props.
+- If a third-party component needs a new style-prop mapping, add or update a wrapper in `src/components/styled`. Keep the mapping colocated with the wrapper, not in a global entry point.
+- This project currently uses `nativewind@5.0.0-preview.3`, where `remapProps`/`cssInterop` are not exported. Use `styled(...)` mappings from `nativewind` for wrapper components, matching the existing wrapper pattern.
+- **EXCEPTION: Use inline `style` prop for layout-critical properties on external/third-party components only when no styled wrapper exists** (e.g. `SafeAreaView` from `react-native-safe-area-context`, provider root views, animated transforms)
 - **EXCEPTION: Use raw values from `@/src/theme/tokens` for native/third-party props that cannot consume NativeWind classes** (e.g. React Navigation tab options, `TextInput` placeholder/selection colors, bottom-sheet backdrop styles, animated transforms)
 
-Why: NativeWind processes classNames asynchronously. On external components this means styles may not be applied on the first layout pass, causing broken layouts. Inline `style` is synchronous and guaranteed.
+Why: NativeWind className support is safest when third-party components expose all style props through a wrapper. Some native props cannot consume class strings cleanly; use theme tokens for those cases instead of forcing a complex wrapper.
 
 Allowed for core RN components:
 
@@ -57,11 +60,21 @@ Allowed for core RN components:
 <View className="bg-card border-border rounded-lg border p-4" />
 ```
 
-Required for external components with layout-critical flex:
+Required for wrapped scroll/list components:
 
 ```tsx
-<SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top"]}>
-<ScrollView style={{ flex: 1 }} contentContainerClassName="px-4 py-6">
+<StyledScrollView
+  className="flex-1"
+  contentContainerClassName="flex-grow px-4 py-6"
+/>
+```
+
+Required for unwrapped external components with layout-critical flex:
+
+```tsx
+<SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
+  {children}
+</SafeAreaView>
 ```
 
 Avoid:
@@ -131,10 +144,10 @@ Use semantic tokens only. For className styling, prefer tokens defined in `globa
 
 Prefer the shared `Screen` primitive from `@/src/components/ui/screen` for standard screens. It already handles `SafeAreaView`, optional vertical scrolling, padding, keyboard taps, and sticky footer layout.
 
-Use inline style for flex, className for theming:
+Use inline style for `SafeAreaView` flex, className for theming:
 
 ```tsx
-<SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top"]}>
+<SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
 ```
 
 ---
@@ -142,51 +155,60 @@ Use inline style for flex, className for theming:
 ### 2. Use ScrollView for vertical content
 
 If content can exceed screen height → ALWAYS use ScrollView.
-Always set `style={{ flex: 1 }}` via inline style, not className:
+Use the styled wrapper for scrollable layouts:
 
 ```tsx
-<ScrollView style={{ flex: 1 }} contentContainerClassName="px-4 py-6">
+<StyledScrollView
+  className="flex-1"
+  contentContainerClassName="flex-grow px-4 py-6"
+/>
 ```
 
 NEVER rely on View for scrollable layouts.
 
-For long or dynamic data lists, use `FlatList` or `SectionList` instead of mapping inside a `ScrollView`. If the list must fill available space, use inline `style={{ flex: 1 }}` on the list rather than `className="flex-1"`.
+For long or dynamic data lists, use `StyledFlatList`, `StyledBottomSheetFlatList`, or another appropriate list wrapper instead of mapping inside a `ScrollView`.
 
 ---
 
-### 3. ScrollView flex must use inline style
+### 3. Third-party style prop wrappers
 
-NativeWind's `flex-1` className on `ScrollView` is unreliable — the style is applied after the first layout pass, so the ScrollView collapses to zero height and hides content.
+Components with two or more style props must use a styled wrapper. Do not import those components directly at call sites.
 
 Bad:
 
 ```tsx
-<ScrollView className="flex-1">
+import { ScrollView } from 'react-native';
+
+<ScrollView
+  style={{ flex: 1 }}
+  contentContainerStyle={{ paddingHorizontal: 16 }}
+/>;
 ```
 
 Good:
 
 ```tsx
-<ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
+import { StyledScrollView } from '@/src/components/styled/scroll-view';
+
+<StyledScrollView className="flex-1" contentContainerClassName="px-4" />;
 ```
 
-This applies any time a `ScrollView` needs to fill available space, especially when used alongside a sticky footer. Apply the same rule to `FlatList` and `SectionList` when their fill behavior is layout-critical.
+Existing wrappers include `StyledScrollView`, `StyledFlatList`, `StyledBottomSheetFlatList`, `StyledBottomSheetBackdrop`, `StyledTextInput`, and `StyledActivityIndicator`.
 
 ---
 
 ### 4. Sticky footer layout pattern
 
-When a screen has a footer (e.g. a CTA button), the ScrollView must use inline flex styles or content will be hidden:
+When a screen has a footer (e.g. a CTA button), use a styled scroll wrapper with a growing content container:
 
 ```tsx
 <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
-  <ScrollView
-    style={{ flex: 1 }}
-    contentContainerStyle={{ flexGrow: 1 }}
-    contentContainerClassName="px-4 py-6 pb-4"
+  <StyledScrollView
+    className="flex-1"
+    contentContainerClassName="flex-grow px-4 pt-6 pb-4"
   >
     {children}
-  </ScrollView>
+  </StyledScrollView>
   <View className="border-border bg-background border-t px-4 py-4">
     {footer}
   </View>
@@ -328,7 +350,7 @@ Leads to content being hidden off-screen
 
 ### NativeWind className on external components for layout
 
-`flex-1` via className on `ScrollView`, `FlatList`, `SectionList`, or `SafeAreaView` (from `react-native-safe-area-context`) is applied asynchronously and may be missing on the first layout pass. This can cause the component to collapse to zero height, hiding all content. Always use `style={{ flex: 1 }}` inline for layout-critical fill behavior on these components.
+Do not use direct imports of third-party components with multiple style props and then pass raw style objects. Use the wrappers in `src/components/styled` so `className`, `contentContainerClassName`, and related props are mapped consistently. For external components without wrappers, keep layout-critical inline style when needed.
 
 ### Using line-height globally
 
@@ -379,8 +401,9 @@ The agent MUST:
 4. Use SafeAreaView at root, preferably through the shared Screen primitive
 5. Keep components simple
 6. Avoid unnecessary libraries
-7. Avoid inline styles for core RN components **except** for layout-critical flex on external components or native APIs that require raw values from `@/src/theme/tokens`
-8. Avoid web-only assumptions
+7. Use styled wrappers from `@/src/components/styled` for third-party components with multiple style props
+8. Avoid inline styles for core RN components **except** for animated values, unwrapped external layout-critical flex, or native APIs that require raw values from `@/src/theme/tokens`
+9. Avoid web-only assumptions
 
 ---
 

@@ -1,3 +1,4 @@
+import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { Text } from '@/src/components/ui/text';
 import type { DrizzleDb } from '@/src/db/client';
 import type { Set } from '@/src/db/schema';
@@ -7,7 +8,7 @@ import {
   updateSet
 } from '@/src/features/workouts/repository';
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { SetEntryRow } from './set-entry-row';
 import { SetForm } from './set-form';
 import type { SetValues, WorkoutExerciseWithSets } from './types';
@@ -55,9 +56,9 @@ export function ExerciseTrackTab({ db, item }: ExerciseTrackTabProps) {
   };
 
   return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
+    <StyledScrollView
+      className="flex-1"
+      contentContainerClassName="px-4 pb-8"
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
     >
@@ -95,6 +96,6 @@ export function ExerciseTrackTab({ db, item }: ExerciseTrackTabProps) {
           </Text>
         )}
       </View>
-    </ScrollView>
+    </StyledScrollView>
   );
 }
