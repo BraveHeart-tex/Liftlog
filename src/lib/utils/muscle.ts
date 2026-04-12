@@ -22,3 +22,15 @@ export function formatMuscleList(muscles: string[]) {
 
   return muscles.map(toTitleCase).join(', ');
 }
+
+export function getPrimaryMuscleLabel(
+  primaryMuscles: Exercise['primaryMuscles']
+) {
+  try {
+    const parsed = JSON.parse(primaryMuscles) as string[];
+
+    return parsed[0] ?? 'Unspecified';
+  } catch {
+    return 'Unspecified';
+  }
+}

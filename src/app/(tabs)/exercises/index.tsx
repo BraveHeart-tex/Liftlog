@@ -4,7 +4,6 @@ import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import type { Exercise } from '@/src/db/schema';
 import { CreateExerciseSheet } from '@/src/features/exercises/components/create-exercise-sheet';
 import {
   CATEGORY_FILTERS,
@@ -12,20 +11,11 @@ import {
 } from '@/src/features/exercises/constants';
 import { useExercises } from '@/src/features/exercises/hooks';
 import { cn } from '@/src/lib/utils/cn';
+import { getPrimaryMuscleLabel } from '@/src/lib/utils/muscle';
 import { toTitleCase } from '@/src/lib/utils/string';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
-
-function getPrimaryMuscleLabel(primaryMuscles: Exercise['primaryMuscles']) {
-  try {
-    const parsed = JSON.parse(primaryMuscles) as string[];
-
-    return parsed[0] ?? 'Unspecified';
-  } catch {
-    return 'Unspecified';
-  }
-}
 
 export default function ExercisesScreen() {
   const [query, setQuery] = useState('');
