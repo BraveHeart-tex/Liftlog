@@ -5,15 +5,19 @@ import {
   createDrizzleDb,
   databaseName,
   databaseOptions,
-  DrizzleDb
+  type DrizzleDb
 } from '@/src/db/client';
 import migrations from '@/src/db/migrations/migrations';
 import { runSeedIfNeeded } from '@/src/db/seed';
 import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
-import { SQLiteDatabase, SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
+import {
+  type SQLiteDatabase,
+  SQLiteProvider,
+  useSQLiteContext
+} from 'expo-sqlite';
 import {
   createContext,
-  PropsWithChildren,
+  type PropsWithChildren,
   Suspense,
   useContext,
   useMemo

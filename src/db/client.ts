@@ -1,5 +1,5 @@
-import { drizzle, ExpoSQLiteDatabase } from 'drizzle-orm/expo-sqlite';
-import { SQLiteDatabase, SQLiteOpenOptions } from 'expo-sqlite';
+import { drizzle, type ExpoSQLiteDatabase } from 'drizzle-orm/expo-sqlite';
+import type { SQLiteDatabase, SQLiteOpenOptions } from 'expo-sqlite';
 import * as schema from './schema';
 
 export { schema };

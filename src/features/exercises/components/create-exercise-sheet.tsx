@@ -9,7 +9,7 @@ import {
 import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
-import { type Exercise, type NewExercise } from '@/src/db/schema';
+import type { Exercise, NewExercise } from '@/src/db/schema';
 import {
   CATEGORY_FILTERS,
   MUSCLE_GROUP,

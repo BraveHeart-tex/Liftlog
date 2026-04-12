@@ -5,7 +5,7 @@ import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import { type Exercise } from '@/src/db/schema';
+import type { Exercise } from '@/src/db/schema';
 import { getExercisesQuery } from '@/src/features/exercises/repository';
 import { ExerciseHistoryTab } from '@/src/features/workouts/components/exercise-history-tab';
 import { ExerciseTrackTab } from '@/src/features/workouts/components/exercise-track-tab';
