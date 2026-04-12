@@ -115,7 +115,7 @@ export function ActiveWorkoutContent({
     timerIndicatorTick >= 0;
 
   return (
-    <Screen withPadding={false} edges={['top', 'bottom']}>
+    <Screen withPadding={false}>
       <View className="flex-row items-center justify-between gap-4 px-4 pt-4 pb-2">
         <Text variant="h2" className="flex-1">
           {activeWorkout.name}
