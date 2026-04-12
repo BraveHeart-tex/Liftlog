@@ -17,17 +17,17 @@ import { XIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Text as NativeText, TextInput, View } from 'react-native';
 
+const MIN_DURATION_SECONDS = 10;
+const MAX_DURATION_SECONDS = 3600;
+const DEFAULT_DURATION_SECONDS = 30;
+
 export const timerRef = {
   endTime: null as number | null,
   pausedRemaining: null as number | null,
-  durationSeconds: 90,
+  durationSeconds: DEFAULT_DURATION_SECONDS,
   hasCompleted: false,
   isRunning: false
 };
-
-const MIN_DURATION_SECONDS = 10;
-const MAX_DURATION_SECONDS = 3600;
-const DEFAULT_DURATION_SECONDS = 90;
 
 type RestTimerSheetProps = {
   isOpen: boolean;
