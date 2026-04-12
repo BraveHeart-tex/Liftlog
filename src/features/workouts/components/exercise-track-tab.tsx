@@ -1,5 +1,4 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
-import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import type { DrizzleDb } from '@/src/db/client';
 import type { Set } from '@/src/db/schema';
@@ -8,11 +7,8 @@ import {
   deleteSet,
   updateSet
 } from '@/src/features/workouts/repository';
-import { formatTime } from '@/src/lib/utils/format-time';
-import { TimerIcon } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
-import { Pressable, View } from 'react-native';
-import { timerRef } from './rest-timer-sheet';
+import { useState } from 'react';
+import { View } from 'react-native';
 import { SetEntryRow } from './set-entry-row';
 import { SetForm } from './set-form';
 import type { SetValues, WorkoutExerciseWithSets } from './types';
@@ -20,28 +16,11 @@ import type { SetValues, WorkoutExerciseWithSets } from './types';
 type ExerciseTrackTabProps = {
   db: DrizzleDb;
   item: WorkoutExerciseWithSets;
-  onOpenRestTimer: () => void;
 };
 
-export function ExerciseTrackTab({
-  db,
-  item,
-  onOpenRestTimer
-}: ExerciseTrackTabProps) {
+export function ExerciseTrackTab({ db, item }: ExerciseTrackTabProps) {
   const [editingSetId, setEditingSetId] = useState<Set['id'] | null>(null);
-  const [timerTriggerLabel, setTimerTriggerLabel] =
-    useState(getTimerTriggerLabel);
   const editingSet = item.sets.find(set => set.id === editingSetId);
-
-  useEffect(() => {
-    setTimerTriggerLabel(getTimerTriggerLabel());
-
-    const intervalId = setInterval(() => {
-      setTimerTriggerLabel(getTimerTriggerLabel());
-    }, 1000);
-
-    return () => clearInterval(intervalId);
-  }, []);
 
   const handleAddSet = ({ weightKg, reps }: SetValues) => {
     createSet(db, {
@@ -91,16 +70,6 @@ export function ExerciseTrackTab({
         onDeleteSet={handleDeleteSet}
       />
 
-      <Pressable
-        className="mt-3 flex-row items-center gap-2 self-start"
-        onPress={onOpenRestTimer}
-      >
-        <Icon icon={TimerIcon} size={14} className="text-muted-foreground" />
-        <Text variant="small" tone="muted">
-          {timerTriggerLabel}
-        </Text>
-      </Pressable>
-
       <View className="mt-4">
         <Text variant="caption" tone="muted">
           Sets
@@ -129,21 +98,4 @@ export function ExerciseTrackTab({
       </View>
     </StyledScrollView>
   );
-}
-
-function getTimerTriggerLabel(): string {
-  if (!timerRef.isRunning) {
-    return 'Rest timer';
-  }
-
-  const remaining = Math.max(
-    0,
-    Math.ceil(((timerRef.endTime ?? Date.now()) - Date.now()) / 1000)
-  );
-
-  if (remaining <= 0) {
-    return 'Rest complete';
-  }
-
-  return `Rest · ${formatTime(remaining)}`;
 }
