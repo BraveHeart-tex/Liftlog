@@ -95,8 +95,10 @@ export default function ExerciseDetailScreen() {
               className="text-foreground"
             />
           </Pressable>
-          <View>
-            <Text variant="h1">{exercise.name}</Text>
+          <View className="flex-1">
+            <Text variant="h1" numberOfLines={2} ellipsizeMode="tail">
+              {exercise.name}
+            </Text>
             <Text variant="small" tone="muted">
               {toTitleCase(exercise.category)}
             </Text>
