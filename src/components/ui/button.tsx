@@ -39,7 +39,7 @@ const variantClassNames: Record<ButtonVariant, string> = {
   primary: 'bg-primary',
   secondary: 'border border-border bg-card',
   ghost: 'bg-transparent',
-  destructive: 'bg-danger'
+  destructive: 'bg-danger border-danger'
 };
 
 const textClassNames: Record<ButtonVariant, string> = {
