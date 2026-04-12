@@ -1,5 +1,7 @@
-import { StyledBottomSheetBackdrop } from '@/src/components/styled/bottom-sheet';
-import { StyledScrollView } from '@/src/components/styled/scroll-view';
+import {
+  StyledBottomSheetBackdrop,
+  StyledBottomSheetScrollView
+} from '@/src/components/styled/bottom-sheet';
 import { cn } from '@/src/lib/utils/cn';
 import GorhomBottomSheet, {
   type BottomSheetBackdropProps,
@@ -20,6 +22,7 @@ type BottomSheetComponentProps = {
   isOpen: boolean;
   onClose: () => void;
   snapPoints?: string[];
+  enablePanDownToClose?: boolean;
   children: ReactNode;
   className?: string;
 };
@@ -56,6 +59,7 @@ export function BottomSheet({
   isOpen,
   onClose,
   snapPoints = DEFAULT_SNAP_POINTS,
+  enablePanDownToClose = true,
   children,
   className
 }: BottomSheetComponentProps) {
@@ -93,13 +97,13 @@ export function BottomSheet({
       backdropComponent={renderBackdrop}
       backgroundComponent={SheetBackground}
       enableDynamicSizing={false}
-      enablePanDownToClose
+      enablePanDownToClose={enablePanDownToClose}
       handleComponent={SheetHandle}
       index={-1}
       onClose={onClose}
       snapPoints={resolvedSnapPoints}
     >
-      <View className={className}>{children}</View>
+      <View className={cn('flex-1', className)}>{children}</View>
     </GorhomBottomSheet>
   );
 }
@@ -136,8 +140,11 @@ export function BottomSheetContent({
   className
 }: BottomSheetSectionProps) {
   return (
-    <StyledScrollView contentContainerClassName={cn('px-4 pb-8', className)}>
+    <StyledBottomSheetScrollView
+      contentContainerClassName={cn('px-4', className)}
+      showsVerticalScrollIndicator={false}
+    >
       {children}
-    </StyledScrollView>
+    </StyledBottomSheetScrollView>
   );
 }

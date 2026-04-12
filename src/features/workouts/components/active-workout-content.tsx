@@ -10,13 +10,17 @@ import { ActiveWorkoutExerciseList } from '@/src/features/workouts/components/ac
 import { EmptyExerciseState } from '@/src/features/workouts/components/empty-exercise-state';
 import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise-picker-sheet';
 import {
+  RestTimerSheet,
+  timerRef
+} from '@/src/features/workouts/components/rest-timer-sheet';
+import {
   completeWorkout,
   createWorkoutExercise,
   getWorkoutExercisesQuery
 } from '@/src/features/workouts/repository';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router } from 'expo-router';
-import { PlusIcon } from 'lucide-react-native';
+import { PlusIcon, TimerIcon } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
@@ -42,6 +46,8 @@ export function ActiveWorkoutContent({
   const db = useDrizzle();
   const [now, setNow] = useState(() => Date.now());
   const [isExercisePickerOpen, setIsExercisePickerOpen] = useState(false);
+  const [isRestTimerOpen, setIsRestTimerOpen] = useState(false);
+  const [timerIndicatorTick, setTimerIndicatorTick] = useState(0);
 
   const {
     data: workoutExerciseRows = [],
@@ -73,6 +79,16 @@ export function ActiveWorkoutContent({
     };
   }, [activeWorkout]);
 
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setTimerIndicatorTick(tick => tick + 1);
+    }, 5000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []);
+
   const handleFinishWorkout = () => {
     completeWorkout(db, activeWorkout.id);
     router.replace('/(tabs)/workout');
@@ -92,12 +108,29 @@ export function ActiveWorkoutContent({
     setIsExercisePickerOpen(false);
   };
 
+  const isRestTimerRunning =
+    timerRef.isRunning &&
+    timerRef.endTime !== null &&
+    timerRef.endTime > Date.now() &&
+    timerIndicatorTick >= 0;
+
   return (
     <Screen withPadding={false} edges={['top', 'bottom']}>
       <View className="flex-row items-center justify-between gap-4 px-4 pt-4 pb-2">
         <Text variant="h2" className="flex-1">
           {activeWorkout.name}
         </Text>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onPress={() => setIsRestTimerOpen(true)}
+        >
+          <Icon icon={TimerIcon} size={20} className="text-foreground" />
+          {isRestTimerRunning ? (
+            <View className="bg-primary absolute top-0 right-0 h-2 w-2 rounded-full" />
+          ) : null}
+        </Button>
 
         <Button
           variant="secondary"
@@ -156,6 +189,13 @@ export function ActiveWorkoutContent({
         exercises={exerciseRows}
         onClose={() => setIsExercisePickerOpen(false)}
         onSelectExercise={handleSelectExercise}
+      />
+
+      <RestTimerSheet
+        isOpen={isRestTimerOpen}
+        onClose={() => setIsRestTimerOpen(false)}
+        // TODO: read durationSeconds from user settings (phase 6.1)
+        durationSeconds={90}
       />
     </Screen>
   );

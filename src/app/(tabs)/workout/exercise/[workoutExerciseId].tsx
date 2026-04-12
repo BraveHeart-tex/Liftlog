@@ -9,6 +9,7 @@ import { type Exercise } from '@/src/db/schema';
 import { getExercisesQuery } from '@/src/features/exercises/repository';
 import { ExerciseHistoryTab } from '@/src/features/workouts/components/exercise-history-tab';
 import { ExerciseTrackTab } from '@/src/features/workouts/components/exercise-track-tab';
+import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sheet';
 import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
 import {
   getSetsByWorkoutExerciseIdQuery,
@@ -47,6 +48,7 @@ export default function ActiveWorkoutExerciseScreen() {
   const workoutExerciseId = getRouteParamId(localParams.workoutExerciseId);
 
   const [selectedTab, setSelectedTab] = useState<ExerciseDetailTab>('track');
+  const [isRestTimerOpen, setIsRestTimerOpen] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const { width } = useWindowDimensions();
 
@@ -182,7 +184,11 @@ export default function ActiveWorkoutExerciseScreen() {
         scrollEventThrottle={16}
       >
         <View className="w-screen flex-1">
-          <ExerciseTrackTab db={db} item={item} />
+          <ExerciseTrackTab
+            db={db}
+            item={item}
+            onOpenRestTimer={() => setIsRestTimerOpen(true)}
+          />
         </View>
         <View className="w-screen flex-1">
           <ExerciseHistoryTab
@@ -191,6 +197,13 @@ export default function ActiveWorkoutExerciseScreen() {
           />
         </View>
       </StyledScrollView>
+
+      <RestTimerSheet
+        isOpen={isRestTimerOpen}
+        onClose={() => setIsRestTimerOpen(false)}
+        // TODO: read durationSeconds from user settings (phase 6.1)
+        durationSeconds={90}
+      />
     </Screen>
   );
 }
