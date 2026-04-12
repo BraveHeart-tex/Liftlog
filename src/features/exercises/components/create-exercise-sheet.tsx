@@ -1,5 +1,5 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import { StyledScrollView } from '@/src/components/styled/scroll-view';
+import { StyledBottomSheetScrollView } from '@/src/components/styled/bottom-sheet';
 import {
   BottomSheet,
   BottomSheetDescription,
@@ -161,7 +161,7 @@ export function CreateExerciseSheet({
         />
       </View>
 
-      <StyledScrollView
+      <StyledBottomSheetScrollView
         className="flex-1"
         contentContainerClassName="px-4 pb-8"
         keyboardShouldPersistTaps="handled"
@@ -234,18 +234,18 @@ export function CreateExerciseSheet({
             </Text>
           ) : null}
         </View>
+      </StyledBottomSheetScrollView>
 
-        <View className="mt-6 flex-row gap-3">
-          <View className="flex-1">
-            <Button variant="secondary" onPress={handleClose}>
-              Cancel
-            </Button>
-          </View>
-          <View className="flex-1">
-            <Button onPress={submit}>Save</Button>
-          </View>
+      <View className="mt-3 flex-row gap-3 px-4 pb-3">
+        <View className="flex-1">
+          <Button variant="secondary" onPress={handleClose}>
+            Cancel
+          </Button>
         </View>
-      </StyledScrollView>
+        <View className="flex-1">
+          <Button onPress={submit}>Save</Button>
+        </View>
+      </View>
     </BottomSheet>
   );
 }
