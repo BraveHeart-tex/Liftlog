@@ -6,8 +6,16 @@ import {
   ListIcon,
   SettingsIcon
 } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const TAB_BAR_HEIGHT = 60;
+const TAB_BAR_TOP_PADDING = 6;
+const TAB_BAR_BOTTOM_PADDING = 6;
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom, TAB_BAR_BOTTOM_PADDING);
+
   return (
     <Tabs
       screenOptions={{
@@ -17,9 +25,9 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: tabBarTheme.backgroundColor,
           borderTopColor: tabBarTheme.borderColor,
-          height: 60,
-          paddingTop: 6,
-          paddingBottom: 6
+          height: TAB_BAR_HEIGHT + bottomPadding,
+          paddingTop: TAB_BAR_TOP_PADDING,
+          paddingBottom: bottomPadding
         },
         tabBarLabelStyle: {
           fontSize: 11,
