@@ -1,5 +1,5 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import { type Exercise, type Set, type WorkoutExercise } from '@/src/db/schema';
+import type { Exercise, Set, WorkoutExercise } from '@/src/db/schema';
 import { getSetsForWorkoutExercisesQuery } from '@/src/features/workouts/repository';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useMemo } from 'react';

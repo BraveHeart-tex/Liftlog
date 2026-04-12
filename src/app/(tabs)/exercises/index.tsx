@@ -4,7 +4,7 @@ import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import { type Exercise } from '@/src/db/schema';
+import type { Exercise } from '@/src/db/schema';
 import {
   CATEGORY_FILTERS,
   type CategoryFilter

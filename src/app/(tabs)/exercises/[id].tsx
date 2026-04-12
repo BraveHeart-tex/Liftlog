@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/src/components/ui/card';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import { type Exercise, type Set } from '@/src/db/schema';
+import type { Exercise, Set } from '@/src/db/schema';
 import { getExerciseByIdQuery } from '@/src/features/exercises/repository';
 import {
   buildExerciseHistory,

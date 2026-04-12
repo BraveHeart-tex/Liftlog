@@ -1,4 +1,4 @@
-import { Component, ReactNode } from 'react';
+import { Component, type ReactNode } from 'react';
 import { Text, View } from 'react-native';
 
 export class DatabaseErrorBoundary extends Component<
