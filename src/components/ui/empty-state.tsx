@@ -28,11 +28,13 @@ export function EmptyState({
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ flexGrow: 1 }}
-      contentContainerClassName={cn(
-        'items-center justify-center px-8',
-        className
-      )}
+      contentContainerStyle={{
+        alignItems: 'center',
+        flexGrow: 1,
+        justifyContent: 'center',
+        paddingHorizontal: 32
+      }}
+      contentContainerClassName={className}
     >
       {icon ? (
         <Icon icon={icon} className="text-muted-foreground" size={48} />

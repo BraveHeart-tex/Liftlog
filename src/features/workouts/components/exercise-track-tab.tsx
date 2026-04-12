@@ -57,7 +57,7 @@ export function ExerciseTrackTab({ db, item }: ExerciseTrackTabProps) {
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerClassName="px-4 pb-8"
+      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
     >

@@ -64,8 +64,10 @@ export function ExercisePickerSheet({
       <BottomSheetFlatList
         data={filteredExercises}
         keyExtractor={(item: Exercise) => item.id}
-        contentContainerClassName="px-4"
-        contentContainerStyle={{ paddingBottom: insets.bottom + 112 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingBottom: insets.bottom + 112
+        }}
         keyboardShouldPersistTaps="handled"
         renderItem={({ item }: { item: Exercise }) => (
           <Pressable

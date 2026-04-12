@@ -53,7 +53,7 @@ export function ExerciseHistoryTab({
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerClassName="px-4 pb-8"
+      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
       showsVerticalScrollIndicator={false}
     >
       {history.length === 0 ? (

@@ -60,7 +60,7 @@ export default function ExercisesScreen() {
         data={filteredExercises}
         keyExtractor={item => item.id}
         style={{ flex: 1 }}
-        contentContainerClassName="px-4 py-6"
+        contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 24 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
@@ -96,7 +96,7 @@ export default function ExercisesScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               className="mt-4"
-              contentContainerClassName="gap-2 pr-4"
+              contentContainerStyle={{ gap: 8, paddingRight: 16 }}
             >
               {CATEGORY_FILTERS.map(category => {
                 const isSelected = category.value === selectedCategory;
