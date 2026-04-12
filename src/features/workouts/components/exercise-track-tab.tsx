@@ -38,7 +38,7 @@ export function ExerciseTrackTab({
 
     const intervalId = setInterval(() => {
       setTimerTriggerLabel(getTimerTriggerLabel());
-    }, 5000);
+    }, 1000);
 
     return () => clearInterval(intervalId);
   }, []);
