@@ -1,89 +1,28 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import { Card, CardContent } from '@/src/components/ui/card';
+import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import type { Exercise, Set } from '@/src/db/schema';
 import { getExerciseByIdQuery } from '@/src/features/exercises/repository';
 import {
   buildExerciseHistory,
   getExerciseHistorySetsQuery,
   getExerciseHistoryWorkoutsQuery
 } from '@/src/features/progress/repository';
+import { formatWorkoutDate } from '@/src/lib/utils/date';
+import { formatMuscleList, parseMuscleList } from '@/src/lib/utils/muscle';
 import { getRouteParamId } from '@/src/lib/utils/route';
+import { formatCompletedSets, getCompletedSets } from '@/src/lib/utils/set';
 import { toTitleCase } from '@/src/lib/utils/string';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { useLocalSearchParams } from 'expo-router';
-import { View } from 'react-native';
-
-function parseMuscleList(value: Exercise['primaryMuscles']): string[] {
-  try {
-    const parsed = JSON.parse(value) as unknown;
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter((item): item is string => typeof item === 'string');
-  } catch {
-    return [];
-  }
-}
-
-function formatMuscleList(muscles: string[]) {
-  if (muscles.length === 0) {
-    return 'Unspecified';
-  }
-
-  return muscles.map(toTitleCase).join(', ');
-}
-
-function formatWeight(weightKg: number) {
-  if (Number.isInteger(weightKg)) {
-    return String(weightKg);
-  }
-
-  return weightKg.toFixed(1);
-}
-
-function getCompletedSets(sets: Set[]) {
-  return sets.filter(set => set.status === 'completed');
-}
-
-function formatCompletedSets(sets: Set[]) {
-  if (sets.length === 0) {
-    return undefined;
-  }
-
-  return sets
-    .reduce<string[]>((parts, set, index) => {
-      const previousSet = index > 0 ? sets[index - 1] : undefined;
-      const hasSameWeightAsPrevious =
-        previousSet && previousSet.weightKg === set.weightKg;
-
-      if (hasSameWeightAsPrevious) {
-        parts.push(String(set.reps));
-
-        return parts;
-      }
-
-      parts.push(`${formatWeight(set.weightKg)} x ${set.reps}`);
-
-      return parts;
-    }, [])
-    .join(', ');
-}
-
-function formatWorkoutDate(timestamp: number) {
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  }).format(new Date(timestamp));
-}
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ChevronLeftIcon } from 'lucide-react-native';
+import { Pressable, View } from 'react-native';
 
 export default function ExerciseDetailScreen() {
   const db = useDrizzle();
+  const router = useRouter();
 
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const exerciseId = getRouteParamId(id);
@@ -143,10 +82,26 @@ export default function ExerciseDetailScreen() {
   return (
     <Screen scroll>
       <View>
-        <Text variant="h1">{exercise.name}</Text>
-        <Text variant="small" tone="muted" className="mt-2">
-          {toTitleCase(exercise.category)}
-        </Text>
+        <View className="flex-row items-center gap-3">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            onPress={() => router.back()}
+            className="border-border bg-card h-11 w-11 items-center justify-center rounded-lg border"
+          >
+            <Icon
+              icon={ChevronLeftIcon}
+              size={20}
+              className="text-foreground"
+            />
+          </Pressable>
+          <View>
+            <Text variant="h1">{exercise.name}</Text>
+            <Text variant="small" tone="muted">
+              {toTitleCase(exercise.category)}
+            </Text>
+          </View>
+        </View>
       </View>
 
       <Card className="mt-6">
