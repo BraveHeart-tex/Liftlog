@@ -1,7 +1,7 @@
+import { StyledBottomSheetBackdrop } from '@/src/components/styled/bottom-sheet';
+import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { cn } from '@/src/lib/utils/cn';
-import { colors } from '@/src/theme/tokens';
 import GorhomBottomSheet, {
-  BottomSheetBackdrop,
   type BottomSheetBackdropProps,
   type BottomSheetBackgroundProps
 } from '@gorhom/bottom-sheet';
@@ -14,7 +14,7 @@ import {
   type ComponentRef,
   type ReactNode
 } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 type BottomSheetComponentProps = {
   isOpen: boolean;
@@ -73,13 +73,14 @@ export function BottomSheet({
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
+      <StyledBottomSheetBackdrop
         {...props}
         appearsOnIndex={0}
         disappearsOnIndex={-1}
         opacity={0.72}
         pressBehavior="close"
-        style={[props.style, { backgroundColor: colors.background }]}
+        style={props.style}
+        className="bg-background"
       />
     ),
     []
@@ -135,11 +136,8 @@ export function BottomSheetContent({
   className
 }: BottomSheetSectionProps) {
   return (
-    <ScrollView
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
-      contentContainerClassName={className}
-    >
+    <StyledScrollView contentContainerClassName={cn('px-4 pb-8', className)}>
       {children}
-    </ScrollView>
+    </StyledScrollView>
   );
 }

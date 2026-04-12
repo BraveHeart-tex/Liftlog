@@ -1,3 +1,5 @@
+import { StyledFlatList } from '@/src/components/styled/flat-list';
+import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
 import { Screen } from '@/src/components/ui/screen';
@@ -12,7 +14,7 @@ import { useExercises } from '@/src/features/exercises/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 function getPrimaryMuscleLabel(primaryMuscles: Exercise['primaryMuscles']) {
   try {
@@ -56,11 +58,11 @@ export default function ExercisesScreen() {
 
   return (
     <Screen withPadding={false}>
-      <FlatList
+      <StyledFlatList
         data={filteredExercises}
         keyExtractor={item => item.id}
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 24 }}
+        className="flex-1"
+        contentContainerClassName="px-4 py-6"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
@@ -92,11 +94,11 @@ export default function ExercisesScreen() {
               className="mt-4"
             />
 
-            <ScrollView
+            <StyledScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               className="mt-4"
-              contentContainerStyle={{ gap: 8, paddingRight: 16 }}
+              contentContainerClassName="gap-2 pr-4"
             >
               {CATEGORY_FILTERS.map(category => {
                 const isSelected = category.value === selectedCategory;
@@ -121,7 +123,7 @@ export default function ExercisesScreen() {
                   </Pressable>
                 );
               })}
-            </ScrollView>
+            </StyledScrollView>
 
             <View className="mt-6">
               {filteredExercises.length > 0 && (

@@ -1,6 +1,7 @@
+import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { cn } from '@/src/lib/utils/cn';
 import type { ReactNode } from 'react';
-import { ScrollView, type StyleProp, View, type ViewStyle } from 'react-native';
+import { View } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
 type ScreenProps = {
@@ -13,17 +14,6 @@ type ScreenProps = {
   footer?: ReactNode;
   keyboardShouldPersistTaps?: 'always' | 'never' | 'handled';
 };
-
-const SCREEN_CONTENT_PADDING_STYLE = {
-  paddingHorizontal: 16,
-  paddingVertical: 24
-} satisfies ViewStyle;
-
-const SCREEN_FOOTER_CONTENT_PADDING_STYLE = {
-  paddingHorizontal: 16,
-  paddingTop: 24,
-  paddingBottom: 16
-} satisfies ViewStyle;
 
 export function Screen({
   children,
@@ -39,34 +29,31 @@ export function Screen({
     !scroll && withPadding && 'px-4 py-6',
     contentClassName
   );
-  const scrollContentStyle: StyleProp<ViewStyle> = [
-    { flexGrow: 1 },
-    withPadding &&
-      (footer
-        ? SCREEN_FOOTER_CONTENT_PADDING_STYLE
-        : SCREEN_CONTENT_PADDING_STYLE)
-  ];
+
+  const scrollContentClassName = cn(
+    'flex-grow',
+    withPadding && (footer ? 'px-4 pt-6 pb-4' : 'px-4 py-6'),
+    sharedContentClassName
+  );
 
   const content = !scroll ? (
     <View className={cn('flex-1', sharedContentClassName)}>{children}</View>
   ) : footer ? (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={scrollContentStyle}
-      contentContainerClassName={sharedContentClassName}
+    <StyledScrollView
+      className="flex-1"
+      contentContainerClassName={scrollContentClassName}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps}
     >
       {children}
-    </ScrollView>
+    </StyledScrollView>
   ) : (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={scrollContentStyle}
-      contentContainerClassName={sharedContentClassName}
+    <StyledScrollView
+      className="flex-1"
+      contentContainerClassName={scrollContentClassName}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps}
     >
       {children}
-    </ScrollView>
+    </StyledScrollView>
   );
 
   return (

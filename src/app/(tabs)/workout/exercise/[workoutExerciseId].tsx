@@ -1,4 +1,5 @@
 import { useDrizzle } from '@/src/components/database-provider';
+import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
@@ -20,7 +21,7 @@ import { ChevronLeftIcon } from 'lucide-react-native';
 import { useMemo, useRef, useState } from 'react';
 import {
   Pressable,
-  ScrollView,
+  type ScrollView,
   useWindowDimensions,
   View,
   type NativeScrollEvent,
@@ -171,13 +172,13 @@ export default function ActiveWorkoutExerciseScreen() {
         })}
       </View>
 
-      <ScrollView
+      <StyledScrollView
         ref={scrollRef}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleMomentumScrollEnd}
-        style={{ flex: 1 }}
+        className="flex-1"
         scrollEventThrottle={16}
       >
         <View className="w-screen flex-1">
@@ -189,7 +190,7 @@ export default function ActiveWorkoutExerciseScreen() {
             exerciseId={item.workoutExercise.exerciseId}
           />
         </View>
-      </ScrollView>
+      </StyledScrollView>
     </Screen>
   );
 }

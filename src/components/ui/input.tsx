@@ -1,4 +1,4 @@
-import { colors } from '@/src/theme/tokens';
+import { StyledTextInput } from '@/src/components/styled/text-input';
 import { cn } from '@/src/lib/utils/cn';
 import {
   forwardRef,
@@ -42,7 +42,6 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
     editable,
     onBlur,
     onFocus,
-    placeholderTextColor,
     ...props
   },
   ref
@@ -72,7 +71,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
           <View className="mr-3 items-center justify-center">{leftIcon}</View>
         ) : null}
 
-        <TextInput
+        <StyledTextInput
           ref={ref}
           className={cn('text-body text-foreground flex-1', inputClassName)}
           editable={isEditable}
@@ -84,8 +83,8 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
             setFocused(true);
             onFocus?.(event);
           }}
-          placeholderTextColor={placeholderTextColor ?? colors.mutedForeground}
-          selectionColor={colors.primary}
+          placeholderClassName="text-muted-foreground"
+          selectionClassName="text-primary"
           {...props}
         />
 

@@ -1,3 +1,4 @@
+import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { useDrizzle } from '@/src/components/database-provider';
 import {
   BottomSheet,
@@ -17,7 +18,7 @@ import {
 import { createExercise } from '@/src/features/exercises/repository';
 import { cn } from '@/src/lib/utils/cn';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 type CreateExerciseSheetProps = {
   isOpen: boolean;
@@ -148,9 +149,9 @@ export function CreateExerciseSheet({
         </BottomSheetDescription>
       </BottomSheetHeader>
 
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
+      <StyledScrollView
+        className="flex-1"
+        contentContainerClassName="px-4 pb-8"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -250,7 +251,7 @@ export function CreateExerciseSheet({
             <Button onPress={submit}>Save</Button>
           </View>
         </View>
-      </ScrollView>
+      </StyledScrollView>
     </BottomSheet>
   );
 }

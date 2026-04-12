@@ -1,3 +1,4 @@
+import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { Text } from '@/src/components/ui/text';
 import type { DrizzleDb } from '@/src/db/client';
 import type { Exercise, Set } from '@/src/db/schema';
@@ -7,7 +8,7 @@ import {
   getExerciseHistoryWorkoutsQuery
 } from '@/src/features/progress/repository';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { formatInputNumber } from './utils';
 
 type ExerciseHistoryTabProps = {
@@ -51,9 +52,9 @@ export function ExerciseHistoryTab({
     .slice(0, 10);
 
   return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
+    <StyledScrollView
+      className="flex-1"
+      contentContainerClassName="px-4 pb-8"
       showsVerticalScrollIndicator={false}
     >
       {history.length === 0 ? (
@@ -92,6 +93,6 @@ export function ExerciseHistoryTab({
           </View>
         ))
       )}
-    </ScrollView>
+    </StyledScrollView>
   );
 }

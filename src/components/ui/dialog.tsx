@@ -1,3 +1,4 @@
+import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { cn } from '@/src/lib/utils/cn';
 import { BlurView } from 'expo-blur';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -7,7 +8,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  ScrollView,
   Text,
   View
 } from 'react-native';
@@ -150,14 +150,13 @@ export function DialogDescription({ children, className }: DialogSectionProps) {
 
 export function DialogContent({ children, className }: DialogSectionProps) {
   return (
-    <ScrollView
+    <StyledScrollView
       className="shrink"
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 8 }}
-      contentContainerClassName={className}
+      contentContainerClassName={cn('px-4 pb-2', className)}
       showsVerticalScrollIndicator={false}
     >
       {children}
-    </ScrollView>
+    </StyledScrollView>
   );
 }
 
