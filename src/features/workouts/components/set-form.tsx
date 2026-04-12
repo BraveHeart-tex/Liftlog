@@ -264,7 +264,6 @@ export function SetForm({
           <Button
             variant={isEditing ? 'destructive' : 'secondary'}
             size="sm"
-            className={isEditing ? 'border-danger w-full border' : 'w-full'}
             onPress={isEditing ? handleDelete : handleClear}
           >
             {isEditing ? 'Delete' : 'Clear'}
