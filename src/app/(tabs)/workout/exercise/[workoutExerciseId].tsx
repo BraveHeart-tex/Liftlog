@@ -1,7 +1,6 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
-import { Button } from '@/src/components/ui/button';
-import { Icon } from '@/src/components/ui/icon';
+import { BackButton } from '@/src/components/ui/back-button';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
@@ -18,8 +17,7 @@ import {
 import { cn } from '@/src/lib/utils/cn';
 import { getRouteParamId } from '@/src/lib/utils/route';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { router, useLocalSearchParams } from 'expo-router';
-import { ChevronLeftIcon } from 'lucide-react-native';
+import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import {
   Pressable,
@@ -115,9 +113,7 @@ export default function ActiveWorkoutExerciseScreen() {
         <Text variant="h3" className="text-center">
           Exercise not found
         </Text>
-        <Button className="mt-4" onPress={() => router.back()}>
-          Go back
-        </Button>
+        <BackButton variant="text" className="mt-4" />
       </Screen>
     );
   }
@@ -126,18 +122,7 @@ export default function ActiveWorkoutExerciseScreen() {
     <Screen withPadding={false}>
       <View className="px-4 pt-4 pb-3">
         <View className="flex-row items-center gap-3">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            onPress={() => router.back()}
-            className="border-border bg-card h-11 w-11 items-center justify-center rounded-lg border"
-          >
-            <Icon
-              icon={ChevronLeftIcon}
-              size={20}
-              className="text-foreground"
-            />
-          </Pressable>
+          <BackButton />
 
           <Text variant="h2" className="flex-1" numberOfLines={1}>
             {item.exercise?.name ?? 'Unknown exercise'}
