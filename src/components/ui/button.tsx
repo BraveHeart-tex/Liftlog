@@ -5,7 +5,8 @@ import {
   Pressable,
   Text,
   View,
-  type GestureResponderEvent
+  type GestureResponderEvent,
+  type TextStyle
 } from 'react-native';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
@@ -45,6 +46,11 @@ const textClassNames: Record<ButtonVariant, string> = {
   secondary: 'text-body-medium text-foreground',
   ghost: 'text-body-medium text-foreground',
   destructive: 'text-body-medium text-foreground'
+};
+
+const textStyle: TextStyle = {
+  includeFontPadding: false,
+  textAlignVertical: 'center'
 };
 
 export function Button({
@@ -102,7 +108,10 @@ export function Button({
         }}
       >
         {loading ? (
-          <Text className={cn(textClassNames[variant], textClassName)}>
+          <Text
+            className={cn(textClassNames[variant], textClassName)}
+            style={textStyle}
+          >
             Loading...
           </Text>
         ) : (
@@ -115,6 +124,7 @@ export function Button({
                   isIconButton && 'text-h3',
                   textClassName
                 )}
+                style={textStyle}
               >
                 {label}
               </Text>
