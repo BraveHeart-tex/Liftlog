@@ -6,7 +6,7 @@ This project is a mobile application built with:
 - Expo Router
 - TypeScript
 - NativeWind (Tailwind CSS v4, CSS-first via global.css)
-- React Native Safe Area Context
+- React Native Safe Area Context via a local hook-based SafeAreaView wrapper
 - Expo SQLite + Drizzle ORM
 - Gorhom Bottom Sheet
 - Lucide React Native icons
@@ -49,7 +49,7 @@ The app is a progressive overload workout tracker focused on:
 - For third-party components with multiple style props, use the colocated styled wrappers in `@/src/components/styled` instead of direct imports. These wrappers map `className`, `contentContainerClassName`, etc. to the underlying style props.
 - If a third-party component needs a new style-prop mapping, add or update a wrapper in `src/components/styled`. Keep the mapping colocated with the wrapper, not in a global entry point.
 - This project currently uses `nativewind@5.0.0-preview.3`, where `remapProps`/`cssInterop` are not exported. Use `styled(...)` mappings from `nativewind` for wrapper components, matching the existing wrapper pattern.
-- **EXCEPTION: Use inline `style` prop for layout-critical properties on external/third-party components only when no styled wrapper exists** (e.g. `SafeAreaView` from `react-native-safe-area-context`, provider root views, animated transforms)
+- **EXCEPTION: Use inline `style` prop for layout-critical properties on external/third-party components only when no styled wrapper exists** (e.g. provider root views, animated transforms)
 - **EXCEPTION: Use raw values from `@/src/theme/tokens` for native/third-party props that cannot consume NativeWind classes** (e.g. React Navigation tab options, `TextInput` placeholder/selection colors, bottom-sheet backdrop styles, animated transforms)
 
 Why: NativeWind className support is safest when third-party components expose all style props through a wrapper. Some native props cannot consume class strings cleanly; use theme tokens for those cases instead of forcing a complex wrapper.
@@ -69,12 +69,14 @@ Required for wrapped scroll/list components:
 />
 ```
 
-Required for unwrapped external components with layout-critical flex:
+Required for safe-area roots:
 
 ```tsx
+import { SafeAreaView } from '@/src/components/ui/safe-area-view';
+
 <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
   {children}
-</SafeAreaView>
+</SafeAreaView>;
 ```
 
 Avoid:
@@ -140,15 +142,19 @@ Use semantic tokens only. For className styling, prefer tokens defined in `globa
 
 ## Layout Rules
 
-### 1. Always use SafeAreaView at screen root
+### 1. Always use the local SafeAreaView at screen root
 
-Prefer the shared `Screen` primitive from `@/src/components/ui/screen` for standard screens. It already handles `SafeAreaView`, optional vertical scrolling, padding, keyboard taps, and sticky footer layout.
+Prefer the shared `Screen` primitive from `@/src/components/ui/screen` for standard screens. It already handles the app's local `SafeAreaView`, optional vertical scrolling, padding, keyboard taps, and sticky footer layout.
 
-Use inline style for `SafeAreaView` flex, className for theming:
+When a custom screen wrapper is needed, import the local hook-based `SafeAreaView` from `@/src/components/ui/safe-area-view`. It supports `className`, `edges`, normal `View` props, and additive numeric padding through `style`.
 
 ```tsx
+import { SafeAreaView } from '@/src/components/ui/safe-area-view';
+
 <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
 ```
+
+Do not import `SafeAreaView` from `react-native-safe-area-context` in app UI. React Navigation warns that component can cause jumpy behavior during animations; use the local wrapper because it renders a regular `View` and applies insets with `useSafeAreaInsets`.
 
 ---
 
@@ -202,6 +208,8 @@ Existing wrappers include `StyledScrollView`, `StyledFlatList`, `StyledBottomShe
 When a screen has a footer (e.g. a CTA button), use a styled scroll wrapper with a growing content container:
 
 ```tsx
+import { SafeAreaView } from '@/src/components/ui/safe-area-view';
+
 <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
   <StyledScrollView
     className="flex-1"
@@ -212,7 +220,7 @@ When a screen has a footer (e.g. a CTA button), use a styled scroll wrapper with
   <View className="border-border bg-background border-t px-4 py-4">
     {footer}
   </View>
-</SafeAreaView>
+</SafeAreaView>;
 ```
 
 ---
@@ -352,6 +360,10 @@ Leads to content being hidden off-screen
 
 Do not use direct imports of third-party components with multiple style props and then pass raw style objects. Use the wrappers in `src/components/styled` so `className`, `contentContainerClassName`, and related props are mapped consistently. For external components without wrappers, keep layout-critical inline style when needed.
 
+### Importing SafeAreaView from react-native-safe-area-context
+
+Do not import `SafeAreaView` directly from `react-native-safe-area-context` for app UI. Use `Screen` for normal screens, or `SafeAreaView` from `@/src/components/ui/safe-area-view` for custom roots. The local wrapper avoids the known jumpy-layout behavior by using `useSafeAreaInsets`.
+
 ### Using line-height globally
 
 Breaks layout in React Native
@@ -398,7 +410,7 @@ The agent MUST:
 1. Use NativeWind classes for theming and spacing
 2. Respect theme tokens
 3. Use ScrollView for vertical layouts, or FlatList/SectionList for long dynamic lists
-4. Use SafeAreaView at root, preferably through the shared Screen primitive
+4. Use `Screen` at screen roots, or the local `SafeAreaView` from `@/src/components/ui/safe-area-view` when a custom safe-area root is needed
 5. Keep components simple
 6. Avoid unnecessary libraries
 7. Use styled wrappers from `@/src/components/styled` for third-party components with multiple style props
