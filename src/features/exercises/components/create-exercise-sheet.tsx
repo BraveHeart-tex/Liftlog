@@ -65,6 +65,7 @@ export function CreateExerciseSheet({
   onClose
 }: CreateExerciseSheetProps) {
   const db = useDrizzle();
+
   const [name, setName] = useState('');
   const [category, setCategory] = useState<ExerciseCategory>('barbell');
   const [selectedPrimaryMuscles, setSelectedPrimaryMuscles] = useState<
@@ -132,8 +133,7 @@ export function CreateExerciseSheet({
     <BottomSheet
       isOpen={isOpen}
       onClose={handleClose}
-      snapPoints={['85%']}
-      className="flex-1"
+      snapPoints={['70%', '90%']}
     >
       <BottomSheetHeader>
         <BottomSheetTitle>Create custom exercise</BottomSheetTitle>
@@ -142,12 +142,7 @@ export function CreateExerciseSheet({
         </BottomSheetDescription>
       </BottomSheetHeader>
 
-      <StyledScrollView
-        className="flex-1"
-        contentContainerClassName="px-4 pb-8"
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+      <View className="px-4 pb-3">
         <Input
           label="Name"
           value={name}
@@ -163,9 +158,15 @@ export function CreateExerciseSheet({
                 ? 'An exercise with this name already exists'
                 : undefined
           }
-          className="mt-2"
         />
+      </View>
 
+      <StyledScrollView
+        className="flex-1"
+        contentContainerClassName="px-4 pb-8"
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View className="mt-6">
           <Text variant="small">Category</Text>
           <View className="mt-3 flex-row flex-wrap gap-2">

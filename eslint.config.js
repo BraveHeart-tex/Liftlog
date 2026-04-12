@@ -2,6 +2,7 @@ const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
 const typescriptEslint = require('@typescript-eslint/eslint-plugin');
 const unusedImports = require('eslint-plugin-unused-imports');
+const stylistic = require('@stylistic/eslint-plugin'); // add this
 
 module.exports = defineConfig([
   expoConfig,
@@ -22,7 +23,8 @@ module.exports = defineConfig([
   {
     plugins: {
       '@typescript-eslint': typescriptEslint,
-      'unused-imports': unusedImports
+      'unused-imports': unusedImports,
+      '@stylistic': stylistic // add this
     },
     rules: {
       'no-unused-vars': 'off',
@@ -51,6 +53,34 @@ module.exports = defineConfig([
             }
           ]
         }
+      ],
+      '@stylistic/padding-line-between-statements': [
+        'error',
+        { blankLine: 'always', prev: '*', next: 'return' },
+        {
+          blankLine: 'always',
+          prev: '*',
+          next: ['if', 'for', 'while', 'switch', 'try']
+        },
+        {
+          blankLine: 'always',
+          prev: ['if', 'for', 'while', 'switch', 'try'],
+          next: '*'
+        },
+        { blankLine: 'always', prev: ['const', 'let', 'var'], next: '*' },
+        {
+          blankLine: 'any',
+          prev: ['const', 'let', 'var'],
+          next: ['const', 'let', 'var']
+        },
+        { blankLine: 'always', prev: 'import', next: '*' },
+        { blankLine: 'any', prev: 'import', next: 'import' },
+        { blankLine: 'always', prev: '*', next: 'function' },
+        { blankLine: 'always', prev: 'function', next: '*' },
+        { blankLine: 'always', prev: '*', next: 'throw' },
+        // TS-specific types supported by @stylistic
+        { blankLine: 'always', prev: ['interface', 'type'], next: '*' },
+        { blankLine: 'always', prev: '*', next: ['interface', 'type'] }
       ],
       curly: ['error', 'all'],
       eqeqeq: ['error', 'always', { null: 'ignore' }],

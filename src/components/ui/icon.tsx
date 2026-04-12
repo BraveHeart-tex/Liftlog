@@ -13,6 +13,7 @@ const styledIconCache = new WeakMap<IconComponent, StyledIconComponent>();
 
 function createStyledIcon(Icon: IconComponent): StyledIconComponent {
   const CachedIcon = styledIconCache.get(Icon);
+
   if (CachedIcon) {
     return CachedIcon;
   }
@@ -30,6 +31,7 @@ function createStyledIcon(Icon: IconComponent): StyledIconComponent {
       }
     }
   }) as StyledIconComponent;
+
   styledIconCache.set(Icon, StyledIcon);
 
   return StyledIcon;

@@ -69,6 +69,7 @@ export function BottomSheet({
   useEffect(() => {
     if (isOpen) {
       sheetRef.current?.snapToIndex(0);
+
       return;
     }
 
