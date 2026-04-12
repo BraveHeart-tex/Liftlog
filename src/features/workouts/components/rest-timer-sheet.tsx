@@ -443,40 +443,48 @@ export function RestTimerSheet({
         ) : null}
 
         {status === 'running' ? (
-          <View className="w-full flex-row gap-3">
-            <Button
-              variant="secondary"
-              className="flex-1"
-              onPress={handlePause}
-            >
-              Pause
-            </Button>
-            <Button
-              variant="destructive"
-              className="flex-1"
-              onPress={handleCancel}
-            >
-              Cancel
-            </Button>
+          <View className="w-full flex-row items-center gap-3">
+            <View className="flex-1">
+              <Button
+                variant="secondary"
+                className="w-full"
+                onPress={handlePause}
+              >
+                Pause
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button
+                variant="destructive"
+                className="w-full"
+                onPress={handleCancel}
+              >
+                Cancel
+              </Button>
+            </View>
           </View>
         ) : null}
 
         {status === 'paused' ? (
           <View className="w-full flex-row gap-3">
-            <Button
-              variant="secondary"
-              className="flex-1"
-              onPress={handleResume}
-            >
-              Resume
-            </Button>
-            <Button
-              variant="destructive"
-              className="flex-1"
-              onPress={handleCancel}
-            >
-              Cancel
-            </Button>
+            <View className="flex-1">
+              <Button
+                variant="secondary"
+                className="w-full"
+                onPress={handleResume}
+              >
+                Resume
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button
+                variant="destructive"
+                className="w-full"
+                onPress={handleCancel}
+              >
+                Cancel
+              </Button>
+            </View>
           </View>
         ) : null}
       </View>
