@@ -1,6 +1,6 @@
 import { useDrizzle } from '@/src/components/database-provider';
+import { BackButton } from '@/src/components/ui/back-button';
 import { Card, CardContent } from '@/src/components/ui/card';
-import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
@@ -16,13 +16,11 @@ import { getRouteParamId } from '@/src/lib/utils/route';
 import { formatCompletedSets, getCompletedSets } from '@/src/lib/utils/set';
 import { toTitleCase } from '@/src/lib/utils/string';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeftIcon } from 'lucide-react-native';
-import { Pressable, View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { View } from 'react-native';
 
 export default function ExerciseDetailScreen() {
   const db = useDrizzle();
-  const router = useRouter();
 
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const exerciseId = getRouteParamId(id);
@@ -83,18 +81,7 @@ export default function ExerciseDetailScreen() {
     <Screen scroll>
       <View>
         <View className="flex-row items-center gap-3">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            onPress={() => router.back()}
-            className="border-border bg-card h-11 w-11 items-center justify-center rounded-lg border"
-          >
-            <Icon
-              icon={ChevronLeftIcon}
-              size={20}
-              className="text-foreground"
-            />
-          </Pressable>
+          <BackButton />
           <View className="flex-1">
             <Text variant="h1" numberOfLines={2} ellipsizeMode="tail">
               {exercise.name}

@@ -1,5 +1,6 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
+import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
@@ -20,9 +21,9 @@ import {
 } from '@/src/features/workouts/repository';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router } from 'expo-router';
-import { ChevronLeftIcon, PlusIcon, TimerIcon } from 'lucide-react-native';
+import { PlusIcon, TimerIcon } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 type ActiveWorkoutContentProps = {
   activeWorkout: Workout;
@@ -117,14 +118,7 @@ export function ActiveWorkoutContent({
   return (
     <Screen withPadding={false}>
       <View className="flex-row items-center justify-between gap-4 px-4 pt-4 pb-2">
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          onPress={() => router.back()}
-          className="border-border bg-card h-11 w-11 items-center justify-center rounded-lg border"
-        >
-          <Icon icon={ChevronLeftIcon} size={20} className="text-foreground" />
-        </Pressable>
+        <BackButton />
 
         <Text variant="h2" className="flex-1" numberOfLines={1}>
           {activeWorkout.name}
