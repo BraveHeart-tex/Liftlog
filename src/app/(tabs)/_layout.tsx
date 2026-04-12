@@ -17,13 +17,13 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: tabBarTheme.backgroundColor,
           borderTopColor: tabBarTheme.borderColor,
-          height: 72,
-          paddingTop: 8,
-          paddingBottom: 8
+          height: 60,
+          paddingTop: 6,
+          paddingBottom: 6
         },
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600'
+          fontSize: 11,
+          fontWeight: '500'
         },
         sceneStyle: {
           backgroundColor: tabBarTheme.sceneBackgroundColor
