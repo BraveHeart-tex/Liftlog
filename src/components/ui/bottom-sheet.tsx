@@ -16,7 +16,7 @@ import {
   type ComponentRef,
   type ReactNode
 } from 'react';
-import { Text, View } from 'react-native';
+import { Keyboard, Text, View } from 'react-native';
 
 type BottomSheetComponentProps = {
   isOpen: boolean;
@@ -75,6 +75,11 @@ export function BottomSheet({
     sheetRef.current?.close();
   }, [isOpen]);
 
+  const handleClose = useCallback(() => {
+    Keyboard.dismiss();
+    onClose();
+  }, [onClose]);
+
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
       <StyledBottomSheetBackdrop
@@ -100,7 +105,7 @@ export function BottomSheet({
       enablePanDownToClose={enablePanDownToClose}
       handleComponent={SheetHandle}
       index={-1}
-      onClose={onClose}
+      onClose={handleClose}
       snapPoints={resolvedSnapPoints}
     >
       <View className={cn('flex-1', className)}>{children}</View>
