@@ -181,6 +181,7 @@ export default function ActiveWorkoutExerciseScreen() {
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleMomentumScrollEnd}
         className="flex-1"
+        keyboardShouldPersistTaps="handled"
         scrollEventThrottle={16}
       >
         <View className="w-screen flex-1">
