@@ -20,9 +20,9 @@ import {
 } from '@/src/features/workouts/repository';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router } from 'expo-router';
-import { PlusIcon, TimerIcon } from 'lucide-react-native';
+import { ChevronLeftIcon, PlusIcon, TimerIcon } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 type ActiveWorkoutContentProps = {
   activeWorkout: Workout;
@@ -117,7 +117,16 @@ export function ActiveWorkoutContent({
   return (
     <Screen withPadding={false}>
       <View className="flex-row items-center justify-between gap-4 px-4 pt-4 pb-2">
-        <Text variant="h2" className="flex-1">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          onPress={() => router.back()}
+          className="border-border bg-card h-11 w-11 items-center justify-center rounded-lg border"
+        >
+          <Icon icon={ChevronLeftIcon} size={20} className="text-foreground" />
+        </Pressable>
+
+        <Text variant="h2" className="flex-1" numberOfLines={1}>
           {activeWorkout.name}
         </Text>
 
