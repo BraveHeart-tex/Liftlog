@@ -1,5 +1,5 @@
-import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { useDrizzle } from '@/src/components/database-provider';
+import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import {
   BottomSheet,
   BottomSheetDescription,
@@ -17,6 +17,7 @@ import {
 } from '@/src/features/exercises/constants';
 import { createExercise } from '@/src/features/exercises/repository';
 import { cn } from '@/src/lib/utils/cn';
+import { toTitleCase } from '@/src/lib/utils/string';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -57,14 +58,6 @@ const PRIMARY_MUSCLE_OPTIONS = [
   MUSCLE_GROUP.hipFlexors,
   MUSCLE_GROUP.adductors
 ] as const;
-
-function toTitleCase(value: string) {
-  return value
-    .split(' ')
-    .filter(Boolean)
-    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-}
 
 export function CreateExerciseSheet({
   isOpen,

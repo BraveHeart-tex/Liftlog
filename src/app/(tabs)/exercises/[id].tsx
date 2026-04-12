@@ -11,6 +11,7 @@ import {
   getExerciseHistoryWorkoutsQuery
 } from '@/src/features/progress/repository';
 import { getRouteParamId } from '@/src/lib/utils/route';
+import { toTitleCase } from '@/src/lib/utils/string';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
@@ -27,14 +28,6 @@ function parseMuscleList(value: Exercise['primaryMuscles']): string[] {
   } catch {
     return [];
   }
-}
-
-function toTitleCase(value: string) {
-  return value
-    .split(' ')
-    .filter(Boolean)
-    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
 }
 
 function formatMuscleList(muscles: string[]) {
