@@ -183,7 +183,7 @@ export default function ActiveWorkoutExerciseScreen() {
         isOpen={isRestTimerOpen}
         onClose={() => setIsRestTimerOpen(false)}
         // TODO: read durationSeconds from user settings (phase 6.1)
-        durationSeconds={90}
+        durationSeconds={30}
       />
     </Screen>
   );
