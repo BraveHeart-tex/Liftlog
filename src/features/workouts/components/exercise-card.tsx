@@ -5,6 +5,9 @@ import { deleteWorkoutExercise } from '@/src/features/workouts/repository';
 import { cn } from '@/src/lib/utils/cn';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import ReanimatedSwipeable, {
+  type SwipeableMethods
+} from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { Alert, Pressable, View } from 'react-native';
 import type { WorkoutExerciseWithSets } from './types';
 import { formatInputNumber } from './utils';
@@ -16,6 +19,7 @@ type ExerciseCardProps = {
 
 export function ExerciseCard({ item, className }: ExerciseCardProps) {
   const db = useDrizzle();
+  const [isDeleteActionHidden, setIsDeleteActionHidden] = useState(false);
   const [isSelected, setIsSelected] = useState(false);
   const completedSets = item.sets.filter(set => set.status === 'completed');
 
@@ -37,66 +41,102 @@ export function ExerciseCard({ item, className }: ExerciseCardProps) {
         {
           text: 'Cancel',
           style: 'cancel',
-          onPress: () => setIsSelected(false)
+          onPress: () => {
+            setIsDeleteActionHidden(false);
+            setIsSelected(false);
+          }
         },
         {
           text: 'Remove',
           style: 'destructive',
           onPress: () => {
+            setIsDeleteActionHidden(false);
             setIsSelected(false);
             deleteWorkoutExercise(db, item.workoutExercise.id);
           }
         }
       ],
       {
-        onDismiss: () => setIsSelected(false)
+        onDismiss: () => {
+          setIsDeleteActionHidden(false);
+          setIsSelected(false);
+        }
       }
     );
   };
 
-  return (
+  const renderDeleteAction = (
+    _progress: unknown,
+    _translation: unknown,
+    swipeable: SwipeableMethods
+  ) => (
     <Pressable
-      onPress={() =>
-        router.push({
-          pathname: '/(tabs)/workout/exercise/[workoutExerciseId]',
-          params: { workoutExerciseId: item.workoutExercise.id }
-        })
-      }
-      onLongPress={handleRemoveExercise}
-      className={className}
+      accessibilityRole="button"
+      className={cn(
+        'bg-danger w-24 items-center justify-center rounded-r-lg px-3',
+        isDeleteActionHidden && 'opacity-0'
+      )}
+      onPressIn={() => setIsDeleteActionHidden(true)}
+      onPress={() => {
+        swipeable.close();
+        handleRemoveExercise();
+      }}
     >
-      <Card className={cn(isSelected && 'border-primary bg-muted/50')}>
-        <CardHeader className="flex-row items-center justify-between gap-3">
-          <Text variant="bodyMedium" className="flex-1">
-            {item.exercise?.name ?? 'Unknown exercise'}
-          </Text>
-        </CardHeader>
-
-        <CardContent>
-          {completedSets.length > 0 ? (
-            <View>
-              {completedSets.map((set, index) => (
-                <View key={set.id} className="flex-row items-center gap-3">
-                  <Text variant="caption" tone="muted" className="w-6">
-                    {index + 1}
-                  </Text>
-                  <Text variant="caption">
-                    {formatInputNumber(set.weightKg)} kg
-                  </Text>
-                  <Text variant="caption" tone="muted">
-                    x
-                  </Text>
-                  <Text variant="caption">{set.reps}</Text>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <Text variant="small" tone="muted">
-              Tap to log sets
-            </Text>
-          )}
-        </CardContent>
-      </Card>
+      <Text variant="bodyMedium" className="text-primary-foreground">
+        Remove
+      </Text>
     </Pressable>
+  );
+
+  return (
+    <View className={className}>
+      <ReanimatedSwipeable
+        overshootRight={false}
+        onSwipeableClose={() => setIsDeleteActionHidden(false)}
+        renderRightActions={renderDeleteAction}
+      >
+        <Pressable
+          onPress={() =>
+            router.push({
+              pathname: '/(tabs)/workout/exercise/[workoutExerciseId]',
+              params: { workoutExerciseId: item.workoutExercise.id }
+            })
+          }
+        >
+          <Card className={cn(isSelected && 'border-primary bg-muted/50')}>
+            <CardHeader className="flex-row items-center justify-between gap-3">
+              <Text variant="bodyMedium" className="flex-1">
+                {item.exercise?.name ?? 'Unknown exercise'}
+              </Text>
+            </CardHeader>
+
+            <CardContent>
+              {completedSets.length > 0 ? (
+                <View>
+                  {completedSets.map((set, index) => (
+                    <View key={set.id} className="flex-row items-center gap-3">
+                      <Text variant="caption" tone="muted" className="w-6">
+                        {index + 1}
+                      </Text>
+                      <Text variant="caption">
+                        {formatInputNumber(set.weightKg)} kg
+                      </Text>
+                      <Text variant="caption" tone="muted">
+                        x
+                      </Text>
+                      <Text variant="caption">{set.reps}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text variant="small" tone="muted">
+                  Tap to log sets
+                </Text>
+              )}
+            </CardContent>
+          </Card>
+        </Pressable>
+      </ReanimatedSwipeable>
+    </View>
   );
 }
