@@ -1,6 +1,10 @@
 import { Text } from '@/src/components/ui/text';
 import type { Set } from '@/src/db/schema';
 import { cn } from '@/src/lib/utils/cn';
+import ReanimatedSwipeable, {
+  type SwipeableMethods
+} from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 import { formatInputNumber } from './utils';
 
@@ -19,50 +23,95 @@ export function SetEntryRow({
   onEdit,
   onDeleteSet
 }: SetEntryRowProps) {
+  const [isDeleteActionHidden, setIsDeleteActionHidden] = useState(false);
+
   const handleDeleteSet = () => {
-    Alert.alert('Delete set?', 'This set will be removed from the workout.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(
+      'Delete set?',
+      'This set will be removed from the workout.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: () => setIsDeleteActionHidden(false)
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            setIsDeleteActionHidden(false);
+            onDeleteSet();
+          }
+        }
+      ],
       {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: onDeleteSet
+        onDismiss: () => setIsDeleteActionHidden(false)
       }
-    ]);
+    );
   };
 
-  return (
-    <Pressable onPress={onEdit} onLongPress={handleDeleteSet}>
-      <View
-        className={cn(
-          'border-border flex-row items-center gap-3 border-b px-3 py-3',
-          isEditing && 'bg-muted/50'
-        )}
-      >
-        <View className="bg-muted h-12 w-12 items-center justify-center rounded-md">
-          <Text variant="caption" tone="muted">
-            Set
-          </Text>
-          <Text variant="bodyMedium">{setNumber}</Text>
-        </View>
-
-        <View className="flex-1">
-          <Text variant="caption" tone="muted">
-            Weight
-          </Text>
-          <Text variant="bodyMedium" className="mt-1">
-            {formatInputNumber(set.weightKg)} kg
-          </Text>
-        </View>
-
-        <View className="flex-1">
-          <Text variant="caption" tone="muted">
-            Reps
-          </Text>
-          <Text variant="bodyMedium" className="mt-1">
-            {set.reps}
-          </Text>
-        </View>
-      </View>
+  const renderDeleteAction = (
+    _progress: unknown,
+    _translation: unknown,
+    swipeable: SwipeableMethods
+  ) => (
+    <Pressable
+      accessibilityRole="button"
+      className={cn(
+        'bg-danger w-24 items-center justify-center px-3',
+        isDeleteActionHidden && 'opacity-0'
+      )}
+      onPressIn={() => setIsDeleteActionHidden(true)}
+      onPress={() => {
+        swipeable.close();
+        handleDeleteSet();
+      }}
+    >
+      <Text variant="bodyMedium" className="text-primary-foreground">
+        Delete
+      </Text>
     </Pressable>
+  );
+
+  return (
+    <ReanimatedSwipeable
+      overshootRight={false}
+      onSwipeableClose={() => setIsDeleteActionHidden(false)}
+      renderRightActions={renderDeleteAction}
+    >
+      <Pressable onPress={onEdit}>
+        <View
+          className={cn(
+            'border-border bg-background flex-row items-center gap-3 border-b px-3 py-3',
+            isEditing && 'bg-muted/50'
+          )}
+        >
+          <View className="bg-muted h-12 w-12 items-center justify-center rounded-md">
+            <Text variant="caption" tone="muted">
+              Set
+            </Text>
+            <Text variant="bodyMedium">{setNumber}</Text>
+          </View>
+
+          <View className="flex-1">
+            <Text variant="caption" tone="muted">
+              Weight
+            </Text>
+            <Text variant="bodyMedium" className="mt-1">
+              {formatInputNumber(set.weightKg)} kg
+            </Text>
+          </View>
+
+          <View className="flex-1">
+            <Text variant="caption" tone="muted">
+              Reps
+            </Text>
+            <Text variant="bodyMedium" className="mt-1">
+              {set.reps}
+            </Text>
+          </View>
+        </View>
+      </Pressable>
+    </ReanimatedSwipeable>
   );
 }
