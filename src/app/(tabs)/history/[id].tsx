@@ -23,7 +23,7 @@ import {
 import { useSettings } from '@/src/features/settings/hooks';
 import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date';
 import { getRouteParamId } from '@/src/lib/utils/route';
-import { formatWeight } from '@/src/lib/utils/weight';
+import { formatWeightForUnit } from '@/src/lib/utils/weight';
 import { eq, inArray } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -240,7 +240,7 @@ export default function WorkoutHistoryDetailScreen() {
               Volume
             </Text>
             <Text variant="h3" className="mt-1">
-              {totalVolume} {weightUnit}
+              {formatWeightForUnit(totalVolume, weightUnit)} {weightUnit}
             </Text>
           </CardContent>
         </Card>
@@ -278,7 +278,8 @@ export default function WorkoutHistoryDetailScreen() {
                           {index + 1}
                         </Text>
                         <Text variant="caption">
-                          {formatWeight(set.weightKg)} {weightUnit}
+                          {formatWeightForUnit(set.weightKg, weightUnit)}{' '}
+                          {weightUnit}
                         </Text>
                         <Text variant="caption" tone="muted">
                           x
