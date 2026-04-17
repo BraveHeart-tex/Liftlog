@@ -251,48 +251,56 @@ export default function WorkoutHistoryDetailScreen() {
           Exercises
         </Text>
 
-        {workoutExerciseRows.map(workoutExercise => {
-          const exercise = exerciseById.get(workoutExercise.exerciseId);
-          const completedSets =
-            setsByWorkoutExerciseId.get(workoutExercise.id) ?? [];
+        {workoutExerciseRows.length === 0 ? (
+          <View className="mt-3 items-center py-8">
+            <Text variant="small" tone="muted" className="text-center">
+              No exercises were logged in this workout.
+            </Text>
+          </View>
+        ) : (
+          workoutExerciseRows.map(workoutExercise => {
+            const exercise = exerciseById.get(workoutExercise.exerciseId);
+            const completedSets =
+              setsByWorkoutExerciseId.get(workoutExercise.id) ?? [];
 
-          return (
-            <Card key={workoutExercise.id} className="mt-3">
-              <CardContent>
-                <Text variant="bodyMedium">
-                  {exercise?.name ?? 'Unknown exercise'}
-                </Text>
-
-                {completedSets.length === 0 ? (
-                  <Text variant="small" tone="muted" className="mt-2">
-                    No sets logged
+            return (
+              <Card key={workoutExercise.id} className="mt-3">
+                <CardContent>
+                  <Text variant="bodyMedium">
+                    {exercise?.name ?? 'Unknown exercise'}
                   </Text>
-                ) : (
-                  <View className="mt-3">
-                    {completedSets.map((set, index) => (
-                      <View
-                        key={set.id}
-                        className="flex-row items-center gap-3 py-1"
-                      >
-                        <Text variant="caption" tone="muted" className="w-6">
-                          {index + 1}
-                        </Text>
-                        <Text variant="caption">
-                          {formatWeightForUnit(set.weightKg, weightUnit)}{' '}
-                          {weightUnit}
-                        </Text>
-                        <Text variant="caption" tone="muted">
-                          x
-                        </Text>
-                        <Text variant="caption">{set.reps} reps</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
+
+                  {completedSets.length === 0 ? (
+                    <Text variant="small" tone="muted" className="mt-2">
+                      No sets logged
+                    </Text>
+                  ) : (
+                    <View className="mt-3">
+                      {completedSets.map((set, index) => (
+                        <View
+                          key={set.id}
+                          className="flex-row items-center gap-3 py-1"
+                        >
+                          <Text variant="caption" tone="muted" className="w-6">
+                            {index + 1}
+                          </Text>
+                          <Text variant="caption">
+                            {formatWeightForUnit(set.weightKg, weightUnit)}{' '}
+                            {weightUnit}
+                          </Text>
+                          <Text variant="caption" tone="muted">
+                            x
+                          </Text>
+                          <Text variant="caption">{set.reps} reps</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
       </View>
 
       <Button

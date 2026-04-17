@@ -1,5 +1,6 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import { StyledFlatList } from '@/src/components/styled/flat-list';
+import { LoadingState } from '@/src/components/ui/loading-state';
 import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 import { Text } from '@/src/components/ui/text';
 import type { DrizzleDb } from '@/src/db/client';
@@ -59,7 +60,10 @@ function formatDuration(startedAt: number, completedAt: number | null): string {
 
 export default function HistoryScreen() {
   const db = useDrizzle();
-  const { data: workoutRows = [] } = useLiveQuery(getWorkoutsQuery(db), [db]);
+  const { data: workoutRows = [], updatedAt } = useLiveQuery(
+    getWorkoutsQuery(db),
+    [db]
+  );
 
   const workoutIds = useMemo(
     () => workoutRows.map(workout => workout.id),
@@ -112,6 +116,18 @@ export default function HistoryScreen() {
 
     return nextSetCountByWorkoutId;
   }, [setRows, workoutExerciseRows]);
+
+  if (!updatedAt) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1 }}
+        className="bg-background"
+        edges={['top']}
+      >
+        <LoadingState label="Loading history..." />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
