@@ -8,9 +8,9 @@ import {
   getExerciseHistoryWorkoutsQuery
 } from '@/src/features/progress/repository';
 import { useSettings } from '@/src/features/settings/hooks';
+import { formatWeightForUnit } from '@/src/lib/utils/weight';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { View } from 'react-native';
-import { formatInputNumber } from './utils';
 
 type ExerciseHistoryTabProps = {
   db: DrizzleDb;
@@ -82,7 +82,7 @@ export function ExerciseHistoryTab({
                   {index + 1}
                 </Text>
                 <Text variant="caption">
-                  {formatInputNumber(set.weightKg)} {weightUnit}
+                  {formatWeightForUnit(set.weightKg, weightUnit)} {weightUnit}
                 </Text>
                 <Text variant="caption" tone="muted">
                   x

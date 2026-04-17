@@ -2,12 +2,12 @@ import { Text } from '@/src/components/ui/text';
 import type { Set } from '@/src/db/schema';
 import { useSettings } from '@/src/features/settings/hooks';
 import { cn } from '@/src/lib/utils/cn';
+import { formatWeightForUnit } from '@/src/lib/utils/weight';
 import ReanimatedSwipeable, {
   type SwipeableMethods
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
-import { formatInputNumber } from './utils';
 
 type SetEntryRowProps = {
   set: Set;
@@ -102,7 +102,7 @@ export function SetEntryRow({
               Weight
             </Text>
             <Text variant="bodyMedium" className="mt-1">
-              {formatInputNumber(set.weightKg)} {weightUnit}
+              {formatWeightForUnit(set.weightKg, weightUnit)} {weightUnit}
             </Text>
           </View>
 

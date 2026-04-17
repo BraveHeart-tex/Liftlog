@@ -4,6 +4,7 @@ import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import type { Set } from '@/src/db/schema';
 import { useSettings } from '@/src/features/settings/hooks';
+import { convertWeightToKg, formatWeightForUnit } from '@/src/lib/utils/weight';
 import { PlusIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
@@ -14,6 +15,11 @@ const inputClassName = 'text-body-medium text-foreground flex-1 px-3 py-3';
 
 const stepperButtonClassName =
   'bg-secondary border-border h-14 w-14 items-center justify-center rounded-lg border';
+
+const weightStepByUnit = {
+  kg: 2.5,
+  lb: 5
+};
 
 type SetFormProps = {
   editingSet: Set | undefined;
@@ -39,7 +45,7 @@ export function SetForm({
 
   useEffect(() => {
     if (editingSet) {
-      setWeightValue(formatInputNumber(editingSet.weightKg));
+      setWeightValue(formatWeightForUnit(editingSet.weightKg, weightUnit));
       setRepsValue(String(editingSet.reps));
 
       return;
@@ -47,7 +53,7 @@ export function SetForm({
 
     setWeightValue('');
     setRepsValue('');
-  }, [editingSet]);
+  }, [editingSet, weightUnit]);
 
   useEffect(() => {
     return () => {
@@ -120,14 +126,14 @@ export function SetForm({
   const getValidatedValues = () => {
     const trimmedWeight = weightValue.trim().replace(',', '.');
     const trimmedReps = repsValue.trim();
-    const weightKg = Number(trimmedWeight);
+    const weight = Number(trimmedWeight);
     const reps = Number(trimmedReps);
 
     if (trimmedWeight.length === 0) {
       return undefined;
     }
 
-    if (!Number.isFinite(weightKg) || weightKg < 0) {
+    if (!Number.isFinite(weight) || weight < 0) {
       return undefined;
     }
 
@@ -139,7 +145,7 @@ export function SetForm({
       return undefined;
     }
 
-    return { weightKg, reps };
+    return { weightKg: convertWeightToKg(weight, weightUnit), reps };
   };
 
   return (
@@ -153,7 +159,7 @@ export function SetForm({
             <StepperButton
               label="-"
               accessibilityLabel="Decrease weight"
-              onStep={() => updateWeightValue(-2.5)}
+              onStep={() => updateWeightValue(-weightStepByUnit[weightUnit])}
               onStartRepeating={startRepeatingStep}
               onStopRepeating={stopRepeatingStep}
             />
@@ -166,7 +172,7 @@ export function SetForm({
                 placeholder="0"
                 placeholderClassName="text-muted-foreground"
                 selectionClassName="text-primary"
-                accessibilityLabel="Next set weight in kilograms"
+                accessibilityLabel={`Next set weight in ${weightUnit}`}
                 className={inputClassName}
               />
               <Text variant="bodyMedium" tone="muted" className="pr-3">
@@ -177,7 +183,7 @@ export function SetForm({
             <StepperButton
               label="+"
               accessibilityLabel="Increase weight"
-              onStep={() => updateWeightValue(2.5)}
+              onStep={() => updateWeightValue(weightStepByUnit[weightUnit])}
               onStartRepeating={startRepeatingStep}
               onStopRepeating={stopRepeatingStep}
             />
