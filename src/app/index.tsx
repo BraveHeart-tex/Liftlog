@@ -1,15 +1,15 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import { isOnboardingCompleted } from '@/src/features/settings/onboarding';
-import { Redirect, type Href } from 'expo-router';
+import { Redirect } from 'expo-router';
 
-const tabsRoute = '/(tabs)' as Href;
+const workoutRoute = '/(tabs)/workout';
 
 export default function Index() {
   const db = useDrizzle();
   const completed = isOnboardingCompleted(db);
 
   return completed ? (
-    <Redirect href={tabsRoute} />
+    <Redirect href={workoutRoute} />
   ) : (
     <Redirect href="/onboarding" />
   );
