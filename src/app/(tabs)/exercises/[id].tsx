@@ -7,9 +7,11 @@ import { Text } from '@/src/components/ui/text';
 import { getExerciseByIdQuery } from '@/src/features/exercises/repository';
 import {
   buildExerciseHistory,
+  computeEstimated1RM,
   getExerciseHistorySetsQuery,
   getExerciseHistoryWorkoutsQuery
 } from '@/src/features/progress/repository';
+import { formatInputNumber } from '@/src/features/workouts/components/utils';
 import { formatWorkoutDate } from '@/src/lib/utils/date';
 import { formatMuscleList, parseMuscleList } from '@/src/lib/utils/muscle';
 import { getRouteParamId } from '@/src/lib/utils/route';
@@ -17,6 +19,7 @@ import { formatCompletedSets, getCompletedSets } from '@/src/lib/utils/set';
 import { toTitleCase } from '@/src/lib/utils/string';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useLocalSearchParams } from 'expo-router';
+import { useMemo } from 'react';
 import { View } from 'react-native';
 
 export default function ExerciseDetailScreen() {
@@ -39,6 +42,17 @@ export default function ExerciseDetailScreen() {
   const { data: setRows = [] } = useLiveQuery(
     getExerciseHistorySetsQuery(db, exerciseId ?? '', workoutIds),
     [db, exerciseId, workoutIds.join(',')]
+  );
+  const history = useMemo(
+    () =>
+      buildExerciseHistory(workoutRows, setRows)
+        .map(entry => ({
+          ...entry,
+          sets: entry.sets.filter(set => set.status === 'completed')
+        }))
+        .filter(entry => entry.sets.length > 0)
+        .slice(0, 10),
+    [setRows, workoutRows]
   );
 
   if (exerciseId && !exerciseUpdatedAt) {
@@ -154,6 +168,74 @@ export default function ExerciseDetailScreen() {
                 Log a workout to see stats
               </Text>
             </View>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4">
+        <CardContent>
+          <Text variant="caption" tone="muted">
+            History
+          </Text>
+
+          {history.length === 0 ? (
+            <View className="mt-4">
+              <Text variant="h3">No history yet</Text>
+              <Text variant="small" tone="muted" className="mt-2">
+                Log a workout to see your history here.
+              </Text>
+            </View>
+          ) : (
+            history.map(historyEntry => {
+              const bestSet = historyEntry.sets.reduce((best, set) =>
+                computeEstimated1RM(set.weightKg, set.reps) >
+                computeEstimated1RM(best.weightKg, best.reps)
+                  ? set
+                  : best
+              );
+
+              return (
+                <View key={historyEntry.workout.id}>
+                  <Text variant="caption" tone="muted" className="mt-4 mb-2">
+                    {formatWorkoutDate(historyEntry.workout.startedAt)} ·{' '}
+                    {historyEntry.sets.length} sets
+                  </Text>
+
+                  {historyEntry.sets.map((set, index) => {
+                    const isBestSet = set.id === bestSet.id;
+
+                    return (
+                      <View
+                        key={set.id}
+                        className={
+                          isBestSet
+                            ? 'bg-success/10 flex-row items-center gap-3 rounded-md px-1 py-1'
+                            : 'flex-row items-center gap-3 py-1'
+                        }
+                      >
+                        <Text variant="caption" tone="muted" className="w-6">
+                          {index + 1}
+                        </Text>
+                        <Text variant="caption">
+                          {formatInputNumber(set.weightKg)} kg
+                        </Text>
+                        <Text variant="caption" tone="muted">
+                          x
+                        </Text>
+                        <Text variant="caption">{set.reps} reps</Text>
+                        {isBestSet ? (
+                          <Text variant="caption" className="text-success ml-1">
+                            PR
+                          </Text>
+                        ) : null}
+                      </View>
+                    );
+                  })}
+
+                  <View className="border-border mt-4 border-b" />
+                </View>
+              );
+            })
           )}
         </CardContent>
       </Card>
