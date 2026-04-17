@@ -9,35 +9,14 @@ import {
   getWorkoutsQuery
 } from '@/src/features/workouts/repository';
 import { cn } from '@/src/lib/utils/cn';
+import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date';
+import { formatWorkoutName } from '@/src/lib/utils/workout';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 const activeWorkoutRoute = '/(tabs)/workout/active' as Href;
-
-function formatWorkoutName(date: Date): string {
-  return `${date.toLocaleDateString(undefined, { weekday: 'long' })} workout`;
-}
-
-function formatWorkoutDate(timestamp: number): string {
-  return new Intl.DateTimeFormat(undefined, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short'
-  }).format(new Date(timestamp));
-}
-
-function formatDuration(startedAt: number, completedAt: number | null): string {
-  const end = completedAt ?? Date.now();
-  const durationMs = end - startedAt;
-
-  if (durationMs < 60000) {
-    return '< 1 min';
-  }
-
-  return `${Math.round(durationMs / 60000)} min`;
-}
 
 export default function WorkoutStartScreen() {
   const db = useDrizzle();
@@ -102,7 +81,10 @@ export default function WorkoutStartScreen() {
                 {activeWorkout.name}
               </Text>
               <Text variant="small" tone="muted" className="mt-2">
-                {formatDuration(activeWorkout.startedAt, now)}
+                {formatDuration({
+                  startedAt: activeWorkout.startedAt,
+                  completedAt: now
+                })}
               </Text>
             </CardContent>
           </Card>
@@ -123,8 +105,9 @@ export default function WorkoutStartScreen() {
                 {recentWorkouts.map((workout, index) => (
                   <Pressable
                     key={workout.id}
-                    // TODO: repeat workout (phase 4.2)
-                    onPress={() => {}}
+                    onPress={() => {
+                      router.push(`/(tabs)/history/${workout.id}`);
+                    }}
                     className={cn(
                       'border-border bg-card rounded-lg border p-4',
                       index > 0 && 'mt-3'
@@ -136,7 +119,10 @@ export default function WorkoutStartScreen() {
                         {formatWorkoutDate(workout.startedAt)}
                       </Text>
                       <Text variant="caption" tone="muted">
-                        {formatDuration(workout.startedAt, workout.completedAt)}
+                        {formatDuration({
+                          startedAt: workout.startedAt,
+                          completedAt: workout.completedAt
+                        })}
                       </Text>
                     </View>
                   </Pressable>
