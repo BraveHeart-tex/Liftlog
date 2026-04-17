@@ -254,7 +254,7 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
 
   const handleInputBlur = () => {
     if (!Number.isFinite(inputValue) || inputValue <= 0) {
-      setPausedInputValue(DEFAULT_DURATION_SECONDS);
+      setPausedInputValue(clampDuration(defaultDuration));
 
       return;
     }

@@ -1,11 +1,11 @@
 import type { Set } from '@/src/db';
-import { formatWeight } from '@/src/lib/utils/weight';
+import { formatWeightForUnit, type WeightUnit } from '@/src/lib/utils/weight';
 
 export function getCompletedSets(sets: Set[]) {
   return sets.filter(set => set.status === 'completed');
 }
 
-export function formatCompletedSets(sets: Set[]) {
+export function formatCompletedSets(sets: Set[], unit: WeightUnit = 'kg') {
   if (sets.length === 0) {
     return undefined;
   }
@@ -22,7 +22,9 @@ export function formatCompletedSets(sets: Set[]) {
         return parts;
       }
 
-      parts.push(`${formatWeight(set.weightKg)} x ${set.reps}`);
+      parts.push(
+        `${formatWeightForUnit(set.weightKg, unit)} ${unit} x ${set.reps}`
+      );
 
       return parts;
     }, [])
