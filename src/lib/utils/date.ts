@@ -23,7 +23,6 @@ export function formatWorkoutDate(
   );
 }
 
-// TODO: Make the duration more readable
 export function formatDuration({
   startedAt,
   completedAt
@@ -35,11 +34,28 @@ export function formatDuration({
     return '—';
   }
 
-  const durationMinutes = Math.round((completedAt - startedAt) / 60000);
+  const durationMs = completedAt - startedAt;
 
-  if (durationMinutes < 1) {
+  if (durationMs <= 0) {
     return '< 1 min';
   }
 
-  return `${durationMinutes} min`;
+  const totalMinutes = Math.round(durationMs / 60000);
+
+  if (totalMinutes < 1) {
+    return '< 1 min';
+  }
+
+  if (totalMinutes < 60) {
+    return `${totalMinutes} min`;
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (minutes === 0) {
+    return `${hours} hr`;
+  }
+
+  return `${hours} hr ${minutes} min`;
 }
