@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/src/components/ui/card';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
+import { personalRecords } from '@/src/db/schema';
 import { getExerciseByIdQuery } from '@/src/features/exercises/repository';
 import {
   buildExerciseHistory,
@@ -12,15 +13,21 @@ import {
   getExerciseHistoryWorkoutsQuery
 } from '@/src/features/progress/repository';
 import { formatInputNumber } from '@/src/features/workouts/components/utils';
+import { cn } from '@/src/lib/utils/cn';
 import { formatWorkoutDate } from '@/src/lib/utils/date';
 import { formatMuscleList, parseMuscleList } from '@/src/lib/utils/muscle';
 import { getRouteParamId } from '@/src/lib/utils/route';
 import { formatCompletedSets, getCompletedSets } from '@/src/lib/utils/set';
 import { toTitleCase } from '@/src/lib/utils/string';
+import { desc, eq } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useLocalSearchParams } from 'expo-router';
 import { useMemo } from 'react';
 import { View } from 'react-native';
+
+function formatWeight(weightKg: number): string {
+  return Number.isInteger(weightKg) ? String(weightKg) : weightKg.toFixed(1);
+}
 
 export default function ExerciseDetailScreen() {
   const db = useDrizzle();
@@ -42,6 +49,14 @@ export default function ExerciseDetailScreen() {
   const { data: setRows = [] } = useLiveQuery(
     getExerciseHistorySetsQuery(db, exerciseId ?? '', workoutIds),
     [db, exerciseId, workoutIds.join(',')]
+  );
+  const { data: prRows = [] } = useLiveQuery(
+    db
+      .select()
+      .from(personalRecords)
+      .where(eq(personalRecords.exerciseId, exerciseId ?? ''))
+      .orderBy(desc(personalRecords.achievedAt)),
+    [db, exerciseId]
   );
   const history = useMemo(
     () =>
@@ -236,6 +251,61 @@ export default function ExerciseDetailScreen() {
                 </View>
               );
             })
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4">
+        <CardContent>
+          <Text variant="caption" tone="muted">
+            Personal records
+          </Text>
+
+          {prRows.length === 0 ? (
+            <View className="mt-4">
+              <Text variant="h3">No PRs yet</Text>
+              <Text variant="small" tone="muted" className="mt-2">
+                Beat your best estimated 1RM to set a PR.
+              </Text>
+            </View>
+          ) : (
+            <View className="mt-4">
+              {prRows.map((pr, index) => (
+                <View
+                  key={pr.id}
+                  className={cn(
+                    'flex-row items-center justify-between py-3',
+                    index < prRows.length - 1 && 'border-border border-b'
+                  )}
+                >
+                  <View className="flex-1">
+                    <Text variant="bodyMedium">
+                      {formatWeight(pr.weightKg)} kg × {pr.reps}
+                    </Text>
+                    <Text variant="caption" tone="muted" className="mt-1">
+                      {formatWorkoutDate(pr.achievedAt)}
+                    </Text>
+                  </View>
+
+                  <View className="items-end">
+                    <Text variant="caption" tone="muted">
+                      Est. 1RM
+                    </Text>
+                    <Text variant="bodyMedium" className="mt-1">
+                      {formatWeight(pr.estimated1rm)} kg
+                    </Text>
+                  </View>
+
+                  {index === 0 ? (
+                    <View className="bg-success/15 ml-3 rounded-md px-2 py-1">
+                      <Text variant="caption" className="text-success">
+                        Best
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              ))}
+            </View>
           )}
         </CardContent>
       </Card>
