@@ -20,6 +20,7 @@ import {
   getSetsForWorkoutExercisesQuery,
   getWorkoutExercisesQuery
 } from '@/src/features/workouts/repository';
+import { useSettings } from '@/src/features/settings/hooks';
 import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date';
 import { getRouteParamId } from '@/src/lib/utils/route';
 import { formatWeight } from '@/src/lib/utils/weight';
@@ -45,6 +46,7 @@ function getExercisesForWorkoutQuery(
 
 export default function WorkoutHistoryDetailScreen() {
   const db = useDrizzle();
+  const { weightUnit } = useSettings();
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const workoutId = getRouteParamId(id);
 
@@ -238,7 +240,7 @@ export default function WorkoutHistoryDetailScreen() {
               Volume
             </Text>
             <Text variant="h3" className="mt-1">
-              {totalVolume} kg
+              {totalVolume} {weightUnit}
             </Text>
           </CardContent>
         </Card>
@@ -276,7 +278,7 @@ export default function WorkoutHistoryDetailScreen() {
                           {index + 1}
                         </Text>
                         <Text variant="caption">
-                          {formatWeight(set.weightKg)} kg
+                          {formatWeight(set.weightKg)} {weightUnit}
                         </Text>
                         <Text variant="caption" tone="muted">
                           x

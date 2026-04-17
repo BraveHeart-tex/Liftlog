@@ -3,6 +3,7 @@ import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import type { Set } from '@/src/db/schema';
+import { useSettings } from '@/src/features/settings/hooks';
 import { PlusIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
@@ -29,6 +30,7 @@ export function SetForm({
   onClear,
   onDeleteSet
 }: SetFormProps) {
+  const { weightUnit } = useSettings();
   const [weightValue, setWeightValue] = useState('');
   const [repsValue, setRepsValue] = useState('');
   const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -145,7 +147,7 @@ export function SetForm({
       <View className="mt-2 gap-4">
         <View>
           <Text variant="caption" tone="muted" className="mb-1">
-            Weight (kg)
+            Weight ({weightUnit})
           </Text>
           <View className="flex-row items-center gap-2">
             <StepperButton
@@ -168,7 +170,7 @@ export function SetForm({
                 className={inputClassName}
               />
               <Text variant="bodyMedium" tone="muted" className="pr-3">
-                kg
+                {weightUnit}
               </Text>
             </View>
 
