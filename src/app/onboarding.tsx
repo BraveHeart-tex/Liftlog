@@ -10,11 +10,11 @@ import {
   type WeightUnit
 } from '@/src/features/settings/repository';
 import { cn } from '@/src/lib/utils/cn';
-import { router, type Href } from 'expo-router';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
 
-const tabsRoute = '/(tabs)' as Href;
+const workoutRoute = '/(tabs)/workout';
 
 export default function OnboardingScreen() {
   const db = useDrizzle();
@@ -36,7 +36,7 @@ export default function OnboardingScreen() {
 
     completeOnboarding(db, trimmedName);
     setWeightUnit(db, weightUnitPreference);
-    router.replace(tabsRoute);
+    router.replace(workoutRoute);
   };
 
   return (
