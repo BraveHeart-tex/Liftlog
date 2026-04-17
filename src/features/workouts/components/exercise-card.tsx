@@ -1,6 +1,7 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import { Card, CardContent, CardHeader } from '@/src/components/ui/card';
 import { Text } from '@/src/components/ui/text';
+import { useSettings } from '@/src/features/settings/hooks';
 import { deleteWorkoutExercise } from '@/src/features/workouts/repository';
 import { cn } from '@/src/lib/utils/cn';
 import { router } from 'expo-router';
@@ -19,6 +20,7 @@ type ExerciseCardProps = {
 
 export function ExerciseCard({ item, className }: ExerciseCardProps) {
   const db = useDrizzle();
+  const { weightUnit } = useSettings();
   const [isDeleteActionHidden, setIsDeleteActionHidden] = useState(false);
   const [isSelected, setIsSelected] = useState(false);
   const completedSets = item.sets.filter(set => set.status === 'completed');
@@ -119,7 +121,7 @@ export function ExerciseCard({ item, className }: ExerciseCardProps) {
                         {index + 1}
                       </Text>
                       <Text variant="caption">
-                        {formatInputNumber(set.weightKg)} kg
+                        {formatInputNumber(set.weightKg)} {weightUnit}
                       </Text>
                       <Text variant="caption" tone="muted">
                         x
