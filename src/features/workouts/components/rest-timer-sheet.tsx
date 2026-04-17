@@ -6,6 +6,7 @@ import {
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
+import { useSettings } from '@/src/features/settings/hooks';
 import { formatTime } from '@/src/lib/utils/format-time';
 import {
   setAudioModeAsync,
@@ -19,7 +20,7 @@ import { Text as NativeText, TextInput, View } from 'react-native';
 
 const MIN_DURATION_SECONDS = 10;
 const MAX_DURATION_SECONDS = 3600;
-const DEFAULT_DURATION_SECONDS = 30;
+const DEFAULT_DURATION_SECONDS = 90;
 
 export const timerRef = {
   endTime: null as number | null,
@@ -53,11 +54,8 @@ function deriveStatus(): TimerStatus {
   return 'idle';
 }
 
-export function RestTimerSheet({
-  isOpen,
-  onClose,
-  durationSeconds = 90
-}: RestTimerSheetProps) {
+export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
+  const { restTimerDuration: defaultDuration } = useSettings();
   const [secondsRemaining, setSecondsRemaining] = useState(() =>
     Math.ceil(
       (timerRef.pausedRemaining ?? timerRef.durationSeconds * 1000) / 1000
@@ -191,18 +189,15 @@ export function RestTimerSheet({
   }, [playCompletionFeedback]);
 
   useEffect(() => {
-    if (durationSeconds && durationSeconds !== timerRef.durationSeconds) {
-      if (!timerRef.isRunning && timerRef.pausedRemaining === null) {
-        timerRef.durationSeconds = durationSeconds;
-        timerRef.pausedRemaining = null;
-        timerRef.hasCompleted = false;
-        setActiveDuration(durationSeconds);
-        setInputValue(durationSeconds);
-        setSecondsRemaining(durationSeconds);
-        setStatus('idle');
-      }
+    if (!timerRef.isRunning && !timerRef.hasCompleted) {
+      timerRef.durationSeconds = defaultDuration;
+      timerRef.pausedRemaining = null;
+      setActiveDuration(defaultDuration);
+      setInputValue(defaultDuration);
+      setSecondsRemaining(defaultDuration);
+      setStatus('idle');
     }
-  }, [durationSeconds]);
+  }, [defaultDuration]);
 
   useEffect(() => {
     const didOpen = isOpen && !wasOpenRef.current;
@@ -211,6 +206,11 @@ export function RestTimerSheet({
 
     if (!didOpen) {
       return;
+    }
+
+    // When sheet opens and timer is idle, use settings default.
+    if (!timerRef.isRunning && !timerRef.hasCompleted) {
+      timerRef.durationSeconds = defaultDuration;
     }
 
     const currentStatus = deriveStatus();
@@ -224,7 +224,7 @@ export function RestTimerSheet({
     setInputValue(
       currentStatus === 'paused' ? remaining : timerRef.durationSeconds
     );
-  }, [isOpen]);
+  }, [defaultDuration, isOpen]);
 
   const handleInputChange = (value: string) => {
     if (value.trim().length === 0) {
