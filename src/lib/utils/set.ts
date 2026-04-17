@@ -1,12 +1,5 @@
 import type { Set } from '@/src/db';
-
-function formatWeight(weightKg: number) {
-  if (Number.isInteger(weightKg)) {
-    return String(weightKg);
-  }
-
-  return weightKg.toFixed(1);
-}
+import { formatWeight } from '@/src/lib/utils/weight';
 
 export function getCompletedSets(sets: Set[]) {
   return sets.filter(set => set.status === 'completed');
