@@ -16,6 +16,7 @@ import {
 import {
   createWorkout,
   createWorkoutExercise,
+  getActiveWorkoutQuery,
   getSetsForWorkoutExercisesQuery,
   getWorkoutExercisesQuery
 } from '@/src/features/workouts/repository';
@@ -55,6 +56,12 @@ export default function WorkoutHistoryDetailScreen() {
     [db, workoutId]
   );
   const workout = workoutRows[0];
+
+  const { data: activeWorkoutRows = [] } = useLiveQuery(
+    getActiveWorkoutQuery(db),
+    [db]
+  );
+  const activeWorkout = activeWorkoutRows[0];
 
   const { data: workoutExerciseRows = [] } = useLiveQuery(
     getWorkoutExercisesQuery(db, workoutId ?? ''),
@@ -131,6 +138,12 @@ export default function WorkoutHistoryDetailScreen() {
 
   const handleRepeatWorkout = () => {
     if (!workout) {
+      return;
+    }
+
+    if (activeWorkout) {
+      router.push('/(tabs)/workout/active');
+
       return;
     }
 
@@ -281,7 +294,7 @@ export default function WorkoutHistoryDetailScreen() {
         className="mt-6 w-full"
         onPress={handleRepeatWorkout}
       >
-        Repeat this workout
+        {activeWorkout ? 'Resume active workout' : 'Repeat this workout'}
       </Button>
     </Screen>
   );
