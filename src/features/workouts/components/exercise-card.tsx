@@ -4,6 +4,7 @@ import { Text } from '@/src/components/ui/text';
 import { useSettings } from '@/src/features/settings/hooks';
 import { deleteWorkoutExercise } from '@/src/features/workouts/repository';
 import { cn } from '@/src/lib/utils/cn';
+import { formatWeightForUnit } from '@/src/lib/utils/weight';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import ReanimatedSwipeable, {
@@ -11,7 +12,6 @@ import ReanimatedSwipeable, {
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { Alert, Pressable, View } from 'react-native';
 import type { WorkoutExerciseWithSets } from './types';
-import { formatInputNumber } from './utils';
 
 type ExerciseCardProps = {
   item: WorkoutExerciseWithSets;
@@ -121,7 +121,8 @@ export function ExerciseCard({ item, className }: ExerciseCardProps) {
                         {index + 1}
                       </Text>
                       <Text variant="caption">
-                        {formatInputNumber(set.weightKg)} {weightUnit}
+                        {formatWeightForUnit(set.weightKg, weightUnit)}{' '}
+                        {weightUnit}
                       </Text>
                       <Text variant="caption" tone="muted">
                         x

@@ -14,22 +14,18 @@ import {
   rebuildPersonalRecordsForExercise
 } from '@/src/features/progress/repository';
 import { useSettings } from '@/src/features/settings/hooks';
-import { formatInputNumber } from '@/src/features/workouts/components/utils';
 import { cn } from '@/src/lib/utils/cn';
 import { formatWorkoutDate } from '@/src/lib/utils/date';
 import { formatMuscleList, parseMuscleList } from '@/src/lib/utils/muscle';
 import { getRouteParamId } from '@/src/lib/utils/route';
 import { formatCompletedSets, getCompletedSets } from '@/src/lib/utils/set';
 import { toTitleCase } from '@/src/lib/utils/string';
+import { formatWeightForUnit } from '@/src/lib/utils/weight';
 import { desc, eq } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo } from 'react';
 import { View } from 'react-native';
-
-function formatWeight(weightKg: number): string {
-  return Number.isInteger(weightKg) ? String(weightKg) : weightKg.toFixed(1);
-}
 
 export default function ExerciseDetailScreen() {
   const db = useDrizzle();
@@ -115,7 +111,7 @@ export default function ExerciseDetailScreen() {
   const completedSets = mostRecentHistory
     ? getCompletedSets(mostRecentHistory.sets)
     : [];
-  const completedSetSummary = formatCompletedSets(completedSets);
+  const completedSetSummary = formatCompletedSets(completedSets, weightUnit);
 
   return (
     <Screen scroll>
@@ -243,7 +239,8 @@ export default function ExerciseDetailScreen() {
                           {index + 1}
                         </Text>
                         <Text variant="caption">
-                          {formatInputNumber(set.weightKg)} {weightUnit}
+                          {formatWeightForUnit(set.weightKg, weightUnit)}{' '}
+                          {weightUnit}
                         </Text>
                         <Text variant="caption" tone="muted">
                           x
@@ -291,7 +288,8 @@ export default function ExerciseDetailScreen() {
                 >
                   <View className="flex-1">
                     <Text variant="bodyMedium">
-                      {formatWeight(pr.weightKg)} {weightUnit} × {pr.reps}
+                      {formatWeightForUnit(pr.weightKg, weightUnit)}{' '}
+                      {weightUnit} × {pr.reps}
                     </Text>
                     <Text variant="caption" tone="muted" className="mt-1">
                       {formatWorkoutDate(pr.achievedAt)}
@@ -303,7 +301,8 @@ export default function ExerciseDetailScreen() {
                       Est. 1RM
                     </Text>
                     <Text variant="bodyMedium" className="mt-1">
-                      {formatWeight(pr.estimated1rm)} {weightUnit}
+                      {formatWeightForUnit(pr.estimated1rm, weightUnit)}{' '}
+                      {weightUnit}
                     </Text>
                   </View>
 

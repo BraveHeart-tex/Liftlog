@@ -1,8 +1,9 @@
 import type { DrizzleDb } from '@/src/db/client';
 import { appMeta } from '@/src/db/schema';
+import type { WeightUnit } from '@/src/lib/utils/weight';
 import { eq } from 'drizzle-orm';
 
-export type WeightUnit = 'kg' | 'lb';
+export type { WeightUnit };
 
 export const SETTINGS_KEYS = {
   weightUnit: 'settings.weight_unit',
