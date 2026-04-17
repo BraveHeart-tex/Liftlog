@@ -57,7 +57,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="history"
+        name="history/index"
         options={{
           title: 'History',
           tabBarIcon: ({ color, size }) => (
