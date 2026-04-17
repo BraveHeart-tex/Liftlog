@@ -2,11 +2,7 @@ import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { Text } from '@/src/components/ui/text';
 import type { DrizzleDb } from '@/src/db/client';
 import { personalRecords, type Set } from '@/src/db/schema';
-import {
-  computeEstimated1RM,
-  createPersonalRecord,
-  getLatestPersonalRecord
-} from '@/src/features/progress/repository';
+import { rebuildPersonalRecordsForExercise } from '@/src/features/progress/repository';
 import {
   createSet,
   deleteSet,
@@ -46,31 +42,8 @@ export function ExerciseTrackTab({ db, item }: ExerciseTrackTabProps) {
     [prRows]
   );
 
-  function checkAndCreatePR(setId: Set['id'], weightKg: number, reps: number) {
-    if (weightKg <= 0 || reps <= 0) {
-      return;
-    }
-
-    const estimated1rm = computeEstimated1RM(weightKg, reps);
-    const currentPR = getLatestPersonalRecord(db, exerciseId);
-    const isNewPR = !currentPR || estimated1rm > currentPR.estimated1rm;
-
-    if (!isNewPR) {
-      return;
-    }
-
-    createPersonalRecord(db, {
-      exerciseId,
-      setId,
-      weightKg,
-      reps,
-      estimated1rm,
-      achievedAt: Date.now()
-    });
-  }
-
   const handleAddSet = ({ weightKg, reps }: SetValues) => {
-    const newSet = createSet(db, {
+    createSet(db, {
       workoutExerciseId: item.workoutExercise.id,
       weightKg,
       reps,
@@ -79,7 +52,7 @@ export function ExerciseTrackTab({ db, item }: ExerciseTrackTabProps) {
       completedAt: Date.now()
     });
 
-    checkAndCreatePR(newSet.id, weightKg, reps);
+    rebuildPersonalRecordsForExercise(db, exerciseId);
   };
 
   const handleUpdateSet = ({
@@ -93,12 +66,13 @@ export function ExerciseTrackTab({ db, item }: ExerciseTrackTabProps) {
       status: 'completed',
       completedAt: Date.now()
     });
-    checkAndCreatePR(setId, weightKg, reps);
+    rebuildPersonalRecordsForExercise(db, exerciseId);
     setEditingSetId(null);
   };
 
   const handleDeleteSet = (setId: Set['id']) => {
     deleteSet(db, setId);
+    rebuildPersonalRecordsForExercise(db, exerciseId);
 
     if (setId === editingSetId) {
       setEditingSetId(null);

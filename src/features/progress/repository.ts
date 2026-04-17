@@ -5,7 +5,6 @@ import {
   workoutExercises,
   workouts,
   type Exercise,
-  type NewPersonalRecord,
   type PersonalRecord,
   type Set,
   type Workout
@@ -32,25 +31,6 @@ export function getPersonalRecordsByExercise(
     .where(eq(personalRecords.exerciseId, exerciseId))
     .orderBy(desc(personalRecords.achievedAt))
     .all();
-}
-
-export function getLatestPersonalRecord(
-  db: DrizzleDb,
-  exerciseId: Exercise['id']
-): PersonalRecord | undefined {
-  return db
-    .select()
-    .from(personalRecords)
-    .where(eq(personalRecords.exerciseId, exerciseId))
-    .orderBy(desc(personalRecords.achievedAt))
-    .get();
-}
-
-export function createPersonalRecord(
-  db: DrizzleDb,
-  data: NewPersonalRecord
-): PersonalRecord {
-  return db.insert(personalRecords).values(data).returning().get();
 }
 
 export function getExerciseHistoryWorkoutsQuery(
@@ -171,6 +151,76 @@ export function getExerciseHistory(
   const setRows = getExerciseHistorySetsQuery(db, exerciseId, workoutIds).all();
 
   return buildExerciseHistory(workoutRows, setRows);
+}
+
+function getCompletedSetsForPersonalRecords(db: DrizzleDb, exerciseId: string) {
+  return db
+    .select({
+      set: sets,
+      workoutStartedAt: workouts.startedAt
+    })
+    .from(sets)
+    .innerJoin(
+      workoutExercises,
+      eq(sets.workoutExerciseId, workoutExercises.id)
+    )
+    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
+    .where(
+      and(
+        eq(workoutExercises.exerciseId, exerciseId),
+        inArray(workouts.status, ['completed', 'in_progress']),
+        eq(sets.status, 'completed')
+      )
+    )
+    .all();
+}
+
+function getSetAchievedAt(row: {
+  set: Set;
+  workoutStartedAt: Workout['startedAt'];
+}): number {
+  return row.set.completedAt ?? row.workoutStartedAt;
+}
+
+export function rebuildPersonalRecordsForExercise(
+  db: DrizzleDb,
+  exerciseId: Exercise['id']
+): void {
+  const completedSetRows = getCompletedSetsForPersonalRecords(db, exerciseId);
+  const sortedRows = [...completedSetRows].sort((left, right) => {
+    const achievedAtDiff = getSetAchievedAt(left) - getSetAchievedAt(right);
+
+    if (achievedAtDiff !== 0) {
+      return achievedAtDiff;
+    }
+
+    return left.set.order - right.set.order;
+  });
+  let bestEstimated1RM = 0;
+
+  db.delete(personalRecords)
+    .where(eq(personalRecords.exerciseId, exerciseId))
+    .run();
+
+  for (const row of sortedRows) {
+    const estimated1rm = computeEstimated1RM(row.set.weightKg, row.set.reps);
+
+    if (estimated1rm <= bestEstimated1RM) {
+      continue;
+    }
+
+    bestEstimated1RM = estimated1rm;
+    db.insert(personalRecords)
+      .values({
+        exerciseId,
+        setId: row.set.id,
+        weightKg: row.set.weightKg,
+        reps: row.set.reps,
+        estimated1rm,
+        achievedAt: getSetAchievedAt(row)
+      })
+      .run();
+  }
 }
 
 export function computeEstimated1RM(weightKg: number, reps: number): number {
