@@ -13,6 +13,7 @@ import {
   getExerciseHistoryWorkoutsQuery,
   rebuildPersonalRecordsForExercise
 } from '@/src/features/progress/repository';
+import { useSettings } from '@/src/features/settings/hooks';
 import { formatInputNumber } from '@/src/features/workouts/components/utils';
 import { cn } from '@/src/lib/utils/cn';
 import { formatWorkoutDate } from '@/src/lib/utils/date';
@@ -32,6 +33,7 @@ function formatWeight(weightKg: number): string {
 
 export default function ExerciseDetailScreen() {
   const db = useDrizzle();
+  const { weightUnit } = useSettings();
 
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const exerciseId = getRouteParamId(id);
@@ -241,7 +243,7 @@ export default function ExerciseDetailScreen() {
                           {index + 1}
                         </Text>
                         <Text variant="caption">
-                          {formatInputNumber(set.weightKg)} kg
+                          {formatInputNumber(set.weightKg)} {weightUnit}
                         </Text>
                         <Text variant="caption" tone="muted">
                           x
@@ -289,7 +291,7 @@ export default function ExerciseDetailScreen() {
                 >
                   <View className="flex-1">
                     <Text variant="bodyMedium">
-                      {formatWeight(pr.weightKg)} kg × {pr.reps}
+                      {formatWeight(pr.weightKg)} {weightUnit} × {pr.reps}
                     </Text>
                     <Text variant="caption" tone="muted" className="mt-1">
                       {formatWorkoutDate(pr.achievedAt)}
@@ -301,7 +303,7 @@ export default function ExerciseDetailScreen() {
                       Est. 1RM
                     </Text>
                     <Text variant="bodyMedium" className="mt-1">
-                      {formatWeight(pr.estimated1rm)} kg
+                      {formatWeight(pr.estimated1rm)} {weightUnit}
                     </Text>
                   </View>
 

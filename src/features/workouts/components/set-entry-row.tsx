@@ -1,5 +1,6 @@
 import { Text } from '@/src/components/ui/text';
 import type { Set } from '@/src/db/schema';
+import { useSettings } from '@/src/features/settings/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import ReanimatedSwipeable, {
   type SwipeableMethods
@@ -25,6 +26,7 @@ export function SetEntryRow({
   onEdit,
   onDeleteSet
 }: SetEntryRowProps) {
+  const { weightUnit } = useSettings();
   const [isDeleteActionHidden, setIsDeleteActionHidden] = useState(false);
 
   const handleDeleteSet = () => {
@@ -100,7 +102,7 @@ export function SetEntryRow({
               Weight
             </Text>
             <Text variant="bodyMedium" className="mt-1">
-              {formatInputNumber(set.weightKg)} kg
+              {formatInputNumber(set.weightKg)} {weightUnit}
             </Text>
           </View>
 

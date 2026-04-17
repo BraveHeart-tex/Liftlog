@@ -7,6 +7,7 @@ import {
   getExerciseHistorySetsQuery,
   getExerciseHistoryWorkoutsQuery
 } from '@/src/features/progress/repository';
+import { useSettings } from '@/src/features/settings/hooks';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { View } from 'react-native';
 import { formatInputNumber } from './utils';
@@ -32,6 +33,7 @@ export function ExerciseHistoryTab({
   db,
   exerciseId
 }: ExerciseHistoryTabProps) {
+  const { weightUnit } = useSettings();
   const { data: workoutRows = [] } = useLiveQuery(
     getExerciseHistoryWorkoutsQuery(db, exerciseId),
     [db, exerciseId]
@@ -80,7 +82,7 @@ export function ExerciseHistoryTab({
                   {index + 1}
                 </Text>
                 <Text variant="caption">
-                  {formatInputNumber(set.weightKg)} kg
+                  {formatInputNumber(set.weightKg)} {weightUnit}
                 </Text>
                 <Text variant="caption" tone="muted">
                   x
