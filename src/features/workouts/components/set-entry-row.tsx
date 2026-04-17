@@ -11,6 +11,7 @@ import { formatInputNumber } from './utils';
 type SetEntryRowProps = {
   set: Set;
   setNumber: number;
+  isPR: boolean;
   isEditing: boolean;
   onEdit: () => void;
   onDeleteSet: () => void;
@@ -19,6 +20,7 @@ type SetEntryRowProps = {
 export function SetEntryRow({
   set,
   setNumber,
+  isPR,
   isEditing,
   onEdit,
   onDeleteSet
@@ -110,6 +112,14 @@ export function SetEntryRow({
               {set.reps}
             </Text>
           </View>
+
+          {isPR ? (
+            <View className="bg-success/15 rounded-md px-2 py-1">
+              <Text variant="caption" className="text-success">
+                PR
+              </Text>
+            </View>
+          ) : null}
         </View>
       </Pressable>
     </ReanimatedSwipeable>
