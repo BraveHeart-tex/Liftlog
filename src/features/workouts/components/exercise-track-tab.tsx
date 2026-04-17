@@ -1,8 +1,15 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { Text } from '@/src/components/ui/text';
 import type { DrizzleDb } from '@/src/db/client';
-import { personalRecords, type Set } from '@/src/db/schema';
-import { rebuildPersonalRecordsForExercise } from '@/src/features/progress/repository';
+import {
+  personalRecords,
+  type PersonalRecord,
+  type Set
+} from '@/src/db/schema';
+import {
+  computeEstimated1RM,
+  rebuildPersonalRecordsForExercise
+} from '@/src/features/progress/repository';
 import {
   createSet,
   deleteSet,
@@ -10,6 +17,7 @@ import {
 } from '@/src/features/workouts/repository';
 import { desc, eq } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import * as Haptics from 'expo-haptics';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { SetEntryRow } from './set-entry-row';
@@ -29,6 +37,13 @@ function getPersonalRecordsByExerciseQuery(db: DrizzleDb, exerciseId: string) {
     .orderBy(desc(personalRecords.achievedAt));
 }
 
+function getLatestPersonalRecord(
+  db: DrizzleDb,
+  exerciseId: string
+): PersonalRecord | undefined {
+  return getPersonalRecordsByExerciseQuery(db, exerciseId).get();
+}
+
 export function ExerciseTrackTab({ db, item }: ExerciseTrackTabProps) {
   const [editingSetId, setEditingSetId] = useState<Set['id'] | null>(null);
   const editingSet = item.sets.find(set => set.id === editingSetId);
@@ -43,7 +58,7 @@ export function ExerciseTrackTab({ db, item }: ExerciseTrackTabProps) {
   );
 
   const handleAddSet = ({ weightKg, reps }: SetValues) => {
-    createSet(db, {
+    const newSet = createSet(db, {
       workoutExerciseId: item.workoutExercise.id,
       weightKg,
       reps,
@@ -52,7 +67,13 @@ export function ExerciseTrackTab({ db, item }: ExerciseTrackTabProps) {
       completedAt: Date.now()
     });
 
-    rebuildPersonalRecordsForExercise(db, exerciseId);
+    const isPR = checkAndCreatePR(newSet.id, weightKg, reps);
+
+    if (isPR) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
   };
 
   const handleUpdateSet = ({
@@ -66,7 +87,14 @@ export function ExerciseTrackTab({ db, item }: ExerciseTrackTabProps) {
       status: 'completed',
       completedAt: Date.now()
     });
-    rebuildPersonalRecordsForExercise(db, exerciseId);
+    const isPR = checkAndCreatePR(setId, weightKg, reps);
+
+    if (isPR) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
     setEditingSetId(null);
   };
 
@@ -78,6 +106,30 @@ export function ExerciseTrackTab({ db, item }: ExerciseTrackTabProps) {
       setEditingSetId(null);
     }
   };
+
+  function checkAndCreatePR(
+    setId: Set['id'],
+    weightKg: number,
+    reps: number
+  ): boolean {
+    if (weightKg <= 0 || reps <= 0) {
+      rebuildPersonalRecordsForExercise(db, exerciseId);
+
+      return false;
+    }
+
+    const estimated1rm = computeEstimated1RM(weightKg, reps);
+    const currentPR = getLatestPersonalRecord(db, exerciseId);
+    const isNewPR = !currentPR || estimated1rm > currentPR.estimated1rm;
+
+    rebuildPersonalRecordsForExercise(db, exerciseId);
+
+    if (!isNewPR) {
+      return false;
+    }
+
+    return getLatestPersonalRecord(db, exerciseId)?.setId === setId;
+  }
 
   return (
     <StyledScrollView
