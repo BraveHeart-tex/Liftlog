@@ -63,10 +63,13 @@ export default function WorkoutHistoryDetailScreen() {
   );
   const activeWorkout = activeWorkoutRows[0];
 
-  const { data: workoutExerciseRows = [] } = useLiveQuery(
-    getWorkoutExercisesQuery(db, workoutId ?? ''),
-    [db, workoutId]
-  );
+  const {
+    data: workoutExerciseRows = [],
+    updatedAt: workoutExercisesUpdatedAt
+  } = useLiveQuery(getWorkoutExercisesQuery(db, workoutId ?? ''), [
+    db,
+    workoutId
+  ]);
 
   const workoutExerciseIds = useMemo(
     () => workoutExerciseRows.map(workoutExercise => workoutExercise.id),
@@ -137,7 +140,7 @@ export default function WorkoutHistoryDetailScreen() {
   );
 
   const handleRepeatWorkout = () => {
-    if (!workout) {
+    if (!workout || (!activeWorkout && !workoutExercisesUpdatedAt)) {
       return;
     }
 
@@ -292,6 +295,7 @@ export default function WorkoutHistoryDetailScreen() {
       <Button
         variant="secondary"
         className="mt-6 w-full"
+        disabled={!activeWorkout && !workoutExercisesUpdatedAt}
         onPress={handleRepeatWorkout}
       >
         {activeWorkout ? 'Resume active workout' : 'Repeat this workout'}
