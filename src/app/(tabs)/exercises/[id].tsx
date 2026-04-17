@@ -225,7 +225,7 @@ export default function ExerciseDetailScreen() {
                         <Text variant="caption">{set.reps} reps</Text>
                         {isBestSet ? (
                           <Text variant="caption" className="text-success ml-1">
-                            PR
+                            Best
                           </Text>
                         ) : null}
                       </View>
