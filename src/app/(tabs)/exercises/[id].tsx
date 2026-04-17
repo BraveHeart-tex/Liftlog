@@ -10,7 +10,8 @@ import {
   buildExerciseHistory,
   computeEstimated1RM,
   getExerciseHistorySetsQuery,
-  getExerciseHistoryWorkoutsQuery
+  getExerciseHistoryWorkoutsQuery,
+  rebuildPersonalRecordsForExercise
 } from '@/src/features/progress/repository';
 import { formatInputNumber } from '@/src/features/workouts/components/utils';
 import { cn } from '@/src/lib/utils/cn';
@@ -22,7 +23,7 @@ import { toTitleCase } from '@/src/lib/utils/string';
 import { desc, eq } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useLocalSearchParams } from 'expo-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { View } from 'react-native';
 
 function formatWeight(weightKg: number): string {
@@ -69,6 +70,14 @@ export default function ExerciseDetailScreen() {
         .slice(0, 10),
     [setRows, workoutRows]
   );
+
+  useEffect(() => {
+    if (!exerciseId || !exerciseUpdatedAt) {
+      return;
+    }
+
+    rebuildPersonalRecordsForExercise(db, exerciseId);
+  }, [db, exerciseId, exerciseUpdatedAt]);
 
   if (exerciseId && !exerciseUpdatedAt) {
     return (
