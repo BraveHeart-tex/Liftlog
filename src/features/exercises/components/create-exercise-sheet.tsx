@@ -161,6 +161,7 @@ export function CreateExerciseSheet({
         />
       </View>
 
+      {/* keyboard handled by ScrollView + keyboardShouldPersistTaps */}
       <StyledBottomSheetScrollView
         className="flex-1"
         contentContainerClassName="px-4 pb-8"

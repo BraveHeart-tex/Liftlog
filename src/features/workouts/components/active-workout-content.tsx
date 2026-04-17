@@ -20,6 +20,7 @@ import {
   getWorkoutExercisesQuery
 } from '@/src/features/workouts/repository';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { PlusIcon, TimerIcon } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
@@ -92,6 +93,7 @@ export function ActiveWorkoutContent({
 
   const handleFinishWorkout = () => {
     completeWorkout(db, activeWorkout.id);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     router.replace('/(tabs)/workout');
   };
 

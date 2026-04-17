@@ -22,6 +22,7 @@ export default function SettingsScreen() {
 
   return (
     <Screen scroll>
+      {/* no TextInput on this screen — stepper uses buttons only */}
       <View>
         <Text variant="h1">Settings</Text>
         <Text variant="small" tone="muted" className="mt-2">

@@ -63,6 +63,7 @@ export default function WorkoutStartScreen() {
 
   return (
     <Screen scroll>
+      {/* no keyboard avoiding needed — no text inputs on this screen */}
       <View>
         <Text variant="h1">Workout</Text>
         <Text variant="small" tone="muted" className="mt-2">

@@ -45,6 +45,7 @@ export default function ActiveWorkoutScreen() {
   }
 
   return (
+    // keyboard avoiding handled by BottomSheet internally
     <ActiveWorkoutContent
       activeWorkout={activeWorkout}
       exerciseRows={exerciseRows}

@@ -71,6 +71,7 @@ export default function ExercisesScreen() {
         />
       </View>
 
+      {/* keyboardShouldPersistTaps="handled" on FlatList handles this */}
       <StyledFlatList
         data={filteredExercises}
         keyExtractor={item => item.id}
