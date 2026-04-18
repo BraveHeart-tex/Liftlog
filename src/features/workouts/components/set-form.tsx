@@ -172,8 +172,8 @@ export function SetForm({
                 placeholder="0"
                 placeholderClassName="text-muted-foreground"
                 selectionClassName="text-primary"
-                accessibilityLabel={`Next set weight in ${weightUnit}`}
                 className={inputClassName}
+                accessibilityLabel={`Next set weight in ${weightUnit}`}
               />
               <Text variant="bodyMedium" tone="muted" className="pr-3">
                 {weightUnit}
