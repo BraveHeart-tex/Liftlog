@@ -3,11 +3,11 @@ import type { Set } from '@/src/db/schema';
 import { useSettings } from '@/src/features/settings/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { formatWeightForUnit } from '@/src/lib/utils/weight';
+import { useState } from 'react';
+import { Alert, Pressable, View } from 'react-native';
 import ReanimatedSwipeable, {
   type SwipeableMethods
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
-import { useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
 
 type SetEntryRowProps = {
   set: Set;
@@ -71,7 +71,7 @@ export function SetEntryRow({
         handleDeleteSet();
       }}
     >
-      <Text variant="bodyMedium" className="text-primary-foreground">
+      <Text variant="bodyMedium" className="text-white">
         Delete
       </Text>
     </Pressable>
@@ -86,7 +86,7 @@ export function SetEntryRow({
       <Pressable onPress={onEdit}>
         <View
           className={cn(
-            'border-border bg-background flex-row items-center gap-3 border-b px-3 py-3',
+            'border-border bg-background relative flex-row items-center gap-3 border-b px-3 py-3',
             isEditing && 'bg-muted/50'
           )}
         >
@@ -116,12 +116,16 @@ export function SetEntryRow({
           </View>
 
           {isPR ? (
-            <View className="bg-success/15 rounded-md px-2 py-1">
-              <Text variant="caption" className="text-success">
-                PR
-              </Text>
+            <View className="items-center justify-center">
+              <View className="bg-success/15 rounded-md px-2 py-1">
+                <Text variant="caption" className="text-success">
+                  PR
+                </Text>
+              </View>
             </View>
-          ) : null}
+          ) : (
+            <View className="w-10" />
+          )}
         </View>
       </Pressable>
     </ReanimatedSwipeable>

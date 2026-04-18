@@ -289,7 +289,7 @@ export default function ExerciseDetailScreen() {
                   <View className="flex-1">
                     <Text variant="bodyMedium">
                       {formatWeightForUnit(pr.weightKg, weightUnit)}{' '}
-                      {weightUnit} × {pr.reps}
+                      {weightUnit} x {pr.reps}
                     </Text>
                     <Text variant="caption" tone="muted" className="mt-1">
                       {formatWorkoutDate(pr.achievedAt)}
