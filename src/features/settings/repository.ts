@@ -5,15 +5,29 @@ import { eq } from 'drizzle-orm';
 
 export type { WeightUnit };
 
+export type ThemePreference = 'system' | 'light' | 'dark';
+
 export const SETTINGS_KEYS = {
   weightUnit: 'settings.weight_unit',
-  restTimerDuration: 'settings.rest_timer'
+  restTimerDuration: 'settings.rest_timer',
+  themePreference: 'settings.theme_preference'
 } as const;
 
 export const SETTINGS_DEFAULTS = {
   weightUnit: 'kg' as WeightUnit,
-  restTimerDuration: 90
+  restTimerDuration: 90,
+  themePreference: 'system' as ThemePreference
 };
+
+export function parseThemePreference(
+  value: string | undefined
+): ThemePreference {
+  if (value === 'light' || value === 'dark' || value === 'system') {
+    return value;
+  }
+
+  return SETTINGS_DEFAULTS.themePreference;
+}
 
 export function getSetting(db: DrizzleDb, key: string): string | undefined {
   return db.select().from(appMeta).where(eq(appMeta.key, key)).get()?.value;
@@ -52,4 +66,15 @@ export function getRestTimerDuration(db: DrizzleDb): number {
 
 export function setRestTimerDuration(db: DrizzleDb, seconds: number): void {
   setSetting(db, SETTINGS_KEYS.restTimerDuration, String(seconds));
+}
+
+export function getThemePreference(db: DrizzleDb): ThemePreference {
+  return parseThemePreference(getSetting(db, SETTINGS_KEYS.themePreference));
+}
+
+export function setThemePreference(
+  db: DrizzleDb,
+  preference: ThemePreference
+): void {
+  setSetting(db, SETTINGS_KEYS.themePreference, preference);
 }

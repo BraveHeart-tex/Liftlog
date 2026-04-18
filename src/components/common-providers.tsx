@@ -1,4 +1,5 @@
 import { DatabaseProvider } from '@/src/components/database-provider';
+import { AppThemeProvider } from '@/src/theme/app-theme-provider';
 import type { PropsWithChildren } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
@@ -13,7 +14,9 @@ export function CommonProviders({ children }: PropsWithChildren) {
         initialMetrics={initialWindowMetrics}
         style={{ flex: 1 }}
       >
-        <DatabaseProvider>{children}</DatabaseProvider>
+        <DatabaseProvider>
+          <AppThemeProvider>{children}</AppThemeProvider>
+        </DatabaseProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
