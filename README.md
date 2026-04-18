@@ -44,19 +44,12 @@ Run on Android:
 pnpm android
 ```
 
-Run on web:
-
-```bash
-pnpm web
-```
-
 ## Scripts
 
 ```bash
 pnpm start
 pnpm ios
 pnpm android
-pnpm web
 pnpm run ts-check
 pnpm run lint
 pnpm run lint:fix
