@@ -1,6 +1,6 @@
-import { StyledTextInput } from '@/src/components/styled/text-input';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
+import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
 import type { Set } from '@/src/db/schema';
 import { useSettings } from '@/src/features/settings/hooks';
@@ -12,6 +12,9 @@ import type { SetValues } from './types';
 import { formatInputNumber } from './utils';
 
 const inputClassName = 'text-body-medium text-foreground flex-1 px-3 py-3';
+
+const inputContainerClassName =
+  'border-border min-h-14 flex-row items-center rounded-lg border';
 
 const stepperButtonClassName =
   'bg-secondary border-border h-14 w-14 items-center justify-center rounded-lg border';
@@ -164,21 +167,23 @@ export function SetForm({
               onStopRepeating={stopRepeatingStep}
             />
 
-            <View className="border-border min-h-14 flex-1 flex-row items-center rounded-lg border">
-              <StyledTextInput
-                value={weightValue}
-                onChangeText={setWeightValue}
-                keyboardType="decimal-pad"
-                placeholder="0"
-                placeholderClassName="text-muted-foreground"
-                selectionClassName="text-primary"
-                className={inputClassName}
-                accessibilityLabel={`Next set weight in ${weightUnit}`}
-              />
-              <Text variant="bodyMedium" tone="muted" className="pr-3">
-                {weightUnit}
-              </Text>
-            </View>
+            <Input
+              value={weightValue}
+              onChangeText={setWeightValue}
+              keyboardType="decimal-pad"
+              placeholder="0"
+              className="flex-1"
+              withContainerDefaults={false}
+              containerClassName={inputContainerClassName}
+              inputClassName={inputClassName}
+              accessibilityLabel={`Next set weight in ${weightUnit}`}
+              rightIconContainerClassName="ml-0"
+              rightIcon={
+                <Text variant="bodyMedium" tone="muted" className="pr-3">
+                  {weightUnit}
+                </Text>
+              }
+            />
 
             <StepperButton
               label="+"
@@ -203,21 +208,23 @@ export function SetForm({
               onStopRepeating={stopRepeatingStep}
             />
 
-            <View className="border-border min-h-14 flex-1 flex-row items-center rounded-lg border">
-              <StyledTextInput
-                value={repsValue}
-                onChangeText={setRepsValue}
-                keyboardType="number-pad"
-                placeholder="0"
-                placeholderClassName="text-muted-foreground"
-                selectionClassName="text-primary"
-                accessibilityLabel="Next set reps"
-                className={inputClassName}
-              />
-              <Text variant="bodyMedium" tone="muted" className="pr-3">
-                reps
-              </Text>
-            </View>
+            <Input
+              value={repsValue}
+              onChangeText={setRepsValue}
+              keyboardType="number-pad"
+              placeholder="0"
+              className="flex-1"
+              withContainerDefaults={false}
+              containerClassName={inputContainerClassName}
+              inputClassName={inputClassName}
+              accessibilityLabel="Next set reps"
+              rightIconContainerClassName="ml-0"
+              rightIcon={
+                <Text variant="bodyMedium" tone="muted" className="pr-3">
+                  reps
+                </Text>
+              }
+            />
 
             <StepperButton
               label="+"
