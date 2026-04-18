@@ -1,7 +1,9 @@
-import { tabBarTheme } from '@/src/theme/tokens';
+import { useTabBarTheme } from '@/src/theme/app-theme-provider';
 import { Stack } from 'expo-router';
 
 export default function WorkoutLayout() {
+  const tabBarTheme = useTabBarTheme();
+
   return (
     <Stack
       screenOptions={{

@@ -5,8 +5,11 @@ import { useCallback, useMemo } from 'react';
 import {
   SETTINGS_DEFAULTS,
   SETTINGS_KEYS,
+  parseThemePreference,
   setRestTimerDuration as setRestTimerDurationRepo,
+  setThemePreference as setThemePreferenceRepo,
   setWeightUnit as setWeightUnitRepo,
+  type ThemePreference,
   type WeightUnit
 } from './repository';
 
@@ -35,6 +38,12 @@ export function useSettings() {
       : SETTINGS_DEFAULTS.restTimerDuration;
   }, [rows]);
 
+  const themePreference: ThemePreference = useMemo(() => {
+    const row = rows.find(row => row.key === SETTINGS_KEYS.themePreference);
+
+    return parseThemePreference(row?.value);
+  }, [rows]);
+
   const setWeightUnit = useCallback(
     (unit: WeightUnit) => {
       setWeightUnitRepo(db, unit);
@@ -49,10 +58,19 @@ export function useSettings() {
     [db]
   );
 
+  const setThemePreference = useCallback(
+    (preference: ThemePreference) => {
+      setThemePreferenceRepo(db, preference);
+    },
+    [db]
+  );
+
   return {
     weightUnit,
     restTimerDuration,
+    themePreference,
     setWeightUnit,
-    setRestTimerDuration
+    setRestTimerDuration,
+    setThemePreference
   };
 }
