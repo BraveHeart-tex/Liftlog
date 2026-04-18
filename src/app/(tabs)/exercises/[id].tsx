@@ -208,7 +208,7 @@ export default function ExerciseDetailScreen() {
               </Text>
             </View>
           ) : (
-            history.map(historyEntry => {
+            history.map((historyEntry, historyIndex) => {
               const bestSet = historyEntry.sets.reduce((best, set) =>
                 computeEstimated1RM(set.weightKg, set.reps) >
                 computeEstimated1RM(best.weightKg, best.reps)
@@ -229,11 +229,10 @@ export default function ExerciseDetailScreen() {
                     return (
                       <View
                         key={set.id}
-                        className={
-                          isBestSet
-                            ? 'bg-success/10 flex-row items-center gap-3 rounded-md px-1 py-1'
-                            : 'flex-row items-center gap-3 py-1'
-                        }
+                        className={cn(
+                          'flex-row items-center gap-3 py-1',
+                          isBestSet && 'bg-success/10 rounded-md'
+                        )}
                       >
                         <Text variant="caption" tone="muted" className="w-6">
                           {index + 1}
@@ -246,16 +245,20 @@ export default function ExerciseDetailScreen() {
                           x
                         </Text>
                         <Text variant="caption">{set.reps} reps</Text>
-                        {isBestSet ? (
-                          <Text variant="caption" className="text-success ml-1">
-                            Best
-                          </Text>
-                        ) : null}
+                        <View className="ml-1 w-10">
+                          {isBestSet ? (
+                            <Text variant="caption" className="text-success">
+                              Best
+                            </Text>
+                          ) : null}
+                        </View>
                       </View>
                     );
                   })}
 
-                  <View className="border-border mt-4 border-b" />
+                  {historyIndex < history.length - 1 && (
+                    <View className="border-border mt-4 border-b" />
+                  )}
                 </View>
               );
             })
@@ -306,13 +309,15 @@ export default function ExerciseDetailScreen() {
                     </Text>
                   </View>
 
-                  {index === 0 ? (
-                    <View className="bg-success/15 ml-3 rounded-md px-2 py-1">
-                      <Text variant="caption" className="text-success">
-                        Best
-                      </Text>
-                    </View>
-                  ) : null}
+                  <View className="ml-3 w-12 items-end">
+                    {index === 0 ? (
+                      <View className="bg-success/15 rounded-md px-2 py-1">
+                        <Text variant="caption" className="text-success">
+                          Best
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
                 </View>
               ))}
             </View>
