@@ -7,8 +7,8 @@ export const colorSchemes = {
     card: '#FFFFFF',
     primary: '#FF4D00',
     primaryForeground: '#FFFFFF',
-    border: '#E0E0E5',
-    mutedForeground: '#AEAEB2'
+    border: '#D8D8DD',
+    mutedForeground: '#8E8E93'
   },
   dark: {
     background: '#1C1C1E',

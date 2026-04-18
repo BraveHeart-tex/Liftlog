@@ -6,7 +6,7 @@ import {
   type ComponentPropsWithoutRef,
   type ReactNode
 } from 'react';
-import { Text, type TextInput, View } from 'react-native';
+import { Text, View, type TextInput } from 'react-native';
 
 type NativeTextInputProps = ComponentPropsWithoutRef<typeof TextInput>;
 
