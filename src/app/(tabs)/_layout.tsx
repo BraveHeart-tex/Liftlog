@@ -1,4 +1,4 @@
-import { tabBarTheme } from '@/src/theme/tokens';
+import { useTabBarTheme } from '@/src/theme/app-theme-provider';
 import { Tabs } from 'expo-router';
 import {
   ClockIcon,
@@ -14,6 +14,8 @@ const TAB_BAR_BOTTOM_PADDING = 6;
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+
+  const tabBarTheme = useTabBarTheme();
   const bottomPadding = Math.max(insets.bottom, TAB_BAR_BOTTOM_PADDING);
 
   return (

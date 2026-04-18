@@ -36,9 +36,9 @@ const sizeClassNames: Record<ButtonSize, string> = {
 };
 
 const variantClassNames: Record<ButtonVariant, string> = {
-  primary: 'bg-primary',
-  secondary: 'border border-border bg-card',
-  ghost: 'bg-transparent border-0',
+  primary: 'bg-primary border-primary',
+  secondary: 'border-border bg-card',
+  ghost: 'bg-transparent border-transparent',
   destructive: 'bg-danger border-danger'
 };
 
@@ -46,7 +46,7 @@ const textClassNames: Record<ButtonVariant, string> = {
   primary: 'text-body-medium text-primary-foreground',
   secondary: 'text-body-medium text-foreground',
   ghost: 'text-body-medium text-foreground',
-  destructive: 'text-body-medium text-foreground'
+  destructive: 'text-body-medium text-white'
 };
 
 const textStyle: TextStyle = {
