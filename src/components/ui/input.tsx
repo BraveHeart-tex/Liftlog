@@ -16,6 +16,9 @@ export type InputProps = NativeTextInputProps & {
   error?: string;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
+  leftIconContainerClassName?: string;
+  rightIconContainerClassName?: string;
+  withContainerDefaults?: boolean;
   containerClassName?: string;
   className?: string;
   inputClassName?: string;
@@ -32,6 +35,9 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
     error,
     leftIcon,
     rightIcon,
+    leftIconContainerClassName,
+    rightIconContainerClassName,
+    withContainerDefaults = true,
     containerClassName,
     className,
     inputClassName,
@@ -60,7 +66,8 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
 
       <View
         className={cn(
-          'border-border bg-input mt-2 flex-row items-center rounded-lg border px-4 py-3',
+          withContainerDefaults &&
+            'border-border bg-input mt-2 flex-row items-center rounded-lg border px-4 py-3',
           focused && !hasError && 'border-ring',
           hasError && 'border-danger',
           disabled && 'opacity-50',
@@ -68,7 +75,14 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         )}
       >
         {leftIcon ? (
-          <View className="mr-3 items-center justify-center">{leftIcon}</View>
+          <View
+            className={cn(
+              'mr-3 items-center justify-center',
+              leftIconContainerClassName
+            )}
+          >
+            {leftIcon}
+          </View>
         ) : null}
 
         <StyledTextInput
@@ -89,7 +103,14 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         />
 
         {rightIcon ? (
-          <View className="ml-3 items-center justify-center">{rightIcon}</View>
+          <View
+            className={cn(
+              'ml-3 items-center justify-center',
+              rightIconContainerClassName
+            )}
+          >
+            {rightIcon}
+          </View>
         ) : null}
       </View>
 
