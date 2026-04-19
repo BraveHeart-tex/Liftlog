@@ -1,10 +1,11 @@
-import type { Exercise, WorkoutExercise } from '@/src/db/schema';
+import type { WorkoutExercise } from '@/src/db/schema';
+import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { useActiveWorkoutExerciseList } from '@/src/features/workouts/hooks';
 import { ExerciseCard } from './exercise-card';
 
 interface ActiveWorkoutExerciseListProps {
   workoutExercises: WorkoutExercise[];
-  exerciseById: Map<Exercise['id'], Exercise>;
+  exerciseById: Map<ExerciseListItem['id'], ExerciseListItem>;
 }
 
 export function ActiveWorkoutExerciseList({

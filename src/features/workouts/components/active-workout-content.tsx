@@ -5,7 +5,8 @@ import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import type { Exercise, Workout } from '@/src/db/schema';
+import type { Workout } from '@/src/db/schema';
+import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import {
   useActiveWorkoutActions,
   useActiveWorkoutContent as useActiveWorkoutContentData
@@ -20,7 +21,7 @@ import { View } from 'react-native';
 
 type ActiveWorkoutContentProps = {
   activeWorkout: Workout;
-  exerciseRows: Exercise[];
+  exerciseRows: ExerciseListItem[];
 };
 
 export function ActiveWorkoutContent({

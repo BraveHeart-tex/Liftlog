@@ -1,5 +1,6 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import type { Exercise, Workout, WorkoutExercise } from '@/src/db/schema';
+import type { Workout, WorkoutExercise } from '@/src/db/schema';
+import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import {
   completeWorkout,
   createWorkoutExercise
@@ -30,7 +31,7 @@ export function useActiveWorkoutActions({
   }, [activeWorkout.id, db]);
 
   const selectExercise = useCallback(
-    (exercise: Exercise) => {
+    (exercise: ExerciseListItem) => {
       if (isLoadingWorkoutExercises) {
         return;
       }

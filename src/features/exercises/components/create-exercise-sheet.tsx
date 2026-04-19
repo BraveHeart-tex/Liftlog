@@ -9,13 +9,16 @@ import {
 import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
-import type { Exercise, NewExercise } from '@/src/db/schema';
+import type { NewExercise } from '@/src/db/schema';
 import {
   CATEGORY_FILTERS,
   MUSCLE_GROUP,
   type ExerciseCategory
 } from '@/src/features/exercises/constants';
-import { createExercise } from '@/src/features/exercises/repository';
+import {
+  createExercise,
+  type ExerciseListItem
+} from '@/src/features/exercises/repository';
 import { cn } from '@/src/lib/utils/cn';
 import { toTitleCase } from '@/src/lib/utils/string';
 import { useState } from 'react';
@@ -23,7 +26,7 @@ import { Keyboard, Pressable, View } from 'react-native';
 
 type CreateExerciseSheetProps = {
   isOpen: boolean;
-  exercises: Exercise[];
+  exercises: ExerciseListItem[];
   onClose: () => void;
 };
 

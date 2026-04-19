@@ -1,9 +1,11 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import type { Workout, WorkoutExercise } from '@/src/db/schema';
 import {
-  createWorkout,
-  createWorkoutExercise
-} from '@/src/features/workouts/repository';
+  workoutExercises,
+  type Workout,
+  type WorkoutExercise
+} from '@/src/db/schema';
+import { createWorkout } from '@/src/features/workouts/repository';
+import { generateUuid } from '@/src/lib/utils/uuid';
 import { router } from 'expo-router';
 import { useCallback } from 'react';
 
@@ -39,13 +41,18 @@ export function useRepeatWorkout({
       startedAt: Date.now()
     });
 
-    for (const workoutExercise of workoutExerciseRows) {
-      createWorkoutExercise(db, {
-        workoutId: newWorkout.id,
-        exerciseId: workoutExercise.exerciseId,
-        order: workoutExercise.order,
-        notes: null
-      });
+    if (workoutExerciseRows.length > 0) {
+      db.insert(workoutExercises)
+        .values(
+          workoutExerciseRows.map(workoutExercise => ({
+            id: generateUuid(),
+            workoutId: newWorkout.id,
+            exerciseId: workoutExercise.exerciseId,
+            order: workoutExercise.order,
+            notes: null
+          }))
+        )
+        .run();
     }
 
     router.push('/(tabs)/workout/active');

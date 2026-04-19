@@ -5,6 +5,7 @@ import {
   workoutExercises,
   workouts,
   type Exercise,
+  type NewPersonalRecord,
   type PersonalRecord,
   type Set,
   type Workout
@@ -203,10 +204,7 @@ export function rebuildPersonalRecordsForExercise(
     return left.set.order - right.set.order;
   });
   let bestEstimated1RM = 0;
-
-  db.delete(personalRecords)
-    .where(eq(personalRecords.exerciseId, exerciseId))
-    .run();
+  const newRecords: NewPersonalRecord[] = [];
 
   for (const row of sortedRows) {
     const estimated1rm = computeEstimated1RM(row.set.weightKg, row.set.reps);
@@ -216,17 +214,45 @@ export function rebuildPersonalRecordsForExercise(
     }
 
     bestEstimated1RM = estimated1rm;
-    db.insert(personalRecords)
-      .values({
-        exerciseId,
-        setId: row.set.id,
-        weightKg: row.set.weightKg,
-        reps: row.set.reps,
-        estimated1rm,
-        achievedAt: getSetAchievedAt(row)
-      })
-      .run();
+    newRecords.push({
+      exerciseId,
+      setId: row.set.id,
+      weightKg: row.set.weightKg,
+      reps: row.set.reps,
+      estimated1rm,
+      achievedAt: getSetAchievedAt(row)
+    });
   }
+
+  db.transaction(tx => {
+    tx.delete(personalRecords)
+      .where(eq(personalRecords.exerciseId, exerciseId))
+      .run();
+
+    if (newRecords.length > 0) {
+      tx.insert(personalRecords).values(newRecords).run();
+    }
+  });
+}
+
+export function maybeRebuildPersonalRecords(
+  db: DrizzleDb,
+  exerciseId: Exercise['id'],
+  newSetEstimated1rm: number
+): void {
+  const currentBest = db
+    .select({ estimated1rm: personalRecords.estimated1rm })
+    .from(personalRecords)
+    .where(eq(personalRecords.exerciseId, exerciseId))
+    .orderBy(desc(personalRecords.estimated1rm))
+    .limit(1)
+    .get();
+
+  if (currentBest && newSetEstimated1rm <= currentBest.estimated1rm) {
+    return;
+  }
+
+  rebuildPersonalRecordsForExercise(db, exerciseId);
 }
 
 export function computeEstimated1RM(weightKg: number, reps: number): number {

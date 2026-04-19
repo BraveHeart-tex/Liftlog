@@ -1,5 +1,6 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import type { Exercise, Set, WorkoutExercise } from '@/src/db/schema';
+import type { Set, WorkoutExercise } from '@/src/db/schema';
+import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import {
   getSetsForWorkoutExercises,
   getSetsForWorkoutExercisesQuery
@@ -10,7 +11,7 @@ import type { WorkoutExerciseWithSets } from '../components/types';
 
 type UseActiveWorkoutExerciseListParams = {
   workoutExercises: WorkoutExercise[];
-  exerciseById: Map<Exercise['id'], Exercise>;
+  exerciseById: Map<ExerciseListItem['id'], ExerciseListItem>;
 };
 
 export function useActiveWorkoutExerciseList({
