@@ -87,6 +87,13 @@ export function getWorkoutExercisesQuery(
     .orderBy(asc(workoutExercises.order));
 }
 
+export function getWorkoutExercises(
+  db: DrizzleDb,
+  workoutId: Workout['id']
+): WorkoutExercise[] {
+  return getWorkoutExercisesQuery(db, workoutId).all();
+}
+
 export function getWorkoutExerciseByIdQuery(
   db: DrizzleDb,
   id: WorkoutExercise['id']
