@@ -1,16 +1,12 @@
 import { StyledFlatList } from '@/src/components/styled/flat-list';
-import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { CreateExerciseSheet } from '@/src/features/exercises/components/create-exercise-sheet';
-import {
-  CATEGORY_FILTERS,
-  type CategoryFilter
-} from '@/src/features/exercises/constants';
+import { ExerciseCategoryFilters } from '@/src/features/exercises/components/exercise-category-filters';
+import type { CategoryFilter } from '@/src/features/exercises/constants';
 import { useExercises } from '@/src/features/exercises/hooks';
-import { cn } from '@/src/lib/utils/cn';
 import { getPrimaryMuscleLabel } from '@/src/lib/utils/muscle';
 import { toTitleCase } from '@/src/lib/utils/string';
 import { router } from 'expo-router';
@@ -81,36 +77,10 @@ export default function ExercisesScreen() {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View>
-            <StyledScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              className="mt-4"
-              contentContainerClassName="gap-2 pr-4"
-            >
-              {CATEGORY_FILTERS.map(category => {
-                const isSelected = category.value === selectedCategory;
-
-                return (
-                  <Pressable
-                    key={category.value}
-                    onPress={() => setSelectedCategory(category.value)}
-                    className={cn(
-                      'border-border rounded-full border px-4 py-3',
-                      isSelected ? 'bg-card' : 'bg-background'
-                    )}
-                  >
-                    <Text
-                      variant="small"
-                      className={cn(
-                        isSelected ? 'text-foreground' : 'text-muted-foreground'
-                      )}
-                    >
-                      {category.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </StyledScrollView>
+            <ExerciseCategoryFilters
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+            />
 
             <View className="mt-4">
               {filteredExercises.length > 0 && (
