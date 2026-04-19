@@ -5,6 +5,9 @@ import { useCallback, useMemo } from 'react';
 import {
   SETTINGS_DEFAULTS,
   SETTINGS_KEYS,
+  getRestTimerDuration,
+  getThemePreference,
+  getWeightUnit,
   parseThemePreference,
   setRestTimerDuration as setRestTimerDurationRepo,
   setThemePreference as setThemePreferenceRepo,
@@ -15,16 +18,36 @@ import {
 
 export function useSettings() {
   const db = useDrizzle();
+  const initialSettings = useMemo(
+    () => ({
+      weightUnit: getWeightUnit(db),
+      restTimerDuration: getRestTimerDuration(db),
+      themePreference: getThemePreference(db)
+    }),
+    [db]
+  );
 
-  const { data: rows = [] } = useLiveQuery(db.select().from(appMeta), [db]);
+  const { data: rows = [], updatedAt } = useLiveQuery(
+    db.select().from(appMeta),
+    [db]
+  );
+  const hasLoadedRows = Boolean(updatedAt);
 
   const weightUnit: WeightUnit = useMemo(() => {
+    if (!hasLoadedRows) {
+      return initialSettings.weightUnit;
+    }
+
     const row = rows.find(row => row.key === SETTINGS_KEYS.weightUnit);
 
     return row?.value === 'lb' ? 'lb' : 'kg';
-  }, [rows]);
+  }, [hasLoadedRows, initialSettings.weightUnit, rows]);
 
   const restTimerDuration: number = useMemo(() => {
+    if (!hasLoadedRows) {
+      return initialSettings.restTimerDuration;
+    }
+
     const row = rows.find(row => row.key === SETTINGS_KEYS.restTimerDuration);
 
     if (!row) {
@@ -36,13 +59,17 @@ export function useSettings() {
     return Number.isFinite(parsed) && parsed >= 10
       ? parsed
       : SETTINGS_DEFAULTS.restTimerDuration;
-  }, [rows]);
+  }, [hasLoadedRows, initialSettings.restTimerDuration, rows]);
 
   const themePreference: ThemePreference = useMemo(() => {
+    if (!hasLoadedRows) {
+      return initialSettings.themePreference;
+    }
+
     const row = rows.find(row => row.key === SETTINGS_KEYS.themePreference);
 
     return parseThemePreference(row?.value);
-  }, [rows]);
+  }, [hasLoadedRows, initialSettings.themePreference, rows]);
 
   const setWeightUnit = useCallback(
     (unit: WeightUnit) => {

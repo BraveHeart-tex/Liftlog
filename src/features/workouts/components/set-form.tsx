@@ -6,7 +6,7 @@ import type { Set } from '@/src/db/schema';
 import { useSettings } from '@/src/features/settings/hooks';
 import { convertWeightToKg, formatWeightForUnit } from '@/src/lib/utils/weight';
 import { PlusIcon } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 import type { SetValues } from './types';
 import { formatInputNumber } from './utils';
@@ -46,7 +46,7 @@ export function SetForm({
   const repeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isEditing = Boolean(editingSet);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (editingSet) {
       setWeightValue(formatWeightForUnit(editingSet.weightKg, weightUnit));
       setRepsValue(String(editingSet.reps));
