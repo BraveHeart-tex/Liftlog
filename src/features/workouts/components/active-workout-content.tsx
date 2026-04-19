@@ -19,6 +19,7 @@ import {
   createWorkoutExercise,
   getWorkoutExercisesQuery
 } from '@/src/features/workouts/repository';
+import { formatDuration } from '@/src/lib/utils/date';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
@@ -30,16 +31,6 @@ type ActiveWorkoutContentProps = {
   activeWorkout: Workout;
   exerciseRows: Exercise[];
 };
-
-function formatDuration(startedAt: number, now = Date.now()) {
-  const durationMinutes = Math.round((now - startedAt) / 60000);
-
-  if (durationMinutes < 1) {
-    return '< 1 min';
-  }
-
-  return `${durationMinutes} min`;
-}
 
 export function ActiveWorkoutContent({
   activeWorkout,
@@ -151,7 +142,10 @@ export function ActiveWorkoutContent({
 
       <View className="px-4 pb-3">
         <Text variant="caption" tone="muted">
-          {formatDuration(activeWorkout.startedAt, now)}
+          {formatDuration({
+            startedAt: activeWorkout.startedAt,
+            completedAt: now
+          })}
         </Text>
       </View>
 
