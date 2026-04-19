@@ -1,36 +1,21 @@
-import { useDrizzle } from '@/src/components/database-provider';
 import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import {
-  createWorkout,
-  getActiveWorkoutQuery,
-  getWorkoutsQuery
-} from '@/src/features/workouts/repository';
+  useStartWorkout,
+  useWorkoutStart
+} from '@/src/features/workouts/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date';
-import { formatWorkoutName } from '@/src/lib/utils/workout';
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { router, type Href } from 'expo-router';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-const activeWorkoutRoute = '/(tabs)/workout/active' as Href;
-
 export default function WorkoutStartScreen() {
-  const db = useDrizzle();
   const [now, setNow] = useState(() => Date.now());
-  const { data: activeWorkoutRows = [] } = useLiveQuery(
-    getActiveWorkoutQuery(db),
-    [db]
-  );
-  const { data: completedWorkouts = [] } = useLiveQuery(getWorkoutsQuery(db), [
-    db
-  ]);
-
-  const activeWorkout = activeWorkoutRows[0];
-  const recentWorkouts = completedWorkouts.slice(0, 5);
+  const { activeWorkout, recentWorkouts } = useWorkoutStart();
+  const { startWorkout, resumeWorkout } = useStartWorkout();
 
   useEffect(() => {
     if (!activeWorkout) {
@@ -48,19 +33,6 @@ export default function WorkoutStartScreen() {
     };
   }, [activeWorkout]);
 
-  const handleStartWorkout = () => {
-    createWorkout(db, {
-      name: formatWorkoutName(new Date()),
-      status: 'in_progress'
-    });
-
-    router.push(activeWorkoutRoute);
-  };
-
-  const handleResumeWorkout = () => {
-    router.push(activeWorkoutRoute);
-  };
-
   return (
     <Screen scroll>
       {/* no keyboard avoiding needed — no text inputs on this screen */}
@@ -72,7 +44,7 @@ export default function WorkoutStartScreen() {
       </View>
 
       {activeWorkout ? (
-        <Pressable onPress={handleResumeWorkout} className="mt-6">
+        <Pressable onPress={resumeWorkout} className="mt-6">
           <Card className="border-primary">
             <CardContent>
               <Text variant="caption" tone="muted">
@@ -92,7 +64,7 @@ export default function WorkoutStartScreen() {
         </Pressable>
       ) : (
         <>
-          <Button className="mt-6 w-full" onPress={handleStartWorkout}>
+          <Button className="mt-6 w-full" onPress={startWorkout}>
             Start Workout
           </Button>
 

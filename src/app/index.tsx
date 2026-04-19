@@ -1,16 +1,8 @@
-import { useDrizzle } from '@/src/components/database-provider';
-import { isOnboardingCompleted } from '@/src/features/settings/onboarding';
+import { useIndexRedirect } from '@/src/features/settings/hooks';
 import { Redirect } from 'expo-router';
 
-const workoutRoute = '/(tabs)/workout';
-
 export default function Index() {
-  const db = useDrizzle();
-  const completed = isOnboardingCompleted(db);
+  const { href } = useIndexRedirect();
 
-  return completed ? (
-    <Redirect href={workoutRoute} />
-  ) : (
-    <Redirect href="/onboarding" />
-  );
+  return <Redirect href={href} />;
 }

@@ -5,36 +5,23 @@ import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { CreateExerciseSheet } from '@/src/features/exercises/components/create-exercise-sheet';
 import { ExerciseCategoryFilters } from '@/src/features/exercises/components/exercise-category-filters';
-import type { CategoryFilter } from '@/src/features/exercises/constants';
-import { useExercises } from '@/src/features/exercises/hooks';
+import { useExercisesScreen } from '@/src/features/exercises/hooks';
 import { getPrimaryMuscleLabel } from '@/src/lib/utils/muscle';
 import { toTitleCase } from '@/src/lib/utils/string';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 export default function ExercisesScreen() {
-  const [query, setQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] =
-    useState<CategoryFilter>('all');
-  const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
-
-  const exercises = useExercises();
-
-  const filteredExercises = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase();
-
-    return exercises.filter(exercise => {
-      const matchesQuery =
-        normalizedQuery.length === 0 ||
-        exercise.name.toLocaleLowerCase().includes(normalizedQuery);
-      const matchesCategory =
-        selectedCategory === 'all' ||
-        exercise.category.toLocaleLowerCase() === selectedCategory;
-
-      return matchesQuery && matchesCategory;
-    });
-  }, [exercises, query, selectedCategory]);
+  const {
+    query,
+    setQuery,
+    selectedCategory,
+    setSelectedCategory,
+    isCreateSheetOpen,
+    setIsCreateSheetOpen,
+    exercises,
+    filteredExercises
+  } = useExercisesScreen();
 
   return (
     <Screen withPadding={false}>

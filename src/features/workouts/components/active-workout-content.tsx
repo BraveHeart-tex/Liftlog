@@ -1,4 +1,3 @@
-import { useDrizzle } from '@/src/components/database-provider';
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
@@ -7,24 +6,16 @@ import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import type { Exercise, Workout } from '@/src/db/schema';
+import {
+  useActiveWorkoutActions,
+  useActiveWorkoutContent as useActiveWorkoutContentData
+} from '@/src/features/workouts/hooks';
 import { ActiveWorkoutExerciseList } from '@/src/features/workouts/components/active-workout-exercise-list';
 import { EmptyExerciseState } from '@/src/features/workouts/components/empty-exercise-state';
 import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise-picker-sheet';
-import {
-  RestTimerSheet,
-  timerRef
-} from '@/src/features/workouts/components/rest-timer-sheet';
-import {
-  completeWorkout,
-  createWorkoutExercise,
-  getWorkoutExercisesQuery
-} from '@/src/features/workouts/repository';
+import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sheet';
 import { formatDuration } from '@/src/lib/utils/date';
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
 import { PlusIcon, TimerIcon } from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
 type ActiveWorkoutContentProps = {
@@ -36,77 +27,23 @@ export function ActiveWorkoutContent({
   activeWorkout,
   exerciseRows
 }: ActiveWorkoutContentProps) {
-  const db = useDrizzle();
-  const [now, setNow] = useState(() => Date.now());
-  const [isExercisePickerOpen, setIsExercisePickerOpen] = useState(false);
-  const [isRestTimerOpen, setIsRestTimerOpen] = useState(false);
-  const [timerIndicatorTick, setTimerIndicatorTick] = useState(0);
-
   const {
-    data: workoutExerciseRows = [],
-    updatedAt: workoutExercisesUpdatedAt
-  } = useLiveQuery(getWorkoutExercisesQuery(db, activeWorkout.id), [
-    db,
-    activeWorkout.id
-  ]);
-
-  const isLoadingWorkoutExercises = !workoutExercisesUpdatedAt;
-
-  const exerciseById = useMemo(
-    () =>
-      new Map<Exercise['id'], Exercise>(
-        exerciseRows.map(exercise => [exercise.id, exercise])
-      ),
-    [exerciseRows]
-  );
-
-  useEffect(() => {
-    setNow(Date.now());
-
-    const intervalId = setInterval(() => {
-      setNow(Date.now());
-    }, 30000);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [activeWorkout]);
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setTimerIndicatorTick(tick => tick + 1);
-    }, 5000);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, []);
-
-  const handleFinishWorkout = () => {
-    completeWorkout(db, activeWorkout.id);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    router.replace('/(tabs)/workout');
-  };
-
-  const handleSelectExercise = (exercise: Exercise) => {
-    if (isLoadingWorkoutExercises) {
-      return;
-    }
-
-    createWorkoutExercise(db, {
-      workoutId: activeWorkout.id,
-      exerciseId: exercise.id,
-      order: workoutExerciseRows.length,
-      notes: null
-    });
-    setIsExercisePickerOpen(false);
-  };
-
-  const isRestTimerRunning =
-    timerRef.isRunning &&
-    timerRef.endTime !== null &&
-    timerRef.endTime > Date.now() &&
-    timerIndicatorTick >= 0;
+    now,
+    isExercisePickerOpen,
+    setIsExercisePickerOpen,
+    isRestTimerOpen,
+    setIsRestTimerOpen,
+    workoutExerciseRows,
+    isLoadingWorkoutExercises,
+    exerciseById,
+    isRestTimerRunning
+  } = useActiveWorkoutContentData({ activeWorkout, exerciseRows });
+  const { finishWorkout, selectExercise } = useActiveWorkoutActions({
+    activeWorkout,
+    workoutExerciseRows,
+    isLoadingWorkoutExercises,
+    setIsExercisePickerOpen
+  });
 
   return (
     <Screen withPadding={false}>
@@ -134,7 +71,7 @@ export function ActiveWorkoutContent({
           disabled={
             isLoadingWorkoutExercises || workoutExerciseRows.length === 0
           }
-          onPress={handleFinishWorkout}
+          onPress={finishWorkout}
         >
           Finish
         </Button>
@@ -187,7 +124,7 @@ export function ActiveWorkoutContent({
         isOpen={isExercisePickerOpen}
         exercises={exerciseRows}
         onClose={() => setIsExercisePickerOpen(false)}
-        onSelectExercise={handleSelectExercise}
+        onSelectExercise={selectExercise}
       />
 
       <RestTimerSheet

@@ -1,201 +1,42 @@
-import { useDrizzle } from '@/src/components/database-provider';
 import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import type { DrizzleDb } from '@/src/db/client';
 import {
-  exercises,
-  workouts,
-  type Exercise,
-  type Set,
-  type WorkoutExercise
-} from '@/src/db/schema';
-import { useSettings } from '@/src/features/settings/hooks';
-import {
-  createWorkout,
-  createWorkoutExercise,
-  getActiveWorkout,
-  getActiveWorkoutQuery,
-  getSetsForWorkoutExercises,
-  getSetsForWorkoutExercisesQuery,
-  getWorkoutExercises,
-  getWorkoutExercisesQuery
-} from '@/src/features/workouts/repository';
+  useRepeatWorkout,
+  useWorkoutHistoryDetail
+} from '@/src/features/workouts/hooks';
 import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date';
 import { getRouteParamId } from '@/src/lib/utils/route';
 import { formatWeightForUnit } from '@/src/lib/utils/weight';
-import { eq, inArray } from 'drizzle-orm';
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 
-function getExercisesForWorkoutQuery(
-  db: DrizzleDb,
-  exerciseIds: Exercise['id'][]
-) {
-  if (exerciseIds.length === 0) {
-    return db
-      .select()
-      .from(exercises)
-      .where(inArray(exercises.id, ['']));
-  }
-
-  return db.select().from(exercises).where(inArray(exercises.id, exerciseIds));
-}
-
 export default function WorkoutHistoryDetailScreen() {
-  const db = useDrizzle();
-  const { weightUnit } = useSettings();
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const workoutId = getRouteParamId(id);
-
-  const { data: workoutRows = [], updatedAt: workoutUpdatedAt } = useLiveQuery(
-    db
-      .select()
-      .from(workouts)
-      .where(eq(workouts.id, workoutId ?? '')),
-    [db, workoutId]
-  );
-  const workout = workoutRows[0];
-
-  const initialActiveWorkout = useMemo(() => getActiveWorkout(db), [db]);
-  const { data: activeWorkoutRows = [], updatedAt: activeWorkoutUpdatedAt } =
-    useLiveQuery(getActiveWorkoutQuery(db), [db]);
-  const activeWorkout = activeWorkoutUpdatedAt
-    ? activeWorkoutRows[0]
-    : initialActiveWorkout;
-
-  const initialWorkoutExerciseRows = useMemo(
-    () => getWorkoutExercises(db, workoutId ?? ''),
-    [db, workoutId]
-  );
   const {
-    data: liveWorkoutExerciseRows = [],
-    updatedAt: workoutExercisesUpdatedAt
-  } = useLiveQuery(getWorkoutExercisesQuery(db, workoutId ?? ''), [
-    db,
-    workoutId
-  ]);
-  const workoutExerciseRows = workoutExercisesUpdatedAt
-    ? liveWorkoutExerciseRows
-    : initialWorkoutExerciseRows;
+    workout,
+    activeWorkout,
+    workoutExerciseRows,
+    exerciseById,
+    setsByWorkoutExerciseId,
+    totalVolume,
+    totalCompletedSets,
+    weightUnit,
+    isLoading,
+    canRepeatWorkout
+  } = useWorkoutHistoryDetail(workoutId);
+  const repeatWorkout = useRepeatWorkout({
+    workout,
+    activeWorkout,
+    workoutExerciseRows,
+    canRepeatWorkout
+  });
 
-  const workoutExerciseIds = useMemo(
-    () => workoutExerciseRows.map(workoutExercise => workoutExercise.id),
-    [workoutExerciseRows]
-  );
-  const workoutExerciseIdKey = useMemo(
-    () => workoutExerciseIds.join(','),
-    [workoutExerciseIds]
-  );
-  const initialSetRows = useMemo(
-    () => getSetsForWorkoutExercises(db, workoutExerciseIds),
-    [db, workoutExerciseIds]
-  );
-  const { data: liveSetRows = [], updatedAt: setsUpdatedAt } = useLiveQuery(
-    getSetsForWorkoutExercisesQuery(db, workoutExerciseIds),
-    [db, workoutExerciseIdKey]
-  );
-  const setRows = setsUpdatedAt ? liveSetRows : initialSetRows;
-
-  const exerciseIds = useMemo(
-    () =>
-      workoutExerciseRows.map(workoutExercise => workoutExercise.exerciseId),
-    [workoutExerciseRows]
-  );
-  const exerciseIdKey = useMemo(() => exerciseIds.join(','), [exerciseIds]);
-  const initialExerciseRows = useMemo(
-    () => getExercisesForWorkoutQuery(db, exerciseIds).all(),
-    [db, exerciseIds]
-  );
-  const { data: liveExerciseRows = [], updatedAt: exercisesUpdatedAt } =
-    useLiveQuery(getExercisesForWorkoutQuery(db, exerciseIds), [
-      db,
-      exerciseIdKey
-    ]);
-  const exerciseRows = exercisesUpdatedAt
-    ? liveExerciseRows
-    : initialExerciseRows;
-
-  const exerciseById = useMemo(
-    () =>
-      new Map<Exercise['id'], Exercise>(
-        exerciseRows.map(exercise => [exercise.id, exercise])
-      ),
-    [exerciseRows]
-  );
-
-  const setsByWorkoutExerciseId = useMemo(() => {
-    const nextSetsByWorkoutExerciseId = new Map<WorkoutExercise['id'], Set[]>();
-
-    for (const set of setRows) {
-      if (set.status !== 'completed') {
-        continue;
-      }
-
-      const existingSets =
-        nextSetsByWorkoutExerciseId.get(set.workoutExerciseId) ?? [];
-
-      nextSetsByWorkoutExerciseId.set(set.workoutExerciseId, [
-        ...existingSets,
-        set
-      ]);
-    }
-
-    return nextSetsByWorkoutExerciseId;
-  }, [setRows]);
-
-  const totalVolume = useMemo(() => {
-    const volume = setRows.reduce((total, set) => {
-      if (set.status !== 'completed') {
-        return total;
-      }
-
-      return total + set.weightKg * set.reps;
-    }, 0);
-
-    return Math.round(volume * 10) / 10;
-  }, [setRows]);
-
-  const totalCompletedSets = useMemo(
-    () => setRows.filter(set => set.status === 'completed').length,
-    [setRows]
-  );
-
-  const handleRepeatWorkout = () => {
-    if (!workout || (!activeWorkout && !workoutExercisesUpdatedAt)) {
-      return;
-    }
-
-    if (activeWorkout) {
-      router.push('/(tabs)/workout/active');
-
-      return;
-    }
-
-    const newWorkout = createWorkout(db, {
-      name: workout.name,
-      status: 'in_progress',
-      startedAt: Date.now()
-    });
-
-    for (const workoutExercise of workoutExerciseRows) {
-      createWorkoutExercise(db, {
-        workoutId: newWorkout.id,
-        exerciseId: workoutExercise.exerciseId,
-        order: workoutExercise.order,
-        notes: null
-      });
-    }
-
-    router.push('/(tabs)/workout/active');
-  };
-
-  if (workoutId && !workoutUpdatedAt) {
+  if (workoutId && isLoading) {
     return (
       <Screen withPadding={false}>
         <LoadingState label="Loading workout..." />
@@ -331,8 +172,8 @@ export default function WorkoutHistoryDetailScreen() {
       <Button
         variant="secondary"
         className="mt-6 w-full"
-        disabled={!activeWorkout && !workoutExercisesUpdatedAt}
-        onPress={handleRepeatWorkout}
+        disabled={!canRepeatWorkout}
+        onPress={repeatWorkout}
       >
         {activeWorkout ? 'Resume active workout' : 'Repeat this workout'}
       </Button>

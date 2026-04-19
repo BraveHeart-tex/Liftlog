@@ -1,19 +1,12 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { Text } from '@/src/components/ui/text';
-import type { DrizzleDb } from '@/src/db/client';
-import type { Exercise, Set } from '@/src/db/schema';
-import {
-  buildExerciseHistory,
-  getExerciseHistorySetsQuery,
-  getExerciseHistoryWorkoutsQuery
-} from '@/src/features/progress/repository';
+import type { Exercise } from '@/src/db/schema';
 import { useSettings } from '@/src/features/settings/hooks';
+import { useExerciseHistoryTab } from '@/src/features/workouts/hooks';
 import { formatWeightForUnit } from '@/src/lib/utils/weight';
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { View } from 'react-native';
 
 type ExerciseHistoryTabProps = {
-  db: DrizzleDb;
   exerciseId: Exercise['id'];
 };
 
@@ -25,33 +18,9 @@ function formatWorkoutDate(timestamp: number) {
   }).format(new Date(timestamp));
 }
 
-function getCompletedSets(sets: Set[]) {
-  return sets.filter(set => set.status === 'completed');
-}
-
-export function ExerciseHistoryTab({
-  db,
-  exerciseId
-}: ExerciseHistoryTabProps) {
+export function ExerciseHistoryTab({ exerciseId }: ExerciseHistoryTabProps) {
   const { weightUnit } = useSettings();
-  const { data: workoutRows = [] } = useLiveQuery(
-    getExerciseHistoryWorkoutsQuery(db, exerciseId),
-    [db, exerciseId]
-  );
-  const workoutIds = Array.from(
-    new Set(workoutRows.map(row => row.workout.id))
-  ).slice(0, 10);
-  const { data: setRows = [] } = useLiveQuery(
-    getExerciseHistorySetsQuery(db, exerciseId, workoutIds),
-    [db, exerciseId, workoutIds.join(',')]
-  );
-  const history = buildExerciseHistory(workoutRows, setRows)
-    .map(historyEntry => ({
-      ...historyEntry,
-      sets: getCompletedSets(historyEntry.sets)
-    }))
-    .filter(historyEntry => historyEntry.sets.length > 0)
-    .slice(0, 10);
+  const { history } = useExerciseHistoryTab(exerciseId);
 
   return (
     <StyledScrollView

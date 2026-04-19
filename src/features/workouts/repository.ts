@@ -54,6 +54,10 @@ export function getActiveWorkout(db: DrizzleDb): Workout | undefined {
   return getActiveWorkoutQuery(db).get();
 }
 
+export function getWorkoutByIdQuery(db: DrizzleDb, id: Workout['id']) {
+  return db.select().from(workouts).where(eq(workouts.id, id));
+}
+
 export function getWorkoutById(
   db: DrizzleDb,
   id: Workout['id']
@@ -94,11 +98,40 @@ export function getWorkoutExercises(
   return getWorkoutExercisesQuery(db, workoutId).all();
 }
 
+export function getWorkoutExercisesForWorkoutsQuery(
+  db: DrizzleDb,
+  workoutIds: Workout['id'][]
+) {
+  if (workoutIds.length === 0) {
+    return getWorkoutExercisesQuery(db, '');
+  }
+
+  return db
+    .select()
+    .from(workoutExercises)
+    .where(inArray(workoutExercises.workoutId, workoutIds))
+    .orderBy(asc(workoutExercises.order));
+}
+
+export function getWorkoutExercisesForWorkouts(
+  db: DrizzleDb,
+  workoutIds: Workout['id'][]
+): WorkoutExercise[] {
+  return getWorkoutExercisesForWorkoutsQuery(db, workoutIds).all();
+}
+
 export function getWorkoutExerciseByIdQuery(
   db: DrizzleDb,
   id: WorkoutExercise['id']
 ) {
   return db.select().from(workoutExercises).where(eq(workoutExercises.id, id));
+}
+
+export function getWorkoutExerciseById(
+  db: DrizzleDb,
+  id: WorkoutExercise['id']
+): WorkoutExercise | undefined {
+  return getWorkoutExerciseByIdQuery(db, id).get();
 }
 
 export function getSetsByWorkoutExerciseIdQuery(
@@ -110,6 +143,13 @@ export function getSetsByWorkoutExerciseIdQuery(
     .from(sets)
     .where(eq(sets.workoutExerciseId, workoutExerciseId))
     .orderBy(asc(sets.order));
+}
+
+export function getSetsByWorkoutExerciseId(
+  db: DrizzleDb,
+  workoutExerciseId: WorkoutExercise['id']
+): Set[] {
+  return getSetsByWorkoutExerciseIdQuery(db, workoutExerciseId).all();
 }
 
 export function getSetsForWorkoutExercisesQuery(

@@ -2,7 +2,7 @@ const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
 const typescriptEslint = require('@typescript-eslint/eslint-plugin');
 const unusedImports = require('eslint-plugin-unused-imports');
-const stylistic = require('@stylistic/eslint-plugin'); // add this
+const stylistic = require('@stylistic/eslint-plugin');
 
 module.exports = defineConfig([
   expoConfig,
@@ -24,7 +24,7 @@ module.exports = defineConfig([
     plugins: {
       '@typescript-eslint': typescriptEslint,
       'unused-imports': unusedImports,
-      '@stylistic': stylistic // add this
+      '@stylistic': stylistic
     },
     rules: {
       'no-unused-vars': 'off',
@@ -78,7 +78,6 @@ module.exports = defineConfig([
         { blankLine: 'always', prev: '*', next: 'function' },
         { blankLine: 'always', prev: 'function', next: '*' },
         { blankLine: 'always', prev: '*', next: 'throw' },
-        // TS-specific types supported by @stylistic
         { blankLine: 'always', prev: ['interface', 'type'], next: '*' },
         { blankLine: 'always', prev: '*', next: ['interface', 'type'] }
       ],

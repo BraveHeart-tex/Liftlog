@@ -1,23 +1,15 @@
-import { useDrizzle } from '@/src/components/database-provider';
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
 import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 import { Text } from '@/src/components/ui/text';
-import { completeOnboarding } from '@/src/features/settings/onboarding';
-import {
-  setWeightUnit,
-  type WeightUnit
-} from '@/src/features/settings/repository';
+import { useOnboardingActions } from '@/src/features/settings/hooks';
 import { cn } from '@/src/lib/utils/cn';
-import { router } from 'expo-router';
+import type { WeightUnit } from '@/src/lib/utils/weight';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
 
-const workoutRoute = '/(tabs)/workout';
-
 export default function OnboardingScreen() {
-  const db = useDrizzle();
   const [name, setName] = useState('');
   const [weightUnitPreference, setWeightUnitPreference] =
     useState<WeightUnit>('kg');
@@ -26,18 +18,11 @@ export default function OnboardingScreen() {
   const trimmedName = name.trim();
   const isNameValid = trimmedName.length > 0;
   const shouldShowNameError = attemptedSubmit && !isNameValid;
-
-  const handleGetStarted = () => {
-    setAttemptedSubmit(true);
-
-    if (!isNameValid) {
-      return;
-    }
-
-    completeOnboarding(db, trimmedName);
-    setWeightUnit(db, weightUnitPreference);
-    router.replace(workoutRoute);
-  };
+  const { getStarted } = useOnboardingActions({
+    name,
+    weightUnitPreference,
+    setAttemptedSubmit
+  });
 
   return (
     <SafeAreaView
@@ -116,7 +101,7 @@ export default function OnboardingScreen() {
             </View>
           </View>
 
-          <Button className="mt-10 w-full" onPress={handleGetStarted}>
+          <Button className="mt-10 w-full" onPress={getStarted}>
             Get started
           </Button>
         </StyledScrollView>
