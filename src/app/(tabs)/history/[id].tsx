@@ -13,14 +13,17 @@ import {
   type Set,
   type WorkoutExercise
 } from '@/src/db/schema';
+import { useSettings } from '@/src/features/settings/hooks';
 import {
   createWorkout,
   createWorkoutExercise,
+  getActiveWorkout,
   getActiveWorkoutQuery,
+  getSetsForWorkoutExercises,
   getSetsForWorkoutExercisesQuery,
+  getWorkoutExercises,
   getWorkoutExercisesQuery
 } from '@/src/features/workouts/repository';
-import { useSettings } from '@/src/features/settings/hooks';
 import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date';
 import { getRouteParamId } from '@/src/lib/utils/route';
 import { formatWeightForUnit } from '@/src/lib/utils/weight';
@@ -59,42 +62,64 @@ export default function WorkoutHistoryDetailScreen() {
   );
   const workout = workoutRows[0];
 
-  const { data: activeWorkoutRows = [] } = useLiveQuery(
-    getActiveWorkoutQuery(db),
-    [db]
-  );
-  const activeWorkout = activeWorkoutRows[0];
+  const initialActiveWorkout = useMemo(() => getActiveWorkout(db), [db]);
+  const { data: activeWorkoutRows = [], updatedAt: activeWorkoutUpdatedAt } =
+    useLiveQuery(getActiveWorkoutQuery(db), [db]);
+  const activeWorkout = activeWorkoutUpdatedAt
+    ? activeWorkoutRows[0]
+    : initialActiveWorkout;
 
+  const initialWorkoutExerciseRows = useMemo(
+    () => getWorkoutExercises(db, workoutId ?? ''),
+    [db, workoutId]
+  );
   const {
-    data: workoutExerciseRows = [],
+    data: liveWorkoutExerciseRows = [],
     updatedAt: workoutExercisesUpdatedAt
   } = useLiveQuery(getWorkoutExercisesQuery(db, workoutId ?? ''), [
     db,
     workoutId
   ]);
+  const workoutExerciseRows = workoutExercisesUpdatedAt
+    ? liveWorkoutExerciseRows
+    : initialWorkoutExerciseRows;
 
   const workoutExerciseIds = useMemo(
     () => workoutExerciseRows.map(workoutExercise => workoutExercise.id),
     [workoutExerciseRows]
   );
-  const workoutExerciseIdKey = workoutExerciseIds.join(',');
-
-  const { data: setRows = [] } = useLiveQuery(
+  const workoutExerciseIdKey = useMemo(
+    () => workoutExerciseIds.join(','),
+    [workoutExerciseIds]
+  );
+  const initialSetRows = useMemo(
+    () => getSetsForWorkoutExercises(db, workoutExerciseIds),
+    [db, workoutExerciseIds]
+  );
+  const { data: liveSetRows = [], updatedAt: setsUpdatedAt } = useLiveQuery(
     getSetsForWorkoutExercisesQuery(db, workoutExerciseIds),
     [db, workoutExerciseIdKey]
   );
+  const setRows = setsUpdatedAt ? liveSetRows : initialSetRows;
 
   const exerciseIds = useMemo(
     () =>
       workoutExerciseRows.map(workoutExercise => workoutExercise.exerciseId),
     [workoutExerciseRows]
   );
-  const exerciseIdKey = exerciseIds.join(',');
-
-  const { data: exerciseRows = [] } = useLiveQuery(
-    getExercisesForWorkoutQuery(db, exerciseIds),
-    [db, exerciseIdKey]
+  const exerciseIdKey = useMemo(() => exerciseIds.join(','), [exerciseIds]);
+  const initialExerciseRows = useMemo(
+    () => getExercisesForWorkoutQuery(db, exerciseIds).all(),
+    [db, exerciseIds]
   );
+  const { data: liveExerciseRows = [], updatedAt: exercisesUpdatedAt } =
+    useLiveQuery(getExercisesForWorkoutQuery(db, exerciseIds), [
+      db,
+      exerciseIdKey
+    ]);
+  const exerciseRows = exercisesUpdatedAt
+    ? liveExerciseRows
+    : initialExerciseRows;
 
   const exerciseById = useMemo(
     () =>
