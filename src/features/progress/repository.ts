@@ -21,16 +21,22 @@ export function getPersonalRecords(db: DrizzleDb): PersonalRecord[] {
     .all();
 }
 
-export function getPersonalRecordsByExercise(
+export function getPersonalRecordsByExerciseQuery(
   db: DrizzleDb,
   exerciseId: Exercise['id']
-): PersonalRecord[] {
+) {
   return db
     .select()
     .from(personalRecords)
     .where(eq(personalRecords.exerciseId, exerciseId))
-    .orderBy(desc(personalRecords.achievedAt))
-    .all();
+    .orderBy(desc(personalRecords.achievedAt));
+}
+
+export function getPersonalRecordsByExercise(
+  db: DrizzleDb,
+  exerciseId: Exercise['id']
+): PersonalRecord[] {
+  return getPersonalRecordsByExerciseQuery(db, exerciseId).all();
 }
 
 export function getExerciseHistoryWorkoutsQuery(
