@@ -46,7 +46,7 @@ const textClassNames: Record<ButtonVariant, string> = {
   primary: 'text-body-medium text-primary-foreground',
   secondary: 'text-body-medium text-foreground',
   ghost: 'text-body-medium text-foreground',
-  destructive: 'text-body-medium text-white'
+  destructive: 'text-body-medium text-danger-foreground'
 };
 
 const textStyle: TextStyle = {

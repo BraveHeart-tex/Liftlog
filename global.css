@@ -23,7 +23,8 @@
   --color-ring: #ff4d00;
   --color-success: #30d158;
   --color-warning: #ffd60a;
-  --color-danger: #ff453a;
+  --color-danger: #c0192c;
+  --color-danger-foreground: #ffffff;
   --color-info: #64d2ff;
   --color-progress-up: #30d158;
   --color-progress-same: #636366;
@@ -68,7 +69,8 @@
   --color-ring: #ff4d00;
   --color-success: #248a3d;
   --color-warning: #b07d00;
-  --color-danger: #d70015;
+  --color-danger: #b5162a;
+  --color-danger-foreground: #ffffff;
   --color-info: #0071a4;
   --color-progress-up: #248a3d;
   --color-progress-same: #8e8e93;
