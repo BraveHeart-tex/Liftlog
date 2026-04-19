@@ -199,8 +199,6 @@ export function ActiveWorkoutContent({
       <RestTimerSheet
         isOpen={isRestTimerOpen}
         onClose={() => setIsRestTimerOpen(false)}
-        // TODO: read durationSeconds from user settings (phase 6.1)
-        durationSeconds={90}
       />
     </Screen>
   );
