@@ -33,6 +33,14 @@ export function getSetting(db: DrizzleDb, key: string): string | undefined {
   return db.select().from(appMeta).where(eq(appMeta.key, key)).get()?.value;
 }
 
+export function getSettingsQuery(db: DrizzleDb) {
+  return db.select().from(appMeta);
+}
+
+export function getSettings(db: DrizzleDb) {
+  return getSettingsQuery(db).all();
+}
+
 export function setSetting(db: DrizzleDb, key: string, value: string): void {
   db.insert(appMeta)
     .values({ key, value })

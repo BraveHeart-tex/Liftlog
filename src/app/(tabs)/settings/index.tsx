@@ -2,11 +2,11 @@ import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import { useSettings } from '@/src/features/settings/hooks';
 import {
   SETTINGS_DEFAULTS,
+  useSettings,
   type ThemePreference
-} from '@/src/features/settings/repository';
+} from '@/src/features/settings/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import Constants from 'expo-constants';

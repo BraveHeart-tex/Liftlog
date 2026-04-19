@@ -1,23 +1,15 @@
-import { useDrizzle } from '@/src/components/database-provider';
 import { Button } from '@/src/components/ui/button';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import { getExercisesQuery } from '@/src/features/exercises/repository';
 import { ActiveWorkoutContent } from '@/src/features/workouts/components/active-workout-content';
-import { getActiveWorkoutQuery } from '@/src/features/workouts/repository';
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import { useActiveWorkoutScreen } from '@/src/features/workouts/hooks';
 import { router } from 'expo-router';
 
 export default function ActiveWorkoutScreen() {
-  const db = useDrizzle();
+  const { activeWorkout, exerciseRows, isLoading } = useActiveWorkoutScreen();
 
-  const { data: activeWorkoutRows = [], updatedAt: activeWorkoutUpdatedAt } =
-    useLiveQuery(getActiveWorkoutQuery(db), [db]);
-  const activeWorkout = activeWorkoutRows[0];
-  const { data: exerciseRows = [] } = useLiveQuery(getExercisesQuery(db), [db]);
-
-  if (!activeWorkoutUpdatedAt) {
+  if (isLoading) {
     return (
       <Screen withPadding={false}>
         <LoadingState label="Loading workout..." />

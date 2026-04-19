@@ -1,39 +1,10 @@
-import { useDrizzle } from '@/src/components/database-provider';
 import { StyledFlatList } from '@/src/components/styled/flat-list';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 import { Text } from '@/src/components/ui/text';
-import type { DrizzleDb } from '@/src/db/client';
-import {
-  workoutExercises,
-  type Workout,
-  type WorkoutExercise
-} from '@/src/db/schema';
-import {
-  getSetsForWorkoutExercisesQuery,
-  getWorkoutExercisesQuery,
-  getWorkoutsQuery
-} from '@/src/features/workouts/repository';
-import { asc, inArray } from 'drizzle-orm';
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import { useHistoryList } from '@/src/features/workouts/hooks';
 import { router, type Href } from 'expo-router';
-import { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
-
-function getWorkoutExercisesForWorkoutsQuery(
-  db: DrizzleDb,
-  workoutIds: Workout['id'][]
-) {
-  if (workoutIds.length === 0) {
-    return getWorkoutExercisesQuery(db, '');
-  }
-
-  return db
-    .select()
-    .from(workoutExercises)
-    .where(inArray(workoutExercises.workoutId, workoutIds))
-    .orderBy(asc(workoutExercises.order));
-}
 
 function formatWorkoutDate(timestamp: number): string {
   return new Intl.DateTimeFormat(undefined, {
@@ -59,65 +30,9 @@ function formatDuration(startedAt: number, completedAt: number | null): string {
 }
 
 export default function HistoryScreen() {
-  const db = useDrizzle();
-  const { data: workoutRows = [], updatedAt } = useLiveQuery(
-    getWorkoutsQuery(db),
-    [db]
-  );
+  const { workoutRows, setCountByWorkoutId, isLoading } = useHistoryList();
 
-  const workoutIds = useMemo(
-    () => workoutRows.map(workout => workout.id),
-    [workoutRows]
-  );
-
-  const { data: workoutExerciseRows = [] } = useLiveQuery(
-    getWorkoutExercisesForWorkoutsQuery(db, workoutIds),
-    [db, workoutIds]
-  );
-
-  const workoutExerciseIds = useMemo(
-    () => workoutExerciseRows.map(workoutExercise => workoutExercise.id),
-    [workoutExerciseRows]
-  );
-
-  const { data: setRows = [] } = useLiveQuery(
-    getSetsForWorkoutExercisesQuery(db, workoutExerciseIds),
-    [db, workoutExerciseIds]
-  );
-
-  const setCountByWorkoutId = useMemo(() => {
-    const workoutIdByExerciseId = new Map<
-      WorkoutExercise['id'],
-      Workout['id']
-    >();
-
-    for (const workoutExercise of workoutExerciseRows) {
-      workoutIdByExerciseId.set(workoutExercise.id, workoutExercise.workoutId);
-    }
-
-    const nextSetCountByWorkoutId = new Map<Workout['id'], number>();
-
-    for (const set of setRows) {
-      if (set.status !== 'completed') {
-        continue;
-      }
-
-      const workoutId = workoutIdByExerciseId.get(set.workoutExerciseId);
-
-      if (!workoutId) {
-        continue;
-      }
-
-      nextSetCountByWorkoutId.set(
-        workoutId,
-        (nextSetCountByWorkoutId.get(workoutId) ?? 0) + 1
-      );
-    }
-
-    return nextSetCountByWorkoutId;
-  }, [setRows, workoutExerciseRows]);
-
-  if (!updatedAt) {
+  if (isLoading) {
     return (
       <SafeAreaView
         style={{ flex: 1 }}

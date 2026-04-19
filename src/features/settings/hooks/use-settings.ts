@@ -1,11 +1,12 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import { appMeta } from '@/src/db/schema';
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { useCallback, useMemo } from 'react';
 import {
   SETTINGS_DEFAULTS,
   SETTINGS_KEYS,
   getRestTimerDuration,
+  getSettings,
+  getSettingsQuery,
   getThemePreference,
   getWeightUnit,
   parseThemePreference,
@@ -14,7 +15,7 @@ import {
   setWeightUnit as setWeightUnitRepo,
   type ThemePreference,
   type WeightUnit
-} from './repository';
+} from '../repository';
 
 export function useSettings() {
   const db = useDrizzle();
@@ -26,25 +27,24 @@ export function useSettings() {
     }),
     [db]
   );
-
-  const { data: rows = [], updatedAt } = useLiveQuery(
-    db.select().from(appMeta),
+  const { data: rows, isLive } = useLiveWithFallback(
+    () => getSettingsQuery(db),
+    () => getSettings(db),
     [db]
   );
-  const hasLoadedRows = Boolean(updatedAt);
 
   const weightUnit: WeightUnit = useMemo(() => {
-    if (!hasLoadedRows) {
+    if (!isLive) {
       return initialSettings.weightUnit;
     }
 
     const row = rows.find(row => row.key === SETTINGS_KEYS.weightUnit);
 
     return row?.value === 'lb' ? 'lb' : 'kg';
-  }, [hasLoadedRows, initialSettings.weightUnit, rows]);
+  }, [initialSettings.weightUnit, isLive, rows]);
 
   const restTimerDuration: number = useMemo(() => {
-    if (!hasLoadedRows) {
+    if (!isLive) {
       return initialSettings.restTimerDuration;
     }
 
@@ -59,17 +59,17 @@ export function useSettings() {
     return Number.isFinite(parsed) && parsed >= 10
       ? parsed
       : SETTINGS_DEFAULTS.restTimerDuration;
-  }, [hasLoadedRows, initialSettings.restTimerDuration, rows]);
+  }, [initialSettings.restTimerDuration, isLive, rows]);
 
   const themePreference: ThemePreference = useMemo(() => {
-    if (!hasLoadedRows) {
+    if (!isLive) {
       return initialSettings.themePreference;
     }
 
     const row = rows.find(row => row.key === SETTINGS_KEYS.themePreference);
 
     return parseThemePreference(row?.value);
-  }, [hasLoadedRows, initialSettings.themePreference, rows]);
+  }, [initialSettings.themePreference, isLive, rows]);
 
   const setWeightUnit = useCallback(
     (unit: WeightUnit) => {

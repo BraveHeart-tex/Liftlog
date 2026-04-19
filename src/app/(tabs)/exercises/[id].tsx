@@ -1,105 +1,35 @@
-import { useDrizzle } from '@/src/components/database-provider';
 import { BackButton } from '@/src/components/ui/back-button';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import { getExerciseByIdQuery } from '@/src/features/exercises/repository';
-import {
-  buildExerciseHistory,
-  computeEstimated1RM,
-  getExerciseHistorySetsQuery,
-  getExerciseHistoryWorkoutsQuery,
-  getPersonalRecordsByExercise,
-  getPersonalRecordsByExerciseQuery,
-  rebuildPersonalRecordsForExercise
-} from '@/src/features/progress/repository';
-import { useSettings } from '@/src/features/settings/hooks';
+import { useExerciseDetail } from '@/src/features/exercises/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { formatWorkoutDate } from '@/src/lib/utils/date';
-import { formatMuscleList, parseMuscleList } from '@/src/lib/utils/muscle';
+import { formatMuscleList } from '@/src/lib/utils/muscle';
 import { getRouteParamId } from '@/src/lib/utils/route';
-import { formatCompletedSets, getCompletedSets } from '@/src/lib/utils/set';
 import { toTitleCase } from '@/src/lib/utils/string';
 import { formatWeightForUnit } from '@/src/lib/utils/weight';
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useLocalSearchParams } from 'expo-router';
-import { useLayoutEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
 export default function ExerciseDetailScreen() {
-  const db = useDrizzle();
-  const { weightUnit } = useSettings();
-  const [rebuiltPrExerciseId, setRebuiltPrExerciseId] = useState<string | null>(
-    null
-  );
-
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const exerciseId = getRouteParamId(id);
+  const {
+    exercise,
+    history,
+    prRows,
+    primaryMuscles,
+    secondaryMuscles,
+    instructions,
+    mostRecentHistory,
+    completedSetSummary,
+    weightUnit,
+    isLoading
+  } = useExerciseDetail(exerciseId);
 
-  const { data: exerciseRows = [], updatedAt: exerciseUpdatedAt } =
-    useLiveQuery(getExerciseByIdQuery(db, exerciseId ?? ''), [db, exerciseId]);
-  const exercise = exerciseRows[0];
-
-  const initialWorkoutRows = useMemo(
-    () => getExerciseHistoryWorkoutsQuery(db, exerciseId ?? '').all(),
-    [db, exerciseId]
-  );
-  const { data: liveWorkoutRows = [], updatedAt: workoutsUpdatedAt } =
-    useLiveQuery(getExerciseHistoryWorkoutsQuery(db, exerciseId ?? ''), [
-      db,
-      exerciseId
-    ]);
-  const workoutRows = workoutsUpdatedAt ? liveWorkoutRows : initialWorkoutRows;
-  const workoutIds = useMemo(
-    () =>
-      Array.from(new Set(workoutRows.map(row => row.workout.id))).slice(0, 20),
-    [workoutRows]
-  );
-  const workoutIdKey = useMemo(() => workoutIds.join(','), [workoutIds]);
-  const initialSetRows = useMemo(
-    () => getExerciseHistorySetsQuery(db, exerciseId ?? '', workoutIds).all(),
-    [db, exerciseId, workoutIdKey, workoutIds]
-  );
-  const { data: liveSetRows = [], updatedAt: setsUpdatedAt } = useLiveQuery(
-    getExerciseHistorySetsQuery(db, exerciseId ?? '', workoutIds),
-    [db, exerciseId, workoutIdKey]
-  );
-  const setRows = setsUpdatedAt ? liveSetRows : initialSetRows;
-  const initialPrRows = useMemo(
-    () => getPersonalRecordsByExercise(db, exerciseId ?? ''),
-    [db, exerciseId, rebuiltPrExerciseId]
-  );
-  const { data: livePrRows = [], updatedAt: prsUpdatedAt } = useLiveQuery(
-    getPersonalRecordsByExerciseQuery(db, exerciseId ?? ''),
-    [db, exerciseId]
-  );
-  const prRows = prsUpdatedAt ? livePrRows : initialPrRows;
-  const history = useMemo(
-    () =>
-      buildExerciseHistory(workoutRows, setRows)
-        .map(entry => ({
-          ...entry,
-          sets: entry.sets.filter(set => set.status === 'completed')
-        }))
-        .filter(entry => entry.sets.length > 0)
-        .slice(0, 10),
-    [setRows, workoutRows]
-  );
-
-  useLayoutEffect(() => {
-    if (!exercise?.id || !exerciseUpdatedAt) {
-      return;
-    }
-
-    rebuildPersonalRecordsForExercise(db, exercise.id);
-    setRebuiltPrExerciseId(exercise.id);
-  }, [db, exercise?.id, exerciseUpdatedAt]);
-
-  const isPreparingExerciseStats =
-    Boolean(exercise?.id) && rebuiltPrExerciseId !== exercise?.id;
-
-  if (exerciseId && (!exerciseUpdatedAt || isPreparingExerciseStats)) {
+  if (exerciseId && isLoading) {
     return (
       <Screen withPadding={false}>
         <LoadingState label="Loading exercise..." />
@@ -122,18 +52,6 @@ export default function ExerciseDetailScreen() {
       </Screen>
     );
   }
-
-  const primaryMuscles = parseMuscleList(exercise.primaryMuscles);
-  const secondaryMuscles = parseMuscleList(exercise.secondaryMuscles);
-  const instructions = exercise.instructions?.trim();
-
-  const mostRecentHistory = buildExerciseHistory(workoutRows, setRows).find(
-    historyEntry => getCompletedSets(historyEntry.sets).length > 0
-  );
-  const completedSets = mostRecentHistory
-    ? getCompletedSets(mostRecentHistory.sets)
-    : [];
-  const completedSetSummary = formatCompletedSets(completedSets, weightUnit);
 
   return (
     <Screen scroll>
@@ -231,13 +149,6 @@ export default function ExerciseDetailScreen() {
             </View>
           ) : (
             history.map((historyEntry, historyIndex) => {
-              const bestSet = historyEntry.sets.reduce((best, set) =>
-                computeEstimated1RM(set.weightKg, set.reps) >
-                computeEstimated1RM(best.weightKg, best.reps)
-                  ? set
-                  : best
-              );
-
               return (
                 <View key={historyEntry.workout.id}>
                   <Text variant="caption" tone="muted" className="mt-4 mb-2">
@@ -246,7 +157,7 @@ export default function ExerciseDetailScreen() {
                   </Text>
 
                   {historyEntry.sets.map((set, index) => {
-                    const isBestSet = set.id === bestSet.id;
+                    const isBestSet = set.id === historyEntry.bestSetId;
 
                     return (
                       <View

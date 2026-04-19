@@ -1,8 +1,7 @@
-import { useDrizzle } from '@/src/components/database-provider';
 import { Card, CardContent, CardHeader } from '@/src/components/ui/card';
 import { Text } from '@/src/components/ui/text';
 import { useSettings } from '@/src/features/settings/hooks';
-import { deleteWorkoutExercise } from '@/src/features/workouts/repository';
+import { useRemoveWorkoutExercise } from '@/src/features/workouts/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { formatWeightForUnit } from '@/src/lib/utils/weight';
 import { router } from 'expo-router';
@@ -19,8 +18,8 @@ type ExerciseCardProps = {
 };
 
 export function ExerciseCard({ item, className }: ExerciseCardProps) {
-  const db = useDrizzle();
   const { weightUnit } = useSettings();
+  const removeWorkoutExercise = useRemoveWorkoutExercise();
   const [isDeleteActionHidden, setIsDeleteActionHidden] = useState(false);
   const [isSelected, setIsSelected] = useState(false);
   const completedSets = item.sets.filter(set => set.status === 'completed');
@@ -54,7 +53,7 @@ export function ExerciseCard({ item, className }: ExerciseCardProps) {
           onPress: () => {
             setIsDeleteActionHidden(false);
             setIsSelected(false);
-            deleteWorkoutExercise(db, item.workoutExercise.id);
+            removeWorkoutExercise(item.workoutExercise.id);
           }
         }
       ],

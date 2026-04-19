@@ -1,4 +1,3 @@
-import { useDrizzle } from '@/src/components/database-provider';
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
@@ -6,25 +5,18 @@ import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import type { Exercise } from '@/src/db/schema';
-import { getExercisesQuery } from '@/src/features/exercises/repository';
 import { ExerciseHistoryTab } from '@/src/features/workouts/components/exercise-history-tab';
 import { ExerciseTrackTab } from '@/src/features/workouts/components/exercise-track-tab';
 import {
   RestTimerSheet,
   timerRef
 } from '@/src/features/workouts/components/rest-timer-sheet';
-import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
-import {
-  getSetsByWorkoutExerciseIdQuery,
-  getWorkoutExerciseByIdQuery
-} from '@/src/features/workouts/repository';
+import { useActiveWorkoutExerciseDetail } from '@/src/features/workouts/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { getRouteParamId } from '@/src/lib/utils/route';
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useLocalSearchParams } from 'expo-router';
 import { TimerIcon } from 'lucide-react-native';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Pressable,
   useWindowDimensions,
@@ -39,8 +31,6 @@ type ExerciseDetailTab = 'track' | 'history';
 const tabs: ExerciseDetailTab[] = ['track', 'history'];
 
 export default function ActiveWorkoutExerciseScreen() {
-  const db = useDrizzle();
-
   const { workoutExerciseId: rawId } = useLocalSearchParams<{
     workoutExerciseId: string | string[];
   }>();
@@ -51,39 +41,7 @@ export default function ActiveWorkoutExerciseScreen() {
   const [timerIndicatorTick, setTimerIndicatorTick] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const { width } = useWindowDimensions();
-
-  const {
-    data: workoutExerciseRows = [],
-    updatedAt: workoutExerciseUpdatedAt
-  } = useLiveQuery(getWorkoutExerciseByIdQuery(db, workoutExerciseId ?? ''), [
-    db,
-    workoutExerciseId
-  ]);
-  const workoutExercise = workoutExerciseRows[0];
-  const { data: setRows = [], updatedAt: setsUpdatedAt } = useLiveQuery(
-    getSetsByWorkoutExerciseIdQuery(db, workoutExerciseId ?? ''),
-    [db, workoutExerciseId]
-  );
-  const { data: exerciseRows = [] } = useLiveQuery(getExercisesQuery(db), [db]);
-  const exerciseById = useMemo(
-    () =>
-      new Map<Exercise['id'], Exercise>(
-        exerciseRows.map(exercise => [exercise.id, exercise])
-      ),
-    [exerciseRows]
-  );
-
-  const item = useMemo<WorkoutExerciseWithSets | undefined>(() => {
-    if (!workoutExercise) {
-      return undefined;
-    }
-
-    return {
-      workoutExercise,
-      exercise: exerciseById.get(workoutExercise.exerciseId),
-      sets: setRows
-    };
-  }, [exerciseById, setRows, workoutExercise]);
+  const { item, isLoading } = useActiveWorkoutExerciseDetail(workoutExerciseId);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -119,7 +77,7 @@ export default function ActiveWorkoutExerciseScreen() {
     timerRef.endTime > Date.now() &&
     timerIndicatorTick >= 0;
 
-  if (workoutExerciseId && (!workoutExerciseUpdatedAt || !setsUpdatedAt)) {
+  if (workoutExerciseId && isLoading) {
     return (
       <Screen withPadding={false}>
         <LoadingState label="Loading exercise..." />
@@ -199,13 +157,10 @@ export default function ActiveWorkoutExerciseScreen() {
         scrollEventThrottle={16}
       >
         <View className="w-screen flex-1">
-          <ExerciseTrackTab db={db} item={item} />
+          <ExerciseTrackTab item={item} />
         </View>
         <View className="w-screen flex-1">
-          <ExerciseHistoryTab
-            db={db}
-            exerciseId={item.workoutExercise.exerciseId}
-          />
+          <ExerciseHistoryTab exerciseId={item.workoutExercise.exerciseId} />
         </View>
       </StyledScrollView>
 

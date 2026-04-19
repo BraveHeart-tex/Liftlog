@@ -1,6 +1,6 @@
 import type { DrizzleDb } from '@/src/db/client';
 import { exercises, type Exercise, type NewExercise } from '@/src/db/schema';
-import { and, asc, eq, like } from 'drizzle-orm';
+import { and, asc, eq, inArray, like } from 'drizzle-orm';
 
 function escapeLikePattern(value: string): string {
   return value
@@ -30,6 +30,24 @@ export function getExercisesQuery(db: DrizzleDb) {
 
 export function getExercises(db: DrizzleDb): Exercise[] {
   return getExercisesQuery(db).all();
+}
+
+export function getExercisesByIdsQuery(db: DrizzleDb, ids: Exercise['id'][]) {
+  if (ids.length === 0) {
+    return db
+      .select()
+      .from(exercises)
+      .where(inArray(exercises.id, ['']));
+  }
+
+  return db.select().from(exercises).where(inArray(exercises.id, ids));
+}
+
+export function getExercisesByIds(
+  db: DrizzleDb,
+  ids: Exercise['id'][]
+): Exercise[] {
+  return getExercisesByIdsQuery(db, ids).all();
 }
 
 export function getExerciseById(
