@@ -30,12 +30,6 @@ export const timerRef = {
   isRunning: false
 };
 
-type RestTimerSheetProps = {
-  isOpen: boolean;
-  onClose: () => void;
-  durationSeconds?: number;
-};
-
 type TimerStatus = 'idle' | 'running' | 'paused';
 
 function clampDuration(value: number) {
@@ -52,6 +46,11 @@ function deriveStatus(): TimerStatus {
   }
 
   return 'idle';
+}
+
+interface RestTimerSheetProps {
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
