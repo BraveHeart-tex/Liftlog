@@ -15,6 +15,13 @@
       "when": 1775911921789,
       "tag": "0001_pretty_diamondback",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1776631002339,
+      "tag": "0002_swift_brood",
+      "breakpoints": true
     }
   ]
 }
