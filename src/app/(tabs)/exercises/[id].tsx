@@ -4,13 +4,14 @@ import { Card, CardContent } from '@/src/components/ui/card';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import { personalRecords } from '@/src/db/schema';
 import { getExerciseByIdQuery } from '@/src/features/exercises/repository';
 import {
   buildExerciseHistory,
   computeEstimated1RM,
   getExerciseHistorySetsQuery,
   getExerciseHistoryWorkoutsQuery,
+  getPersonalRecordsByExercise,
+  getPersonalRecordsByExerciseQuery,
   rebuildPersonalRecordsForExercise
 } from '@/src/features/progress/repository';
 import { useSettings } from '@/src/features/settings/hooks';
@@ -21,15 +22,17 @@ import { getRouteParamId } from '@/src/lib/utils/route';
 import { formatCompletedSets, getCompletedSets } from '@/src/lib/utils/set';
 import { toTitleCase } from '@/src/lib/utils/string';
 import { formatWeightForUnit } from '@/src/lib/utils/weight';
-import { desc, eq } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo } from 'react';
+import { useLayoutEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
 export default function ExerciseDetailScreen() {
   const db = useDrizzle();
   const { weightUnit } = useSettings();
+  const [rebuiltPrExerciseId, setRebuiltPrExerciseId] = useState<string | null>(
+    null
+  );
 
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const exerciseId = getRouteParamId(id);
@@ -38,25 +41,40 @@ export default function ExerciseDetailScreen() {
     useLiveQuery(getExerciseByIdQuery(db, exerciseId ?? ''), [db, exerciseId]);
   const exercise = exerciseRows[0];
 
-  const { data: workoutRows = [] } = useLiveQuery(
-    getExerciseHistoryWorkoutsQuery(db, exerciseId ?? ''),
+  const initialWorkoutRows = useMemo(
+    () => getExerciseHistoryWorkoutsQuery(db, exerciseId ?? '').all(),
     [db, exerciseId]
   );
-  const workoutIds = Array.from(
-    new Set(workoutRows.map(row => row.workout.id))
-  ).slice(0, 20);
-  const { data: setRows = [] } = useLiveQuery(
+  const { data: liveWorkoutRows = [], updatedAt: workoutsUpdatedAt } =
+    useLiveQuery(getExerciseHistoryWorkoutsQuery(db, exerciseId ?? ''), [
+      db,
+      exerciseId
+    ]);
+  const workoutRows = workoutsUpdatedAt ? liveWorkoutRows : initialWorkoutRows;
+  const workoutIds = useMemo(
+    () =>
+      Array.from(new Set(workoutRows.map(row => row.workout.id))).slice(0, 20),
+    [workoutRows]
+  );
+  const workoutIdKey = useMemo(() => workoutIds.join(','), [workoutIds]);
+  const initialSetRows = useMemo(
+    () => getExerciseHistorySetsQuery(db, exerciseId ?? '', workoutIds).all(),
+    [db, exerciseId, workoutIdKey, workoutIds]
+  );
+  const { data: liveSetRows = [], updatedAt: setsUpdatedAt } = useLiveQuery(
     getExerciseHistorySetsQuery(db, exerciseId ?? '', workoutIds),
-    [db, exerciseId, workoutIds.join(',')]
+    [db, exerciseId, workoutIdKey]
   );
-  const { data: prRows = [] } = useLiveQuery(
-    db
-      .select()
-      .from(personalRecords)
-      .where(eq(personalRecords.exerciseId, exerciseId ?? ''))
-      .orderBy(desc(personalRecords.achievedAt)),
+  const setRows = setsUpdatedAt ? liveSetRows : initialSetRows;
+  const initialPrRows = useMemo(
+    () => getPersonalRecordsByExercise(db, exerciseId ?? ''),
+    [db, exerciseId, rebuiltPrExerciseId]
+  );
+  const { data: livePrRows = [], updatedAt: prsUpdatedAt } = useLiveQuery(
+    getPersonalRecordsByExerciseQuery(db, exerciseId ?? ''),
     [db, exerciseId]
   );
+  const prRows = prsUpdatedAt ? livePrRows : initialPrRows;
   const history = useMemo(
     () =>
       buildExerciseHistory(workoutRows, setRows)
@@ -69,15 +87,19 @@ export default function ExerciseDetailScreen() {
     [setRows, workoutRows]
   );
 
-  useEffect(() => {
-    if (!exerciseId || !exerciseUpdatedAt) {
+  useLayoutEffect(() => {
+    if (!exercise?.id || !exerciseUpdatedAt) {
       return;
     }
 
-    rebuildPersonalRecordsForExercise(db, exerciseId);
-  }, [db, exerciseId, exerciseUpdatedAt]);
+    rebuildPersonalRecordsForExercise(db, exercise.id);
+    setRebuiltPrExerciseId(exercise.id);
+  }, [db, exercise?.id, exerciseUpdatedAt]);
 
-  if (exerciseId && !exerciseUpdatedAt) {
+  const isPreparingExerciseStats =
+    Boolean(exercise?.id) && rebuiltPrExerciseId !== exercise?.id;
+
+  if (exerciseId && (!exerciseUpdatedAt || isPreparingExerciseStats)) {
     return (
       <Screen withPadding={false}>
         <LoadingState label="Loading exercise..." />
