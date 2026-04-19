@@ -7,16 +7,16 @@ import {
 } from '@/src/components/ui/bottom-sheet';
 import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
-import type { Exercise } from '@/src/db/schema';
+import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { useMemo, useState } from 'react';
 import { Keyboard, Pressable, View } from 'react-native';
 import { getCategoryLabel } from './utils';
 
 type ExercisePickerSheetProps = {
   isOpen: boolean;
-  exercises: Exercise[];
+  exercises: ExerciseListItem[];
   onClose: () => void;
-  onSelectExercise: (exercise: Exercise) => void;
+  onSelectExercise: (exercise: ExerciseListItem) => void;
 };
 
 export function ExercisePickerSheet({
@@ -61,13 +61,13 @@ export function ExercisePickerSheet({
 
       <StyledBottomSheetFlatList
         data={filteredExercises}
-        keyExtractor={(item: Exercise) => item.id}
+        keyExtractor={(item: ExerciseListItem) => item.id}
         contentContainerClassName="px-4 pb-8"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         onScrollBeginDrag={Keyboard.dismiss}
         onTouchStart={Keyboard.dismiss}
-        renderItem={({ item }: { item: Exercise }) => (
+        renderItem={({ item }: { item: ExerciseListItem }) => (
           <Pressable
             onPress={() => onSelectExercise(item)}
             className="border-border bg-card mt-3 rounded-lg border p-4"

@@ -1,8 +1,7 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import type { Exercise } from '@/src/db/schema';
 import {
-  getExercises,
-  getExercisesQuery
+  getExerciseById,
+  getExerciseByIdQuery
 } from '@/src/features/exercises/repository';
 import {
   getSetsByWorkoutExerciseId,
@@ -32,24 +31,26 @@ export function useActiveWorkoutExerciseDetail(
     [db, resolvedWorkoutExerciseId]
   );
   const workoutExercise = workoutExerciseResult.data[0];
+  const exerciseId = workoutExercise?.exerciseId ?? null;
   const setResult = useLiveWithFallback(
     () => getSetsByWorkoutExerciseIdQuery(db, resolvedWorkoutExerciseId),
     () => getSetsByWorkoutExerciseId(db, resolvedWorkoutExerciseId),
     [db, resolvedWorkoutExerciseId]
   );
   const exerciseResult = useLiveWithFallback(
-    () => getExercisesQuery(db),
-    () => getExercises(db),
-    [db]
-  );
+    () => getExerciseByIdQuery(db, exerciseId ?? ''),
+    () => {
+      if (!exerciseId) {
+        return [];
+      }
 
-  const exerciseById = useMemo(
-    () =>
-      new Map<Exercise['id'], Exercise>(
-        exerciseResult.data.map(exercise => [exercise.id, exercise])
-      ),
-    [exerciseResult.data]
+      const exercise = getExerciseById(db, exerciseId);
+
+      return exercise ? [exercise] : [];
+    },
+    [db, exerciseId]
   );
+  const exercise = exerciseResult.data[0] ?? null;
   const item = useMemo<WorkoutExerciseWithSets | undefined>(() => {
     if (!workoutExercise) {
       return undefined;
@@ -57,15 +58,17 @@ export function useActiveWorkoutExerciseDetail(
 
     return {
       workoutExercise,
-      exercise: exerciseById.get(workoutExercise.exerciseId),
+      exercise,
       sets: setResult.data
     };
-  }, [exerciseById, setResult.data, workoutExercise]);
+  }, [exercise, setResult.data, workoutExercise]);
 
   return {
     item,
     isLoading:
       Boolean(workoutExerciseId) &&
-      (!workoutExerciseResult.isLive || !setResult.isLive)
+      (!workoutExerciseResult.isLive ||
+        !setResult.isLive ||
+        Boolean(exerciseId && !exerciseResult.isLive))
   };
 }

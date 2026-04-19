@@ -10,14 +10,13 @@ import {
   getExerciseHistorySetsQuery,
   getExerciseHistoryWorkoutsQuery,
   getPersonalRecordsByExercise,
-  getPersonalRecordsByExerciseQuery,
-  rebuildPersonalRecordsForExercise
+  getPersonalRecordsByExerciseQuery
 } from '@/src/features/progress/repository';
 import { useSettings } from '@/src/features/settings/hooks';
 import { parseMuscleList } from '@/src/lib/utils/muscle';
 import { formatCompletedSets, getCompletedSets } from '@/src/lib/utils/set';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
-import { useLayoutEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 function getBestSetId(sets: Set[]) {
   if (sets.length === 0) {
@@ -35,9 +34,6 @@ function getBestSetId(sets: Set[]) {
 export function useExerciseDetail(exerciseId: string | undefined) {
   const db = useDrizzle();
   const { weightUnit } = useSettings();
-  const [rebuiltPrExerciseId, setRebuiltPrExerciseId] = useState<string | null>(
-    null
-  );
   const resolvedExerciseId = exerciseId ?? '';
   const exerciseResult = useLiveWithFallback(
     () => getExerciseByIdQuery(db, resolvedExerciseId),
@@ -70,7 +66,7 @@ export function useExerciseDetail(exerciseId: string | undefined) {
   const prResult = useLiveWithFallback(
     () => getPersonalRecordsByExerciseQuery(db, resolvedExerciseId),
     () => getPersonalRecordsByExercise(db, resolvedExerciseId),
-    [db, resolvedExerciseId, rebuiltPrExerciseId]
+    [db, resolvedExerciseId]
   );
 
   const history = useMemo(
@@ -92,17 +88,6 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     [setResult.data, workoutRows]
   );
 
-  useLayoutEffect(() => {
-    if (!exercise?.id || !exerciseResult.isLive) {
-      return;
-    }
-
-    rebuildPersonalRecordsForExercise(db, exercise.id);
-    setRebuiltPrExerciseId(exercise.id);
-  }, [db, exercise?.id, exerciseResult.isLive]);
-
-  const isPreparingExerciseStats =
-    Boolean(exercise?.id) && rebuiltPrExerciseId !== exercise?.id;
   const primaryMuscles = useMemo(
     () => parseMuscleList(exercise?.primaryMuscles ?? '[]'),
     [exercise?.primaryMuscles]
@@ -134,8 +119,6 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     mostRecentHistory,
     completedSetSummary,
     weightUnit,
-    isLoading:
-      Boolean(exerciseId) &&
-      (!exerciseResult.isLive || isPreparingExerciseStats)
+    isLoading: Boolean(exerciseId) && !exerciseResult.isLive
   };
 }

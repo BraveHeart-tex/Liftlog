@@ -1,16 +1,17 @@
-import type { Exercise, Workout } from '@/src/db/schema';
+import type { Workout } from '@/src/db/schema';
+import type { ExerciseListItem } from '@/src/features/exercises/repository';
+import { timerRef } from '@/src/features/workouts/components/rest-timer-sheet';
 import {
   getWorkoutExercises,
   getWorkoutExercisesQuery
 } from '@/src/features/workouts/repository';
-import { timerRef } from '@/src/features/workouts/components/rest-timer-sheet';
 import { useDrizzle } from '@/src/components/database-provider';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { useEffect, useMemo, useState } from 'react';
 
 type UseActiveWorkoutContentParams = {
   activeWorkout: Workout;
-  exerciseRows: Exercise[];
+  exerciseRows: ExerciseListItem[];
 };
 
 export function useActiveWorkoutContent({
@@ -30,7 +31,7 @@ export function useActiveWorkoutContent({
 
   const exerciseById = useMemo(
     () =>
-      new Map<Exercise['id'], Exercise>(
+      new Map<ExerciseListItem['id'], ExerciseListItem>(
         exerciseRows.map(exercise => [exercise.id, exercise])
       ),
     [exerciseRows]

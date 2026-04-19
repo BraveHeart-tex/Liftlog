@@ -3,6 +3,7 @@ import type { Set } from '@/src/db/schema';
 import {
   computeEstimated1RM,
   getPersonalRecordsByExercise,
+  maybeRebuildPersonalRecords,
   rebuildPersonalRecordsForExercise
 } from '@/src/features/progress/repository';
 import {
@@ -51,6 +52,21 @@ export function useExerciseTrackActions({
     [db, exerciseId]
   );
 
+  const checkAndCreatePRForNewSet = useCallback(
+    (setId: Set['id'], weightKg: number, reps: number): boolean => {
+      if (weightKg <= 0 || reps <= 0) {
+        return false;
+      }
+
+      const estimated1rm = computeEstimated1RM(weightKg, reps);
+
+      maybeRebuildPersonalRecords(db, exerciseId, estimated1rm);
+
+      return getPersonalRecordsByExercise(db, exerciseId)[0]?.setId === setId;
+    },
+    [db, exerciseId]
+  );
+
   const addSet = useCallback(
     ({ weightKg, reps }: SetValues) => {
       const newSet = createSet(db, {
@@ -62,7 +78,7 @@ export function useExerciseTrackActions({
         completedAt: Date.now()
       });
 
-      const isPR = checkAndCreatePR(newSet.id, weightKg, reps);
+      const isPR = checkAndCreatePRForNewSet(newSet.id, weightKg, reps);
 
       if (isPR) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -70,7 +86,7 @@ export function useExerciseTrackActions({
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     },
-    [checkAndCreatePR, db, item.sets.length, item.workoutExercise.id]
+    [checkAndCreatePRForNewSet, db, item.sets.length, item.workoutExercise.id]
   );
 
   const updateExistingSet = useCallback(

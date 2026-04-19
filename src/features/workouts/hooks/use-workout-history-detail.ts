@@ -1,8 +1,9 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import type { Exercise, Set, WorkoutExercise } from '@/src/db/schema';
+import type { Set, WorkoutExercise } from '@/src/db/schema';
 import {
   getExercisesByIds,
-  getExercisesByIdsQuery
+  getExercisesByIdsQuery,
+  type ExerciseListItem
 } from '@/src/features/exercises/repository';
 import { useSettings } from '@/src/features/settings/hooks';
 import {
@@ -81,7 +82,7 @@ export function useWorkoutHistoryDetail(workoutId: string | undefined) {
 
   const exerciseById = useMemo(
     () =>
-      new Map<Exercise['id'], Exercise>(
+      new Map<ExerciseListItem['id'], ExerciseListItem>(
         exerciseResult.data.map(exercise => [exercise.id, exercise])
       ),
     [exerciseResult.data]

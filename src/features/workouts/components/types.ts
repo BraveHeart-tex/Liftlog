@@ -1,8 +1,9 @@
-import type { Exercise, Set, WorkoutExercise } from '@/src/db/schema';
+import type { Set, WorkoutExercise } from '@/src/db/schema';
+import type { ExerciseListItem } from '@/src/features/exercises/repository';
 
 export type WorkoutExerciseWithSets = {
   workoutExercise: WorkoutExercise;
-  exercise: Exercise | undefined;
+  exercise: ExerciseListItem | undefined;
   sets: Set[];
 };
 
