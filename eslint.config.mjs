@@ -1,10 +1,10 @@
-const { defineConfig } = require('eslint/config');
-const expoConfig = require('eslint-config-expo/flat');
-const typescriptEslint = require('@typescript-eslint/eslint-plugin');
-const unusedImports = require('eslint-plugin-unused-imports');
-const stylistic = require('@stylistic/eslint-plugin');
+import stylistic from '@stylistic/eslint-plugin';
+import typescriptEslint from '@typescript-eslint/eslint-plugin';
+import expoConfig from 'eslint-config-expo/flat.js';
+import unusedImports from 'eslint-plugin-unused-imports';
+import { defineConfig } from 'eslint/config';
 
-module.exports = defineConfig([
+export default defineConfig([
   expoConfig,
   {
     ignores: [
