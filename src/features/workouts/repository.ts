@@ -124,6 +124,13 @@ export function getSetsForWorkoutExercisesQuery(
     .orderBy(asc(sets.order));
 }
 
+export function getSetsForWorkoutExercises(
+  db: DrizzleDb,
+  workoutExerciseIds: WorkoutExercise['id'][]
+): Set[] {
+  return getSetsForWorkoutExercisesQuery(db, workoutExerciseIds).all();
+}
+
 export function getWorkoutExerciseWithSets(
   db: DrizzleDb,
   workoutExerciseId: WorkoutExercise['id']

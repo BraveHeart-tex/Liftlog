@@ -1,30 +1,44 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { Exercise, Set, WorkoutExercise } from '@/src/db/schema';
-import { getSetsForWorkoutExercisesQuery } from '@/src/features/workouts/repository';
+import {
+  getSetsForWorkoutExercises,
+  getSetsForWorkoutExercisesQuery
+} from '@/src/features/workouts/repository';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useMemo } from 'react';
 import { ExerciseCard } from './exercise-card';
 import type { WorkoutExerciseWithSets } from './types';
 
-type ActiveWorkoutExerciseListProps = {
+interface ActiveWorkoutExerciseListProps {
   workoutExercises: WorkoutExercise[];
   exerciseById: Map<Exercise['id'], Exercise>;
-};
+}
 
 export function ActiveWorkoutExerciseList({
   workoutExercises,
   exerciseById
 }: ActiveWorkoutExerciseListProps) {
   const db = useDrizzle();
-  const workoutExerciseIds = workoutExercises.map(
-    workoutExercise => workoutExercise.id
-  );
-  const workoutExerciseIdKey = workoutExerciseIds.join(',');
 
-  const { data: setRows = [] } = useLiveQuery(
+  const workoutExerciseIds = useMemo(
+    () => workoutExercises.map(workoutExercise => workoutExercise.id),
+    [workoutExercises]
+  );
+  const workoutExerciseIdKey = useMemo(
+    () => workoutExerciseIds.join(','),
+    [workoutExerciseIds]
+  );
+
+  const initialSetRows = useMemo(
+    () => getSetsForWorkoutExercises(db, workoutExerciseIds),
+    [db, workoutExerciseIds]
+  );
+
+  const { data: liveSetRows = [], updatedAt } = useLiveQuery(
     getSetsForWorkoutExercisesQuery(db, workoutExerciseIds),
     [db, workoutExerciseIdKey]
   );
+  const setRows = updatedAt ? liveSetRows : initialSetRows;
 
   const workoutExercisesWithSets = useMemo<WorkoutExerciseWithSets[]>(() => {
     const setsByWorkoutExerciseId = new Map<WorkoutExercise['id'], Set[]>();
@@ -47,15 +61,11 @@ export function ActiveWorkoutExerciseList({
     }));
   }, [exerciseById, setRows, workoutExercises]);
 
-  return (
-    <>
-      {workoutExercisesWithSets.map(workoutExercise => (
-        <ExerciseCard
-          key={workoutExercise.workoutExercise.id}
-          item={workoutExercise}
-          className="mt-4"
-        />
-      ))}
-    </>
-  );
+  return workoutExercisesWithSets.map(workoutExercise => (
+    <ExerciseCard
+      key={workoutExercise.workoutExercise.id}
+      item={workoutExercise}
+      className="mt-4"
+    />
+  ));
 }
