@@ -9,7 +9,7 @@ import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
 import type { Exercise } from '@/src/db/schema';
 import { useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Keyboard, Pressable, View } from 'react-native';
 import { getCategoryLabel } from './utils';
 
 type ExercisePickerSheetProps = {
@@ -62,8 +62,11 @@ export function ExercisePickerSheet({
       <StyledBottomSheetFlatList
         data={filteredExercises}
         keyExtractor={(item: Exercise) => item.id}
-        contentContainerClassName="px-4 pb-4"
+        contentContainerClassName="px-4 pb-8"
+        keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
+        onScrollBeginDrag={Keyboard.dismiss}
+        onTouchStart={Keyboard.dismiss}
         renderItem={({ item }: { item: Exercise }) => (
           <Pressable
             onPress={() => onSelectExercise(item)}

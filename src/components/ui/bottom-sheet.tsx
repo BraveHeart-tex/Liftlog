@@ -99,13 +99,17 @@ export function BottomSheet({
   return (
     <GorhomBottomSheet
       ref={sheetRef}
+      android_keyboardInputMode="adjustResize"
       animateOnMount={false}
       backdropComponent={renderBackdrop}
       backgroundComponent={SheetBackground}
       enableDynamicSizing={false}
+      enableBlurKeyboardOnGesture
       enablePanDownToClose={enablePanDownToClose}
       handleComponent={SheetHandle}
       index={-1}
+      keyboardBehavior="extend"
+      keyboardBlurBehavior="restore"
       onClose={handleClose}
       snapPoints={resolvedSnapPoints}
     >

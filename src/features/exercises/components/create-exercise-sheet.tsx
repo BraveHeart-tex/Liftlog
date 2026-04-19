@@ -19,7 +19,7 @@ import { createExercise } from '@/src/features/exercises/repository';
 import { cn } from '@/src/lib/utils/cn';
 import { toTitleCase } from '@/src/lib/utils/string';
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Keyboard, Pressable, View } from 'react-native';
 
 type CreateExerciseSheetProps = {
   isOpen: boolean;
@@ -165,7 +165,10 @@ export function CreateExerciseSheet({
       <StyledBottomSheetScrollView
         className="flex-1"
         contentContainerClassName="px-4 pb-8"
+        keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
+        onScrollBeginDrag={Keyboard.dismiss}
+        onTouchStart={Keyboard.dismiss}
         showsVerticalScrollIndicator={false}
       >
         <View className="mt-6">
