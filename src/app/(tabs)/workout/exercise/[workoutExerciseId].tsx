@@ -26,12 +26,12 @@ import { useLocalSearchParams } from 'expo-router';
 import { TimerIcon } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  View,
   Pressable,
+  useWindowDimensions,
+  View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
-  type ScrollView,
-  useWindowDimensions
+  type ScrollView
 } from 'react-native';
 
 type ExerciseDetailTab = 'track' | 'history';
@@ -212,8 +212,6 @@ export default function ActiveWorkoutExerciseScreen() {
       <RestTimerSheet
         isOpen={isRestTimerOpen}
         onClose={() => setIsRestTimerOpen(false)}
-        // TODO: read durationSeconds from user settings (phase 6.1)
-        durationSeconds={30}
       />
     </Screen>
   );
