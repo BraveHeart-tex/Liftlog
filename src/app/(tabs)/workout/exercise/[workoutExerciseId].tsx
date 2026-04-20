@@ -18,6 +18,8 @@ import { useLocalSearchParams } from 'expo-router';
 import { TimerIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import {
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   useWindowDimensions,
   View,
@@ -35,7 +37,6 @@ export default function ActiveWorkoutExerciseScreen() {
     workoutExerciseId: string | string[];
   }>();
   const workoutExerciseId = getRouteParamId(rawId);
-
   const [selectedTab, setSelectedTab] = useState<ExerciseDetailTab>('track');
   const [isRestTimerOpen, setIsRestTimerOpen] = useState(false);
   const [timerIndicatorTick, setTimerIndicatorTick] = useState(0);
@@ -48,19 +49,14 @@ export default function ActiveWorkoutExerciseScreen() {
       setTimerIndicatorTick(tick => tick + 1);
     }, 5000);
 
-    return () => {
-      clearInterval(intervalId);
-    };
+    return () => clearInterval(intervalId);
   }, []);
 
   const handleSelectTab = (tab: ExerciseDetailTab) => {
     const tabIndex = tabs.indexOf(tab);
 
     setSelectedTab(tab);
-    scrollRef.current?.scrollTo({
-      x: tabIndex * width,
-      animated: true
-    });
+    scrollRef.current?.scrollTo({ x: tabIndex * width, animated: true });
   };
 
   const handleMomentumScrollEnd = (
@@ -101,14 +97,13 @@ export default function ActiveWorkoutExerciseScreen() {
 
   return (
     <Screen withPadding={false}>
+      {/* Header — sits above keyboard, never moves */}
       <View className="px-4 pt-4 pb-3">
         <View className="flex-row items-center gap-3">
           <BackButton />
-
           <Text variant="h2" className="flex-1" numberOfLines={1}>
             {item.exercise?.name ?? 'Unknown exercise'}
           </Text>
-
           <Button
             variant="ghost"
             size="icon"
@@ -122,6 +117,7 @@ export default function ActiveWorkoutExerciseScreen() {
         </View>
       </View>
 
+      {/* Tab bar — also above keyboard */}
       <View className="border-border flex-row border-b px-4">
         {tabs.map(tab => {
           const isSelected = selectedTab === tab;
@@ -146,23 +142,29 @@ export default function ActiveWorkoutExerciseScreen() {
         })}
       </View>
 
-      <StyledScrollView
-        ref={scrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={handleMomentumScrollEnd}
-        className="flex-1"
-        keyboardShouldPersistTaps="handled"
-        scrollEventThrottle={16}
+      {/* KAV only wraps the tab content area, not the header/tab bar */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View className="w-screen flex-1">
-          <ExerciseTrackTab item={item} />
-        </View>
-        <View className="w-screen flex-1">
-          <ExerciseHistoryTab exerciseId={item.workoutExercise.exerciseId} />
-        </View>
-      </StyledScrollView>
+        <StyledScrollView
+          ref={scrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={handleMomentumScrollEnd}
+          className="flex-1"
+          keyboardShouldPersistTaps="handled"
+          scrollEventThrottle={16}
+        >
+          <View className="w-screen flex-1">
+            <ExerciseTrackTab item={item} />
+          </View>
+          <View className="w-screen flex-1">
+            <ExerciseHistoryTab exerciseId={item.workoutExercise.exerciseId} />
+          </View>
+        </StyledScrollView>
+      </KeyboardAvoidingView>
 
       <RestTimerSheet
         isOpen={isRestTimerOpen}
