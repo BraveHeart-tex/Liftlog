@@ -14,7 +14,7 @@ import { formatWeightForUnit } from '@/src/lib/utils/weight';
 import { useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 
-export default function WorkoutHistoryDetailScreen() {
+export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const workoutId = getRouteParamId(id);
   const {
