@@ -14,7 +14,6 @@ export default function HistoryLayout() {
       }}
     >
       <Stack.Screen name="index" />
-      <Stack.Screen name="[id]" />
     </Stack>
   );
 }
