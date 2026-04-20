@@ -16,9 +16,7 @@ type ExerciseTrackTabProps = {
 export function ExerciseTrackTab({ item }: ExerciseTrackTabProps) {
   const { editingSetId, editingSet, setEditingSetId, prSetIds } =
     useExerciseTrackTab(item);
-
   const scrollViewRef = useRef<ScrollView>(null);
-
   const scrollToBottom = () => {
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -33,18 +31,15 @@ export function ExerciseTrackTab({ item }: ExerciseTrackTabProps) {
 
     return () => show.remove();
   }, []);
-
   const {
     addSet: _handleAddSet,
     updateSet: _handleUpdateSet,
     deleteSet: handleDeleteSet
   } = useExerciseTrackActions({ item, editingSetId, setEditingSetId });
-
   const handleAddSet: typeof _handleAddSet = data => {
     _handleAddSet(data);
     scrollToBottom();
   };
-
   const handleUpdateSet: typeof _handleUpdateSet = data => {
     _handleUpdateSet(data);
     scrollToBottom();
@@ -59,18 +54,17 @@ export function ExerciseTrackTab({ item }: ExerciseTrackTabProps) {
         onClear={() => setEditingSetId(null)}
         onDeleteSet={handleDeleteSet}
       />
-
       <View className="border-border mt-4 border-t" />
-
       <View className="mt-4 flex-1">
         <Text variant="caption" tone="muted">
           Sets
         </Text>
-
         {item.sets.length > 0 ? (
           <ScrollView
             ref={scrollViewRef}
             className="flex-1"
+            nestedScrollEnabled={false}
+            scrollIndicatorInsets={{ right: 1 }}
             contentContainerStyle={{ paddingBottom: 32 }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
@@ -86,7 +80,6 @@ export function ExerciseTrackTab({ item }: ExerciseTrackTabProps) {
                   onEdit={() =>
                     setEditingSetId(prev => (prev === set.id ? null : set.id))
                   }
-                  onDeleteSet={() => handleDeleteSet(set.id)}
                 />
               ))}
             </View>

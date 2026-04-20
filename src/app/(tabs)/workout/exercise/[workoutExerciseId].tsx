@@ -56,6 +56,7 @@ export default function ActiveWorkoutExerciseScreen() {
     const tabIndex = tabs.indexOf(tab);
 
     setSelectedTab(tab);
+
     scrollRef.current?.scrollTo({ x: tabIndex * width, animated: true });
   };
 
@@ -116,7 +117,6 @@ export default function ActiveWorkoutExerciseScreen() {
           </Button>
         </View>
       </View>
-
       {/* Tab bar — also above keyboard */}
       <View className="border-border flex-row border-b px-4">
         {tabs.map(tab => {
@@ -141,7 +141,6 @@ export default function ActiveWorkoutExerciseScreen() {
           );
         })}
       </View>
-
       {/* KAV only wraps the tab content area, not the header/tab bar */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -151,6 +150,7 @@ export default function ActiveWorkoutExerciseScreen() {
           ref={scrollRef}
           horizontal
           pagingEnabled
+          directionalLockEnabled
           showsHorizontalScrollIndicator={false}
           onMomentumScrollEnd={handleMomentumScrollEnd}
           className="flex-1"
@@ -165,7 +165,6 @@ export default function ActiveWorkoutExerciseScreen() {
           </View>
         </StyledScrollView>
       </KeyboardAvoidingView>
-
       <RestTimerSheet
         isOpen={isRestTimerOpen}
         onClose={() => setIsRestTimerOpen(false)}
