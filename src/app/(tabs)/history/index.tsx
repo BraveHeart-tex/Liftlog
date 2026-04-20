@@ -78,7 +78,7 @@ export default function HistoryScreen() {
             <Pressable
               onPress={() =>
                 router.push({
-                  pathname: '/(tabs)/history/[id]',
+                  pathname: '/workouts/[id]',
                   params: { id: item.id }
                 } as unknown as Href)
               }

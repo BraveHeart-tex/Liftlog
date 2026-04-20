@@ -8,7 +8,7 @@ import {
 } from '@/src/features/workouts/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -79,7 +79,10 @@ export default function WorkoutStartScreen() {
                   <Pressable
                     key={workout.id}
                     onPress={() => {
-                      router.push(`/(tabs)/history/${workout.id}`);
+                      router.push({
+                        pathname: '/workouts/[id]',
+                        params: { id: workout.id }
+                      } as unknown as Href);
                     }}
                     className={cn(
                       'border-border bg-card rounded-lg border p-4',
