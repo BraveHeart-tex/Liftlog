@@ -6,8 +6,8 @@ import {
   BottomSheetHeader,
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
+import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
 import { Button } from '@/src/components/ui/button';
-import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
 import type { NewExercise } from '@/src/db/schema';
 import {
@@ -24,11 +24,11 @@ import { toTitleCase } from '@/src/lib/utils/string';
 import { useState } from 'react';
 import { Keyboard, Pressable, View } from 'react-native';
 
-type CreateExerciseSheetProps = {
+interface CreateExerciseSheetProps {
   isOpen: boolean;
   exercises: ExerciseListItem[];
   onClose: () => void;
-};
+}
 
 type CategoryOption = Extract<
   (typeof CATEGORY_FILTERS)[number],
@@ -145,8 +145,16 @@ export function CreateExerciseSheet({
         </BottomSheetDescription>
       </BottomSheetHeader>
 
-      <View className="px-4 pb-3">
-        <Input
+      <StyledBottomSheetScrollView
+        className="flex-1"
+        contentContainerClassName="px-4 pt-3 pb-8"
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+        onScrollBeginDrag={Keyboard.dismiss}
+        onTouchStart={Keyboard.dismiss}
+        showsVerticalScrollIndicator={false}
+      >
+        <BottomSheetInput
           label="Name"
           value={name}
           onChangeText={setName}
@@ -162,18 +170,7 @@ export function CreateExerciseSheet({
                 : undefined
           }
         />
-      </View>
 
-      {/* keyboard handled by ScrollView + keyboardShouldPersistTaps */}
-      <StyledBottomSheetScrollView
-        className="flex-1"
-        contentContainerClassName="px-4 pb-8"
-        keyboardDismissMode="on-drag"
-        keyboardShouldPersistTaps="handled"
-        onScrollBeginDrag={Keyboard.dismiss}
-        onTouchStart={Keyboard.dismiss}
-        showsVerticalScrollIndicator={false}
-      >
         <View className="mt-6">
           <Text variant="small">Category</Text>
           <View className="mt-3 flex-row flex-wrap gap-2">
@@ -243,7 +240,7 @@ export function CreateExerciseSheet({
         </View>
       </StyledBottomSheetScrollView>
 
-      <View className="mt-3 flex-row gap-3 px-4 pb-3">
+      <View className="border-border bg-card flex-row gap-3 border-t px-4 pt-3 pb-3">
         <View className="flex-1">
           <Button variant="secondary" onPress={handleClose}>
             Cancel
