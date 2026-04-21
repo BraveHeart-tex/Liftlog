@@ -10,7 +10,7 @@ import {
 import { useHistoryList } from '@/src/features/workouts/hooks';
 import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date';
 import { router, type Href } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 function formatSelectedDate(dateKey: string): string {
@@ -41,18 +41,6 @@ export default function HistoryScreen() {
       ),
     [selectedDateKey, workoutRows]
   );
-
-  useEffect(() => {
-    if (workoutRows.length === 0) {
-      return;
-    }
-
-    if (workoutCountByDateKey.has(selectedDateKey)) {
-      return;
-    }
-
-    setSelectedDateKey(toLocalDateKey(workoutRows[0].startedAt));
-  }, [selectedDateKey, workoutCountByDateKey, workoutRows]);
 
   if (isLoading) {
     return (
