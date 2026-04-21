@@ -13,7 +13,9 @@ type TextInputColorBridgeProps = ComponentPropsWithoutRef<typeof TextInput> & {
   selectionStyle?: StyleProp<TextStyle>;
 };
 
-function getStyleColor(style: StyleProp<TextStyle>): ColorValue | undefined {
+export function getStyleColor(
+  style: StyleProp<TextStyle>
+): ColorValue | undefined {
   const color = StyleSheet.flatten(style)?.color;
 
   return typeof color === 'string' ? color : undefined;
