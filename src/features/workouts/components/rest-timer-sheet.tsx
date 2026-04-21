@@ -425,7 +425,11 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
           <View className="items-center">
             <NativeText
               className="text-foreground"
-              style={{ fontSize: 72, fontWeight: '500' }}
+              style={{
+                fontSize: 72,
+                fontWeight: '500',
+                fontVariant: ['tabular-nums']
+              }}
             >
               {formatTime(secondsRemaining)}
             </NativeText>
