@@ -2,35 +2,57 @@ import { StyledFlatList } from '@/src/components/styled/flat-list';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 import { Text } from '@/src/components/ui/text';
+import {
+  getWorkoutCountByDateKey,
+  toLocalDateKey,
+  WorkoutHistoryCalendar
+} from '@/src/features/workouts/components/workout-history-calendar';
 import { useHistoryList } from '@/src/features/workouts/hooks';
+import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date';
 import { router, type Href } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-function formatWorkoutDate(timestamp: number): string {
+function formatSelectedDate(dateKey: string): string {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+
   return new Intl.DateTimeFormat(undefined, {
     weekday: 'short',
     day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  }).format(new Date(timestamp));
-}
-
-function formatDuration(startedAt: number, completedAt: number | null): string {
-  if (completedAt === null) {
-    return '—';
-  }
-
-  const durationMinutes = Math.round((completedAt - startedAt) / 60000);
-
-  if (durationMinutes < 1) {
-    return '< 1 min';
-  }
-
-  return `${durationMinutes} min`;
+    month: 'short'
+  }).format(date);
 }
 
 export default function HistoryScreen() {
   const { workoutRows, setCountByWorkoutId, isLoading } = useHistoryList();
+  const workoutCountByDateKey = useMemo(
+    () => getWorkoutCountByDateKey(workoutRows),
+    [workoutRows]
+  );
+  const initialDateKey = workoutRows[0]
+    ? toLocalDateKey(workoutRows[0].startedAt)
+    : toLocalDateKey(Date.now());
+  const [selectedDateKey, setSelectedDateKey] = useState(initialDateKey);
+  const selectedWorkouts = useMemo(
+    () =>
+      workoutRows.filter(
+        workout => toLocalDateKey(workout.startedAt) === selectedDateKey
+      ),
+    [selectedDateKey, workoutRows]
+  );
+
+  useEffect(() => {
+    if (workoutRows.length === 0) {
+      return;
+    }
+
+    if (workoutCountByDateKey.has(selectedDateKey)) {
+      return;
+    }
+
+    setSelectedDateKey(toLocalDateKey(workoutRows[0].startedAt));
+  }, [selectedDateKey, workoutCountByDateKey, workoutRows]);
 
   if (isLoading) {
     return (
@@ -47,7 +69,7 @@ export default function HistoryScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
       <StyledFlatList
-        data={workoutRows}
+        data={selectedWorkouts}
         keyExtractor={item => item.id}
         style={{ flex: 1 }}
         contentContainerClassName="px-4 py-6"
@@ -57,17 +79,40 @@ export default function HistoryScreen() {
           <View className="mb-6">
             <Text variant="h1">History</Text>
             <Text variant="small" tone="muted" className="mt-2">
-              Your completed workout sessions.
+              Browse completed sessions by day.
             </Text>
+
+            <View className="mt-6">
+              <WorkoutHistoryCalendar
+                selectedDateKey={selectedDateKey}
+                workoutCountByDateKey={workoutCountByDateKey}
+                onSelectDate={setSelectedDateKey}
+              />
+            </View>
+
+            <View className="mt-6 flex-row items-end justify-between gap-4">
+              <View>
+                <Text variant="caption" tone="muted">
+                  Selected day
+                </Text>
+                <Text variant="h3" className="mt-1">
+                  {formatSelectedDate(selectedDateKey)}
+                </Text>
+              </View>
+              <Text variant="caption" tone="muted">
+                {selectedWorkouts.length}{' '}
+                {selectedWorkouts.length === 1 ? 'workout' : 'workouts'}
+              </Text>
+            </View>
           </View>
         }
         ListEmptyComponent={
-          <View className="flex-1 items-center justify-center py-20">
+          <View className="border-border bg-card items-center justify-center rounded-lg border border-dashed px-6 py-10">
             <Text variant="h3" className="text-center">
-              No workouts yet
+              No workouts
             </Text>
             <Text variant="small" tone="muted" className="mt-2 text-center">
-              Complete your first session to see it here.
+              Completed sessions for this day will show here.
             </Text>
           </View>
         }
@@ -89,7 +134,10 @@ export default function HistoryScreen() {
                   {item.name}
                 </Text>
                 <Text variant="caption" tone="muted">
-                  {formatDuration(item.startedAt, item.completedAt)}
+                  {formatDuration({
+                    startedAt: item.startedAt,
+                    completedAt: item.completedAt
+                  })}
                 </Text>
               </View>
 
