@@ -9,11 +9,17 @@ import { SetEntryRow } from './set-entry-row';
 import { SetForm } from './set-form';
 import type { WorkoutExerciseWithSets } from './types';
 
-type ExerciseTrackTabProps = {
+interface ExerciseTrackTabProps {
   item: WorkoutExerciseWithSets;
-};
+  onVerticalScrollStart?: () => void;
+  onVerticalScrollEnd?: () => void;
+}
 
-export function ExerciseTrackTab({ item }: ExerciseTrackTabProps) {
+export function ExerciseTrackTab({
+  item,
+  onVerticalScrollStart,
+  onVerticalScrollEnd
+}: ExerciseTrackTabProps) {
   const { editingSetId, editingSet, setEditingSetId, prSetIds } =
     useExerciseTrackTab(item);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -63,11 +69,15 @@ export function ExerciseTrackTab({ item }: ExerciseTrackTabProps) {
           <ScrollView
             ref={scrollViewRef}
             className="flex-1"
-            nestedScrollEnabled={false}
+            nestedScrollEnabled={true}
+            directionalLockEnabled={true}
             scrollIndicatorInsets={{ right: 1 }}
             contentContainerStyle={{ paddingBottom: 32 }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
+            onScrollBeginDrag={onVerticalScrollStart}
+            onScrollEndDrag={onVerticalScrollEnd}
+            onMomentumScrollEnd={onVerticalScrollEnd}
           >
             <View className="mt-2">
               {item.sets.map((set, index) => (

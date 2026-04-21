@@ -37,10 +37,13 @@ export default function ActiveWorkoutExerciseScreen() {
     workoutExerciseId: string | string[];
   }>();
   const workoutExerciseId = getRouteParamId(rawId);
+
   const [selectedTab, setSelectedTab] = useState<ExerciseDetailTab>('track');
   const [isRestTimerOpen, setIsRestTimerOpen] = useState(false);
   const [timerIndicatorTick, setTimerIndicatorTick] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
+  const [outerScrollEnabled, setOuterScrollEnabled] = useState(true);
+
   const { width } = useWindowDimensions();
   const { item, isLoading } = useActiveWorkoutExerciseDetail(workoutExerciseId);
 
@@ -148,6 +151,7 @@ export default function ActiveWorkoutExerciseScreen() {
       >
         <StyledScrollView
           ref={scrollRef}
+          scrollEnabled={outerScrollEnabled}
           horizontal
           pagingEnabled
           directionalLockEnabled
@@ -158,7 +162,11 @@ export default function ActiveWorkoutExerciseScreen() {
           scrollEventThrottle={16}
         >
           <View className="w-screen flex-1">
-            <ExerciseTrackTab item={item} />
+            <ExerciseTrackTab
+              item={item}
+              onVerticalScrollStart={() => setOuterScrollEnabled(false)}
+              onVerticalScrollEnd={() => setOuterScrollEnabled(true)}
+            />
           </View>
           <View className="w-screen flex-1">
             <ExerciseHistoryTab exerciseId={item.workoutExercise.exerciseId} />
