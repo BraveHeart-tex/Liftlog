@@ -362,7 +362,7 @@ const createSeedExercises = (): NewExercise[] => [
   }
 ];
 
-export function seedDatabase(db: DrizzleDb): void {
+export function runSeedIfNeeded(db: DrizzleDb): void {
   const hasSeeded = db
     .select()
     .from(appMeta)
@@ -410,8 +410,4 @@ export function seedDatabase(db: DrizzleDb): void {
       })
       .run();
   });
-}
-
-export function runSeedIfNeeded(db: DrizzleDb): void {
-  seedDatabase(db);
 }
