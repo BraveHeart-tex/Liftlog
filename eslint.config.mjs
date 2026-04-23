@@ -99,5 +99,24 @@ export default defineConfig([
       ],
       '@typescript-eslint/no-import-type-side-effects': 'error'
     }
+  },
+  {
+    files: ['**/*.{js,jsx,mjs,cjs,ts,tsx}'],
+    ignores: [
+      '*.config.{js,mjs,ts}',
+      'eslint.config.mjs',
+      'src/app/**',
+      'src/db/migrations/**'
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'ExportDefaultDeclaration',
+          message:
+            'Use named exports. Default exports are reserved for Expo Router screens, layouts, config files, and generated framework files.'
+        }
+      ]
+    }
   }
 ]);

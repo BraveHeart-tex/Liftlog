@@ -131,5 +131,3 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
     </View>
   );
 });
-
-export default Input;

@@ -64,5 +64,3 @@ export const Text = forwardRef<ComponentRef<typeof NativeText>, TextProps>(
     );
   }
 );
-
-export default Text;

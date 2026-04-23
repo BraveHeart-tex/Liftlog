@@ -53,5 +53,3 @@ export function BackButton({
     </Pressable>
   );
 }
-
-export default BackButton;
