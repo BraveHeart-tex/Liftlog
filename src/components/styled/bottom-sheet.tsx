@@ -1,10 +1,10 @@
+import { getStyleColor } from '@/src/components/styled/text-input';
 import {
   BottomSheetBackdrop,
   BottomSheetFlatList,
   BottomSheetScrollView,
   BottomSheetTextInput
 } from '@gorhom/bottom-sheet';
-import { getStyleColor } from '@/src/components/styled/text-input';
 import { styled } from 'nativewind';
 import {
   type ComponentRef,
