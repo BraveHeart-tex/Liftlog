@@ -1,4 +1,3 @@
-import { useDrizzle } from '@/src/components/database-provider';
 import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
@@ -6,11 +5,10 @@ import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { StyledTextInput } from '@/src/components/styled/text-input';
-import { useExerciseDetail } from '@/src/features/exercises/hooks';
 import {
-  removeCustomExercise,
-  updateCustomExerciseName
-} from '@/src/features/exercises/repository';
+  useExerciseActions,
+  useExerciseDetail
+} from '@/src/features/exercises/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { formatWorkoutDate } from '@/src/lib/utils/date';
 import { formatMuscleList } from '@/src/lib/utils/muscle';
@@ -23,7 +21,6 @@ import { Alert, Keyboard, Pressable, View } from 'react-native';
 import type { TextInput } from 'react-native';
 
 export default function ExerciseDetailScreen() {
-  const db = useDrizzle();
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const exerciseId = getRouteParamId(id);
   const renameInputRef = useRef<TextInput>(null);
@@ -46,6 +43,8 @@ export default function ExerciseDetailScreen() {
     weightUnit,
     isLoading
   } = useExerciseDetail(exerciseId);
+  const { renameCustomExercise, removeCustomExerciseById } =
+    useExerciseActions();
 
   useEffect(() => {
     if (!isRenaming || !exercise) {
@@ -138,8 +137,7 @@ export default function ExerciseDetailScreen() {
     setRenameError(undefined);
 
     try {
-      const updatedExercise = updateCustomExerciseName(
-        db,
+      const updatedExercise = renameCustomExercise(
         exercise.id,
         trimmedDraftName
       );
@@ -184,10 +182,10 @@ export default function ExerciseDetailScreen() {
         text: removeActionLabel,
         style: 'destructive',
         onPress: () => {
-          let result: ReturnType<typeof removeCustomExercise>;
+          let result: ReturnType<typeof removeCustomExerciseById>;
 
           try {
-            result = removeCustomExercise(db, exercise.id);
+            result = removeCustomExerciseById(exercise.id);
           } catch (error) {
             console.error('Failed to remove custom exercise', error);
             Alert.alert(

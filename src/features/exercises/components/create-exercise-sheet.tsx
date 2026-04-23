@@ -1,4 +1,3 @@
-import { useDrizzle } from '@/src/components/database-provider';
 import { StyledBottomSheetScrollView } from '@/src/components/styled/bottom-sheet';
 import {
   BottomSheet,
@@ -15,10 +14,8 @@ import {
   MUSCLE_GROUP,
   type ExerciseCategory
 } from '@/src/features/exercises/constants';
-import {
-  createExercise,
-  type ExerciseListItem
-} from '@/src/features/exercises/repository';
+import { useExerciseActions } from '@/src/features/exercises/hooks';
+import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { cn } from '@/src/lib/utils/cn';
 import { toTitleCase } from '@/src/lib/utils/string';
 import { useState } from 'react';
@@ -67,7 +64,7 @@ export function CreateExerciseSheet({
   exercises,
   onClose
 }: CreateExerciseSheetProps) {
-  const db = useDrizzle();
+  const { createCustomExercise } = useExerciseActions();
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState<ExerciseCategory>('barbell');
@@ -128,7 +125,7 @@ export function CreateExerciseSheet({
       isArchived: 0
     };
 
-    createExercise(db, newExercise);
+    createCustomExercise(newExercise);
     handleClose();
   };
 
