@@ -12,17 +12,17 @@ import {
   View
 } from 'react-native';
 
-type DialogProps = {
+interface DialogProps {
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
   className?: string;
-};
+}
 
-type DialogSectionProps = {
+interface DialogSectionProps {
   children: ReactNode;
   className?: string;
-};
+}
 
 export function Dialog({ isOpen, onClose, children, className }: DialogProps) {
   const [isVisible, setIsVisible] = useState(isOpen);

@@ -45,9 +45,7 @@ type BottomSheetTextInputColorBridgeProps = TextInputProps & {
   selectionStyle?: StyleProp<TextStyle>;
 };
 
-export type StyledBottomSheetTextInputRef = ComponentRef<
-  typeof BottomSheetTextInput
->;
+type StyledBottomSheetTextInputRef = ComponentRef<typeof BottomSheetTextInput>;
 
 const BottomSheetTextInputColorBridge = forwardRef<
   StyledBottomSheetTextInputRef,

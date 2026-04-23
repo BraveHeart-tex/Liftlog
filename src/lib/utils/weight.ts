@@ -2,7 +2,7 @@ export type WeightUnit = 'kg' | 'lb';
 
 const POUNDS_PER_KILOGRAM = 2.2046226218;
 
-export function convertWeightFromKg(weightKg: number, unit: WeightUnit) {
+function convertWeightFromKg(weightKg: number, unit: WeightUnit) {
   if (unit === 'lb') {
     return weightKg * POUNDS_PER_KILOGRAM;
   }
@@ -18,7 +18,7 @@ export function convertWeightToKg(weight: number, unit: WeightUnit) {
   return weight;
 }
 
-export function formatWeight(weight: number) {
+function formatWeight(weight: number) {
   if (Number.isInteger(weight)) {
     return String(weight);
   }

@@ -1,6 +1,6 @@
 export type AppColorScheme = 'light' | 'dark';
 
-export const colorSchemes = {
+const colorSchemes = {
   light: {
     background: '#F2F2F7',
     foreground: '#0A0A0A',

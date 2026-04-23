@@ -1,4 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "tags": ["-lintignore"]
+  "tags": ["-lintignore"],
+  "ignoreDependencies": ["babel-plugin-inline-import", "babel-preset-expo"],
+  "ignore": ["babel.config.js"]
 }

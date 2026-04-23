@@ -65,7 +65,7 @@ export function getWorkoutById(
   return getWorkoutRecordById(db, id);
 }
 
-export function getWorkoutWithExercises(
+function getWorkoutWithExercises(
   db: DrizzleDb,
   id: Workout['id']
 ): { workout: Workout; exercises: WorkoutExercise[] } | undefined {
@@ -178,7 +178,7 @@ export function getSetsForWorkoutExercises(
   return getSetsForWorkoutExercisesQuery(db, workoutExerciseIds).all();
 }
 
-export function getWorkoutExerciseWithSets(
+function getWorkoutExerciseWithSets(
   db: DrizzleDb,
   workoutExerciseId: WorkoutExercise['id']
 ): { workoutExercise: WorkoutExercise; sets: Set[] } | undefined {
@@ -200,7 +200,7 @@ export function createWorkout(db: DrizzleDb, data: NewWorkout): Workout {
   return db.insert(workouts).values(data).returning().get();
 }
 
-export function updateWorkout(
+function updateWorkout(
   db: DrizzleDb,
   id: Workout['id'],
   data: Partial<NewWorkout>
@@ -227,7 +227,7 @@ export function completeWorkout(db: DrizzleDb, id: Workout['id']): void {
     .run();
 }
 
-export function cancelWorkout(db: DrizzleDb, id: Workout['id']): void {
+function cancelWorkout(db: DrizzleDb, id: Workout['id']): void {
   db.update(workouts)
     .set({
       status: 'cancelled',
@@ -271,7 +271,7 @@ export function deleteSet(db: DrizzleDb, id: Set['id']): void {
   db.delete(sets).where(eq(sets.id, id)).run();
 }
 
-export function completeSet(db: DrizzleDb, id: Set['id']): void {
+function completeSet(db: DrizzleDb, id: Set['id']): void {
   db.update(sets)
     .set({
       status: 'completed',
