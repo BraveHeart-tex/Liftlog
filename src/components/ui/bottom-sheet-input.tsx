@@ -137,5 +137,3 @@ export const BottomSheetInput = forwardRef<
     </View>
   );
 });
-
-export default BottomSheetInput;

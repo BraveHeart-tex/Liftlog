@@ -145,5 +145,3 @@ export function CreateExerciseForm({
     </View>
   );
 }
-
-export default CreateExerciseForm;

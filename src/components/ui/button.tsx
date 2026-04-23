@@ -142,5 +142,3 @@ export function Button({
     </Animated.View>
   );
 }
-
-export default Button;
