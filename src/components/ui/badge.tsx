@@ -37,5 +37,3 @@ export function Badge({ variant = 'default', label, className }: BadgeProps) {
     </Text>
   );
 }
-
-export default Badge;
