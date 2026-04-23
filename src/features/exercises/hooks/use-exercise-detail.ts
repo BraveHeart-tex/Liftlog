@@ -2,7 +2,10 @@ import { useDrizzle } from '@/src/components/database-provider';
 import type { Set } from '@/src/db/schema';
 import {
   getExerciseById,
-  getExerciseByIdQuery
+  getExerciseByIdQuery,
+  getExercises,
+  getExercisesQuery,
+  getExerciseUsageRowsQuery
 } from '@/src/features/exercises/repository';
 import {
   buildExerciseHistory,
@@ -45,6 +48,16 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     [db, resolvedExerciseId]
   );
   const exercise = exerciseResult.data[0];
+  const exerciseListResult = useLiveWithFallback(
+    () => getExercisesQuery(db),
+    () => getExercises(db),
+    [db]
+  );
+  const exerciseUsageResult = useLiveWithFallback(
+    () => getExerciseUsageRowsQuery(db, resolvedExerciseId),
+    () => getExerciseUsageRowsQuery(db, resolvedExerciseId).all(),
+    [db, resolvedExerciseId]
+  );
 
   const workoutResult = useLiveWithFallback(
     () => getExerciseHistoryWorkoutsQuery(db, resolvedExerciseId),
@@ -111,6 +124,8 @@ export function useExerciseDetail(exerciseId: string | undefined) {
 
   return {
     exercise,
+    exercises: exerciseListResult.data,
+    exerciseUsageCount: exerciseUsageResult.data.length,
     history,
     prRows: prResult.data,
     primaryMuscles,
