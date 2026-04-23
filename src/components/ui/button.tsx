@@ -18,6 +18,7 @@ export type ButtonProps = {
   size?: ButtonSize;
   disabled?: boolean;
   loading?: boolean;
+  accessibilityLabel?: string;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
   className?: string;
@@ -59,6 +60,7 @@ export function Button({
   size = 'md',
   disabled = false,
   loading = false,
+  accessibilityLabel,
   leftIcon,
   rightIcon,
   className,
@@ -96,6 +98,7 @@ export function Button({
           className
         )}
         accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
         accessibilityState={{ disabled: isBlocked, busy: loading }}
         disabled={isBlocked}
         onPress={onPress}
