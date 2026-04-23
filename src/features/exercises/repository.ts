@@ -1,5 +1,10 @@
 import type { DrizzleDb } from '@/src/db/client';
-import { exercises, type Exercise, type NewExercise } from '@/src/db/schema';
+import {
+  exercises,
+  workoutExercises,
+  type Exercise,
+  type NewExercise
+} from '@/src/db/schema';
 import { and, asc, eq, inArray, like } from 'drizzle-orm';
 import type { InferColumnsDataTypes } from 'drizzle-orm/column';
 
@@ -104,8 +109,78 @@ export function updateExercise(
     .get();
 }
 
+export function updateCustomExerciseName(
+  db: DrizzleDb,
+  id: Exercise['id'],
+  name: Exercise['name']
+): Exercise | undefined {
+  const exercise = getExerciseRecordById(db, id);
+
+  if (!exercise || exercise.isCustom !== 1) {
+    return undefined;
+  }
+
+  return updateExercise(db, id, { name });
+}
+
 export function archiveExercise(db: DrizzleDb, id: Exercise['id']): void {
   db.update(exercises).set({ isArchived: 1 }).where(eq(exercises.id, id)).run();
+}
+
+export function deleteExercise(db: DrizzleDb, id: Exercise['id']): void {
+  db.delete(exercises).where(eq(exercises.id, id)).run();
+}
+
+export function getExerciseUsageRowsQuery(
+  db: DrizzleDb,
+  exerciseId: Exercise['id']
+) {
+  return db
+    .select({ id: workoutExercises.id })
+    .from(workoutExercises)
+    .where(eq(workoutExercises.exerciseId, exerciseId));
+}
+
+export function getExerciseUsageCount(
+  db: DrizzleDb,
+  exerciseId: Exercise['id']
+): number {
+  return getExerciseUsageRowsQuery(db, exerciseId).all().length;
+}
+
+export function removeCustomExercise(
+  db: DrizzleDb,
+  id: Exercise['id']
+): 'archived' | 'deleted' | 'not_custom' | 'not_found' {
+  const exercise = getExerciseRecordById(db, id);
+
+  if (!exercise) {
+    return 'not_found';
+  }
+
+  if (exercise.isCustom !== 1) {
+    return 'not_custom';
+  }
+
+  if (getExerciseUsageCount(db, id) > 0) {
+    archiveExercise(db, id);
+
+    return 'archived';
+  }
+
+  try {
+    deleteExercise(db, id);
+  } catch (error) {
+    console.error(
+      'Failed to delete unused custom exercise; archiving instead.',
+      error
+    );
+    archiveExercise(db, id);
+
+    return 'archived';
+  }
+
+  return 'deleted';
 }
 
 export function searchExercises(
