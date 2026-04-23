@@ -8,7 +8,7 @@ import {
 import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Keyboard, Pressable, View } from 'react-native';
 import { getCategoryLabel } from './utils';
 
@@ -19,6 +19,8 @@ type ExercisePickerSheetProps = {
   onSelectExercise: (exercise: ExerciseListItem) => void;
 };
 
+const SNAP_POINTS = ['70%', '90%'];
+
 export function ExercisePickerSheet({
   isOpen,
   exercises,
@@ -26,6 +28,12 @@ export function ExercisePickerSheet({
   onSelectExercise
 }: ExercisePickerSheetProps) {
   const [query, setQuery] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) {
+      setQuery('');
+    }
+  }, [isOpen]);
 
   const filteredExercises = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -40,7 +48,7 @@ export function ExercisePickerSheet({
   }, [exercises, query]);
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} snapPoints={['70%', '90%']}>
+    <BottomSheet isOpen={isOpen} onClose={onClose} snapPoints={SNAP_POINTS}>
       <BottomSheetHeader>
         <BottomSheetTitle>Add exercise</BottomSheetTitle>
         <BottomSheetDescription>
