@@ -10,6 +10,8 @@ This project is a mobile application built with:
 - Expo SQLite + Drizzle ORM
 - Gorhom Bottom Sheet
 - Lucide React Native icons
+- expo-audio for workout sounds
+- react-native-calendars for history calendar views
 
 The app is a progressive overload workout tracker focused on:
 
@@ -137,6 +139,67 @@ Use semantic tokens only. For className styling, prefer tokens defined in `globa
 - DO NOT assume web-like text behavior
   Reason:
   React Native treats `lineHeight` as actual layout height, which causes spacing issues.
+
+---
+
+## Data Access Rules
+
+### 1. Keep Drizzle usage inside feature hooks and repositories
+
+- Client components and route screens should not call `useDrizzle` directly.
+- Screens should consume feature-level hooks from `src/features/*/hooks`.
+- Feature hooks may call `useDrizzle`, compose live queries, and call repository functions.
+- Repository files own Drizzle table imports, query construction, transactions, and synchronous reads/writes.
+- Put reusable query builders in repositories as `*Query` functions so hooks can pass them to `useLiveWithFallback`.
+
+Preferred flow:
+
+```text
+Screen -> feature screen hook -> feature data/action hook -> repository -> Drizzle
+```
+
+Good:
+
+```tsx
+export default function ExercisesScreen() {
+  const { exercises, filteredExercises } = useExercisesScreen();
+}
+```
+
+Avoid:
+
+```tsx
+export default function ExercisesScreen() {
+  const db = useDrizzle();
+}
+```
+
+### 2. Use live queries with an explicit fallback
+
+For reactive data, use `useLiveWithFallback` from `@/src/lib/db/use-live-with-fallback`.
+Pair every live query with a synchronous repository fallback so first render is populated before Drizzle's live listener emits.
+
+```tsx
+const db = useDrizzle();
+const { data } = useLiveWithFallback(
+  () => getExercisesQuery(db),
+  () => getExercises(db),
+  [db]
+);
+```
+
+### 3. Database lifecycle belongs to the provider
+
+- `DatabaseProvider` owns `SQLiteProvider`, migrations, seeding, and the Drizzle context.
+- `src/db/client.ts` owns database configuration (`WAL`, foreign keys), database name/options, and `createDrizzleDb`.
+- App code should not call `useSQLiteContext`, `createDrizzleDb`, `migrate`, or `runSeedIfNeeded` outside the database provider setup.
+
+### 4. Schema and migrations
+
+- Schema lives in `src/db/schema.ts`.
+- Migrations live in `src/db/migrations`.
+- When changing schema, update Drizzle migrations instead of manually patching the local SQLite database.
+- Prefer repository helpers for app-level invariants such as archiving vs deleting custom exercises, rebuilding personal records, and settings defaults.
 
 ---
 
@@ -269,6 +332,13 @@ Prefer simple reusable primitives:
 - EmptyState
 - Icon
 
+Current shared primitive locations:
+
+- `src/components/ui`: app primitives (`Screen`, `Button`, `Input`, `Text`, `Card`, `Dialog`, `BottomSheet`, etc.)
+- `src/components/styled`: NativeWind wrappers for React Native and third-party components with multiple style props
+- `src/components/database-provider.tsx`: SQLite/Drizzle provider and `useDrizzle`
+- `src/components/common-providers.tsx`: app-level provider composition
+
 Do NOT create deep abstraction layers early.
 
 Prefer one component per file when practical. If a component grows beyond a tiny private helper, move it into its own file near the feature or UI primitive it belongs to.
@@ -350,6 +420,20 @@ For workout, progress, and exercise-summary surfaces:
 
 ---
 
+## Validation Commands
+
+This project currently has no dedicated test script in `package.json`.
+
+After code changes, run the relevant available checks:
+
+- `pnpm run ts-check`
+- `pnpm run lint`
+- `pnpm run prettier:check`
+
+For logic changes, add or update tests when a test harness exists. If no test harness exists for the touched area, explicitly say that and rely on `ts-check`/`lint` plus focused manual verification.
+
+---
+
 ## Common Pitfalls (MUST AVOID)
 
 ### Missing ScrollView
@@ -380,6 +464,14 @@ Can push content out of view
 
 Slows down development
 
+### Calling useDrizzle in screens
+
+Leaks persistence details into UI routes. Put data access in feature hooks and repositories instead.
+
+### Building Drizzle queries in components
+
+Makes live-query behavior and fallback reads inconsistent. Keep query builders in `repository.ts` files.
+
 ---
 
 ## File Organization
@@ -388,15 +480,21 @@ Slows down development
 src/
   app/
     (tabs)/
+    workouts/
+  assets/
+    sounds/
   components/
+    styled/
     ui/
   db/
+    migrations/
   features/
     exercises/
-    programs/
     progress/
+    settings/
     workouts/
   lib/
+    db/
     utils/
   theme/
 ```
@@ -416,6 +514,8 @@ The agent MUST:
 7. Use styled wrappers from `@/src/components/styled` for third-party components with multiple style props
 8. Avoid inline styles for core RN components **except** for animated values, unwrapped external layout-critical flex, or native APIs that require raw values from `@/src/theme/tokens`
 9. Avoid web-only assumptions
+10. Keep database reads/writes in feature hooks and repositories; do not call `useDrizzle` from route screens or presentational components
+11. Use `useLiveWithFallback` for reactive Drizzle reads, with repository `*Query` and synchronous fallback functions
 
 ---
 
