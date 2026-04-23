@@ -1,11 +1,11 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { cn } from '@/src/lib/utils/cn';
 import type { ReactNode } from 'react';
-import { View } from 'react-native';
-import { SafeAreaView } from './safe-area-view';
+import { KeyboardAvoidingView, Platform, View } from 'react-native';
 import type { Edge } from 'react-native-safe-area-context';
+import { SafeAreaView } from './safe-area-view';
 
-type ScreenProps = {
+interface ScreenProps {
   children: ReactNode;
   className?: string;
   contentClassName?: string;
@@ -14,7 +14,7 @@ type ScreenProps = {
   edges?: Edge[];
   footer?: ReactNode;
   keyboardShouldPersistTaps?: 'always' | 'never' | 'handled';
-};
+}
 
 export function Screen({
   children,
@@ -63,12 +63,17 @@ export function Screen({
       className={cn('bg-background', className)}
       edges={edges}
     >
-      {content}
-      {footer ? (
-        <View className="border-border bg-background border-t px-4 py-4">
-          {footer}
-        </View>
-      ) : null}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        {content}
+        {footer ? (
+          <View className="border-border bg-background border-t px-4 py-4">
+            {footer}
+          </View>
+        ) : null}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
