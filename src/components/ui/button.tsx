@@ -13,7 +13,7 @@ type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
 
 type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
-export type ButtonProps = {
+interface ButtonProps {
   variant?: ButtonVariant;
   size?: ButtonSize;
   disabled?: boolean;
@@ -25,7 +25,7 @@ export type ButtonProps = {
   textClassName?: string;
   children: ReactNode;
   onPress?: (event: GestureResponderEvent) => void;
-};
+}
 
 const baseClassName = 'flex-row items-center justify-center rounded-lg border';
 

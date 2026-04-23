@@ -1,8 +1,8 @@
 import { cn } from '@/src/lib/utils/cn';
 import {
-  type ComponentRef,
   forwardRef,
-  type ComponentPropsWithoutRef
+  type ComponentPropsWithoutRef,
+  type ComponentRef
 } from 'react';
 import { Text as NativeText } from 'react-native';
 
@@ -40,7 +40,7 @@ type NativeTextProps = Omit<
   'className' | 'style'
 >;
 
-export type TextProps = NativeTextProps & {
+type TextProps = NativeTextProps & {
   variant?: TextVariant;
   tone?: TextTone;
   className?: string;

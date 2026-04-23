@@ -10,7 +10,7 @@ import { Text, View, type TextInput } from 'react-native';
 
 type NativeTextInputProps = ComponentPropsWithoutRef<typeof TextInput>;
 
-export type InputProps = NativeTextInputProps & {
+type InputProps = NativeTextInputProps & {
   label?: string;
   hint?: string;
   error?: string;

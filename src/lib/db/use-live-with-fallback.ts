@@ -2,10 +2,9 @@ import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import type { AnySQLiteSelect } from 'drizzle-orm/sqlite-core';
 import { useMemo, type DependencyList } from 'react';
 
-export type LiveRowsQuery<T> = Pick<AnySQLiteSelect, '_' | 'then'> &
-  PromiseLike<T[]>;
+type LiveRowsQuery<T> = Pick<AnySQLiteSelect, '_' | 'then'> & PromiseLike<T[]>;
 
-export type UseLiveWithFallbackResult<T> = {
+type UseLiveWithFallbackResult<T> = {
   data: T[];
   updatedAt: Date | undefined;
   error: Error | undefined;

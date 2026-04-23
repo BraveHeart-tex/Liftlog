@@ -37,7 +37,7 @@ function createStyledIcon(Icon: IconComponent): StyledIconComponent {
   return StyledIcon;
 }
 
-export type AppIconProps = Omit<LucideProps, 'ref'> & {
+type AppIconProps = Omit<LucideProps, 'ref'> & {
   icon: IconComponent;
   className?: string;
 };

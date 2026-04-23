@@ -92,7 +92,7 @@ export function createExercise(db: DrizzleDb, data: NewExercise): Exercise {
     .get();
 }
 
-export function updateExercise(
+function updateExercise(
   db: DrizzleDb,
   id: Exercise['id'],
   data: Partial<NewExercise>
@@ -123,11 +123,11 @@ export function updateCustomExerciseName(
   return updateExercise(db, id, { name });
 }
 
-export function archiveExercise(db: DrizzleDb, id: Exercise['id']): void {
+function archiveExercise(db: DrizzleDb, id: Exercise['id']): void {
   db.update(exercises).set({ isArchived: 1 }).where(eq(exercises.id, id)).run();
 }
 
-export function deleteExercise(db: DrizzleDb, id: Exercise['id']): void {
+function deleteExercise(db: DrizzleDb, id: Exercise['id']): void {
   db.delete(exercises).where(eq(exercises.id, id)).run();
 }
 
@@ -141,7 +141,7 @@ export function getExerciseUsageRowsQuery(
     .where(eq(workoutExercises.exerciseId, exerciseId));
 }
 
-export function getExerciseUsageCount(
+function getExerciseUsageCount(
   db: DrizzleDb,
   exerciseId: Exercise['id']
 ): number {
@@ -183,10 +183,7 @@ export function removeCustomExercise(
   return 'deleted';
 }
 
-export function searchExercises(
-  db: DrizzleDb,
-  query: string
-): ExerciseListItem[] {
+function searchExercises(db: DrizzleDb, query: string): ExerciseListItem[] {
   const exerciseRecords = getExercises(db);
 
   // SQLite `LIKE` needs an explicit escape clause for literal `%` / `_`.

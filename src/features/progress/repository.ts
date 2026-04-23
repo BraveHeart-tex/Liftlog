@@ -14,7 +14,7 @@ import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 
 const MAX_EXERCISE_HISTORY_WORKOUTS = 20;
 
-export function getPersonalRecords(db: DrizzleDb): PersonalRecord[] {
+function getPersonalRecords(db: DrizzleDb): PersonalRecord[] {
   return db
     .select()
     .from(personalRecords)
@@ -147,7 +147,7 @@ export function buildExerciseHistory(
   });
 }
 
-export function getExerciseHistory(
+function getExerciseHistory(
   db: DrizzleDb,
   exerciseId: Exercise['id']
 ): { workout: Workout; sets: Set[] }[] {
