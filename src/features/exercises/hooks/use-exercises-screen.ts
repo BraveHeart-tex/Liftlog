@@ -6,7 +6,6 @@ export function useExercisesScreen() {
   const [query, setQuery] = useState('');
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryFilter>('all');
-  const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
 
   const exercises = useExercises();
 
@@ -30,8 +29,6 @@ export function useExercisesScreen() {
     setQuery,
     selectedCategory,
     setSelectedCategory,
-    isCreateSheetOpen,
-    setIsCreateSheetOpen,
     exercises,
     filteredExercises
   };

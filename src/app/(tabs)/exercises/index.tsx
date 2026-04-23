@@ -3,7 +3,6 @@ import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import { CreateExerciseSheet } from '@/src/features/exercises/components/create-exercise-sheet';
 import { ExerciseCategoryFilters } from '@/src/features/exercises/components/exercise-category-filters';
 import { useExercisesScreen } from '@/src/features/exercises/hooks';
 import { getPrimaryMuscleLabel } from '@/src/lib/utils/muscle';
@@ -17,9 +16,6 @@ export default function ExercisesScreen() {
     setQuery,
     selectedCategory,
     setSelectedCategory,
-    isCreateSheetOpen,
-    setIsCreateSheetOpen,
-    exercises,
     filteredExercises
   } = useExercisesScreen();
 
@@ -37,7 +33,7 @@ export default function ExercisesScreen() {
           <Button
             variant="secondary"
             size="sm"
-            onPress={() => setIsCreateSheetOpen(true)}
+            onPress={() => router.push('/(tabs)/exercises/new')}
           >
             Add
           </Button>
@@ -104,12 +100,6 @@ export default function ExercisesScreen() {
             </Text>
           </View>
         }
-      />
-
-      <CreateExerciseSheet
-        isOpen={isCreateSheetOpen}
-        exercises={exercises}
-        onClose={() => setIsCreateSheetOpen(false)}
       />
     </Screen>
   );
