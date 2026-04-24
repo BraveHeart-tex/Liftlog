@@ -1,4 +1,5 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
+import { StyledTextInput } from '@/src/components/styled/text-input';
 import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
@@ -9,7 +10,8 @@ import type { Workout } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import {
   useActiveWorkoutActions,
-  useActiveWorkoutContent as useActiveWorkoutContentData
+  useActiveWorkoutContent as useActiveWorkoutContentData,
+  useWorkoutRename
 } from '@/src/features/workouts/hooks';
 import { ActiveWorkoutExerciseList } from '@/src/features/workouts/components/active-workout-exercise-list';
 import { EmptyExerciseState } from '@/src/features/workouts/components/empty-exercise-state';
@@ -17,7 +19,8 @@ import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise
 import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sheet';
 import { formatDuration } from '@/src/lib/utils/date';
 import { PlusIcon, TimerIcon } from 'lucide-react-native';
-import { View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Keyboard, Pressable, View, type TextInput } from 'react-native';
 
 type ActiveWorkoutContentProps = {
   activeWorkout: Workout;
@@ -28,6 +31,12 @@ export function ActiveWorkoutContent({
   activeWorkout,
   exerciseRows
 }: ActiveWorkoutContentProps) {
+  const renameInputRef = useRef<TextInput>(null);
+  const isSavingRenameRef = useRef(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [draftName, setDraftName] = useState('');
+  const [renameError, setRenameError] = useState<string | undefined>();
+  const [isSavingRename, setIsSavingRename] = useState(false);
   const {
     now,
     isExercisePickerOpen,
@@ -45,19 +54,125 @@ export function ActiveWorkoutContent({
     isLoadingWorkoutExercises,
     setIsExercisePickerOpen
   });
+  const renameWorkout = useWorkoutRename();
+
+  useEffect(() => {
+    if (!isRenaming) {
+      return;
+    }
+
+    setDraftName(activeWorkout.name);
+    setRenameError(undefined);
+    const focusTimer = setTimeout(() => {
+      renameInputRef.current?.focus();
+      renameInputRef.current?.setSelection(0, activeWorkout.name.length);
+    }, 50);
+
+    return () => clearTimeout(focusTimer);
+  }, [activeWorkout.name, isRenaming]);
+
+  const beginRename = () => {
+    if (isRenaming) {
+      return;
+    }
+
+    setDraftName(activeWorkout.name);
+    setRenameError(undefined);
+    setIsRenaming(true);
+  };
+
+  const cancelRename = () => {
+    Keyboard.dismiss();
+    isSavingRenameRef.current = false;
+    setDraftName(activeWorkout.name);
+    setRenameError(undefined);
+    setIsSavingRename(false);
+    setIsRenaming(false);
+  };
+
+  const submitRename = () => {
+    if (isSavingRenameRef.current) {
+      return;
+    }
+
+    isSavingRenameRef.current = true;
+    setIsSavingRename(true);
+    setRenameError(undefined);
+
+    try {
+      const updatedWorkout = renameWorkout(activeWorkout, draftName);
+
+      if (!updatedWorkout) {
+        setRenameError('Could not rename workout. Try again.');
+        isSavingRenameRef.current = false;
+        setIsSavingRename(false);
+
+        return;
+      }
+    } catch (error) {
+      console.error('Failed to rename workout', error);
+      setRenameError('Could not rename workout. Try again.');
+      isSavingRenameRef.current = false;
+      setIsSavingRename(false);
+
+      return;
+    }
+
+    Keyboard.dismiss();
+    isSavingRenameRef.current = false;
+    setIsSavingRename(false);
+    setIsRenaming(false);
+  };
 
   return (
     <Screen withPadding={false}>
       <View className="flex-row items-center justify-between gap-4 px-4 pt-4 pb-2">
-        <BackButton />
+        <BackButton onPress={isRenaming ? cancelRename : undefined} />
 
-        <Text variant="h2" className="flex-1" numberOfLines={1}>
-          {activeWorkout.name}
-        </Text>
+        <View className="flex-1">
+          {isRenaming ? (
+            <StyledTextInput
+              ref={renameInputRef}
+              className="text-h2 text-foreground border-border rounded-md border-b py-1"
+              selectionClassName="text-primary"
+              value={draftName}
+              onChangeText={nextName => {
+                setDraftName(nextName);
+                setRenameError(undefined);
+              }}
+              accessibilityLabel="Workout name"
+              autoCapitalize="words"
+              autoCorrect={false}
+              blurOnSubmit={false}
+              enterKeyHint="done"
+              returnKeyType="done"
+              maxLength={80}
+              selectTextOnFocus
+              submitBehavior="submit"
+              onSubmitEditing={submitRename}
+            />
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Rename workout"
+              onPress={beginRename}
+            >
+              <Text variant="h2" numberOfLines={1}>
+                {activeWorkout.name}
+              </Text>
+            </Pressable>
+          )}
+          {renameError ? (
+            <Text variant="caption" tone="danger" className="mt-2">
+              {renameError}
+            </Text>
+          ) : null}
+        </View>
 
         <Button
           variant="ghost"
           size="icon"
+          disabled={isRenaming || isSavingRename}
           onPress={() => setIsRestTimerOpen(true)}
         >
           <Icon icon={TimerIcon} size={20} className="text-foreground" />
@@ -70,7 +185,10 @@ export function ActiveWorkoutContent({
           variant="secondary"
           size="sm"
           disabled={
-            isLoadingWorkoutExercises || workoutExerciseRows.length === 0
+            isRenaming ||
+            isSavingRename ||
+            isLoadingWorkoutExercises ||
+            workoutExerciseRows.length === 0
           }
           onPress={finishWorkout}
         >
