@@ -4,7 +4,7 @@ import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import type { NewExercise } from '@/src/db/schema';
 import type { ExerciseCategory } from '@/src/features/exercises/constants';
-import { CreateExerciseForm } from '@/src/features/exercises/components/create-exercise-form';
+import { ExerciseMetadataForm } from '@/src/features/exercises/components/exercise-metadata-form';
 import {
   useExerciseActions,
   useExercises
@@ -19,6 +19,9 @@ export default function NewExerciseScreen() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<ExerciseCategory>('barbell');
   const [selectedPrimaryMuscles, setSelectedPrimaryMuscles] = useState<
+    string[]
+  >([]);
+  const [selectedSecondaryMuscles, setSelectedSecondaryMuscles] = useState<
     string[]
   >([]);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
@@ -40,11 +43,31 @@ export default function NewExerciseScreen() {
       : undefined;
 
   const togglePrimaryMuscle = (muscle: string) => {
-    setSelectedPrimaryMuscles(current =>
-      current.includes(muscle)
-        ? current.filter(selectedMuscle => selectedMuscle !== muscle)
-        : [...current, muscle]
-    );
+    setSelectedPrimaryMuscles(current => {
+      if (current.includes(muscle)) {
+        return current.filter(selectedMuscle => selectedMuscle !== muscle);
+      }
+
+      setSelectedSecondaryMuscles(existing =>
+        existing.filter(selectedMuscle => selectedMuscle !== muscle)
+      );
+
+      return [...current, muscle];
+    });
+  };
+
+  const toggleSecondaryMuscle = (muscle: string) => {
+    setSelectedSecondaryMuscles(current => {
+      if (current.includes(muscle)) {
+        return current.filter(selectedMuscle => selectedMuscle !== muscle);
+      }
+
+      setSelectedPrimaryMuscles(existing =>
+        existing.filter(selectedMuscle => selectedMuscle !== muscle)
+      );
+
+      return [...current, muscle];
+    });
   };
 
   const createExercise = (newExercise: NewExercise) => {
@@ -72,7 +95,7 @@ export default function NewExerciseScreen() {
       name: trimmedName,
       category,
       primaryMuscles: JSON.stringify(selectedPrimaryMuscles),
-      secondaryMuscles: JSON.stringify([]),
+      secondaryMuscles: JSON.stringify(selectedSecondaryMuscles),
       instructions: null,
       isCustom: 1,
       isArchived: 0
@@ -107,15 +130,17 @@ export default function NewExerciseScreen() {
         </View>
 
         <View className="mt-6">
-          <CreateExerciseForm
+          <ExerciseMetadataForm
             name={name}
             category={category}
             selectedPrimaryMuscles={selectedPrimaryMuscles}
+            selectedSecondaryMuscles={selectedSecondaryMuscles}
             nameError={nameError}
             primaryMusclesError={primaryMusclesError}
             setName={setName}
             setCategory={setCategory}
             togglePrimaryMuscle={togglePrimaryMuscle}
+            toggleSecondaryMuscle={toggleSecondaryMuscle}
           />
         </View>
       </View>
