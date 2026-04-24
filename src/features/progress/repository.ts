@@ -14,14 +14,6 @@ import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 
 const MAX_EXERCISE_HISTORY_WORKOUTS = 20;
 
-function getPersonalRecords(db: DrizzleDb): PersonalRecord[] {
-  return db
-    .select()
-    .from(personalRecords)
-    .orderBy(desc(personalRecords.achievedAt))
-    .all();
-}
-
 export function getPersonalRecordsByExerciseQuery(
   db: DrizzleDb,
   exerciseId: Exercise['id']
@@ -145,19 +137,6 @@ export function buildExerciseHistory(
       sets: setsForWorkout
     };
   });
-}
-
-function getExerciseHistory(
-  db: DrizzleDb,
-  exerciseId: Exercise['id']
-): { workout: Workout; sets: Set[] }[] {
-  const workoutRows = getExerciseHistoryWorkoutsQuery(db, exerciseId).all();
-  const workoutIds = Array.from(
-    new Set(workoutRows.map(row => row.workout.id))
-  ).slice(0, MAX_EXERCISE_HISTORY_WORKOUTS);
-  const setRows = getExerciseHistorySetsQuery(db, exerciseId, workoutIds).all();
-
-  return buildExerciseHistory(workoutRows, setRows);
 }
 
 function getCompletedSetsForPersonalRecords(db: DrizzleDb, exerciseId: string) {
