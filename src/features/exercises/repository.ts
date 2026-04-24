@@ -21,6 +21,12 @@ const exerciseListFields = {
 
 export type ExerciseListItem = InferColumnsDataTypes<typeof exerciseListFields>;
 
+export interface CustomExerciseDetailsUpdate {
+  category: Exercise['category'];
+  primaryMuscles: string[];
+  secondaryMuscles: string[];
+}
+
 function getExerciseRecordById(
   db: DrizzleDb,
   id: Exercise['id']
@@ -114,6 +120,24 @@ export function updateCustomExerciseName(
   }
 
   return updateExercise(db, id, { name });
+}
+
+export function updateCustomExerciseDetails(
+  db: DrizzleDb,
+  id: Exercise['id'],
+  details: CustomExerciseDetailsUpdate
+): Exercise | undefined {
+  const exercise = getExerciseRecordById(db, id);
+
+  if (!exercise || exercise.isCustom !== 1) {
+    return undefined;
+  }
+
+  return updateExercise(db, id, {
+    category: details.category,
+    primaryMuscles: JSON.stringify(details.primaryMuscles),
+    secondaryMuscles: JSON.stringify(details.secondaryMuscles)
+  });
 }
 
 function archiveExercise(db: DrizzleDb, id: Exercise['id']): void {
