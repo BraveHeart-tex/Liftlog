@@ -317,13 +317,29 @@ export default function ExerciseDetailScreen() {
                 </View>
                 <View className="flex-1">
                   <Button
-                    variant="destructive"
-                    onPress={handleRemoveCustomExercise}
+                    variant="secondary"
+                    accessibilityLabel="Edit exercise details"
+                    onPress={() =>
+                      router.push({
+                        pathname: '/(tabs)/exercises/edit/[id]',
+                        params: { id: exercise.id }
+                      })
+                    }
                     disabled={isRenaming}
                   >
-                    {removeActionLabel}
+                    Edit details
                   </Button>
                 </View>
+              </View>
+
+              <View className="mt-3">
+                <Button
+                  variant="destructive"
+                  onPress={handleRemoveCustomExercise}
+                  disabled={isRenaming}
+                >
+                  {removeActionLabel}
+                </Button>
               </View>
             </CardContent>
           </Card>

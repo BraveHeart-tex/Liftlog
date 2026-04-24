@@ -3,6 +3,7 @@ import type { Exercise, NewExercise } from '@/src/db/schema';
 import {
   createExercise,
   removeCustomExercise,
+  updateCustomExerciseDetails,
   updateCustomExerciseName
 } from '@/src/features/exercises/repository';
 
@@ -21,9 +22,17 @@ export function useExerciseActions() {
     return createExercise(db, exercise);
   };
 
+  const updateExerciseDetails = (
+    id: Exercise['id'],
+    details: Parameters<typeof updateCustomExerciseDetails>[2]
+  ) => {
+    return updateCustomExerciseDetails(db, id, details);
+  };
+
   return {
     createCustomExercise,
     renameCustomExercise,
-    removeCustomExerciseById
+    removeCustomExerciseById,
+    updateCustomExerciseDetails: updateExerciseDetails
   };
 }
