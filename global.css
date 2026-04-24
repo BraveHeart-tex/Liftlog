@@ -76,3 +76,31 @@
   --color-progress-same: #8e8e93;
   --color-progress-down: #c93a00;
 }
+
+.theme-dark {
+  --color-background: #1c1c1e;
+  --color-foreground: #f5f5f5;
+  --color-card: #2c2c2e;
+  --color-card-foreground: #f5f5f5;
+  --color-popover: #2c2c2e;
+  --color-popover-foreground: #f5f5f5;
+  --color-primary: #ff4d00;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #3a3a3c;
+  --color-secondary-foreground: #ebebf0;
+  --color-muted: #3a3a3c;
+  --color-muted-foreground: #7a7a7f;
+  --color-accent: #ff4d00;
+  --color-accent-foreground: #ffffff;
+  --color-border: #3a3a3c;
+  --color-input: #2c2c2e;
+  --color-ring: #ff4d00;
+  --color-success: #30d158;
+  --color-warning: #ffd60a;
+  --color-danger: #c0192c;
+  --color-danger-foreground: #ffffff;
+  --color-info: #64d2ff;
+  --color-progress-up: #30d158;
+  --color-progress-same: #636366;
+  --color-progress-down: #ff9f0a;
+}
