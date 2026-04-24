@@ -3,11 +3,11 @@ import { StyledActivityIndicator } from '@/src/components/styled/activity-indica
 import { cn } from '@/src/lib/utils/cn';
 import { View } from 'react-native';
 
-type LoadingStateProps = {
+interface LoadingStateProps {
   label?: string;
   className?: string;
   size?: 'small' | 'large';
-};
+}
 
 export function LoadingState({
   label = 'Loading...',

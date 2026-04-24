@@ -13,12 +13,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { Keyboard, Pressable, View } from 'react-native';
 import { getCategoryLabel } from './utils';
 
-type ExercisePickerSheetProps = {
+interface ExercisePickerSheetProps {
   isOpen: boolean;
   exercises: ExerciseListItem[];
   onClose: () => void;
   onSelectExercise: (exercise: ExerciseListItem) => void;
-};
+}
 
 const SNAP_POINTS = ['70%', '90%'];
 const SOURCE_FILTERS = [

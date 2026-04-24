@@ -22,10 +22,10 @@ import { PlusIcon, TimerIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Keyboard, Pressable, View, type TextInput } from 'react-native';
 
-type ActiveWorkoutContentProps = {
+interface ActiveWorkoutContentProps {
   activeWorkout: Workout;
   exerciseRows: ExerciseListItem[];
-};
+}
 
 export function ActiveWorkoutContent({
   activeWorkout,

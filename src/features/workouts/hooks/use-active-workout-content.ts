@@ -9,10 +9,10 @@ import { useDrizzle } from '@/src/components/database-provider';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { useEffect, useMemo, useState } from 'react';
 
-type UseActiveWorkoutContentParams = {
+interface UseActiveWorkoutContentParams {
   activeWorkout: Workout;
   exerciseRows: ExerciseListItem[];
-};
+}
 
 export function useActiveWorkoutContent({
   activeWorkout,

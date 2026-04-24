@@ -5,13 +5,13 @@ import { cn } from '@/src/lib/utils/cn';
 import { formatWeightForUnit } from '@/src/lib/utils/weight';
 import { Pressable, View } from 'react-native';
 
-type SetEntryRowProps = {
+interface SetEntryRowProps {
   set: Set;
   setNumber: number;
   isPR: boolean;
   isEditing: boolean;
   onEdit: () => void;
-};
+}
 
 export function SetEntryRow({
   set,

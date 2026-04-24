@@ -3,15 +3,15 @@ import { View } from 'react-native';
 import { Button } from '@/src/components/ui/button';
 import { Text } from '@/src/components/ui/text';
 
-type Props = {
+interface Props {
   children: ReactNode;
   screenName?: string;
-};
+}
 
-type State = {
+interface State {
   hasError: boolean;
   error: Error | null;
-};
+}
 
 export class ScreenErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false, error: null };

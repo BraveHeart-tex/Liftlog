@@ -8,12 +8,12 @@ import { Icon } from './icon';
 
 type BackButtonVariant = 'icon' | 'text';
 
-type BackButtonProps = {
+interface BackButtonProps {
   variant?: BackButtonVariant;
   children?: ReactNode;
   className?: string;
   onPress?: (event: GestureResponderEvent) => void;
-};
+}
 
 export function BackButton({
   variant = 'icon',

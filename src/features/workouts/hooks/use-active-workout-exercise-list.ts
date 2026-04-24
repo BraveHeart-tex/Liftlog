@@ -9,10 +9,10 @@ import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { useMemo } from 'react';
 import type { WorkoutExerciseWithSets } from '../components/types';
 
-type UseActiveWorkoutExerciseListParams = {
+interface UseActiveWorkoutExerciseListParams {
   workoutExercises: WorkoutExercise[];
   exerciseById: Map<ExerciseListItem['id'], ExerciseListItem>;
-};
+}
 
 export function useActiveWorkoutExerciseList({
   workoutExercises,

@@ -6,9 +6,9 @@ import { useExerciseHistoryTab } from '@/src/features/workouts/hooks';
 import { formatWeightForUnit } from '@/src/lib/utils/weight';
 import { View } from 'react-native';
 
-type ExerciseHistoryTabProps = {
+interface ExerciseHistoryTabProps {
   exerciseId: Exercise['id'];
-};
+}
 
 function formatWorkoutDate(timestamp: number) {
   return new Intl.DateTimeFormat(undefined, {

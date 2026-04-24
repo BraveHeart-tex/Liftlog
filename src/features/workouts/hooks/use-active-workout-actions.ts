@@ -9,12 +9,12 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useCallback } from 'react';
 
-type UseActiveWorkoutActionsParams = {
+interface UseActiveWorkoutActionsParams {
   activeWorkout: Workout;
   workoutExerciseRows: WorkoutExercise[];
   isLoadingWorkoutExercises: boolean;
   setIsExercisePickerOpen: (isOpen: boolean) => void;
-};
+}
 
 export function useActiveWorkoutActions({
   activeWorkout,

@@ -27,10 +27,10 @@ import {
   type ColorSchemeName
 } from 'react-native';
 
-type AppThemeContextValue = {
+interface AppThemeContextValue {
   colors: ThemeColors;
   colorScheme: AppColorScheme;
-};
+}
 
 const AppThemeContext = createContext<AppThemeContextValue | null>(null);
 

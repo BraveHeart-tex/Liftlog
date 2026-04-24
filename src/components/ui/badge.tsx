@@ -9,11 +9,11 @@ type BadgeVariant =
   | 'info'
   | 'outline';
 
-export type BadgeProps = {
+export interface BadgeProps {
   variant?: BadgeVariant;
   label: string;
   className?: string;
-};
+}
 
 const baseClassName =
   'self-start rounded-md px-2 py-0.5 text-caption font-medium';

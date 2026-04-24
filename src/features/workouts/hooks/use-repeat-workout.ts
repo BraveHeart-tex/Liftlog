@@ -9,12 +9,12 @@ import { generateUuid } from '@/src/lib/utils/uuid';
 import { router } from 'expo-router';
 import { useCallback } from 'react';
 
-type UseRepeatWorkoutParams = {
+interface UseRepeatWorkoutParams {
   workout: Workout | undefined;
   activeWorkout: Workout | undefined;
   workoutExerciseRows: WorkoutExercise[];
   canRepeatWorkout: boolean;
-};
+}
 
 export function useRepeatWorkout({
   workout,

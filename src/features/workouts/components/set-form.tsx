@@ -24,13 +24,13 @@ const weightStepByUnit = {
   lb: 5
 };
 
-type SetFormProps = {
+interface SetFormProps {
   editingSet: Set | undefined;
   onAddSet: (data: SetValues) => void;
   onUpdateSet: (data: SetValues & { setId: Set['id'] }) => void;
   onClear: () => void;
   onDeleteSet: (setId: Set['id']) => void;
-};
+}
 
 export function SetForm({
   editingSet,
@@ -289,13 +289,13 @@ export function SetForm({
   );
 }
 
-type StepperButtonProps = {
+interface StepperButtonProps {
   label: string;
   accessibilityLabel: string;
   onStep: () => void;
   onStartRepeating: (onStep: () => void) => void;
   onStopRepeating: () => void;
-};
+}
 
 function StepperButton({
   label,
