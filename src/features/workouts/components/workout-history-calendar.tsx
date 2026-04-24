@@ -1,5 +1,6 @@
 import type { Workout } from '@/src/db/schema';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
+import { useMemo } from 'react';
 import { Calendar, type DateData } from 'react-native-calendars';
 
 interface WorkoutHistoryCalendarProps {
@@ -81,25 +82,19 @@ export function WorkoutHistoryCalendar({
   workoutCountByDateKey,
   onSelectDate
 }: WorkoutHistoryCalendarProps) {
-  const { colors } = useAppTheme();
-
-  return (
-    <Calendar
-      current={selectedDateKey}
-      firstDay={1}
-      hideExtraDays
-      markingType="multi-dot"
-      markedDates={getMarkedDates({
+  const { colors, colorScheme } = useAppTheme();
+  const markedDates = useMemo(
+    () =>
+      getMarkedDates({
         selectedDateKey,
         workoutCountByDateKey,
         colors
-      })}
-      onDayPress={(day: DateData) => onSelectDate(day.dateString)}
-      style={{
-        borderRadius: 16,
-        overflow: 'hidden'
-      }}
-      theme={{
+      }),
+    [colors, selectedDateKey, workoutCountByDateKey]
+  );
+  const calendarTheme = useMemo(
+    () =>
+      ({
         backgroundColor: colors.card,
         calendarBackground: colors.card,
         dayTextColor: colors.foreground,
@@ -115,10 +110,27 @@ export function WorkoutHistoryCalendar({
         textDayFontSize: 14,
         textMonthFontSize: 18,
         textDayHeaderFontSize: 12,
-        textDayFontWeight: '500',
-        textMonthFontWeight: '600',
-        textDayHeaderFontWeight: '500'
+        textDayFontWeight: 500,
+        textMonthFontWeight: 600,
+        textDayHeaderFontWeight: 500
+      }) as const,
+    [colors]
+  );
+
+  return (
+    <Calendar
+      key={colorScheme}
+      current={selectedDateKey}
+      firstDay={1}
+      hideExtraDays
+      markingType="multi-dot"
+      markedDates={markedDates}
+      onDayPress={(day: DateData) => onSelectDate(day.dateString)}
+      style={{
+        borderRadius: 16,
+        overflow: 'hidden'
       }}
+      theme={calendarTheme}
     />
   );
 }
