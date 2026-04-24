@@ -1,3 +1,19 @@
-export function formatWorkoutName(date: Date): string {
-  return `${date.toLocaleDateString(undefined, { weekday: 'long' })} workout`;
+function resolveWorkoutDate(value: Date | number): Date {
+  return value instanceof Date ? value : new Date(value);
+}
+
+export function formatWorkoutName(value: Date | number): string {
+  return `${resolveWorkoutDate(value).toLocaleDateString(undefined, {
+    weekday: 'long'
+  })} workout`;
+}
+
+export function resolveWorkoutName(name: string, startedAt: number): string {
+  const trimmedName = name.trim();
+
+  if (trimmedName.length === 0) {
+    return formatWorkoutName(startedAt);
+  }
+
+  return trimmedName;
 }

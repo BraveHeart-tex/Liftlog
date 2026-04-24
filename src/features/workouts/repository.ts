@@ -160,6 +160,19 @@ export function createWorkout(db: DrizzleDb, data: NewWorkout): Workout {
   return db.insert(workouts).values(data).returning().get();
 }
 
+export function updateWorkoutName(
+  db: DrizzleDb,
+  id: Workout['id'],
+  name: Workout['name']
+): Workout | undefined {
+  return db
+    .update(workouts)
+    .set({ name })
+    .where(eq(workouts.id, id))
+    .returning()
+    .get();
+}
+
 export function completeWorkout(db: DrizzleDb, id: Workout['id']): void {
   db.update(workouts)
     .set({
