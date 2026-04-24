@@ -2,9 +2,9 @@ import { Button } from '@/src/components/ui/button';
 import { Text } from '@/src/components/ui/text';
 import { View } from 'react-native';
 
-type EmptyExerciseStateProps = {
+interface EmptyExerciseStateProps {
   onAddExercise: () => void;
-};
+}
 
 export function EmptyExerciseState({ onAddExercise }: EmptyExerciseStateProps) {
   return (

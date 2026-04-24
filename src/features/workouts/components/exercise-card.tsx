@@ -12,10 +12,10 @@ import ReanimatedSwipeable, {
 import { Alert, Pressable, View } from 'react-native';
 import type { WorkoutExerciseWithSets } from './types';
 
-type ExerciseCardProps = {
+interface ExerciseCardProps {
   item: WorkoutExerciseWithSets;
   className?: string;
-};
+}
 
 export function ExerciseCard({ item, className }: ExerciseCardProps) {
   const { weightUnit } = useSettings();

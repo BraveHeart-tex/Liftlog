@@ -38,6 +38,11 @@ The app is a progressive overload workout tracker focused on:
    - Build working features first
    - Iterate later
 
+### TypeScript Shape Guidance
+
+- Prefer `interface` for object-shaped props, params, state, and context values when TypeScript supports it cleanly.
+- Keep `type` for unions, literal types, mapped/conditional types, inferred ORM/schema aliases, utility-type compositions, and other non-object-shape aliases.
+
 ---
 
 ## Tech Stack Rules

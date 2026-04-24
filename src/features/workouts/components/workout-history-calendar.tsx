@@ -2,11 +2,11 @@ import type { Workout } from '@/src/db/schema';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { Calendar, type DateData } from 'react-native-calendars';
 
-type WorkoutHistoryCalendarProps = {
+interface WorkoutHistoryCalendarProps {
   selectedDateKey: string;
   workoutCountByDateKey: Map<string, number>;
   onSelectDate: (dateKey: string) => void;
-};
+}
 
 type CalendarMarkedDates = Record<
   string,

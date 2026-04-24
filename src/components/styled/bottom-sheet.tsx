@@ -21,24 +21,24 @@ import type {
   TextStyle
 } from 'react-native';
 
-type BottomSheetFlatListClassNameProps = {
+interface BottomSheetFlatListClassNameProps {
   className?: string;
   contentContainerClassName?: string;
   columnWrapperClassName?: string;
   ListHeaderComponentClassName?: string;
   ListFooterComponentClassName?: string;
-};
+}
 
-type BottomSheetScrollViewClassNameProps = {
+interface BottomSheetScrollViewClassNameProps {
   className?: string;
   contentContainerClassName?: string;
-};
+}
 
-type BottomSheetTextInputClassNameProps = {
+interface BottomSheetTextInputClassNameProps {
   className?: string;
   placeholderClassName?: string;
   selectionClassName?: string;
-};
+}
 
 type BottomSheetTextInputColorBridgeProps = TextInputProps & {
   placeholderStyle?: StyleProp<TextStyle>;

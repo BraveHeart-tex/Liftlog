@@ -15,11 +15,11 @@ import * as Haptics from 'expo-haptics';
 import { useCallback } from 'react';
 import type { SetValues, WorkoutExerciseWithSets } from '../components/types';
 
-type UseExerciseTrackActionsParams = {
+interface UseExerciseTrackActionsParams {
   item: WorkoutExerciseWithSets;
   editingSetId: Set['id'] | null;
   setEditingSetId: (setId: Set['id'] | null) => void;
-};
+}
 
 export function useExerciseTrackActions({
   item,

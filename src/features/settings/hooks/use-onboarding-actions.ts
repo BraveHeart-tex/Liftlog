@@ -9,11 +9,11 @@ import { useCallback } from 'react';
 
 const workoutRoute = '/(tabs)/workout';
 
-type UseOnboardingActionsParams = {
+interface UseOnboardingActionsParams {
   name: string;
   weightUnitPreference: WeightUnit;
   setAttemptedSubmit: (attemptedSubmit: boolean) => void;
-};
+}
 
 export function useOnboardingActions({
   name,

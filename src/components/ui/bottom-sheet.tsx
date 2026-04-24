@@ -18,19 +18,19 @@ import {
 } from 'react';
 import { Keyboard, Text, View } from 'react-native';
 
-type BottomSheetComponentProps = {
+interface BottomSheetComponentProps {
   isOpen: boolean;
   onClose: () => void;
   snapPoints?: string[];
   enablePanDownToClose?: boolean;
   children: ReactNode;
   className?: string;
-};
+}
 
-type BottomSheetSectionProps = {
+interface BottomSheetSectionProps {
   children: ReactNode;
   className?: string;
-};
+}
 
 const DEFAULT_SNAP_POINTS = ['50%', '90%'];
 
