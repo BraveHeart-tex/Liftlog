@@ -91,7 +91,7 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
         <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
         <View
           className={cn(
-            'flex-1',
+            'will-change-variable flex-1',
             colorScheme === 'dark' ? 'theme-dark' : 'theme-light'
           )}
         >
