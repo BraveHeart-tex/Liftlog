@@ -12,7 +12,3 @@ export function completeOnboarding(db: DrizzleDb, displayName: string): void {
   setSetting(db, DISPLAY_NAME_KEY, displayName.trim());
   setSetting(db, ONBOARDING_KEY, 'true');
 }
-
-function getDisplayName(db: DrizzleDb): string {
-  return getSetting(db, DISPLAY_NAME_KEY) ?? '';
-}

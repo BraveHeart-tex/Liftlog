@@ -5,7 +5,7 @@ import {
   type Exercise,
   type NewExercise
 } from '@/src/db/schema';
-import { and, asc, eq, inArray, like } from 'drizzle-orm';
+import { asc, eq, inArray } from 'drizzle-orm';
 import type { InferColumnsDataTypes } from 'drizzle-orm/column';
 
 const exerciseListFields = {
@@ -20,13 +20,6 @@ const exerciseListFields = {
 };
 
 export type ExerciseListItem = InferColumnsDataTypes<typeof exerciseListFields>;
-
-function escapeLikePattern(value: string): string {
-  return value
-    .replaceAll('\\', '\\\\')
-    .replaceAll('%', '\\%')
-    .replaceAll('_', '\\_');
-}
 
 function getExerciseRecordById(
   db: DrizzleDb,
@@ -181,31 +174,4 @@ export function removeCustomExercise(
   }
 
   return 'deleted';
-}
-
-function searchExercises(db: DrizzleDb, query: string): ExerciseListItem[] {
-  const exerciseRecords = getExercises(db);
-
-  // SQLite `LIKE` needs an explicit escape clause for literal `%` / `_`.
-  // Keep the normal query-builder path for common input and fall back to a
-  // literal substring match only when the query contains wildcard characters.
-  if (query.includes('%') || query.includes('_') || query.includes('\\')) {
-    const normalizedQuery = query.toLocaleLowerCase();
-
-    return exerciseRecords.filter(exercise =>
-      exercise.name.toLocaleLowerCase().includes(normalizedQuery)
-    );
-  }
-
-  return db
-    .select(exerciseListFields)
-    .from(exercises)
-    .where(
-      and(
-        eq(exercises.isArchived, 0),
-        like(exercises.name, `%${escapeLikePattern(query)}%`)
-      )
-    )
-    .orderBy(asc(exercises.name))
-    .all();
 }
