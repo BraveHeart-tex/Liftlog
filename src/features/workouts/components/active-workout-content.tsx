@@ -268,6 +268,9 @@ export function ActiveWorkoutContent({
       <ExercisePickerSheet
         isOpen={isExercisePickerOpen}
         exercises={exerciseRows}
+        selectedExerciseIds={workoutExerciseRows.map(
+          workoutExercise => workoutExercise.exerciseId
+        )}
         onClose={() => setIsExercisePickerOpen(false)}
         onSelectExercise={selectExercise}
       />
