@@ -1,23 +1,23 @@
 import type { DrizzleDb } from '@/src/db/client';
 import {
   sets,
-  workoutTemplateExercises,
-  workoutTemplates,
   workoutExercises,
   workouts,
+  workoutTemplateExercises,
+  workoutTemplates,
   type NewSet,
-  type NewWorkoutTemplate,
-  type NewWorkoutTemplateExercise,
   type NewWorkout,
   type NewWorkoutExercise,
+  type NewWorkoutTemplate,
+  type NewWorkoutTemplateExercise,
   type Set,
-  type WorkoutTemplate,
-  type WorkoutTemplateExercise,
   type Workout,
-  type WorkoutExercise
+  type WorkoutExercise,
+  type WorkoutTemplate,
+  type WorkoutTemplateExercise
 } from '@/src/db/schema';
-import { asc, desc, eq, inArray } from 'drizzle-orm';
 import { resolveTemplateName } from '@/src/lib/utils/workout';
+import { asc, desc, eq, inArray } from 'drizzle-orm';
 
 function getWorkoutRecordById(
   db: DrizzleDb,
@@ -363,7 +363,7 @@ export function createWorkoutTemplateFromWorkout(
   const now = Date.now();
   let createdTemplate: WorkoutTemplate | undefined;
 
-  // Approach: create the template record first, then copy the ordered
+  // create the template record first, then copy the ordered
   // exercise rows in the same transaction so the saved preset stays consistent.
   db.transaction(tx => {
     createdTemplate = tx
@@ -415,7 +415,7 @@ export function createWorkoutFromTemplate(
 ): Workout {
   let createdWorkout: Workout | undefined;
 
-  // Approach: create the workout shell and clone the template's ordered
+  // create the workout shell and clone the template's ordered
   // exercises together so starting from a template is all-or-nothing.
   db.transaction(tx => {
     createdWorkout = tx

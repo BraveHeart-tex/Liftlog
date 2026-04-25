@@ -1,8 +1,9 @@
+import { usePressScale } from '@/src/lib/animations/use-press-scale';
 import { cn } from '@/src/lib/utils/cn';
 import { router } from 'expo-router';
 import { ChevronLeftIcon } from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { Pressable, type GestureResponderEvent } from 'react-native';
+import { Animated, Pressable, type GestureResponderEvent } from 'react-native';
 import { Button } from './button';
 import { Icon } from './icon';
 
@@ -21,6 +22,8 @@ export function BackButton({
   className,
   onPress
 }: BackButtonProps) {
+  const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();
+
   const handlePress = (event: GestureResponderEvent) => {
     if (onPress) {
       onPress(event);
@@ -40,16 +43,21 @@ export function BackButton({
   }
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Go back"
-      onPress={handlePress}
-      className={cn(
-        'border-border bg-card h-11 w-11 items-center justify-center rounded-lg border',
-        className
-      )}
-    >
-      <Icon icon={ChevronLeftIcon} size={20} className="text-foreground" />
-    </Pressable>
+    <Animated.View style={scaleStyle}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+        onPress={handlePress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        className={cn(
+          'border-border bg-card h-11 w-11 items-center justify-center rounded-lg border',
+          pressed && 'opacity-80',
+          className
+        )}
+      >
+        <Icon icon={ChevronLeftIcon} size={20} className="text-foreground" />
+      </Pressable>
+    </Animated.View>
   );
 }
