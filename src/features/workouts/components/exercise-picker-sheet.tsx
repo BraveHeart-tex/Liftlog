@@ -8,10 +8,10 @@ import {
 import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
+import { ExercisePickerRow } from '@/src/features/workouts/components/exercise-picker-row';
 import { cn } from '@/src/lib/utils/cn';
 import { useEffect, useMemo, useState } from 'react';
 import { Keyboard, Pressable, View } from 'react-native';
-import { getCategoryLabel } from './utils';
 
 interface ExercisePickerSheetProps {
   isOpen: boolean;
@@ -146,15 +146,7 @@ export function ExercisePickerSheet({
         onScrollBeginDrag={Keyboard.dismiss}
         onTouchStart={Keyboard.dismiss}
         renderItem={({ item }: { item: ExerciseListItem }) => (
-          <Pressable
-            onPress={() => onSelectExercise(item)}
-            className="border-border bg-card mt-3 rounded-lg border p-4"
-          >
-            <Text variant="bodyMedium">{item.name}</Text>
-            <Text variant="small" tone="muted" className="mt-1">
-              {getCategoryLabel(item.category)}
-            </Text>
-          </Pressable>
+          <ExercisePickerRow exercise={item} onPress={onSelectExercise} />
         )}
         ListEmptyComponent={
           <View className="border-border bg-card mt-3 items-center justify-center rounded-lg border border-dashed px-6 py-10">
