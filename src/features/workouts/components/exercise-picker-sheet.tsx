@@ -16,6 +16,7 @@ import { getCategoryLabel } from './utils';
 interface ExercisePickerSheetProps {
   isOpen: boolean;
   exercises: ExerciseListItem[];
+  selectedExerciseIds: ExerciseListItem['id'][];
   onClose: () => void;
   onSelectExercise: (exercise: ExerciseListItem) => void;
 }
@@ -31,6 +32,7 @@ type ExerciseSourceFilter = (typeof SOURCE_FILTERS)[number]['value'];
 export function ExercisePickerSheet({
   isOpen,
   exercises,
+  selectedExerciseIds,
   onClose,
   onSelectExercise
 }: ExercisePickerSheetProps) {
@@ -50,16 +52,18 @@ export function ExercisePickerSheet({
 
   const filteredExercises = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
+    const selectedExerciseIdSet = new Set(selectedExerciseIds);
 
     return exercises.filter(exercise => {
+      const isAlreadySelected = selectedExerciseIdSet.has(exercise.id);
       const matchesSource = sourceFilter === 'all' || exercise.isCustom === 1;
       const matchesQuery =
         normalizedQuery.length === 0 ||
         exercise.name.toLocaleLowerCase().includes(normalizedQuery);
 
-      return matchesSource && matchesQuery;
+      return !isAlreadySelected && matchesSource && matchesQuery;
     });
-  }, [exercises, query, sourceFilter]);
+  }, [exercises, query, selectedExerciseIds, sourceFilter]);
 
   const emptyTitle =
     sourceFilter === 'custom'

@@ -36,20 +36,30 @@ export function useActiveWorkoutActions({
         return;
       }
 
+      const alreadyAdded = workoutExerciseRows.some(
+        workoutExercise => workoutExercise.exerciseId === exercise.id
+      );
+
+      if (alreadyAdded) {
+        setIsExercisePickerOpen(false);
+
+        return;
+      }
+
+      setIsExercisePickerOpen(false);
       createWorkoutExercise(db, {
         workoutId: activeWorkout.id,
         exerciseId: exercise.id,
         order: workoutExerciseRows.length,
         notes: null
       });
-      setIsExercisePickerOpen(false);
     },
     [
       activeWorkout.id,
       db,
       isLoadingWorkoutExercises,
       setIsExercisePickerOpen,
-      workoutExerciseRows.length
+      workoutExerciseRows
     ]
   );
 
