@@ -181,25 +181,23 @@ export default function WorkoutStartScreen() {
         onSubmit={submitRename}
       />
 
-      <DiscardWorkoutSheet
-        isOpen={Boolean(pendingTemplate && activeWorkout)}
-        onClose={() => setPendingTemplateId(undefined)}
-        activeWorkoutName={activeWorkout?.name}
-        templateName={pendingTemplate?.template?.name}
-        onResume={() => {
-          setPendingTemplateId(undefined);
-          resumeWorkout();
-        }}
-        onDiscardAndStart={() => {
-          if (!pendingTemplate) {
-            return;
-          }
+      {pendingTemplate && activeWorkout ? (
+        <DiscardWorkoutSheet
+          isOpen
+          onClose={() => setPendingTemplateId(undefined)}
+          activeWorkoutName={activeWorkout.name}
+          templateName={pendingTemplate.template.name}
+          onResume={() => {
+            setPendingTemplateId(undefined);
+            resumeWorkout();
+          }}
+          onDiscardAndStart={() => {
+            discardActiveWorkoutAndStartTemplate(pendingTemplate.template.id);
 
-          discardActiveWorkoutAndStartTemplate(pendingTemplate.template.id);
-
-          setPendingTemplateId(undefined);
-        }}
-      />
+            setPendingTemplateId(undefined);
+          }}
+        />
+      ) : null}
     </Screen>
   );
 }
