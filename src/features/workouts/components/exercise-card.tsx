@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader } from '@/src/components/ui/card';
 import { Text } from '@/src/components/ui/text';
 import { useSettings } from '@/src/features/settings/hooks';
 import { useRemoveWorkoutExercise } from '@/src/features/workouts/hooks';
@@ -95,7 +94,7 @@ export function ExerciseCard({ item, className }: ExerciseCardProps) {
     <Pressable
       accessibilityRole="button"
       className={cn(
-        'bg-danger w-24 items-center justify-center rounded-r-lg px-3',
+        'bg-danger h-full min-w-24 items-center justify-center px-4',
         isDeleteActionHidden && 'opacity-0'
       )}
       onPressIn={() => setIsDeleteActionHidden(true)}
@@ -111,9 +110,16 @@ export function ExerciseCard({ item, className }: ExerciseCardProps) {
   );
 
   return (
-    <View className={className}>
+    <View
+      className={cn(
+        'border-border bg-card overflow-hidden rounded-lg border',
+        isSelected && 'border-primary',
+        className
+      )}
+    >
       <ReanimatedSwipeable
         overshootRight={false}
+        containerStyle={{ borderRadius: 12, overflow: 'hidden' }}
         onSwipeableOpenStartDrag={handleSwipeStart}
         onSwipeableCloseStartDrag={handleSwipeStart}
         onSwipeableOpen={handleSwipeEnd}
@@ -134,19 +140,20 @@ export function ExerciseCard({ item, className }: ExerciseCardProps) {
             onPressIn={handleCardPressIn}
             onPressOut={onPressOut}
           >
-            <Card
+            <View
               className={cn(
+                'bg-card',
                 pressed && 'opacity-80',
-                isSelected && 'border-primary bg-muted/50'
+                isSelected && 'bg-muted/50'
               )}
             >
-              <CardHeader className="flex-row items-center justify-between gap-3">
+              <View className="flex-row items-center justify-between gap-3 p-4 pb-0">
                 <Text variant="bodyMedium" className="flex-1">
                   {item.exercise?.name ?? 'Unknown exercise'}
                 </Text>
-              </CardHeader>
+              </View>
 
-              <CardContent>
+              <View className="p-4">
                 {completedSets.length > 0 ? (
                   <View>
                     {completedSets.map((set, index) => (
@@ -173,8 +180,8 @@ export function ExerciseCard({ item, className }: ExerciseCardProps) {
                     Tap to log sets
                   </Text>
                 )}
-              </CardContent>
-            </Card>
+              </View>
+            </View>
           </Pressable>
         </Animated.View>
       </ReanimatedSwipeable>
