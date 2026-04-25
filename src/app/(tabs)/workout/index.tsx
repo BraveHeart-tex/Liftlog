@@ -1,15 +1,10 @@
 import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
-import {
-  Dialog,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@/src/components/ui/dialog';
+
 import { Icon } from '@/src/components/ui/icon';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
+import { DiscardWorkoutSheet } from '@/src/features/workouts/components/discard-workout-sheet';
 import { RenameTemplateSheet } from '@/src/features/workouts/components/rename-template-sheet';
 import { useWorkoutStart } from '@/src/features/workouts/hooks';
 import { cn } from '@/src/lib/utils/cn';
@@ -317,44 +312,25 @@ export default function WorkoutStartScreen() {
         onSubmit={submitRename}
       />
 
-      <Dialog
+      <DiscardWorkoutSheet
         isOpen={Boolean(pendingTemplate && activeWorkout)}
         onClose={() => setPendingTemplateId(undefined)}
-      >
-        <DialogHeader>
-          <DialogTitle>Replace active workout?</DialogTitle>
-          <DialogDescription>
-            {activeWorkout
-              ? `Starting ${pendingTemplate?.template.name ?? 'this template'} will discard ${activeWorkout.name}.`
-              : 'Start this template workout.'}
-          </DialogDescription>
-        </DialogHeader>
+        activeWorkoutName={activeWorkout?.name}
+        templateName={pendingTemplate?.template?.name}
+        onResume={() => {
+          setPendingTemplateId(undefined);
+          resumeWorkout();
+        }}
+        onDiscardAndStart={() => {
+          if (!pendingTemplate) {
+            return;
+          }
 
-        <DialogFooter>
-          <Button
-            variant="ghost"
-            onPress={() => {
-              setPendingTemplateId(undefined);
-              resumeWorkout();
-            }}
-          >
-            Resume workout
-          </Button>
-          <Button
-            variant="destructive"
-            onPress={() => {
-              if (!pendingTemplate) {
-                return;
-              }
+          discardActiveWorkoutAndStartTemplate(pendingTemplate.template.id);
 
-              discardActiveWorkoutAndStartTemplate(pendingTemplate.template.id);
-              setPendingTemplateId(undefined);
-            }}
-          >
-            Discard and start
-          </Button>
-        </DialogFooter>
-      </Dialog>
+          setPendingTemplateId(undefined);
+        }}
+      />
     </Screen>
   );
 }
