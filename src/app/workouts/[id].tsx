@@ -5,6 +5,7 @@ import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { StyledTextInput } from '@/src/components/styled/text-input';
 import { Text } from '@/src/components/ui/text';
+import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
 import {
   useWorkoutRename,
   useRepeatWorkout,
@@ -26,6 +27,7 @@ export default function WorkoutDetailScreen() {
   const [draftName, setDraftName] = useState('');
   const [renameError, setRenameError] = useState<string | undefined>();
   const [isSavingRename, setIsSavingRename] = useState(false);
+  const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
   const {
     workout,
     activeWorkout,
@@ -224,6 +226,17 @@ export default function WorkoutDetailScreen() {
         </Card>
       </View>
 
+      <Button
+        variant="secondary"
+        className="mt-6 w-full"
+        disabled={
+          isRenaming || isSavingRename || workoutExerciseRows.length === 0
+        }
+        onPress={() => setIsTemplateSheetOpen(true)}
+      >
+        Save as template
+      </Button>
+
       <View className="mt-6">
         <Text variant="caption" tone="muted" className="mb-3">
           Exercises
@@ -289,6 +302,16 @@ export default function WorkoutDetailScreen() {
       >
         {activeWorkout ? 'Resume active workout' : 'Repeat this workout'}
       </Button>
+
+      <SaveWorkoutTemplateSheet
+        isOpen={isTemplateSheetOpen}
+        initialName={workout.name}
+        workoutExerciseRows={workoutExerciseRows.map(workoutExercise => ({
+          exerciseId: workoutExercise.exerciseId,
+          order: workoutExercise.order
+        }))}
+        onClose={() => setIsTemplateSheetOpen(false)}
+      />
     </Screen>
   );
 }

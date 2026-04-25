@@ -4,25 +4,20 @@ import {
 } from '@/src/components/styled/bottom-sheet';
 import { cn } from '@/src/lib/utils/cn';
 import GorhomBottomSheet, {
+  BottomSheetView,
   type BottomSheetBackdropProps,
   type BottomSheetBackgroundProps
 } from '@gorhom/bottom-sheet';
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  type ComponentRef,
-  type ReactNode
-} from 'react';
+import { memo, useCallback, useMemo, type ReactNode } from 'react';
 import { Keyboard, Text, View } from 'react-native';
 
 interface BottomSheetComponentProps {
   isOpen: boolean;
   onClose: () => void;
-  snapPoints?: string[];
+  snapPoints?: (string | number)[];
   enablePanDownToClose?: boolean;
+  enableDynamicSizing?: boolean;
+  keyboardBehavior?: 'interactive' | 'extend' | 'fillParent';
   children: ReactNode;
   className?: string;
 }
@@ -58,23 +53,20 @@ const SheetHandle = memo(function SheetHandle() {
 export function BottomSheet({
   isOpen,
   onClose,
-  snapPoints = DEFAULT_SNAP_POINTS,
+  snapPoints,
   enablePanDownToClose = true,
+  enableDynamicSizing = false,
+  keyboardBehavior = 'extend',
   children,
   className
 }: BottomSheetComponentProps) {
-  const sheetRef = useRef<ComponentRef<typeof GorhomBottomSheet>>(null);
-  const resolvedSnapPoints = useMemo(() => snapPoints, [snapPoints]);
-
-  useEffect(() => {
-    if (isOpen) {
-      sheetRef.current?.snapToIndex(0);
-
-      return;
+  const resolvedSnapPoints = useMemo(() => {
+    if (enableDynamicSizing) {
+      return snapPoints;
     }
 
-    sheetRef.current?.close();
-  }, [isOpen]);
+    return snapPoints ?? DEFAULT_SNAP_POINTS;
+  }, [enableDynamicSizing, snapPoints]);
 
   const handleClose = useCallback(() => {
     Keyboard.dismiss();
@@ -89,7 +81,6 @@ export function BottomSheet({
         disappearsOnIndex={-1}
         opacity={0.72}
         pressBehavior="close"
-        style={props.style}
         className="bg-background"
       />
     ),
@@ -98,22 +89,25 @@ export function BottomSheet({
 
   return (
     <GorhomBottomSheet
-      ref={sheetRef}
       android_keyboardInputMode="adjustResize"
-      animateOnMount={false}
       backdropComponent={renderBackdrop}
       backgroundComponent={SheetBackground}
-      enableDynamicSizing={false}
+      enableDynamicSizing={enableDynamicSizing}
       enableBlurKeyboardOnGesture
       enablePanDownToClose={enablePanDownToClose}
       handleComponent={SheetHandle}
-      index={-1}
-      keyboardBehavior="extend"
-      keyboardBlurBehavior="restore"
+      index={isOpen ? 0 : -1}
+      keyboardBehavior={keyboardBehavior}
+      keyboardBlurBehavior={enableDynamicSizing ? 'restore' : 'restore'} // always restore
       onClose={handleClose}
       snapPoints={resolvedSnapPoints}
     >
-      <View className={cn('flex-1', className)}>{children}</View>
+      <BottomSheetView
+        style={enableDynamicSizing ? undefined : { flex: 1 }}
+        className={className}
+      >
+        {children}
+      </BottomSheetView>
     </GorhomBottomSheet>
   );
 }
