@@ -11,18 +11,14 @@ import { cn } from '@/src/lib/utils/cn';
 import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date';
 import { router, type Href } from 'expo-router';
 import { PencilIcon, Trash2Icon } from 'lucide-react-native';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard, Pressable, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, Pressable, View } from 'react-native';
 
 export default function WorkoutStartScreen() {
   const [now, setNow] = useState(() => Date.now());
-  const isSavingRenameRef = useRef(false);
   const [renameTemplateId, setRenameTemplateId] = useState<
     string | undefined
   >();
-  const [draftTemplateName, setDraftTemplateName] = useState('');
-  const [renameError, setRenameError] = useState<string | undefined>();
-  const [isSavingRename, setIsSavingRename] = useState(false);
   const [pendingTemplateId, setPendingTemplateId] = useState<
     string | undefined
   >();
@@ -42,6 +38,7 @@ export default function WorkoutStartScreen() {
     () => templates.find(item => item.template.id === renameTemplateId),
     [renameTemplateId, templates]
   );
+
   const pendingTemplate = useMemo(
     () => templates.find(item => item.template.id === pendingTemplateId),
     [pendingTemplateId, templates]
@@ -63,62 +60,16 @@ export default function WorkoutStartScreen() {
     };
   }, [activeWorkout]);
 
-  useEffect(() => {
-    if (!renameTarget) {
-      return;
-    }
-
-    setDraftTemplateName(renameTarget.template.name);
-    setRenameError(undefined);
-  }, [renameTarget]);
-
   const openRenameDialog = (templateId: string) => {
     setRenameTemplateId(templateId);
-    setRenameError(undefined);
   };
 
   const closeRenameDialog = () => {
-    Keyboard.dismiss();
-    isSavingRenameRef.current = false;
-    setDraftTemplateName('');
-    setRenameError(undefined);
-    setIsSavingRename(false);
     setRenameTemplateId(undefined);
   };
 
-  const submitRename = () => {
-    if (!renameTarget || isSavingRenameRef.current) {
-      return;
-    }
-
-    isSavingRenameRef.current = true;
-    setIsSavingRename(true);
-    setRenameError(undefined);
-
-    try {
-      const updatedTemplate = renameTemplate(
-        renameTarget.template.id,
-        draftTemplateName
-      );
-
-      if (!updatedTemplate) {
-        setRenameError('Could not rename template. Try again.');
-        isSavingRenameRef.current = false;
-        setIsSavingRename(false);
-
-        return;
-      }
-    } catch (error) {
-      console.error('Failed to rename template', error);
-      setRenameError('Could not rename template. Try again.');
-      isSavingRenameRef.current = false;
-      setIsSavingRename(false);
-
-      return;
-    }
-
-    closeRenameDialog();
-  };
+  const submitRename = (templateId: string, name: string) =>
+    Boolean(renameTemplate(templateId, name));
 
   const handleTemplatePress = (templateId: string) => {
     if (activeWorkout) {
@@ -301,13 +252,8 @@ export default function WorkoutStartScreen() {
 
       <RenameTemplateSheet
         isOpen={Boolean(renameTarget)}
-        templateName={draftTemplateName}
-        error={renameError}
-        isSaving={isSavingRename}
-        onChangeTemplateName={nextName => {
-          setDraftTemplateName(nextName);
-          setRenameError(undefined);
-        }}
+        templateId={renameTarget?.template.id}
+        initialName={renameTarget?.template.name ?? ''}
         onClose={closeRenameDialog}
         onSubmit={submitRename}
       />

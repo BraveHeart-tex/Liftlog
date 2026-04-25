@@ -8,51 +8,94 @@ import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { XIcon } from 'lucide-react-native';
-import { useEffect, useRef, type ComponentRef } from 'react';
-import { View } from 'react-native';
+import { useEffect, useRef, useState, type ComponentRef } from 'react';
+import { Keyboard, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface RenameTemplateSheetProps {
   isOpen: boolean;
-  templateName: string;
-  error?: string;
-  isSaving: boolean;
-  onChangeTemplateName: (name: string) => void;
+  templateId?: string;
+  initialName: string;
   onClose: () => void;
-  onSubmit: () => void;
+  onSubmit: (templateId: string, name: string) => boolean;
 }
 
 type BottomSheetInputRef = ComponentRef<typeof BottomSheetInput>;
 
 export function RenameTemplateSheet({
   isOpen,
-  templateName,
-  error,
-  isSaving,
-  onChangeTemplateName,
+  templateId,
+  initialName,
   onClose,
   onSubmit
 }: RenameTemplateSheetProps) {
   const insets = useSafeAreaInsets();
   const templateInputRef = useRef<BottomSheetInputRef>(null);
+  const isSavingRef = useRef(false);
+  const [templateName, setTemplateName] = useState('');
+  const [error, setError] = useState<string | undefined>();
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
       return;
     }
 
+    setTemplateName(initialName);
+    setError(undefined);
+
     const focusTimer = setTimeout(() => {
       templateInputRef.current?.focus();
-      templateInputRef.current?.setSelection(0, templateName.length);
+      templateInputRef.current?.setSelection(0, initialName.length);
     }, 150);
 
     return () => clearTimeout(focusTimer);
-  }, [isOpen, templateName]);
+  }, [initialName, isOpen]);
+
+  const handleClose = () => {
+    Keyboard.dismiss();
+    isSavingRef.current = false;
+    setTemplateName(initialName);
+    setError(undefined);
+    setIsSaving(false);
+    onClose();
+  };
+
+  const handleSubmit = () => {
+    if (!templateId || isSavingRef.current) {
+      return;
+    }
+
+    isSavingRef.current = true;
+    setIsSaving(true);
+    setError(undefined);
+
+    try {
+      const didRename = onSubmit(templateId, templateName);
+
+      if (!didRename) {
+        setError('Could not rename template. Try again.');
+        isSavingRef.current = false;
+        setIsSaving(false);
+
+        return;
+      }
+    } catch (submitError) {
+      console.error('Failed to rename template', submitError);
+      setError('Could not rename template. Try again.');
+      isSavingRef.current = false;
+      setIsSaving(false);
+
+      return;
+    }
+
+    handleClose();
+  };
 
   return (
     <BottomSheet
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       enableDynamicSizing
       keyboardBehavior="interactive"
     >
@@ -63,7 +106,7 @@ export function RenameTemplateSheet({
             Update the name shown on your workout start screen.
           </BottomSheetDescription>
         </View>
-        <Button variant="ghost" size="icon" onPress={onClose}>
+        <Button variant="ghost" size="icon" onPress={handleClose}>
           <Icon icon={XIcon} size={20} className="text-foreground" />
         </Button>
       </BottomSheetHeader>
@@ -73,7 +116,10 @@ export function RenameTemplateSheet({
           ref={templateInputRef}
           label="Template name"
           value={templateName}
-          onChangeText={onChangeTemplateName}
+          onChangeText={nextName => {
+            setTemplateName(nextName);
+            setError(undefined);
+          }}
           autoCapitalize="words"
           autoCorrect={false}
           returnKeyType="done"
@@ -81,7 +127,7 @@ export function RenameTemplateSheet({
           error={error}
           blurOnSubmit={false}
           submitBehavior="submit"
-          onSubmitEditing={onSubmit}
+          onSubmitEditing={handleSubmit}
         />
       </View>
 
@@ -91,12 +137,12 @@ export function RenameTemplateSheet({
         style={{ paddingBottom: insets.bottom + 8 }}
       >
         <View className="flex-1">
-          <Button variant="ghost" className="w-full" onPress={onClose}>
+          <Button variant="ghost" className="w-full" onPress={handleClose}>
             Cancel
           </Button>
         </View>
         <View className="flex-1">
-          <Button className="w-full" loading={isSaving} onPress={onSubmit}>
+          <Button className="w-full" loading={isSaving} onPress={handleSubmit}>
             Save
           </Button>
         </View>
