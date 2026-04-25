@@ -1,7 +1,12 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { cn } from '@/src/lib/utils/cn';
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  type ScrollViewProps,
+  View
+} from 'react-native';
 import type { Edge } from 'react-native-safe-area-context';
 import { SafeAreaView } from './safe-area-view';
 
@@ -13,7 +18,19 @@ interface ScreenProps {
   withPadding?: boolean;
   edges?: Edge[];
   footer?: ReactNode;
-  keyboardShouldPersistTaps?: 'always' | 'never' | 'handled';
+  /**
+   * Determines when the keyboard should stay visible after a tap.
+   *
+   * - `'never'` (default): tapping outside the focused input dismisses the
+   *   keyboard, and children will not receive the tap.
+   * - `'always'`: the keyboard does not dismiss automatically, and children can
+   *   receive taps.
+   * - `'handled'`: the keyboard does not dismiss automatically when the tap is
+   *   handled by a child or captured by an ancestor.
+   * - `false`: deprecated, use `'never'` instead.
+   * - `true`: deprecated, use `'always'` instead.
+   */
+  keyboardShouldPersistTaps?: ScrollViewProps['keyboardShouldPersistTaps'];
 }
 
 export function Screen({
