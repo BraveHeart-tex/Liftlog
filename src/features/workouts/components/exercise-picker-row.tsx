@@ -1,8 +1,8 @@
 import { Text } from '@/src/components/ui/text';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { getCategoryLabel } from '@/src/features/workouts/components/utils';
+import { usePressScale } from '@/src/lib/animations/use-press-scale';
 import { cn } from '@/src/lib/utils/cn';
-import { useRef, useState } from 'react';
 import { Animated, Pressable } from 'react-native';
 
 interface ExercisePickerRowProps {
@@ -14,30 +14,14 @@ export const ExercisePickerRow = ({
   exercise,
   onPress
 }: ExercisePickerRowProps) => {
-  const [pressed, setPressed] = useState(false);
-  const scale = useRef(new Animated.Value(1)).current;
-
-  const animateScale = (toValue: number) => {
-    Animated.spring(scale, {
-      toValue,
-      useNativeDriver: true,
-      speed: 30,
-      bounciness: 0
-    }).start();
-  };
+  const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();
 
   return (
-    <Animated.View style={{ transform: [{ scale }] }}>
+    <Animated.View style={scaleStyle}>
       <Pressable
         onPress={() => onPress(exercise)}
-        onPressIn={() => {
-          setPressed(true);
-          animateScale(0.97);
-        }}
-        onPressOut={() => {
-          setPressed(false);
-          animateScale(1);
-        }}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
         className={cn(
           'border-border bg-card mt-3 rounded-lg border p-4',
           pressed && 'opacity-80'

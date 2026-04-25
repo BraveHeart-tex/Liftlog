@@ -1,5 +1,6 @@
 import { cn } from '@/src/lib/utils/cn';
-import { useRef, useState, type ReactNode } from 'react';
+import { usePressScale } from '@/src/lib/animations/use-press-scale';
+import type { ReactNode } from 'react';
 import {
   Animated,
   Pressable,
@@ -68,8 +69,7 @@ export function Button({
   children,
   onPress
 }: ButtonProps) {
-  const [pressed, setPressed] = useState(false);
-  const scale = useRef(new Animated.Value(1)).current;
+  const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();
   const isBlocked = disabled || loading;
   const isIconButton = size === 'icon';
   const label =
@@ -77,17 +77,8 @@ export function Button({
       ? children
       : null;
 
-  const animateScale = (toValue: number) => {
-    Animated.spring(scale, {
-      toValue,
-      useNativeDriver: true,
-      speed: 30,
-      bounciness: 0
-    }).start();
-  };
-
   return (
-    <Animated.View style={{ transform: [{ scale }] }}>
+    <Animated.View style={scaleStyle}>
       <Pressable
         className={cn(
           baseClassName,
@@ -102,14 +93,8 @@ export function Button({
         accessibilityState={{ disabled: isBlocked, busy: loading }}
         disabled={isBlocked}
         onPress={onPress}
-        onPressIn={() => {
-          setPressed(true);
-          animateScale(0.97);
-        }}
-        onPressOut={() => {
-          setPressed(false);
-          animateScale(1);
-        }}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
       >
         {loading ? (
           <Text
