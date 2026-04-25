@@ -1,5 +1,6 @@
 import { DatabaseProvider } from '@/src/components/database-provider';
 import { AppThemeProvider } from '@/src/theme/app-theme-provider';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import type { PropsWithChildren } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
@@ -15,7 +16,9 @@ export function CommonProviders({ children }: PropsWithChildren) {
         style={{ flex: 1 }}
       >
         <DatabaseProvider>
-          <AppThemeProvider>{children}</AppThemeProvider>
+          <AppThemeProvider>
+            <BottomSheetModalProvider>{children}</BottomSheetModalProvider>
+          </AppThemeProvider>
         </DatabaseProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
