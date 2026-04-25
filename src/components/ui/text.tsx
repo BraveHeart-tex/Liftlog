@@ -35,6 +35,16 @@ const toneClassNames: Record<TextTone, string> = {
   danger: 'text-danger'
 };
 
+const variantFontFamilies: Record<TextVariant, string> = {
+  h1: 'Inter_700Bold',
+  h2: 'Inter_700Bold',
+  h3: 'Inter_600SemiBold',
+  body: 'Inter_400Regular',
+  bodyMedium: 'Inter_500Medium',
+  small: 'Inter_400Regular',
+  caption: 'Inter_500Medium'
+};
+
 type NativeTextProps = Omit<
   ComponentPropsWithoutRef<typeof NativeText>,
   'className'
@@ -48,7 +58,7 @@ type TextProps = NativeTextProps & {
 
 export const Text = forwardRef<ComponentRef<typeof NativeText>, TextProps>(
   function Text(
-    { variant = 'body', tone = 'default', className, ...props },
+    { variant = 'body', tone = 'default', className, style, ...props },
     ref
   ) {
     return (
@@ -59,6 +69,7 @@ export const Text = forwardRef<ComponentRef<typeof NativeText>, TextProps>(
           toneClassNames[tone],
           className
         )}
+        style={[{ fontFamily: variantFontFamilies[variant] }, style]}
         {...props}
       />
     );
