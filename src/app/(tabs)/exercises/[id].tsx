@@ -20,6 +20,42 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Keyboard, Pressable, View } from 'react-native';
 import type { TextInput } from 'react-native';
 
+function formatUsageBreakdown({
+  workoutUsageCount,
+  templateUsageCount
+}: {
+  workoutUsageCount: number;
+  templateUsageCount: number;
+}) {
+  const parts: string[] = [];
+
+  if (workoutUsageCount > 0) {
+    parts.push(
+      workoutUsageCount === 1
+        ? '1 workout entry'
+        : `${workoutUsageCount} workout entries`
+    );
+  }
+
+  if (templateUsageCount > 0) {
+    parts.push(
+      templateUsageCount === 1
+        ? '1 template'
+        : `${templateUsageCount} templates`
+    );
+  }
+
+  if (parts.length === 0) {
+    return 'no workouts or templates';
+  }
+
+  if (parts.length === 1) {
+    return parts[0];
+  }
+
+  return `${parts[0]} and ${parts[1]}`;
+}
+
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const exerciseId = getRouteParamId(id);
@@ -33,6 +69,8 @@ export default function ExerciseDetailScreen() {
     exercise,
     exercises,
     exerciseUsageCount,
+    workoutUsageCount,
+    templateUsageCount,
     history,
     prRows,
     primaryMuscles,
@@ -86,10 +124,10 @@ export default function ExerciseDetailScreen() {
   }
 
   const isCustomExercise = exercise.isCustom === 1;
-  const usageLabel =
-    exerciseUsageCount === 1
-      ? '1 workout entry'
-      : `${exerciseUsageCount} workout entries`;
+  const usageLabel = formatUsageBreakdown({
+    workoutUsageCount,
+    templateUsageCount
+  });
   const removeActionLabel = exerciseUsageCount > 0 ? 'Archive' : 'Delete';
   const trimmedDraftName = draftName.trim();
   const hasRenameChanged = trimmedDraftName !== exercise.name.trim();
@@ -173,8 +211,8 @@ export default function ExerciseDetailScreen() {
       exerciseUsageCount > 0 ? 'Archive exercise?' : 'Delete exercise?';
     const message =
       exerciseUsageCount > 0
-        ? `${exercise.name} is used in ${usageLabel}. It will be hidden from new workouts, but your history stays intact.`
-        : `${exercise.name} has no workout history and will be permanently deleted.`;
+        ? `${exercise.name} is used in ${usageLabel}. It will be hidden from new workouts and templates, but your existing history stays intact.`
+        : `${exercise.name} is not used in any workouts or templates and will be permanently deleted.`;
 
     Alert.alert(title, message, [
       { text: 'Cancel', style: 'cancel' },
@@ -300,8 +338,8 @@ export default function ExerciseDetailScreen() {
 
               <Text variant="small" tone="muted" className="mt-3">
                 {exerciseUsageCount > 0
-                  ? `Used in ${usageLabel}. Archive keeps workout history safe.`
-                  : 'Not used in any workouts yet. You can delete it permanently.'}
+                  ? `Used in ${usageLabel}. Archive keeps workout history and saved templates safe.`
+                  : 'Not used in any workouts or templates yet. You can delete it permanently.'}
               </Text>
 
               <View className="mt-4 flex-row gap-3">

@@ -43,13 +43,6 @@ export function RenameTemplateSheet({
 
     setTemplateName(initialName);
     setError(undefined);
-
-    const focusTimer = setTimeout(() => {
-      templateInputRef.current?.focus();
-      templateInputRef.current?.setSelection(0, initialName.length);
-    }, 150);
-
-    return () => clearTimeout(focusTimer);
   }, [initialName, isOpen]);
 
   const handleClose = () => {
