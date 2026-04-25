@@ -37,7 +37,7 @@ const toneClassNames: Record<TextTone, string> = {
 
 type NativeTextProps = Omit<
   ComponentPropsWithoutRef<typeof NativeText>,
-  'className' | 'style'
+  'className'
 >;
 
 type TextProps = NativeTextProps & {

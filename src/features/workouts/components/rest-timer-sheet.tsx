@@ -16,7 +16,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { XIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Text as NativeText, TextInput, View } from 'react-native';
+import { TextInput, View } from 'react-native';
 
 const MIN_DURATION_SECONDS = 10;
 const MAX_DURATION_SECONDS = 3600;
@@ -360,13 +360,7 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
   const showCountdown = status === 'running';
 
   return (
-    <BottomSheet
-      isOpen={isOpen}
-      onClose={handleClose}
-      snapPoints={['55%']}
-      enablePanDownToClose={false}
-      className="flex-1"
-    >
+    <BottomSheet isOpen={isOpen} onClose={handleClose} enableDynamicSizing>
       <BottomSheetHeader className="flex-row items-center justify-between">
         <BottomSheetTitle>Rest</BottomSheetTitle>
         <Button variant="ghost" size="icon" onPress={handleClose}>
@@ -423,16 +417,14 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
 
         {showCountdown ? (
           <View className="items-center">
-            <NativeText
-              className="text-foreground"
+            <Text
+              className="text-foreground text-[72px] font-medium"
               style={{
-                fontSize: 72,
-                fontWeight: '500',
                 fontVariant: ['tabular-nums']
               }}
             >
               {formatTime(secondsRemaining)}
-            </NativeText>
+            </Text>
             <Text variant="caption" tone="muted" className="mt-1 text-center">
               of {formatTime(activeDuration)}
             </Text>
