@@ -80,6 +80,52 @@ export const workoutExercises = sqliteTable(
   ]
 );
 
+export const workoutTemplates = sqliteTable(
+  'workout_templates',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => generateUuid()),
+    name: text('name').notNull(),
+    createdAt: integer('created_at')
+      .notNull()
+      .$defaultFn(() => Date.now()),
+    updatedAt: integer('updated_at')
+      .notNull()
+      .$defaultFn(() => Date.now())
+  },
+  table => [
+    index('workout_templates_updated_at_idx').on(table.updatedAt),
+    index('workout_templates_name_idx').on(table.name)
+  ]
+);
+
+export const workoutTemplateExercises = sqliteTable(
+  'workout_template_exercises',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => generateUuid()),
+    templateId: text('template_id')
+      .notNull()
+      .references(() => workoutTemplates.id, { onDelete: 'cascade' }),
+    exerciseId: text('exercise_id')
+      .notNull()
+      .references(() => exercises.id, { onDelete: 'restrict' }),
+    order: integer('order').notNull()
+  },
+  table => [
+    index('workout_template_exercises_template_id_order_idx').on(
+      table.templateId,
+      table.order
+    ),
+    index('workout_template_exercises_exercise_id_template_id_idx').on(
+      table.exerciseId,
+      table.templateId
+    )
+  ]
+);
+
 export const sets = sqliteTable(
   'sets',
   {
@@ -142,6 +188,14 @@ export type NewWorkout = typeof workouts.$inferInsert;
 
 export type WorkoutExercise = typeof workoutExercises.$inferSelect;
 export type NewWorkoutExercise = typeof workoutExercises.$inferInsert;
+
+export type WorkoutTemplate = typeof workoutTemplates.$inferSelect;
+export type NewWorkoutTemplate = typeof workoutTemplates.$inferInsert;
+
+export type WorkoutTemplateExercise =
+  typeof workoutTemplateExercises.$inferSelect;
+export type NewWorkoutTemplateExercise =
+  typeof workoutTemplateExercises.$inferInsert;
 
 export type Set = typeof sets.$inferSelect;
 export type NewSet = typeof sets.$inferInsert;

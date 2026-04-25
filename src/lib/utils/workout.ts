@@ -2,6 +2,8 @@ function resolveWorkoutDate(value: Date | number): Date {
   return value instanceof Date ? value : new Date(value);
 }
 
+const defaultTemplateName = 'Workout template';
+
 export function formatWorkoutName(value: Date | number): string {
   return `${resolveWorkoutDate(value).toLocaleDateString(undefined, {
     weekday: 'long'
@@ -13,6 +15,16 @@ export function resolveWorkoutName(name: string, startedAt: number): string {
 
   if (trimmedName.length === 0) {
     return formatWorkoutName(startedAt);
+  }
+
+  return trimmedName;
+}
+
+export function resolveTemplateName(name: string): string {
+  const trimmedName = name.trim();
+
+  if (trimmedName.length === 0) {
+    return defaultTemplateName;
   }
 
   return trimmedName;
