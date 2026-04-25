@@ -1,3 +1,6 @@
+import type { Workout } from '@/src/db';
+import { toLocalDateKey } from '@/src/lib/utils/date';
+
 function resolveWorkoutDate(value: Date | number): Date {
   return value instanceof Date ? value : new Date(value);
 }
@@ -28,4 +31,21 @@ export function resolveTemplateName(name: string): string {
   }
 
   return trimmedName;
+}
+
+export function getWorkoutCountByDateKey(
+  workouts: Workout[]
+): Map<string, number> {
+  const workoutCountByDateKey = new Map<string, number>();
+
+  for (const workout of workouts) {
+    const dateKey = toLocalDateKey(workout.startedAt);
+
+    workoutCountByDateKey.set(
+      dateKey,
+      (workoutCountByDateKey.get(dateKey) ?? 0) + 1
+    );
+  }
+
+  return workoutCountByDateKey;
 }
