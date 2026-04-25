@@ -360,7 +360,12 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
   const showCountdown = status === 'running';
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={handleClose} enableDynamicSizing>
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={handleClose}
+      enableDynamicSizing
+      keyboardBehavior="interactive"
+    >
       <BottomSheetHeader className="flex-row items-center justify-between">
         <BottomSheetTitle>Rest</BottomSheetTitle>
         <Button variant="ghost" size="icon" onPress={handleClose}>

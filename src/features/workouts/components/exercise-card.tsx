@@ -119,7 +119,7 @@ export function ExerciseCard({ item, className }: ExerciseCardProps) {
     >
       <ReanimatedSwipeable
         overshootRight={false}
-        containerStyle={{ borderRadius: 12, overflow: 'hidden' }}
+        containerStyle={{ borderRadius: 8, overflow: 'hidden' }}
         onSwipeableOpenStartDrag={handleSwipeStart}
         onSwipeableCloseStartDrag={handleSwipeStart}
         onSwipeableOpen={handleSwipeEnd}
