@@ -32,7 +32,7 @@ export default function ExercisesScreen() {
           <Button
             variant="secondary"
             size="sm"
-            onPress={() => router.push('/(tabs)/exercises/new')}
+            onPress={() => router.push('/exercises/new')}
           >
             Add
           </Button>
