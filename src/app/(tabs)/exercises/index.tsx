@@ -4,11 +4,10 @@ import { Input } from '@/src/components/ui/input';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { ExerciseCategoryFilters } from '@/src/features/exercises/components/exercise-category-filters';
+import { ExerciseListRow } from '@/src/features/exercises/components/exercise-list-row';
 import { useExercisesScreen } from '@/src/features/exercises/hooks';
-import { getPrimaryMuscleLabel } from '@/src/lib/utils/muscle';
-import { toTitleCase } from '@/src/lib/utils/string';
 import { router } from 'expo-router';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 export default function ExercisesScreen() {
   const {
@@ -75,20 +74,15 @@ export default function ExercisesScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <Pressable
-            onPress={() =>
+          <ExerciseListRow
+            exercise={item}
+            onPress={exercise =>
               router.push({
                 pathname: '/(tabs)/exercises/[id]',
-                params: { id: item.id }
+                params: { id: exercise.id }
               })
             }
-            className="border-border bg-card mt-3 rounded-lg border p-4"
-          >
-            <Text variant="bodyMedium">{item.name}</Text>
-            <Text variant="small" tone="muted" className="mt-1">
-              {toTitleCase(getPrimaryMuscleLabel(item.primaryMuscles))}
-            </Text>
-          </Pressable>
+          />
         )}
         ListEmptyComponent={
           <View className="border-border bg-card items-center justify-center rounded-lg border border-dashed px-6 py-10">

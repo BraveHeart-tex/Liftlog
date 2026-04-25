@@ -2,15 +2,15 @@ import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
+import { ThemeOptionCard } from '@/src/features/settings/components/theme-option-card';
 import {
   SETTINGS_DEFAULTS,
   useSettings,
   type ThemePreference
 } from '@/src/features/settings/hooks';
-import { cn } from '@/src/lib/utils/cn';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import Constants from 'expo-constants';
-import { Pressable, Switch, View } from 'react-native';
+import { Switch, View } from 'react-native';
 
 const THEME_OPTIONS: {
   value: ThemePreference;
@@ -79,36 +79,13 @@ export default function SettingsScreen() {
                 const isSelected = themePreference === option.value;
 
                 return (
-                  <Pressable
+                  <ThemeOptionCard
                     key={option.value}
-                    className={cn(
-                      'min-h-16 flex-1 justify-center rounded-lg border px-3 py-3',
-                      'border-border bg-card',
-                      isSelected && 'border-primary'
-                    )}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: isSelected }}
+                    label={option.label}
+                    description={option.description}
+                    isSelected={isSelected}
                     onPress={() => setThemePreference(option.value)}
-                  >
-                    <Text
-                      variant="small"
-                      className={cn(
-                        'text-center',
-                        isSelected ? 'text-primary' : 'text-muted-foreground'
-                      )}
-                    >
-                      {option.label}
-                    </Text>
-                    <Text
-                      variant="caption"
-                      className={cn(
-                        'mt-1 text-center',
-                        isSelected ? 'text-foreground' : 'text-muted-foreground'
-                      )}
-                    >
-                      {option.description}
-                    </Text>
-                  </Pressable>
+                  />
                 );
               })}
             </View>
