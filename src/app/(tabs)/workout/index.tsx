@@ -1,18 +1,16 @@
 import { Button } from '@/src/components/ui/button';
-import { Card, CardContent } from '@/src/components/ui/card';
-
-import { Icon } from '@/src/components/ui/icon';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
+import { ActiveWorkoutSummaryCard } from '@/src/features/workouts/components/active-workout-summary-card';
 import { DiscardWorkoutSheet } from '@/src/features/workouts/components/discard-workout-sheet';
+import { RecentWorkoutCard } from '@/src/features/workouts/components/recent-workout-card';
 import { RenameTemplateSheet } from '@/src/features/workouts/components/rename-template-sheet';
+import { WorkoutTemplateCard } from '@/src/features/workouts/components/workout-template-card';
 import { useWorkoutStart } from '@/src/features/workouts/hooks';
 import { cn } from '@/src/lib/utils/cn';
-import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date';
 import { router, type Href } from 'expo-router';
-import { PencilIcon, Trash2Icon } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { Alert, View } from 'react-native';
 
 export default function WorkoutStartScreen() {
   const [now, setNow] = useState(() => Date.now());
@@ -108,24 +106,11 @@ export default function WorkoutStartScreen() {
       </View>
 
       {activeWorkout ? (
-        <Pressable onPress={resumeWorkout} className="mt-6">
-          <Card className="border-primary">
-            <CardContent>
-              <Text variant="caption" tone="muted">
-                Workout in progress
-              </Text>
-              <Text variant="h3" className="mt-2">
-                {activeWorkout.name}
-              </Text>
-              <Text variant="small" tone="muted" className="mt-2">
-                {formatDuration({
-                  startedAt: activeWorkout.startedAt,
-                  completedAt: now
-                })}
-              </Text>
-            </CardContent>
-          </Card>
-        </Pressable>
+        <ActiveWorkoutSummaryCard
+          workout={activeWorkout}
+          now={now}
+          onPress={resumeWorkout}
+        />
       ) : (
         <Button className="mt-6 w-full" onPress={startWorkout}>
           Start Workout
@@ -140,63 +125,16 @@ export default function WorkoutStartScreen() {
 
           <View className="mt-3">
             {templates.map((item, index) => (
-              <View
+              <WorkoutTemplateCard
                 key={item.template.id}
-                className={cn(
-                  'border-border bg-card rounded-lg border p-4',
-                  index > 0 && 'mt-3'
-                )}
-              >
-                <View className="flex-row items-start gap-3">
-                  <Pressable
-                    className="min-h-12 flex-1 justify-center"
-                    onPress={() => handleTemplatePress(item.template.id)}
-                  >
-                    <Text variant="bodyMedium">{item.template.name}</Text>
-                    <Text variant="small" tone="muted" className="mt-1">
-                      {item.exerciseCount === 1
-                        ? '1 exercise'
-                        : `${item.exerciseCount} exercises`}
-                    </Text>
-                    <Text variant="caption" tone="muted" className="mt-2">
-                      {item.exerciseSummary}
-                    </Text>
-                  </Pressable>
-
-                  <View className="flex-row">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      accessibilityLabel={`Rename ${item.template.name}`}
-                      onPress={() => openRenameDialog(item.template.id)}
-                    >
-                      <Icon
-                        icon={PencilIcon}
-                        size={18}
-                        className="text-foreground"
-                      />
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      accessibilityLabel={`Delete ${item.template.name}`}
-                      onPress={() =>
-                        confirmTemplateDelete(
-                          item.template.id,
-                          item.template.name
-                        )
-                      }
-                    >
-                      <Icon
-                        icon={Trash2Icon}
-                        size={18}
-                        className="text-danger"
-                      />
-                    </Button>
-                  </View>
-                </View>
-              </View>
+                item={item}
+                className={cn(index > 0 && 'mt-3')}
+                onPress={() => handleTemplatePress(item.template.id)}
+                onRename={() => openRenameDialog(item.template.id)}
+                onDelete={() =>
+                  confirmTemplateDelete(item.template.id, item.template.name)
+                }
+              />
             ))}
           </View>
         </View>
@@ -210,32 +148,17 @@ export default function WorkoutStartScreen() {
         {recentWorkouts.length > 0 ? (
           <View className="mt-3">
             {recentWorkouts.map((workout, index) => (
-              <Pressable
+              <RecentWorkoutCard
                 key={workout.id}
+                workout={workout}
+                className={cn(index > 0 && 'mt-3')}
                 onPress={() => {
                   router.push({
                     pathname: '/workouts/[id]',
                     params: { id: workout.id }
                   } as unknown as Href);
                 }}
-                className={cn(
-                  'border-border bg-card rounded-lg border p-4',
-                  index > 0 && 'mt-3'
-                )}
-              >
-                <Text variant="bodyMedium">{workout.name}</Text>
-                <View className="mt-2 flex-row items-center gap-3">
-                  <Text variant="caption" tone="muted">
-                    {formatWorkoutDate(workout.startedAt)}
-                  </Text>
-                  <Text variant="caption" tone="muted">
-                    {formatDuration({
-                      startedAt: workout.startedAt,
-                      completedAt: workout.completedAt
-                    })}
-                  </Text>
-                </View>
-              </Pressable>
+              />
             ))}
           </View>
         ) : (
