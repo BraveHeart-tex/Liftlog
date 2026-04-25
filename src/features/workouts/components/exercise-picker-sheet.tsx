@@ -36,16 +36,17 @@ export function ExercisePickerSheet({
 }: ExercisePickerSheetProps) {
   const [query, setQuery] = useState('');
   const [sourceFilter, setSourceFilter] = useState<ExerciseSourceFilter>('all');
-  const customExerciseCount = useMemo(
-    () => exercises.filter(exercise => exercise.isCustom === 1).length,
-    [exercises]
-  );
 
   useEffect(() => {
     if (!isOpen) {
       setQuery('');
     }
   }, [isOpen]);
+
+  const customExerciseCount = useMemo(
+    () => exercises.filter(exercise => exercise.isCustom === 1).length,
+    [exercises]
+  );
 
   const filteredExercises = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -66,6 +67,7 @@ export function ExercisePickerSheet({
         ? 'No custom exercises found'
         : 'No custom exercises yet'
       : 'No exercises found';
+
   const emptyDescription =
     sourceFilter === 'custom'
       ? query.trim().length > 0
