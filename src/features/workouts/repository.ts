@@ -8,8 +8,6 @@ import {
   type NewSet,
   type NewWorkout,
   type NewWorkoutExercise,
-  type NewWorkoutTemplate,
-  type NewWorkoutTemplateExercise,
   type Set,
   type Workout,
   type WorkoutExercise,
@@ -144,21 +142,7 @@ export function getWorkoutTemplates(db: DrizzleDb): WorkoutTemplate[] {
   return getWorkoutTemplatesQuery(db).all();
 }
 
-export function getWorkoutTemplateByIdQuery(
-  db: DrizzleDb,
-  id: WorkoutTemplate['id']
-) {
-  return db.select().from(workoutTemplates).where(eq(workoutTemplates.id, id));
-}
-
-export function getWorkoutTemplateById(
-  db: DrizzleDb,
-  id: WorkoutTemplate['id']
-): WorkoutTemplate | undefined {
-  return getWorkoutTemplateRecordById(db, id);
-}
-
-export function getWorkoutTemplateExercisesQuery(
+function getWorkoutTemplateExercisesQuery(
   db: DrizzleDb,
   templateId: WorkoutTemplate['id']
 ) {
@@ -167,13 +151,6 @@ export function getWorkoutTemplateExercisesQuery(
     .from(workoutTemplateExercises)
     .where(eq(workoutTemplateExercises.templateId, templateId))
     .orderBy(asc(workoutTemplateExercises.order));
-}
-
-export function getWorkoutTemplateExercises(
-  db: DrizzleDb,
-  templateId: WorkoutTemplate['id']
-): WorkoutTemplateExercise[] {
-  return getWorkoutTemplateExercisesQuery(db, templateId).all();
 }
 
 export function getWorkoutTemplateExercisesForTemplatesQuery(
@@ -246,13 +223,6 @@ export function createWorkout(db: DrizzleDb, data: NewWorkout): Workout {
   return db.insert(workouts).values(data).returning().get();
 }
 
-export function createWorkoutTemplate(
-  db: DrizzleDb,
-  data: NewWorkoutTemplate
-): WorkoutTemplate {
-  return db.insert(workoutTemplates).values(data).returning().get();
-}
-
 export function updateWorkoutName(
   db: DrizzleDb,
   id: Workout['id'],
@@ -298,22 +268,11 @@ export function completeWorkout(db: DrizzleDb, id: Workout['id']): void {
     .run();
 }
 
-export function discardWorkout(db: DrizzleDb, id: Workout['id']): void {
-  db.delete(workouts).where(eq(workouts.id, id)).run();
-}
-
 export function createWorkoutExercise(
   db: DrizzleDb,
   data: NewWorkoutExercise
 ): WorkoutExercise {
   return db.insert(workoutExercises).values(data).returning().get();
-}
-
-export function createWorkoutTemplateExercise(
-  db: DrizzleDb,
-  data: NewWorkoutTemplateExercise
-): WorkoutTemplateExercise {
-  return db.insert(workoutTemplateExercises).values(data).returning().get();
 }
 
 export function deleteWorkoutExercise(
