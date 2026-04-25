@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 interface DiscardWorkoutSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  activeWorkoutName?: string;
+  activeWorkoutName: string;
   templateName?: string;
   onResume: () => void;
   onDiscardAndStart: () => void;
@@ -35,9 +35,7 @@ export const DiscardWorkoutSheet = ({
         <View className="flex-1 pr-4">
           <BottomSheetTitle>Replace active workout?</BottomSheetTitle>
           <BottomSheetDescription>
-            {activeWorkoutName
-              ? `Starting ${templateName ?? 'this template'} will discard ${activeWorkoutName}.`
-              : 'Start this template workout.'}
+            {`Starting ${templateName ?? 'this template'} will discard ${activeWorkoutName}.`}
           </BottomSheetDescription>
         </View>
         <Button variant="ghost" size="icon" onPress={onClose}>
