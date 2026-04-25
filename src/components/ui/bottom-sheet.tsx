@@ -8,7 +8,15 @@ import GorhomBottomSheet, {
   type BottomSheetBackdropProps,
   type BottomSheetBackgroundProps
 } from '@gorhom/bottom-sheet';
-import { memo, useCallback, useMemo, type ReactNode } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  type ComponentRef,
+  type ReactNode
+} from 'react';
 import { Keyboard, Text, View } from 'react-native';
 
 interface BottomSheetComponentProps {
@@ -60,6 +68,7 @@ export function BottomSheet({
   children,
   className
 }: BottomSheetComponentProps) {
+  const sheetRef = useRef<ComponentRef<typeof GorhomBottomSheet>>(null);
   const resolvedSnapPoints = useMemo(() => {
     if (enableDynamicSizing) {
       return snapPoints;
@@ -87,8 +96,19 @@ export function BottomSheet({
     []
   );
 
+  useEffect(() => {
+    if (isOpen) {
+      sheetRef.current?.snapToIndex(0);
+
+      return;
+    }
+
+    sheetRef.current?.close();
+  }, [isOpen]);
+
   return (
     <GorhomBottomSheet
+      ref={sheetRef}
       android_keyboardInputMode="adjustResize"
       backdropComponent={renderBackdrop}
       backgroundComponent={SheetBackground}
@@ -96,7 +116,7 @@ export function BottomSheet({
       enableBlurKeyboardOnGesture
       enablePanDownToClose={enablePanDownToClose}
       handleComponent={SheetHandle}
-      index={isOpen ? 0 : -1}
+      index={-1}
       keyboardBehavior={keyboardBehavior}
       keyboardBlurBehavior={enableDynamicSizing ? 'restore' : 'restore'} // always restore
       onClose={handleClose}
