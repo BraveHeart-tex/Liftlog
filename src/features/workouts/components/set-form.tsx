@@ -4,10 +4,11 @@ import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
 import type { Set } from '@/src/db/schema';
 import { useSettings } from '@/src/features/settings/hooks';
+import { StepperButton } from '@/src/features/workouts/components/stepper-button';
 import { convertWeightToKg, formatWeightForUnit } from '@/src/lib/utils/weight';
 import { PlusIcon } from 'lucide-react-native';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { Alert, View } from 'react-native';
 import type { SetValues } from './types';
 import { formatInputNumber } from './utils';
 
@@ -15,9 +16,6 @@ const inputClassName = 'text-body-medium text-foreground flex-1 px-3 py-3';
 
 const inputContainerClassName =
   'border-border min-h-14 flex-row items-center rounded-lg border';
-
-const stepperButtonClassName =
-  'bg-secondary border-border h-14 w-14 items-center justify-center rounded-lg border';
 
 const weightStepByUnit = {
   kg: 2.5,
@@ -286,33 +284,5 @@ export function SetForm({
         </View>
       </View>
     </View>
-  );
-}
-
-interface StepperButtonProps {
-  label: string;
-  accessibilityLabel: string;
-  onStep: () => void;
-  onStartRepeating: (onStep: () => void) => void;
-  onStopRepeating: () => void;
-}
-
-function StepperButton({
-  label,
-  accessibilityLabel,
-  onStep,
-  onStartRepeating,
-  onStopRepeating
-}: StepperButtonProps) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      onPressIn={() => onStartRepeating(onStep)}
-      onPressOut={onStopRepeating}
-      className={stepperButtonClassName}
-    >
-      <Text variant="h3">{label}</Text>
-    </Pressable>
   );
 }
