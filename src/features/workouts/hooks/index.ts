@@ -10,7 +10,6 @@ export { useHistoryList } from './use-history-list';
 export { useRemoveWorkoutExercise } from './use-remove-workout-exercise';
 export { useRepeatWorkout } from './use-repeat-workout';
 export { useSaveWorkoutTemplate } from './use-save-workout-template';
-export { useStartWorkout } from './use-start-workout';
 export { useWorkoutRename } from './use-workout-rename';
 export { useWorkoutHistoryDetail } from './use-workout-history-detail';
 export { useWorkoutStart } from './use-workout-start';
