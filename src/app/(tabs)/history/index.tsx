@@ -2,16 +2,16 @@ import { StyledFlatList } from '@/src/components/styled/flat-list';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 import { Text } from '@/src/components/ui/text';
+import { HistoryWorkoutRow } from '@/src/features/workouts/components/history-workout-row';
 import {
   getWorkoutCountByDateKey,
   toLocalDateKey,
   WorkoutHistoryCalendar
 } from '@/src/features/workouts/components/workout-history-calendar';
 import { useHistoryList } from '@/src/features/workouts/hooks';
-import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date';
 import { router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 function formatSelectedDate(dateKey: string): string {
   const [year, month, day] = dateKey.split('-').map(Number);
@@ -108,36 +108,16 @@ export default function HistoryScreen() {
           const setCount = setCountByWorkoutId.get(item.id) ?? 0;
 
           return (
-            <Pressable
-              onPress={() =>
+            <HistoryWorkoutRow
+              workout={item}
+              setCount={setCount}
+              onPress={workout =>
                 router.push({
                   pathname: '/workouts/[id]',
-                  params: { id: item.id }
+                  params: { id: workout.id }
                 } as unknown as Href)
               }
-              className="border-border bg-card mt-3 rounded-lg border p-4"
-            >
-              <View className="flex-row items-start justify-between gap-4">
-                <Text variant="bodyMedium" className="flex-1">
-                  {item.name}
-                </Text>
-                <Text variant="caption" tone="muted">
-                  {formatDuration({
-                    startedAt: item.startedAt,
-                    completedAt: item.completedAt
-                  })}
-                </Text>
-              </View>
-
-              <View className="mt-2 flex-row items-center justify-between gap-4">
-                <Text variant="caption" tone="muted" className="flex-1">
-                  {formatWorkoutDate(item.startedAt)}
-                </Text>
-                <Text variant="caption" tone="muted">
-                  {setCount} {setCount === 1 ? 'set' : 'sets'}
-                </Text>
-              </View>
-            </Pressable>
+            />
           );
         }}
       />
