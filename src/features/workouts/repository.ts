@@ -1,16 +1,23 @@
 import type { DrizzleDb } from '@/src/db/client';
 import {
   sets,
+  workoutTemplateExercises,
+  workoutTemplates,
   workoutExercises,
   workouts,
   type NewSet,
+  type NewWorkoutTemplate,
+  type NewWorkoutTemplateExercise,
   type NewWorkout,
   type NewWorkoutExercise,
   type Set,
+  type WorkoutTemplate,
+  type WorkoutTemplateExercise,
   type Workout,
   type WorkoutExercise
 } from '@/src/db/schema';
 import { asc, desc, eq, inArray } from 'drizzle-orm';
+import { resolveTemplateName } from '@/src/lib/utils/workout';
 
 function getWorkoutRecordById(
   db: DrizzleDb,
@@ -21,6 +28,17 @@ function getWorkoutRecordById(
 
 function getSetRecordById(db: DrizzleDb, id: Set['id']): Set | undefined {
   return db.select().from(sets).where(eq(sets.id, id)).get();
+}
+
+function getWorkoutTemplateRecordById(
+  db: DrizzleDb,
+  id: WorkoutTemplate['id']
+): WorkoutTemplate | undefined {
+  return db
+    .select()
+    .from(workoutTemplates)
+    .where(eq(workoutTemplates.id, id))
+    .get();
 }
 
 export function getWorkoutsQuery(db: DrizzleDb) {
@@ -112,6 +130,74 @@ export function getWorkoutExerciseById(
   return getWorkoutExerciseByIdQuery(db, id).get();
 }
 
+export function getWorkoutTemplatesQuery(db: DrizzleDb) {
+  return db
+    .select()
+    .from(workoutTemplates)
+    .orderBy(
+      desc(workoutTemplates.updatedAt),
+      desc(workoutTemplates.createdAt)
+    );
+}
+
+export function getWorkoutTemplates(db: DrizzleDb): WorkoutTemplate[] {
+  return getWorkoutTemplatesQuery(db).all();
+}
+
+export function getWorkoutTemplateByIdQuery(
+  db: DrizzleDb,
+  id: WorkoutTemplate['id']
+) {
+  return db.select().from(workoutTemplates).where(eq(workoutTemplates.id, id));
+}
+
+export function getWorkoutTemplateById(
+  db: DrizzleDb,
+  id: WorkoutTemplate['id']
+): WorkoutTemplate | undefined {
+  return getWorkoutTemplateRecordById(db, id);
+}
+
+export function getWorkoutTemplateExercisesQuery(
+  db: DrizzleDb,
+  templateId: WorkoutTemplate['id']
+) {
+  return db
+    .select()
+    .from(workoutTemplateExercises)
+    .where(eq(workoutTemplateExercises.templateId, templateId))
+    .orderBy(asc(workoutTemplateExercises.order));
+}
+
+export function getWorkoutTemplateExercises(
+  db: DrizzleDb,
+  templateId: WorkoutTemplate['id']
+): WorkoutTemplateExercise[] {
+  return getWorkoutTemplateExercisesQuery(db, templateId).all();
+}
+
+export function getWorkoutTemplateExercisesForTemplatesQuery(
+  db: DrizzleDb,
+  templateIds: WorkoutTemplate['id'][]
+) {
+  if (templateIds.length === 0) {
+    return getWorkoutTemplateExercisesQuery(db, '');
+  }
+
+  return db
+    .select()
+    .from(workoutTemplateExercises)
+    .where(inArray(workoutTemplateExercises.templateId, templateIds))
+    .orderBy(asc(workoutTemplateExercises.order));
+}
+
+export function getWorkoutTemplateExercisesForTemplates(
+  db: DrizzleDb,
+  templateIds: WorkoutTemplate['id'][]
+): WorkoutTemplateExercise[] {
+  return getWorkoutTemplateExercisesForTemplatesQuery(db, templateIds).all();
+}
+
 export function getSetsByWorkoutExerciseIdQuery(
   db: DrizzleDb,
   workoutExerciseId: WorkoutExercise['id']
@@ -160,6 +246,13 @@ export function createWorkout(db: DrizzleDb, data: NewWorkout): Workout {
   return db.insert(workouts).values(data).returning().get();
 }
 
+export function createWorkoutTemplate(
+  db: DrizzleDb,
+  data: NewWorkoutTemplate
+): WorkoutTemplate {
+  return db.insert(workoutTemplates).values(data).returning().get();
+}
+
 export function updateWorkoutName(
   db: DrizzleDb,
   id: Workout['id'],
@@ -169,6 +262,28 @@ export function updateWorkoutName(
     .update(workouts)
     .set({ name })
     .where(eq(workouts.id, id))
+    .returning()
+    .get();
+}
+
+export function updateWorkoutTemplateName(
+  db: DrizzleDb,
+  id: WorkoutTemplate['id'],
+  name: WorkoutTemplate['name']
+): WorkoutTemplate | undefined {
+  const existingTemplate = getWorkoutTemplateRecordById(db, id);
+
+  if (!existingTemplate) {
+    return undefined;
+  }
+
+  return db
+    .update(workoutTemplates)
+    .set({
+      name: resolveTemplateName(name),
+      updatedAt: Date.now()
+    })
+    .where(eq(workoutTemplates.id, id))
     .returning()
     .get();
 }
@@ -183,6 +298,10 @@ export function completeWorkout(db: DrizzleDb, id: Workout['id']): void {
     .run();
 }
 
+export function discardWorkout(db: DrizzleDb, id: Workout['id']): void {
+  db.delete(workouts).where(eq(workouts.id, id)).run();
+}
+
 export function createWorkoutExercise(
   db: DrizzleDb,
   data: NewWorkoutExercise
@@ -190,11 +309,25 @@ export function createWorkoutExercise(
   return db.insert(workoutExercises).values(data).returning().get();
 }
 
+export function createWorkoutTemplateExercise(
+  db: DrizzleDb,
+  data: NewWorkoutTemplateExercise
+): WorkoutTemplateExercise {
+  return db.insert(workoutTemplateExercises).values(data).returning().get();
+}
+
 export function deleteWorkoutExercise(
   db: DrizzleDb,
   id: WorkoutExercise['id']
 ): void {
   db.delete(workoutExercises).where(eq(workoutExercises.id, id)).run();
+}
+
+export function deleteWorkoutTemplate(
+  db: DrizzleDb,
+  id: WorkoutTemplate['id']
+): void {
+  db.delete(workoutTemplates).where(eq(workoutTemplates.id, id)).run();
 }
 
 export function createSet(db: DrizzleDb, data: NewSet): Set {
@@ -215,4 +348,107 @@ export function updateSet(
 
 export function deleteSet(db: DrizzleDb, id: Set['id']): void {
   db.delete(sets).where(eq(sets.id, id)).run();
+}
+
+export function createWorkoutTemplateFromWorkout(
+  db: DrizzleDb,
+  {
+    name,
+    workoutExerciseRows
+  }: {
+    name: string;
+    workoutExerciseRows: Pick<WorkoutExercise, 'exerciseId' | 'order'>[];
+  }
+): WorkoutTemplate {
+  const now = Date.now();
+  let createdTemplate: WorkoutTemplate | undefined;
+
+  // Approach: create the template record first, then copy the ordered
+  // exercise rows in the same transaction so the saved preset stays consistent.
+  db.transaction(tx => {
+    createdTemplate = tx
+      .insert(workoutTemplates)
+      .values({
+        name: resolveTemplateName(name),
+        createdAt: now,
+        updatedAt: now
+      })
+      .returning()
+      .get();
+
+    const createdTemplateRow = createdTemplate;
+
+    if (!createdTemplateRow || workoutExerciseRows.length === 0) {
+      return;
+    }
+
+    tx.insert(workoutTemplateExercises)
+      .values(
+        workoutExerciseRows.map(workoutExercise => ({
+          templateId: createdTemplateRow.id,
+          exerciseId: workoutExercise.exerciseId,
+          order: workoutExercise.order
+        }))
+      )
+      .run();
+  });
+
+  if (!createdTemplate) {
+    throw new Error('Failed to create workout template.');
+  }
+
+  return createdTemplate;
+}
+
+export function createWorkoutFromTemplate(
+  db: DrizzleDb,
+  {
+    template,
+    templateExerciseRows
+  }: {
+    template: Pick<WorkoutTemplate, 'name'>;
+    templateExerciseRows: Pick<
+      WorkoutTemplateExercise,
+      'exerciseId' | 'order'
+    >[];
+  }
+): Workout {
+  let createdWorkout: Workout | undefined;
+
+  // Approach: create the workout shell and clone the template's ordered
+  // exercises together so starting from a template is all-or-nothing.
+  db.transaction(tx => {
+    createdWorkout = tx
+      .insert(workouts)
+      .values({
+        name: template.name,
+        status: 'in_progress',
+        startedAt: Date.now()
+      })
+      .returning()
+      .get();
+
+    const createdWorkoutRow = createdWorkout;
+
+    if (!createdWorkoutRow || templateExerciseRows.length === 0) {
+      return;
+    }
+
+    tx.insert(workoutExercises)
+      .values(
+        templateExerciseRows.map(templateExercise => ({
+          workoutId: createdWorkoutRow.id,
+          exerciseId: templateExercise.exerciseId,
+          order: templateExercise.order,
+          notes: null
+        }))
+      )
+      .run();
+  });
+
+  if (!createdWorkout) {
+    throw new Error('Failed to create workout from template.');
+  }
+
+  return createdWorkout;
 }

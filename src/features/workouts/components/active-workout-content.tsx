@@ -17,6 +17,7 @@ import { ActiveWorkoutExerciseList } from '@/src/features/workouts/components/ac
 import { EmptyExerciseState } from '@/src/features/workouts/components/empty-exercise-state';
 import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise-picker-sheet';
 import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sheet';
+import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
 import { formatDuration } from '@/src/lib/utils/date';
 import { PlusIcon, TimerIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
@@ -37,6 +38,7 @@ export function ActiveWorkoutContent({
   const [draftName, setDraftName] = useState('');
   const [renameError, setRenameError] = useState<string | undefined>();
   const [isSavingRename, setIsSavingRename] = useState(false);
+  const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
   const {
     now,
     isExercisePickerOpen,
@@ -124,6 +126,14 @@ export function ActiveWorkoutContent({
     setIsRenaming(false);
   };
 
+  const openTemplateDialog = () => {
+    if (workoutExerciseRows.length === 0 || isTemplateSheetOpen) {
+      return;
+    }
+
+    setIsTemplateSheetOpen(true);
+  };
+
   return (
     <Screen withPadding={false}>
       <View className="flex-row items-center justify-between gap-4 px-4 pt-4 pb-2">
@@ -205,6 +215,22 @@ export function ActiveWorkoutContent({
         </Text>
       </View>
 
+      <View className="px-4 pb-4">
+        <Button
+          variant="secondary"
+          className="w-full"
+          disabled={
+            isRenaming ||
+            isSavingRename ||
+            isLoadingWorkoutExercises ||
+            workoutExerciseRows.length === 0
+          }
+          onPress={openTemplateDialog}
+        >
+          Save as template
+        </Button>
+      </View>
+
       <StyledScrollView
         className="flex-1"
         contentContainerClassName="flex-grow px-4 pb-6"
@@ -249,6 +275,16 @@ export function ActiveWorkoutContent({
       <RestTimerSheet
         isOpen={isRestTimerOpen}
         onClose={() => setIsRestTimerOpen(false)}
+      />
+
+      <SaveWorkoutTemplateSheet
+        isOpen={isTemplateSheetOpen}
+        initialName={activeWorkout.name}
+        workoutExerciseRows={workoutExerciseRows.map(workoutExercise => ({
+          exerciseId: workoutExercise.exerciseId,
+          order: workoutExercise.order
+        }))}
+        onClose={() => setIsTemplateSheetOpen(false)}
       />
     </Screen>
   );
