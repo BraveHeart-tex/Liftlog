@@ -102,12 +102,13 @@ export function BottomSheet({
       onClose={handleClose}
       snapPoints={resolvedSnapPoints}
     >
-      <BottomSheetView
-        style={enableDynamicSizing ? undefined : { flex: 1 }}
-        className={className}
-      >
-        {children}
-      </BottomSheetView>
+      {enableDynamicSizing ? (
+        <BottomSheetView style={undefined} className={className}>
+          {children}
+        </BottomSheetView>
+      ) : (
+        children
+      )}
     </GorhomBottomSheet>
   );
 }
