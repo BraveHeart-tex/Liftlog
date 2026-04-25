@@ -2,6 +2,7 @@ import type { DrizzleDb } from '@/src/db/client';
 import {
   exercises,
   workoutExercises,
+  workoutTemplateExercises,
   type Exercise,
   type NewExercise
 } from '@/src/db/schema';
@@ -158,11 +159,24 @@ export function getExerciseUsageRowsQuery(
     .where(eq(workoutExercises.exerciseId, exerciseId));
 }
 
+export function getExerciseTemplateUsageRowsQuery(
+  db: DrizzleDb,
+  exerciseId: Exercise['id']
+) {
+  return db
+    .select({ id: workoutTemplateExercises.id })
+    .from(workoutTemplateExercises)
+    .where(eq(workoutTemplateExercises.exerciseId, exerciseId));
+}
+
 function getExerciseUsageCount(
   db: DrizzleDb,
   exerciseId: Exercise['id']
 ): number {
-  return getExerciseUsageRowsQuery(db, exerciseId).all().length;
+  return (
+    getExerciseUsageRowsQuery(db, exerciseId).all().length +
+    getExerciseTemplateUsageRowsQuery(db, exerciseId).all().length
+  );
 }
 
 export function removeCustomExercise(

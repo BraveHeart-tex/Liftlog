@@ -403,21 +403,33 @@ export function createWorkoutTemplateFromWorkout(
 export function createWorkoutFromTemplate(
   db: DrizzleDb,
   {
-    template,
-    templateExerciseRows
+    templateId,
+    discardWorkoutId
   }: {
-    template: Pick<WorkoutTemplate, 'name'>;
-    templateExerciseRows: Pick<
-      WorkoutTemplateExercise,
-      'exerciseId' | 'order'
-    >[];
+    templateId: WorkoutTemplate['id'];
+    discardWorkoutId?: Workout['id'];
   }
-): Workout {
+): Workout | undefined {
   let createdWorkout: Workout | undefined;
 
-  // create the workout shell and clone the template's ordered
-  // exercises together so starting from a template is all-or-nothing.
   db.transaction(tx => {
+    const template = tx
+      .select()
+      .from(workoutTemplates)
+      .where(eq(workoutTemplates.id, templateId))
+      .get();
+
+    if (!template) {
+      return;
+    }
+
+    const templateExerciseRows = tx
+      .select()
+      .from(workoutTemplateExercises)
+      .where(eq(workoutTemplateExercises.templateId, templateId))
+      .orderBy(asc(workoutTemplateExercises.order))
+      .all();
+
     createdWorkout = tx
       .insert(workouts)
       .values({
@@ -430,25 +442,27 @@ export function createWorkoutFromTemplate(
 
     const createdWorkoutRow = createdWorkout;
 
-    if (!createdWorkoutRow || templateExerciseRows.length === 0) {
+    if (!createdWorkoutRow) {
       return;
     }
 
-    tx.insert(workoutExercises)
-      .values(
-        templateExerciseRows.map(templateExercise => ({
-          workoutId: createdWorkoutRow.id,
-          exerciseId: templateExercise.exerciseId,
-          order: templateExercise.order,
-          notes: null
-        }))
-      )
-      .run();
-  });
+    if (templateExerciseRows.length > 0) {
+      tx.insert(workoutExercises)
+        .values(
+          templateExerciseRows.map(templateExercise => ({
+            workoutId: createdWorkoutRow.id,
+            exerciseId: templateExercise.exerciseId,
+            order: templateExercise.order,
+            notes: null
+          }))
+        )
+        .run();
+    }
 
-  if (!createdWorkout) {
-    throw new Error('Failed to create workout from template.');
-  }
+    if (discardWorkoutId) {
+      tx.delete(workouts).where(eq(workouts.id, discardWorkoutId)).run();
+    }
+  });
 
   return createdWorkout;
 }

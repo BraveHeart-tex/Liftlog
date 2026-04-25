@@ -9,7 +9,6 @@ import {
   createWorkout,
   createWorkoutFromTemplate,
   deleteWorkoutTemplate,
-  discardWorkout,
   getActiveWorkout,
   getActiveWorkoutQuery,
   getWorkouts,
@@ -167,34 +166,29 @@ export function useWorkoutStart() {
 
   const startWorkoutFromTemplate = useCallback(
     (templateId: WorkoutTemplate['id']) => {
-      const template = templateResult.data.find(
-        templateItem => templateItem.id === templateId
-      );
-
-      if (!template) {
-        return;
-      }
-
-      createWorkoutFromTemplate(db, {
-        template,
-        templateExerciseRows:
-          templateExercisesByTemplateId.get(templateId) ?? []
+      const createdWorkout = createWorkoutFromTemplate(db, {
+        templateId
       });
 
-      router.push(activeWorkoutRoute);
+      if (createdWorkout) {
+        router.push(activeWorkoutRoute);
+      }
     },
-    [db, templateExercisesByTemplateId, templateResult.data]
+    [db]
   );
 
   const discardActiveWorkoutAndStartTemplate = useCallback(
     (templateId: WorkoutTemplate['id']) => {
-      if (activeWorkout) {
-        discardWorkout(db, activeWorkout.id);
-      }
+      const createdWorkout = createWorkoutFromTemplate(db, {
+        templateId,
+        discardWorkoutId: activeWorkout?.id
+      });
 
-      startWorkoutFromTemplate(templateId);
+      if (createdWorkout) {
+        router.push(activeWorkoutRoute);
+      }
     },
-    [activeWorkout, db, startWorkoutFromTemplate]
+    [activeWorkout?.id, db]
   );
 
   const renameTemplate = useCallback(
