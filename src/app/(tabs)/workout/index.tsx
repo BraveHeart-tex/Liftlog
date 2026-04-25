@@ -2,27 +2,25 @@ import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle
 } from '@/src/components/ui/dialog';
 import { Icon } from '@/src/components/ui/icon';
-import { Input } from '@/src/components/ui/input';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
+import { RenameTemplateSheet } from '@/src/features/workouts/components/rename-template-sheet';
 import { useWorkoutStart } from '@/src/features/workouts/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date';
 import { router, type Href } from 'expo-router';
 import { PencilIcon, Trash2Icon } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard, Pressable, View, type TextInput } from 'react-native';
+import { Alert, Keyboard, Pressable, View } from 'react-native';
 
 export default function WorkoutStartScreen() {
   const [now, setNow] = useState(() => Date.now());
-  const renameInputRef = useRef<TextInput>(null);
   const isSavingRenameRef = useRef(false);
   const [renameTemplateId, setRenameTemplateId] = useState<
     string | undefined
@@ -77,15 +75,6 @@ export default function WorkoutStartScreen() {
 
     setDraftTemplateName(renameTarget.template.name);
     setRenameError(undefined);
-    const focusTimer = setTimeout(() => {
-      renameInputRef.current?.focus();
-      renameInputRef.current?.setSelection(
-        0,
-        renameTarget.template.name.length
-      );
-    }, 50);
-
-    return () => clearTimeout(focusTimer);
   }, [renameTarget]);
 
   const openRenameDialog = (templateId: string) => {
@@ -315,41 +304,18 @@ export default function WorkoutStartScreen() {
         )}
       </View>
 
-      <Dialog isOpen={Boolean(renameTarget)} onClose={closeRenameDialog}>
-        <DialogHeader>
-          <DialogTitle>Rename template</DialogTitle>
-          <DialogDescription>
-            Update the name shown on your workout start screen.
-          </DialogDescription>
-        </DialogHeader>
-
-        <DialogContent>
-          <Input
-            ref={renameInputRef}
-            label="Template name"
-            value={draftTemplateName}
-            onChangeText={nextName => {
-              setDraftTemplateName(nextName);
-              setRenameError(undefined);
-            }}
-            autoCapitalize="words"
-            autoCorrect={false}
-            returnKeyType="done"
-            maxLength={80}
-            error={renameError}
-            onSubmitEditing={submitRename}
-          />
-        </DialogContent>
-
-        <DialogFooter>
-          <Button variant="ghost" onPress={closeRenameDialog}>
-            Cancel
-          </Button>
-          <Button loading={isSavingRename} onPress={submitRename}>
-            Save
-          </Button>
-        </DialogFooter>
-      </Dialog>
+      <RenameTemplateSheet
+        isOpen={Boolean(renameTarget)}
+        templateName={draftTemplateName}
+        error={renameError}
+        isSaving={isSavingRename}
+        onChangeTemplateName={nextName => {
+          setDraftTemplateName(nextName);
+          setRenameError(undefined);
+        }}
+        onClose={closeRenameDialog}
+        onSubmit={submitRename}
+      />
 
       <Dialog
         isOpen={Boolean(pendingTemplate && activeWorkout)}
