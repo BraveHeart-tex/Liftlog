@@ -3,12 +3,10 @@ import { LoadingState } from '@/src/components/ui/loading-state';
 import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 import { Text } from '@/src/components/ui/text';
 import { HistoryWorkoutRow } from '@/src/features/workouts/components/history-workout-row';
-import {
-  getWorkoutCountByDateKey,
-  toLocalDateKey,
-  WorkoutHistoryCalendar
-} from '@/src/features/workouts/components/workout-history-calendar';
+import { WorkoutHistoryCalendar } from '@/src/features/workouts/components/workout-history-calendar';
 import { useHistoryList } from '@/src/features/workouts/hooks';
+import { toLocalDateKey } from '@/src/lib/utils/date';
+import { getWorkoutCountByDateKey } from '@/src/lib/utils/workout';
 import { router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
@@ -26,14 +24,17 @@ function formatSelectedDate(dateKey: string): string {
 
 export default function HistoryScreen() {
   const { workoutRows, setCountByWorkoutId, isLoading } = useHistoryList();
+
   const workoutCountByDateKey = useMemo(
     () => getWorkoutCountByDateKey(workoutRows),
     [workoutRows]
   );
+
   const initialDateKey = workoutRows[0]
     ? toLocalDateKey(workoutRows[0].startedAt)
     : toLocalDateKey(Date.now());
   const [selectedDateKey, setSelectedDateKey] = useState(initialDateKey);
+
   const selectedWorkouts = useMemo(
     () =>
       workoutRows.filter(

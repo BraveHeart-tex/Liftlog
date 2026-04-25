@@ -1,4 +1,3 @@
-import type { Workout } from '@/src/db/schema';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { useMemo } from 'react';
 import { Calendar, type DateData } from 'react-native-calendars';
@@ -19,32 +18,6 @@ type CalendarMarkedDates = Record<
     selectedTextColor?: string;
   }
 >;
-
-export function toLocalDateKey(timestamp: number): string {
-  const date = new Date(timestamp);
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, '0');
-  const day = `${date.getDate()}`.padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-}
-
-export function getWorkoutCountByDateKey(
-  workouts: Workout[]
-): Map<string, number> {
-  const workoutCountByDateKey = new Map<string, number>();
-
-  for (const workout of workouts) {
-    const dateKey = toLocalDateKey(workout.startedAt);
-
-    workoutCountByDateKey.set(
-      dateKey,
-      (workoutCountByDateKey.get(dateKey) ?? 0) + 1
-    );
-  }
-
-  return workoutCountByDateKey;
-}
 
 function getMarkedDates({
   selectedDateKey,
@@ -83,6 +56,7 @@ export function WorkoutHistoryCalendar({
   onSelectDate
 }: WorkoutHistoryCalendarProps) {
   const { colors, colorScheme } = useAppTheme();
+
   const markedDates = useMemo(
     () =>
       getMarkedDates({
@@ -92,6 +66,7 @@ export function WorkoutHistoryCalendar({
       }),
     [colors, selectedDateKey, workoutCountByDateKey]
   );
+
   const calendarTheme = useMemo(
     () =>
       ({
@@ -107,6 +82,9 @@ export function WorkoutHistoryCalendar({
         arrowColor: colors.foreground,
         dotColor: colors.primary,
         selectedDotColor: colors.primaryForeground,
+        textDayFontFamily: 'Inter_400Regular',
+        textMonthFontFamily: 'Inter_600SemiBold',
+        textDayHeaderFontFamily: 'Inter_500Medium',
         textDayFontSize: 14,
         textMonthFontSize: 18,
         textDayHeaderFontSize: 12,
