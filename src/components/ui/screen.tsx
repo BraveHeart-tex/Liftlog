@@ -7,7 +7,7 @@ import {
   type ScrollViewProps,
   View
 } from 'react-native';
-import type { Edge } from 'react-native-safe-area-context';
+import { type Edge, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SafeAreaView } from './safe-area-view';
 
 interface ScreenProps {
@@ -43,6 +43,7 @@ export function Screen({
   footer,
   keyboardShouldPersistTaps = 'handled'
 }: ScreenProps) {
+  const insets = useSafeAreaInsets();
   const sharedContentClassName = cn(
     !scroll && withPadding && 'px-4 py-6',
     contentClassName
@@ -50,7 +51,7 @@ export function Screen({
 
   const scrollContentClassName = cn(
     'flex-grow',
-    withPadding && (footer ? 'px-4 pt-6 pb-4' : 'px-4 py-6'),
+    withPadding && (footer ? 'px-4 pt-6 pb-6' : 'px-4 py-6'),
     sharedContentClassName
   );
 
@@ -86,7 +87,10 @@ export function Screen({
       >
         {content}
         {footer ? (
-          <View className="border-border bg-background border-t px-4 py-4">
+          <View
+            className="border-border bg-background border-t px-4 pt-4"
+            style={{ paddingBottom: insets.bottom + 12 }}
+          >
             {footer}
           </View>
         ) : null}
