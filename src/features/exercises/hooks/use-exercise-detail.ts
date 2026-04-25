@@ -5,6 +5,7 @@ import {
   getExerciseByIdQuery,
   getExercises,
   getExercisesQuery,
+  getExerciseTemplateUsageRowsQuery,
   getExerciseUsageRowsQuery
 } from '@/src/features/exercises/repository';
 import {
@@ -16,9 +17,9 @@ import {
   getPersonalRecordsByExerciseQuery
 } from '@/src/features/progress/repository';
 import { useSettings } from '@/src/features/settings/hooks';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { parseMuscleList } from '@/src/lib/utils/muscle';
 import { formatCompletedSets, getCompletedSets } from '@/src/lib/utils/set';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { useMemo } from 'react';
 
 function getBestSetId(sets: Set[]) {
@@ -48,14 +49,22 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     [db, resolvedExerciseId]
   );
   const exercise = exerciseResult.data[0];
+
   const exerciseListResult = useLiveWithFallback(
     () => getExercisesQuery(db),
     () => getExercises(db),
     [db]
   );
+
   const exerciseUsageResult = useLiveWithFallback(
     () => getExerciseUsageRowsQuery(db, resolvedExerciseId),
     () => getExerciseUsageRowsQuery(db, resolvedExerciseId).all(),
+    [db, resolvedExerciseId]
+  );
+
+  const templateUsageResult = useLiveWithFallback(
+    () => getExerciseTemplateUsageRowsQuery(db, resolvedExerciseId),
+    () => getExerciseTemplateUsageRowsQuery(db, resolvedExerciseId).all(),
     [db, resolvedExerciseId]
   );
 
@@ -64,18 +73,22 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     () => getExerciseHistoryWorkoutsQuery(db, resolvedExerciseId).all(),
     [db, resolvedExerciseId]
   );
+
   const workoutRows = workoutResult.data;
   const workoutIds = useMemo(
     () =>
       Array.from(new Set(workoutRows.map(row => row.workout.id))).slice(0, 20),
     [workoutRows]
   );
+
   const workoutIdKey = useMemo(() => workoutIds.join(','), [workoutIds]);
+
   const setResult = useLiveWithFallback(
     () => getExerciseHistorySetsQuery(db, resolvedExerciseId, workoutIds),
     () => getExerciseHistorySetsQuery(db, resolvedExerciseId, workoutIds).all(),
     [db, resolvedExerciseId, workoutIdKey]
   );
+
   const prResult = useLiveWithFallback(
     () => getPersonalRecordsByExerciseQuery(db, resolvedExerciseId),
     () => getPersonalRecordsByExercise(db, resolvedExerciseId),
@@ -105,11 +118,14 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     () => parseMuscleList(exercise?.primaryMuscles ?? '[]'),
     [exercise?.primaryMuscles]
   );
+
   const secondaryMuscles = useMemo(
     () => parseMuscleList(exercise?.secondaryMuscles ?? '[]'),
     [exercise?.secondaryMuscles]
   );
+
   const instructions = exercise?.instructions?.trim();
+
   const mostRecentHistory = useMemo(
     () =>
       buildExerciseHistory(workoutRows, setResult.data).find(
@@ -117,15 +133,20 @@ export function useExerciseDetail(exerciseId: string | undefined) {
       ),
     [setResult.data, workoutRows]
   );
+
   const completedSets = mostRecentHistory
     ? getCompletedSets(mostRecentHistory.sets)
     : [];
+
   const completedSetSummary = formatCompletedSets(completedSets, weightUnit);
 
   return {
     exercise,
     exercises: exerciseListResult.data,
-    exerciseUsageCount: exerciseUsageResult.data.length,
+    exerciseUsageCount:
+      exerciseUsageResult.data.length + templateUsageResult.data.length,
+    workoutUsageCount: exerciseUsageResult.data.length,
+    templateUsageCount: templateUsageResult.data.length,
     history,
     prRows: prResult.data,
     primaryMuscles,

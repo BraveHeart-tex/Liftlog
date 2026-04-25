@@ -44,12 +44,6 @@ export function SaveWorkoutTemplateSheet({
 
     setTemplateName(initialName);
     setTemplateError(undefined);
-    const t = setTimeout(() => {
-      templateInputRef.current?.focus();
-      templateInputRef.current?.setSelection(0, initialName.length);
-    }, 150);
-
-    return () => clearTimeout(t);
   }, [initialName, isOpen]);
 
   const handleClose = () => {
