@@ -117,7 +117,7 @@ export function ExercisePickerSheet({
                 }}
                 className={cn(
                   'border-border min-h-11 flex-1 items-center justify-center rounded-lg border px-4 py-3',
-                  isSelected ? 'bg-primary' : 'bg-card'
+                  isSelected ? 'bg-primary border-primary' : 'bg-card'
                 )}
               >
                 <Text
