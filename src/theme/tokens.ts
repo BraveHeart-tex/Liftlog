@@ -2,13 +2,13 @@ export type AppColorScheme = 'light' | 'dark';
 
 const colorSchemes = {
   light: {
-    background: '#F2F2F7',
-    foreground: '#0A0A0A',
+    background: '#F5F0EB',
+    foreground: '#1A1208',
     card: '#FFFFFF',
     primary: '#FF4D00',
     primaryForeground: '#FFFFFF',
-    border: '#C7C7CC',
-    mutedForeground: '#6C6C72'
+    border: '#E8DDD3',
+    mutedForeground: '#6B5B4E'
   },
   dark: {
     background: '#1C1C1E',
