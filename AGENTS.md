@@ -404,6 +404,95 @@ Do not keep generic utility functions inside component files. If a helper is reu
 
 ---
 
+## Gorhom Bottom Sheet
+
+### Sheet types and when to use each
+
+Use `enableDynamicSizing` for sheets whose content height varies or is unknown
+(menus, pickers, confirmation dialogs). Use `snapPoints` for sheets with a
+fixed, predictable layout (search + list, full-screen pickers).
+
+### Keyboard behavior
+
+The correct configuration depends on the sheet type:
+
+**Dynamic sizing sheets (forms, dialogs):**
+
+```tsx
+<BottomSheet
+  enableDynamicSizing
+  keyboardBehavior="interactive"
+  keyboardBlurBehavior="restore"
+>
+```
+
+- `interactive` — sheet follows the keyboard up and down as it appears/dismisses
+- `restore` — sheet shrinks back to content height when keyboard closes
+- Do NOT pass `snapPoints` alongside `enableDynamicSizing` — they conflict
+- Do NOT use `animateOnMount={false}` — dynamic sizing measures layout during
+  mount animation; disabling it breaks the initial height calculation
+- Do NOT auto-focus inputs on sheet open — focusing triggers the keyboard before
+  dynamic sizing has measured the content, causing a blown-out layout. Let the
+  user tap the input instead
+
+**Snap point sheets (search + list, tall pickers):**
+
+```tsx
+<BottomSheet
+  snapPoints={['70%', '90%']}
+  keyboardBehavior="extend"
+  keyboardBlurBehavior="restore"
+>
+```
+
+- `extend` — sheet expands to fill remaining space above the keyboard
+- `restore` — sheet snaps back to the active snap point when keyboard closes
+- `interactive` with `snapPoints` adds keyboard height ON TOP of the snap point,
+  making the sheet grow unexpectedly large when the keyboard opens
+
+### Scrollable content inside sheets
+
+`BottomSheetFlatList` must be a direct child of the sheet, not nested inside
+`BottomSheetView`. Wrapping it in `BottomSheetView` breaks scrolling because
+gorhom's internal scroll container expects the list to sit directly inside it.
+
+```tsx
+// ✅ correct — FlatList as direct sheet child
+<GorhomBottomSheet snapPoints={['70%', '90%']}>
+  <View>{/* header and filters */}</View>
+  <StyledBottomSheetFlatList data={items} ... />
+</GorhomBottomSheet>
+
+// ❌ wrong — FlatList inside BottomSheetView
+<GorhomBottomSheet snapPoints={['70%', '90%']}>
+  <BottomSheetView style={{ flex: 1 }}>
+    <StyledBottomSheetFlatList data={items} ... />
+  </BottomSheetView>
+</GorhomBottomSheet>
+```
+
+The base `BottomSheet` component handles this automatically — it only wraps
+children in `BottomSheetView` when `enableDynamicSizing` is true. When using
+`snapPoints`, children render directly inside the sheet so `BottomSheetFlatList`
+works correctly.
+
+### Safe area padding
+
+For sheets with content at the bottom edge (buttons, footers), add bottom safe
+area padding manually. `BottomSheetView` does not apply it automatically:
+
+```tsx
+const insets = useSafeAreaInsets();
+
+<View style={{ paddingBottom: insets.bottom + 16 }}>
+  {/* buttons or footer content */}
+</View>;
+```
+
+`insets.bottom` is the device home indicator height (34px on modern iPhones, 0
+on devices with a home button). The additional value is visual breathing room —
+adjust to taste.
+
 ## Data Display Rules
 
 For workout, progress, and exercise-summary surfaces:
