@@ -68,7 +68,12 @@ export function CreateCustomExerciseSheet({
   };
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={handleClose} snapPoints={SNAP_POINTS}>
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={handleClose}
+      snapPoints={SNAP_POINTS}
+      androidKeyboardInputMode="adjustPan"
+    >
       <BottomSheetHeader>
         <BottomSheetTitle>Create custom exercise</BottomSheetTitle>
         <BottomSheetDescription>
