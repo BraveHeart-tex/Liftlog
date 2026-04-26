@@ -14,6 +14,7 @@ import {
   useWorkoutRename
 } from '@/src/features/workouts/hooks';
 import { ActiveWorkoutExerciseList } from '@/src/features/workouts/components/active-workout-exercise-list';
+import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/create-custom-exercise-sheet';
 import { EmptyExerciseState } from '@/src/features/workouts/components/empty-exercise-state';
 import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise-picker-sheet';
 import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sheet';
@@ -39,6 +40,8 @@ export function ActiveWorkoutContent({
   const [renameError, setRenameError] = useState<string | undefined>();
   const [isSavingRename, setIsSavingRename] = useState(false);
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
+  const [isCreateCustomExerciseOpen, setIsCreateCustomExerciseOpen] =
+    useState(false);
   const {
     now,
     isExercisePickerOpen,
@@ -50,12 +53,13 @@ export function ActiveWorkoutContent({
     exerciseById,
     isRestTimerRunning
   } = useActiveWorkoutContentData({ activeWorkout, exerciseRows });
-  const { finishWorkout, selectExercise } = useActiveWorkoutActions({
-    activeWorkout,
-    workoutExerciseRows,
-    isLoadingWorkoutExercises,
-    setIsExercisePickerOpen
-  });
+  const { finishWorkout, selectExercise, createAndSelectCustomExercise } =
+    useActiveWorkoutActions({
+      activeWorkout,
+      workoutExerciseRows,
+      isLoadingWorkoutExercises,
+      setIsExercisePickerOpen
+    });
   const renameWorkout = useWorkoutRename();
 
   useEffect(() => {
@@ -273,6 +277,25 @@ export function ActiveWorkoutContent({
         )}
         onClose={() => setIsExercisePickerOpen(false)}
         onSelectExercise={selectExercise}
+        onCreateCustomExercise={() => {
+          Keyboard.dismiss();
+          setIsExercisePickerOpen(false);
+          setIsCreateCustomExerciseOpen(true);
+        }}
+      />
+
+      <CreateCustomExerciseSheet
+        isOpen={isCreateCustomExerciseOpen}
+        onClose={() => setIsCreateCustomExerciseOpen(false)}
+        onSave={exercise => {
+          const createdExercise = createAndSelectCustomExercise(exercise);
+
+          if (!createdExercise) {
+            return;
+          }
+
+          setIsCreateCustomExerciseOpen(false);
+        }}
       />
 
       <RestTimerSheet

@@ -1,4 +1,5 @@
 import { Input } from '@/src/components/ui/input';
+import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
 import { Text } from '@/src/components/ui/text';
 import {
   CATEGORY_FILTERS,
@@ -17,6 +18,7 @@ interface ExerciseMetadataFormProps {
   nameError?: string;
   primaryMusclesError?: string;
   secondaryMusclesError?: string;
+  inputVariant?: 'default' | 'bottom-sheet';
   setName?: (name: string) => void;
   setCategory: (category: ExerciseCategory) => void;
   togglePrimaryMuscle: (muscle: string) => void;
@@ -126,17 +128,19 @@ export function ExerciseMetadataForm({
   nameError,
   primaryMusclesError,
   secondaryMusclesError,
+  inputVariant = 'default',
   setName,
   setCategory,
   togglePrimaryMuscle,
   toggleSecondaryMuscle
 }: ExerciseMetadataFormProps) {
   const shouldShowNameField = typeof name === 'string' && Boolean(setName);
+  const NameInput = inputVariant === 'bottom-sheet' ? BottomSheetInput : Input;
 
   return (
     <View>
       {shouldShowNameField ? (
-        <Input
+        <NameInput
           label="Name"
           value={name}
           onChangeText={setName}

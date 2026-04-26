@@ -2,75 +2,37 @@ import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import type { NewExercise } from '@/src/db/schema';
-import type { ExerciseCategory } from '@/src/features/exercises/constants';
 import { ExerciseMetadataForm } from '@/src/features/exercises/components/exercise-metadata-form';
 import {
   useExerciseActions,
-  useExercises
+  useCustomExerciseForm
 } from '@/src/features/exercises/hooks';
 import { router } from 'expo-router';
-import { useState } from 'react';
 import { Keyboard, View } from 'react-native';
 
 export default function NewExerciseScreen() {
-  const exercises = useExercises();
   const { createCustomExercise } = useExerciseActions();
-  const [name, setName] = useState('');
-  const [category, setCategory] = useState<ExerciseCategory>('barbell');
-  const [selectedPrimaryMuscles, setSelectedPrimaryMuscles] = useState<
-    string[]
-  >([]);
-  const [selectedSecondaryMuscles, setSelectedSecondaryMuscles] = useState<
-    string[]
-  >([]);
-  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  const {
+    name,
+    category,
+    selectedPrimaryMuscles,
+    selectedSecondaryMuscles,
+    nameError,
+    primaryMusclesError,
+    setName,
+    setCategory,
+    togglePrimaryMuscle,
+    toggleSecondaryMuscle,
+    submit: buildExercise
+  } = useCustomExerciseForm();
 
-  const trimmedName = name.trim();
-  const normalizedName = trimmedName.toLowerCase();
-  const hasDuplicateName = exercises.some(
-    exercise => exercise.name.trim().toLowerCase() === normalizedName
-  );
-  const nameError =
-    attemptedSubmit && trimmedName.length === 0
-      ? 'Name is required'
-      : attemptedSubmit && hasDuplicateName
-        ? 'An exercise with this name already exists'
-        : undefined;
-  const primaryMusclesError =
-    attemptedSubmit && selectedPrimaryMuscles.length === 0
-      ? 'Select at least one primary muscle'
-      : undefined;
+  const createExercise = () => {
+    const newExercise = buildExercise();
 
-  const togglePrimaryMuscle = (muscle: string) => {
-    setSelectedPrimaryMuscles(current => {
-      if (current.includes(muscle)) {
-        return current.filter(selectedMuscle => selectedMuscle !== muscle);
-      }
+    if (!newExercise) {
+      return;
+    }
 
-      setSelectedSecondaryMuscles(existing =>
-        existing.filter(selectedMuscle => selectedMuscle !== muscle)
-      );
-
-      return [...current, muscle];
-    });
-  };
-
-  const toggleSecondaryMuscle = (muscle: string) => {
-    setSelectedSecondaryMuscles(current => {
-      if (current.includes(muscle)) {
-        return current.filter(selectedMuscle => selectedMuscle !== muscle);
-      }
-
-      setSelectedPrimaryMuscles(existing =>
-        existing.filter(selectedMuscle => selectedMuscle !== muscle)
-      );
-
-      return [...current, muscle];
-    });
-  };
-
-  const createExercise = (newExercise: NewExercise) => {
     const createdExercise = createCustomExercise(newExercise);
 
     router.replace({
@@ -80,26 +42,8 @@ export default function NewExerciseScreen() {
   };
 
   const submit = () => {
-    setAttemptedSubmit(true);
-
-    if (
-      trimmedName.length === 0 ||
-      selectedPrimaryMuscles.length === 0 ||
-      hasDuplicateName
-    ) {
-      return;
-    }
-
     Keyboard.dismiss();
-    createExercise({
-      name: trimmedName,
-      category,
-      primaryMuscles: JSON.stringify(selectedPrimaryMuscles),
-      secondaryMuscles: JSON.stringify(selectedSecondaryMuscles),
-      instructions: null,
-      isCustom: 1,
-      isArchived: 0
-    });
+    createExercise();
   };
 
   return (

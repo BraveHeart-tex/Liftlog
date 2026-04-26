@@ -1,6 +1,9 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import type { Workout, WorkoutExercise } from '@/src/db/schema';
-import type { ExerciseListItem } from '@/src/features/exercises/repository';
+import type { NewExercise, Workout, WorkoutExercise } from '@/src/db/schema';
+import {
+  createExercise,
+  type ExerciseListItem
+} from '@/src/features/exercises/repository';
 import {
   completeWorkout,
   createWorkoutExercise
@@ -63,8 +66,37 @@ export function useActiveWorkoutActions({
     ]
   );
 
+  const createAndSelectCustomExercise = useCallback(
+    (exercise: NewExercise) => {
+      if (isLoadingWorkoutExercises) {
+        return null;
+      }
+
+      const createdExercise = createExercise(db, exercise);
+
+      createWorkoutExercise(db, {
+        workoutId: activeWorkout.id,
+        exerciseId: createdExercise.id,
+        order: workoutExerciseRows.length,
+        notes: null
+      });
+
+      setIsExercisePickerOpen(false);
+
+      return createdExercise;
+    },
+    [
+      activeWorkout.id,
+      db,
+      isLoadingWorkoutExercises,
+      setIsExercisePickerOpen,
+      workoutExerciseRows.length
+    ]
+  );
+
   return {
     finishWorkout,
-    selectExercise
+    selectExercise,
+    createAndSelectCustomExercise
   };
 }
