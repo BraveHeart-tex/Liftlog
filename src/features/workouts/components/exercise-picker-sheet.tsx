@@ -7,6 +7,7 @@ import {
 } from '@/src/components/ui/bottom-sheet';
 import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
+import { Button } from '@/src/components/ui/button';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { ExercisePickerRow } from '@/src/features/workouts/components/exercise-picker-row';
 import { cn } from '@/src/lib/utils/cn';
@@ -19,6 +20,7 @@ interface ExercisePickerSheetProps {
   selectedExerciseIds: ExerciseListItem['id'][];
   onClose: () => void;
   onSelectExercise: (exercise: ExerciseListItem) => void;
+  onCreateCustomExercise: () => void;
 }
 
 const SNAP_POINTS = ['70%', '90%'];
@@ -34,7 +36,8 @@ export function ExercisePickerSheet({
   exercises,
   selectedExerciseIds,
   onClose,
-  onSelectExercise
+  onSelectExercise,
+  onCreateCustomExercise
 }: ExercisePickerSheetProps) {
   const [query, setQuery] = useState('');
   const [sourceFilter, setSourceFilter] = useState<ExerciseSourceFilter>('all');
@@ -135,6 +138,14 @@ export function ExercisePickerSheet({
             );
           })}
         </View>
+
+        <Button
+          variant="secondary"
+          className="mt-3 w-full"
+          onPress={onCreateCustomExercise}
+        >
+          Create custom exercise
+        </Button>
       </View>
 
       <StyledBottomSheetFlatList
