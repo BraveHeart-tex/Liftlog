@@ -1,5 +1,5 @@
-import { Input } from '@/src/components/ui/input';
 import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
+import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
 import {
   CATEGORY_FILTERS,
@@ -95,7 +95,7 @@ function MuscleSelectorSection({
               onPress={() => onToggleMuscle(muscle)}
               className={cn(
                 'border-border rounded-full border px-4 py-3',
-                isSelected ? 'bg-primary' : 'bg-input'
+                isSelected ? 'bg-primary border-primary' : 'bg-input'
               )}
             >
               <Text
@@ -164,7 +164,7 @@ export function ExerciseMetadataForm({
                 onPress={() => setCategory(categoryOption.value)}
                 className={cn(
                   'border-border rounded-full border px-4 py-3',
-                  isSelected ? 'bg-primary' : 'bg-input'
+                  isSelected ? 'bg-primary border-primary' : 'bg-input'
                 )}
               >
                 <Text
