@@ -17,7 +17,7 @@ import {
   useRef,
   type ReactNode
 } from 'react';
-import { Keyboard, Text, View } from 'react-native';
+import { Keyboard, Platform, Text, View } from 'react-native';
 
 interface BottomSheetComponentProps {
   isOpen: boolean;
@@ -26,6 +26,7 @@ interface BottomSheetComponentProps {
   enablePanDownToClose?: boolean;
   enableDynamicSizing?: boolean;
   keyboardBehavior?: 'interactive' | 'extend' | 'fillParent';
+  androidKeyboardInputMode?: 'adjustPan' | 'adjustResize';
   children: ReactNode;
   className?: string;
 }
@@ -65,10 +66,20 @@ export function BottomSheet({
   enablePanDownToClose = true,
   enableDynamicSizing = false,
   keyboardBehavior = 'extend',
+  androidKeyboardInputMode,
   children,
   className
 }: BottomSheetComponentProps) {
   const sheetRef = useRef<BottomSheetModal>(null);
+
+  const resolvedAndroidKeyboardInputMode =
+    androidKeyboardInputMode ??
+    (Platform.OS === 'android' &&
+    enableDynamicSizing &&
+    keyboardBehavior === 'interactive'
+      ? 'adjustPan'
+      : 'adjustResize');
+
   const resolvedSnapPoints = useMemo(() => {
     if (enableDynamicSizing) {
       return snapPoints;
@@ -109,7 +120,7 @@ export function BottomSheet({
   return (
     <BottomSheetModal
       ref={sheetRef}
-      android_keyboardInputMode="adjustResize"
+      android_keyboardInputMode={resolvedAndroidKeyboardInputMode}
       backdropComponent={renderBackdrop}
       backgroundComponent={SheetBackground}
       enableDynamicSizing={enableDynamicSizing}
