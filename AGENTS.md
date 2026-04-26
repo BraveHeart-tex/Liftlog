@@ -291,6 +291,16 @@ import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 </SafeAreaView>;
 ```
 
+### 4a. Screen keyboard behavior
+
+The shared `Screen` primitive already encodes the safest cross-platform keyboard handling we have found for this app's layouts.
+
+- Prefer `Screen` for standard form screens with a sticky footer instead of rebuilding `SafeAreaView` + `KeyboardAvoidingView` manually.
+- On iOS, `Screen` uses `KeyboardAvoidingView` with `behavior="padding"` because that keeps the footer moving naturally with the keyboard.
+- On Android, `Screen` uses `KeyboardAvoidingView` with `behavior="position"`.
+- Do NOT switch Android `Screen` back to `behavior="height"` unless you have re-tested footer screens carefully. In this app it caused stale bottom gaps after keyboard dismissal.
+- Do NOT add custom keyboard listeners or local footer-offset state to ordinary screens unless the shared `Screen` primitive is proven insufficient for that exact layout.
+
 ---
 
 ### 5. Do NOT combine flex-1 with non-scroll content stacks
@@ -434,6 +444,9 @@ The correct configuration depends on the sheet type:
 - Do NOT auto-focus inputs on sheet open — focusing triggers the keyboard before
   dynamic sizing has measured the content, causing a blown-out layout. Let the
   user tap the input instead
+- On Android, dynamic sizing sheets that use `keyboardBehavior="interactive"`
+  should use `androidKeyboardInputMode="adjustPan"` so the sheet can move with
+  the keyboard instead of fighting a resized window
 
 **Snap point sheets (search + list, tall pickers):**
 
@@ -449,6 +462,24 @@ The correct configuration depends on the sheet type:
 - `restore` — sheet snaps back to the active snap point when keyboard closes
 - `interactive` with `snapPoints` adds keyboard height ON TOP of the snap point,
   making the sheet grow unexpectedly large when the keyboard opens
+- On Android, fixed snap-point sheets with a bottom action row may also need
+  `androidKeyboardInputMode="adjustPan"` so footer buttons rise with the sheet.
+  `adjustResize` can leave the footer behind the keyboard on some form-style
+  sheets even when the content scrolls correctly
+
+### Bottom sheet input rules
+
+- Inputs inside Gorhom sheets must use the bottom-sheet-aware input path:
+  `BottomSheetInput`, `StyledBottomSheetTextInput`, or another wrapper built on
+  `BottomSheetTextInput`
+- Do NOT use a plain React Native `TextInput` inside a keyboard-sensitive sheet
+  unless you have verified that the sheet still responds correctly on Android.
+  We saw the keyboard cover the rest timer input until it was migrated to the
+  Gorhom input primitive
+- The shared bottom-sheet text input wrapper already sets
+  `underlineColorAndroid="transparent"` to suppress Android's native blue
+  underline. Keep that behavior in the base wrapper instead of patching
+  individual call sites
 
 ### Scrollable content inside sheets
 
