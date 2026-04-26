@@ -8,8 +8,8 @@ import {
   Inter_700Bold,
   useFonts
 } from '@expo-google-fonts/inter';
-import * as SplashScreen from 'expo-splash-screen';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
 void SplashScreen.preventAutoHideAsync();
@@ -37,7 +37,7 @@ export default function RootLayout() {
       <ScreenErrorBoundary>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
-          <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
+          <Stack.Screen name="onboarding" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="exercises/new" />
           <Stack.Screen name="workouts/[id]" />
