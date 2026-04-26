@@ -1,3 +1,4 @@
+import { StyledBottomSheetTextInput } from '@/src/components/styled/bottom-sheet';
 import {
   BottomSheet,
   BottomSheetHeader,
@@ -16,7 +17,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { XIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { TextInput, View } from 'react-native';
+import { View } from 'react-native';
 
 const MIN_DURATION_SECONDS = 10;
 const MAX_DURATION_SECONDS = 3600;
@@ -54,6 +55,12 @@ interface RestTimerSheetProps {
 }
 
 export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
+  /*
+   * Approach:
+   * 1. Use Gorhom's keyboard-aware text input inside the sheet.
+   * 2. Preserve the current numeric input styling and behavior.
+   * 3. Let the shared BottomSheet keyboard config handle Android lifting.
+   */
   const { restTimerDuration: defaultDuration } = useSettings();
   const [secondsRemaining, setSecondsRemaining] = useState(() =>
     Math.ceil(
@@ -387,10 +394,10 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
                 disabled={inputValue <= MIN_DURATION_SECONDS}
                 onPress={handleDecreaseInput}
               >
-                <Text variant="h3">−</Text>
+                <Text variant="h3">-</Text>
               </Button>
 
-              <TextInput
+              <StyledBottomSheetTextInput
                 value={inputValue.toString()}
                 onChangeText={handleInputChange}
                 keyboardType="number-pad"
@@ -401,6 +408,8 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
                   textAlign: 'center'
                 }}
                 className="border-border text-foreground rounded-lg border px-3 py-2"
+                placeholderClassName="text-muted-foreground"
+                selectionClassName="text-primary"
                 onBlur={handleInputBlur}
                 selectTextOnFocus
               />
