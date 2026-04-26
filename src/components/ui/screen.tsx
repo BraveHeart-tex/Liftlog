@@ -1,13 +1,15 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { cn } from '@/src/lib/utils/cn';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
-  type ScrollViewProps,
-  View
+  View,
+  type KeyboardEvent,
+  type ScrollViewProps
 } from 'react-native';
-import { type Edge, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
 import { SafeAreaView } from './safe-area-view';
 
 interface ScreenProps {
@@ -44,6 +46,38 @@ export function Screen({
   keyboardShouldPersistTaps = 'handled'
 }: ScreenProps) {
   const insets = useSafeAreaInsets();
+  const [androidKeyboardOffset, setAndroidKeyboardOffset] = useState(0);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !footer) {
+      return;
+    }
+
+    const handleKeyboardShow = (event: KeyboardEvent) => {
+      setAndroidKeyboardOffset(
+        Math.max(0, event.endCoordinates.height - insets.bottom + 12)
+      );
+    };
+
+    const handleKeyboardHide = () => {
+      setAndroidKeyboardOffset(0);
+    };
+
+    const showSubscription = Keyboard.addListener(
+      'keyboardDidShow',
+      handleKeyboardShow
+    );
+    const hideSubscription = Keyboard.addListener(
+      'keyboardDidHide',
+      handleKeyboardHide
+    );
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, [footer, insets.bottom]);
+
   const sharedContentClassName = cn(
     !scroll && withPadding && 'px-4 py-6',
     contentClassName
@@ -81,20 +115,34 @@ export function Screen({
       className={cn('bg-background', className)}
       edges={edges}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-        {content}
-        {footer ? (
-          <View
-            className="border-border bg-background border-t px-4 pt-4"
-            style={{ paddingBottom: insets.bottom + 12 }}
-          >
-            {footer}
-          </View>
-        ) : null}
-      </KeyboardAvoidingView>
+      {Platform.OS === 'ios' ? (
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+          {content}
+          {footer ? (
+            <View
+              className="border-border bg-background border-t px-4 pt-4"
+              style={{ paddingBottom: insets.bottom + 12 }}
+            >
+              {footer}
+            </View>
+          ) : null}
+        </KeyboardAvoidingView>
+      ) : (
+        <View className="flex-1">
+          {content}
+          {footer ? (
+            <View
+              className="border-border bg-background border-t px-4 pt-4"
+              style={{
+                marginBottom: androidKeyboardOffset,
+                paddingBottom: insets.bottom + 12
+              }}
+            >
+              {footer}
+            </View>
+          ) : null}
+        </View>
+      )}
     </SafeAreaView>
   );
 }
