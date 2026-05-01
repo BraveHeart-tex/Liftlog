@@ -4,7 +4,7 @@ import {
   type ComponentPropsWithoutRef,
   type ComponentRef
 } from 'react';
-import { Text as NativeText } from 'react-native';
+import { Text as NativeText, type TextStyle } from 'react-native';
 
 type TextVariant =
   | 'h1'
@@ -45,6 +45,11 @@ const variantFontFamilies: Record<TextVariant, string> = {
   caption: 'Inter_500Medium'
 };
 
+const nativeTextDefaults: TextStyle = {
+  includeFontPadding: false,
+  textAlignVertical: 'center'
+};
+
 type NativeTextProps = Omit<
   ComponentPropsWithoutRef<typeof NativeText>,
   'className'
@@ -69,7 +74,11 @@ export const Text = forwardRef<ComponentRef<typeof NativeText>, TextProps>(
           toneClassNames[tone],
           className
         )}
-        style={[{ fontFamily: variantFontFamilies[variant] }, style]}
+        style={[
+          nativeTextDefaults,
+          { fontFamily: variantFontFamilies[variant] },
+          style
+        ]}
         {...props}
       />
     );

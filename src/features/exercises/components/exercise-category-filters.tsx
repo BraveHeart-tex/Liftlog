@@ -1,12 +1,11 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
-import { Text } from '@/src/components/ui/text';
+import { ChoiceChip } from '@/src/components/ui/chip';
 import {
   CATEGORY_FILTERS,
   type CategoryFilter
 } from '@/src/features/exercises/constants';
-import { cn } from '@/src/lib/utils/cn';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, type ScrollView } from 'react-native';
+import type { ScrollView } from 'react-native';
 
 export const ExerciseCategoryFilters = ({
   selectedCategory,
@@ -58,27 +57,19 @@ export const ExerciseCategoryFilters = ({
         const isSelected = category.value === selectedCategory;
 
         return (
-          <Pressable
+          <ChoiceChip
             key={category.value}
+            selected={isSelected}
+            className={isSelected ? 'bg-card border-border' : 'bg-background'}
             onLayout={event => {
               categoryLayoutsRef.current[category.value] =
                 event.nativeEvent.layout;
             }}
             onPress={() => setSelectedCategory(category.value)}
-            className={cn(
-              'border-border rounded-full border px-4 py-3',
-              isSelected ? 'bg-card' : 'bg-background'
-            )}
+            textClassName={isSelected ? 'text-foreground' : undefined}
           >
-            <Text
-              variant="small"
-              className={cn(
-                isSelected ? 'text-foreground' : 'text-muted-foreground'
-              )}
-            >
-              {category.label}
-            </Text>
-          </Pressable>
+            {category.label}
+          </ChoiceChip>
         );
       })}
     </StyledScrollView>

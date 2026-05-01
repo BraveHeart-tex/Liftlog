@@ -5,14 +5,14 @@ import {
   BottomSheetHeader,
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
+import { ChoiceChip } from '@/src/components/ui/chip';
 import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
 import { Button } from '@/src/components/ui/button';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { ExercisePickerRow } from '@/src/features/workouts/components/exercise-picker-row';
-import { cn } from '@/src/lib/utils/cn';
 import { useEffect, useMemo, useState } from 'react';
-import { Keyboard, Pressable, View } from 'react-native';
+import { Keyboard, View } from 'react-native';
 
 interface ExercisePickerSheetProps {
   isOpen: boolean;
@@ -110,31 +110,19 @@ export function ExercisePickerSheet({
                 : filter.label;
 
             return (
-              <Pressable
+              <ChoiceChip
                 key={filter.value}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isSelected }}
+                selected={isSelected}
+                shape="rounded"
+                fullWidth
                 onPress={() => {
                   Keyboard.dismiss();
                   setSourceFilter(filter.value);
                 }}
-                className={cn(
-                  'border-border min-h-11 flex-1 items-center justify-center rounded-lg border px-4 py-3',
-                  isSelected ? 'bg-primary border-primary' : 'bg-card'
-                )}
+                className={!isSelected ? 'bg-card' : undefined}
               >
-                <Text
-                  variant="small"
-                  className={cn(
-                    isSelected
-                      ? 'text-primary-foreground'
-                      : 'text-muted-foreground'
-                  )}
-                  numberOfLines={1}
-                >
-                  {label}
-                </Text>
-              </Pressable>
+                {label}
+              </ChoiceChip>
             );
           })}
         </View>

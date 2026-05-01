@@ -2,6 +2,7 @@ import {
   StyledBottomSheetBackdrop,
   StyledBottomSheetScrollView
 } from '@/src/components/styled/bottom-sheet';
+import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn';
 import {
   BottomSheetModal,
@@ -17,7 +18,7 @@ import {
   useRef,
   type ReactNode
 } from 'react';
-import { Keyboard, Platform, Text, View } from 'react-native';
+import { Keyboard, Platform, View } from 'react-native';
 
 interface BottomSheetComponentProps {
   isOpen: boolean;
@@ -157,7 +158,9 @@ export function BottomSheetTitle({
   className
 }: BottomSheetSectionProps) {
   return (
-    <Text className={cn('text-h3 text-foreground', className)}>{children}</Text>
+    <Text variant="h3" className={className}>
+      {children}
+    </Text>
   );
 }
 
@@ -166,7 +169,7 @@ export function BottomSheetDescription({
   className
 }: BottomSheetSectionProps) {
   return (
-    <Text className={cn('text-small text-muted-foreground mt-1', className)}>
+    <Text variant="small" tone="muted" className={cn('mt-1', className)}>
       {children}
     </Text>
   );

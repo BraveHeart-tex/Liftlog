@@ -1,4 +1,5 @@
 import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
+import { ChoiceChip } from '@/src/components/ui/chip';
 import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
 import {
@@ -6,9 +7,8 @@ import {
   MUSCLE_GROUP,
   type ExerciseCategory
 } from '@/src/features/exercises/constants';
-import { cn } from '@/src/lib/utils/cn';
 import { toTitleCase } from '@/src/lib/utils/string';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 interface ExerciseMetadataFormProps {
   category: ExerciseCategory;
@@ -90,23 +90,13 @@ function MuscleSelectorSection({
           const isSelected = selectedMuscles.includes(muscle);
 
           return (
-            <Pressable
+            <ChoiceChip
               key={muscle}
+              selected={isSelected}
               onPress={() => onToggleMuscle(muscle)}
-              className={cn(
-                'border-border rounded-full border px-4 py-3',
-                isSelected ? 'bg-primary border-primary' : 'bg-input'
-              )}
             >
-              <Text
-                variant="small"
-                className={cn(
-                  isSelected ? 'text-primary-foreground' : 'text-foreground'
-                )}
-              >
-                {toTitleCase(muscle)}
-              </Text>
-            </Pressable>
+              {toTitleCase(muscle)}
+            </ChoiceChip>
           );
         })}
       </View>
@@ -152,30 +142,20 @@ export function ExerciseMetadataForm({
         />
       ) : null}
 
-      <View className={cn(shouldShowNameField ? 'mt-6' : '')}>
+      <View className={shouldShowNameField ? 'mt-6' : undefined}>
         <Text variant="small">Category</Text>
         <View className="mt-3 flex-row flex-wrap gap-2">
           {CATEGORY_OPTIONS.map(categoryOption => {
             const isSelected = category === categoryOption.value;
 
             return (
-              <Pressable
+              <ChoiceChip
                 key={categoryOption.value}
+                selected={isSelected}
                 onPress={() => setCategory(categoryOption.value)}
-                className={cn(
-                  'border-border rounded-full border px-4 py-3',
-                  isSelected ? 'bg-primary border-primary' : 'bg-input'
-                )}
               >
-                <Text
-                  variant="small"
-                  className={cn(
-                    isSelected ? 'text-primary-foreground' : 'text-foreground'
-                  )}
-                >
-                  {categoryOption.label}
-                </Text>
-              </Pressable>
+                {categoryOption.label}
+              </ChoiceChip>
             );
           })}
         </View>

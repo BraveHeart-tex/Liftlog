@@ -1,14 +1,8 @@
+import { PressableSurface } from '@/src/components/ui/pressable-surface';
+import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn';
-import { usePressScale } from '@/src/lib/animations/use-press-scale';
 import type { ReactNode } from 'react';
-import {
-  Animated,
-  Pressable,
-  Text,
-  View,
-  type GestureResponderEvent,
-  type TextStyle
-} from 'react-native';
+import { View, type GestureResponderEvent, type TextStyle } from 'react-native';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
 
@@ -51,10 +45,17 @@ const textClassNames: Record<ButtonVariant, string> = {
   destructive: 'text-body-medium text-danger-foreground'
 };
 
-const textStyle: TextStyle = {
-  includeFontPadding: false,
-  textAlignVertical: 'center'
+const buttonTextStyle: TextStyle = {
+  fontFamily: 'Inter_600SemiBold'
 };
+
+function getButtonContainerClassName(className?: string) {
+  if (!className) {
+    return undefined;
+  }
+
+  return cn(className.includes('w-full') && 'w-full');
+}
 
 export function Button({
   variant = 'primary',
@@ -69,7 +70,6 @@ export function Button({
   children,
   onPress
 }: ButtonProps) {
-  const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();
   const isBlocked = disabled || loading;
   const isIconButton = size === 'icon';
   const label =
@@ -78,52 +78,46 @@ export function Button({
       : null;
 
   return (
-    <Animated.View style={scaleStyle}>
-      <Pressable
-        className={cn(
-          baseClassName,
-          sizeClassNames[size],
-          variantClassNames[variant],
-          isBlocked && 'opacity-50',
-          pressed && !isBlocked && 'opacity-80',
-          className
-        )}
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel}
-        accessibilityState={{ disabled: isBlocked, busy: loading }}
-        disabled={isBlocked}
-        onPress={onPress}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
-      >
-        {loading ? (
-          <Text
-            className={cn(textClassNames[variant], textClassName)}
-            style={textStyle}
-          >
-            Loading...
-          </Text>
-        ) : (
-          <View className="flex-row items-center justify-center gap-2">
-            {leftIcon}
-            {label !== null ? (
-              <Text
-                className={cn(
-                  textClassNames[variant],
-                  isIconButton && 'text-h3',
-                  textClassName
-                )}
-                style={textStyle}
-              >
-                {label}
-              </Text>
-            ) : (
-              children
-            )}
-            {rightIcon}
-          </View>
-        )}
-      </Pressable>
-    </Animated.View>
+    <PressableSurface
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ busy: loading }}
+      containerClassName={getButtonContainerClassName(className)}
+      className={cn(
+        baseClassName,
+        sizeClassNames[size],
+        variantClassNames[variant],
+        className
+      )}
+      disabled={isBlocked}
+      onPress={onPress}
+    >
+      {loading ? (
+        <Text
+          className={cn(textClassNames[variant], textClassName)}
+          style={buttonTextStyle}
+        >
+          Loading...
+        </Text>
+      ) : (
+        <View className="flex-row items-center justify-center gap-2">
+          {leftIcon}
+          {label !== null ? (
+            <Text
+              className={cn(
+                textClassNames[variant],
+                isIconButton && 'text-h3',
+                textClassName
+              )}
+              style={buttonTextStyle}
+            >
+              {label}
+            </Text>
+          ) : (
+            children
+          )}
+          {rightIcon}
+        </View>
+      )}
+    </PressableSurface>
   );
 }
