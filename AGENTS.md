@@ -1,73 +1,89 @@
-## Overview
+## Project Overview
 
-This project is a mobile application built with:
+This is a mobile workout tracking app focused on progressive overload, fast workout logging, minimal friction, and a clean dark-mode UI.
 
-- Expo (React Native)
+Tech stack:
+
+- Expo / React Native
 - Expo Router
 - TypeScript
-- NativeWind (Tailwind CSS v4, CSS-first via global.css)
-- React Native Safe Area Context via a local hook-based SafeAreaView wrapper
+- NativeWind / Tailwind CSS v4 via `global.css`
 - Expo SQLite + Drizzle ORM
 - Gorhom Bottom Sheet
-- Lucide React Native icons
-- expo-audio for workout sounds
-- react-native-calendars for history calendar views
-
-The app is a progressive overload workout tracker focused on:
-
-- fast workout logging
-- minimal friction UX
-- clean, dark-mode UI
-
----
+- Lucide React Native
+- expo-audio
+- react-native-calendars
 
 ## Core Principles
 
-1. **Simplicity first**
-   - Prefer simple implementations over abstraction-heavy solutions
-   - Avoid premature optimization or over-engineering
-2. **Mobile-first UX**
-   - Large touch targets
-   - Minimal typing
-   - Fast interactions
-   - Dense but readable layout
-3. **Consistency via theme tokens**
-   - NEVER hardcode colors or font sizes unless necessary
-   - Always use semantic Tailwind classes (bg-card, text-muted-foreground, etc.)
-4. **Speed over completeness**
-   - Build working features first
-   - Iterate later
+- Keep solutions simple. Avoid abstractions unless they clearly improve readability or reuse.
+- Optimise for mobile UX: large touch targets, fast interactions, minimal typing, readable density.
+- Prefer working features over perfect architecture. Iterate later.
+- Use the existing project patterns before introducing new ones.
+- Do not add production dependencies without confirmation.
 
-### TypeScript Shape Guidance
+## TypeScript
 
-- Prefer `interface` for object-shaped props, params, state, and context values when TypeScript supports it cleanly.
-- Keep `type` for unions, literal types, mapped/conditional types, inferred ORM/schema aliases, utility-type compositions, and other non-object-shape aliases.
+- Use TypeScript.
+- Prefer `interface` for object-shaped props, params, state, and context values.
+- Use `type` for unions, literals, mapped/conditional types, inferred ORM/schema aliases, and utility compositions.
 
----
+## Styling Rules
 
-## Tech Stack Rules
+Use NativeWind `className` by default.
 
-### Styling
+Use semantic theme tokens from `global.css`. Do not hardcode colors or font sizes unless there is no practical alternative.
 
-- Use **NativeWind className** as the default
-- Use the shared `cn` helper from `@/src/lib/utils/cn` for conditional or composed class names
-- Do NOT create local `joinClassNames`/`cn` helpers inside components; keep class merging centralized through the shared utility
-- Do NOT use inline styles for core RN components unless debugging or using a native API that requires raw values
-- For third-party components with multiple style props, use the colocated styled wrappers in `@/src/components/styled` instead of direct imports. These wrappers map `className`, `contentContainerClassName`, etc. to the underlying style props.
-- If a third-party component needs a new style-prop mapping, add or update a wrapper in `src/components/styled`. Keep the mapping colocated with the wrapper, not in a global entry point.
-- This project currently uses `nativewind@5.0.0-preview.3`, where `remapProps`/`cssInterop` are not exported. Use `styled(...)` mappings from `nativewind` for wrapper components, matching the existing wrapper pattern.
-- **EXCEPTION: Use inline `style` prop for layout-critical properties on external/third-party components only when no styled wrapper exists** (e.g. provider root views, animated transforms)
-- **EXCEPTION: Use raw values from `@/src/theme/tokens` for native/third-party props that cannot consume NativeWind classes** (e.g. React Navigation tab options, `TextInput` placeholder/selection colors, bottom-sheet backdrop styles, animated transforms)
-
-Why: NativeWind className support is safest when third-party components expose all style props through a wrapper. Some native props cannot consume class strings cleanly; use theme tokens for those cases instead of forcing a complex wrapper.
-
-Allowed for core RN components:
+Use the shared `cn` helper:
 
 ```tsx
-<View className="bg-card border-border rounded-lg border p-4" />
+import { cn } from '@/src/lib/utils/cn';
 ```
 
-Required for wrapped scroll/list components:
+````
+
+Do not create local `joinClassNames` or `cn` helpers.
+
+### Core React Native components
+
+Use `className` for normal styling:
+
+```tsx
+<View className="border-border bg-card rounded-lg border p-4" />
+```
+
+Avoid inline styles on core RN components unless required for:
+
+- animated values
+- raw native API values
+- layout-critical edge cases that cannot be expressed safely with NativeWind
+
+Bad:
+
+```tsx
+<View style={{ backgroundColor: '#111' }} />
+```
+
+### Third-party components
+
+For third-party components with multiple style props, use wrappers from:
+
+```txt
+src/components/styled
+```
+
+Existing wrappers include:
+
+- `StyledScrollView`
+- `StyledFlatList`
+- `StyledBottomSheetFlatList`
+- `StyledBottomSheetBackdrop`
+- `StyledTextInput`
+- `StyledActivityIndicator`
+
+Use wrappers instead of direct third-party imports at call sites.
+
+Good:
 
 ```tsx
 <StyledScrollView
@@ -76,7 +92,93 @@ Required for wrapped scroll/list components:
 />
 ```
 
-Required for safe-area roots:
+If a third-party component needs a new style-prop mapping, add or update a colocated wrapper in `src/components/styled`.
+
+This project uses `nativewind@5.0.0-preview.3`. `remapProps` / `cssInterop` are not exported. Use `styled(...)` mappings from `nativewind`, following the existing wrapper pattern.
+
+### Theme token exceptions
+
+Use raw values from `@/src/theme/tokens` only for native or third-party props that cannot consume NativeWind classes, such as:
+
+- React Navigation tab options
+- `TextInput` placeholder / selection colors
+- bottom sheet backdrop styles
+- animated transforms
+
+## Theme Tokens
+
+Prefer these semantic tokens.
+
+### Colors
+
+```txt
+bg-background
+bg-card
+bg-primary
+bg-secondary
+bg-muted
+bg-input
+bg-success
+bg-warning
+bg-danger
+bg-info
+
+text-foreground
+text-primary-foreground
+text-secondary-foreground
+text-muted-foreground
+text-accent-foreground
+text-success
+text-warning
+text-danger
+text-progress-up
+text-progress-same
+text-progress-down
+
+border-border
+border-ring
+```
+
+### Typography
+
+```txt
+text-h1
+text-h2
+text-h3
+text-body
+text-body-medium
+text-small
+text-caption
+```
+
+### Radius
+
+```txt
+rounded-sm
+rounded-md
+rounded-lg
+rounded-xl
+```
+
+## React Native Typography
+
+Do not define or rely on global line-height tokens.
+
+React Native treats `lineHeight` as actual layout height, which can cause spacing issues.
+
+## Layout Rules
+
+### Screen roots
+
+Prefer the shared `Screen` primitive for standard screens:
+
+```tsx
+import { Screen } from '@/src/components/ui/screen';
+```
+
+Use it for normal screens, forms, sticky footers, padding, keyboard handling, and scrolling.
+
+When a custom root is needed, use the local SafeAreaView:
 
 ```tsx
 import { SafeAreaView } from '@/src/components/ui/safe-area-view';
@@ -86,82 +188,100 @@ import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 </SafeAreaView>;
 ```
 
-Avoid:
+Do not import `SafeAreaView` directly from `react-native-safe-area-context` in app UI.
+
+### Scrollable content
+
+If vertical content can exceed screen height, use a scroll or list component.
+
+Use:
+
+- `StyledScrollView` for regular vertical content
+- `StyledFlatList` / `StyledBottomSheetFlatList` for long or dynamic lists
+
+Do not rely on a plain `View` for scrollable layouts.
+
+Good:
 
 ```tsx
-<View style={{ backgroundColor: '#111' }} />
+<StyledScrollView
+  className="flex-1"
+  contentContainerClassName="flex-grow px-4 py-6"
+/>
 ```
 
----
+Avoid overusing `flex-1` on non-scroll content stacks because it can push content off-screen.
 
-### Theme Tokens
+### Sticky footers
 
-Use semantic tokens only. For className styling, prefer tokens defined in `global.css`.
+Prefer `Screen` first.
 
-- Colors:
-  - bg-background
-  - bg-card
-  - bg-primary
-  - bg-secondary
-  - bg-muted
-  - bg-input
-  - bg-success
-  - bg-warning
-  - bg-danger
-  - bg-info
-  - text-foreground
-  - text-primary-foreground
-  - text-secondary-foreground
-  - text-muted-foreground
-  - text-accent-foreground
-  - text-success
-  - text-warning
-  - text-danger
-  - text-progress-up
-  - text-progress-same
-  - text-progress-down
-  - border-border
-  - border-ring
-- Typography:
-  - text-h1
-  - text-h2
-  - text-h3
-  - text-body
-  - text-body-medium
-  - text-small
-  - text-caption
-- Radius:
-  - rounded-sm
-  - rounded-md
-  - rounded-lg
-  - rounded-xl
+If building a custom sticky-footer layout:
 
----
+```tsx
+<SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
+  <StyledScrollView
+    className="flex-1"
+    contentContainerClassName="flex-grow px-4 pt-6 pb-4"
+  >
+    {children}
+  </StyledScrollView>
 
-### 🚨 IMPORTANT: React Native Typography Rule
+  <View className="border-border bg-background border-t px-4 py-4">
+    {footer}
+  </View>
+</SafeAreaView>
+```
 
-- DO NOT define or rely on global line-height tokens
-- DO NOT assume web-like text behavior
-  Reason:
-  React Native treats `lineHeight` as actual layout height, which causes spacing issues.
+### Keyboard behavior
 
----
+The `Screen` primitive owns the safest default keyboard behavior.
+
+Do not add custom keyboard listeners or footer offset state unless `Screen` is proven insufficient for that specific layout.
+
+Do not switch Android `Screen` keyboard behavior back to `height`; it previously caused stale bottom gaps after keyboard dismissal.
+
+### Spacing
+
+Use standard spacing utilities:
+
+```txt
+mt-1 tight spacing
+mt-2 small spacing
+mt-3 medium spacing
+mt-4 section spacing
+mt-6 large section break
+```
+
+Avoid random spacing values.
 
 ## Data Access Rules
 
-### 1. Keep Drizzle usage inside feature hooks and repositories
-
-- Client components and route screens should not call `useDrizzle` directly.
-- Screens should consume feature-level hooks from `src/features/*/hooks`.
-- Feature hooks may call `useDrizzle`, compose live queries, and call repository functions.
-- Repository files own Drizzle table imports, query construction, transactions, and synchronous reads/writes.
-- Put reusable query builders in repositories as `*Query` functions so hooks can pass them to `useLiveWithFallback`.
+Keep Drizzle access out of route screens and presentational components.
 
 Preferred flow:
 
-```text
+```txt
 Screen -> feature screen hook -> feature data/action hook -> repository -> Drizzle
 ```
+
+Screens should consume feature-level hooks from:
+
+```txt
+src/features/*/hooks
+```
+
+Feature hooks may call `useDrizzle`, compose live queries, and call repository functions.
+
+Repositories own:
+
+- Drizzle table imports
+- query construction
+- transactions
+- synchronous reads/writes
+- app-level invariants
+
+Use reusable query builders named `*Query` so hooks can pass them to `useLiveWithFallback`.
 
 Good:
 
@@ -179,13 +299,15 @@ export default function ExercisesScreen() {
 }
 ```
 
-### 2. Use live queries with an explicit fallback
+### Live queries
 
-For reactive data, use `useLiveWithFallback` from `@/src/lib/db/use-live-with-fallback`.
-Pair every live query with a synchronous repository fallback so first render is populated before Drizzle's live listener emits.
+For reactive data, use:
 
 ```tsx
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
+
 const db = useDrizzle();
+
 const { data } = useLiveWithFallback(
   () => getExercisesQuery(db),
   () => getExercises(db),
@@ -193,262 +315,101 @@ const { data } = useLiveWithFallback(
 );
 ```
 
-### 3. Database lifecycle belongs to the provider
+Every live query needs a synchronous repository fallback so the first render has data before Drizzle’s live listener emits.
 
-- `DatabaseProvider` owns `SQLiteProvider`, migrations, seeding, and the Drizzle context.
-- `src/db/client.ts` owns database configuration (`WAL`, foreign keys), database name/options, and `createDrizzleDb`.
-- App code should not call `useSQLiteContext`, `createDrizzleDb`, `migrate`, or `runSeedIfNeeded` outside the database provider setup.
+### Database lifecycle
 
-### 4. Schema and migrations
+`DatabaseProvider` owns:
+
+- `SQLiteProvider`
+- migrations
+- seeding
+- Drizzle context
+
+`src/db/client.ts` owns:
+
+- database configuration
+- WAL
+- foreign keys
+- database name/options
+- `createDrizzleDb`
+
+App code should not call these outside provider setup:
+
+- `useSQLiteContext`
+- `createDrizzleDb`
+- `migrate`
+- `runSeedIfNeeded`
+
+### Schema and migrations
 
 - Schema lives in `src/db/schema.ts`.
 - Migrations live in `src/db/migrations`.
-- When changing schema, update Drizzle migrations instead of manually patching the local SQLite database.
-- Prefer repository helpers for app-level invariants such as archiving vs deleting custom exercises, rebuilding personal records, and settings defaults.
-
----
-
-## Layout Rules
-
-### 1. Always use the local SafeAreaView at screen root
-
-Prefer the shared `Screen` primitive from `@/src/components/ui/screen` for standard screens. It already handles the app's local `SafeAreaView`, optional vertical scrolling, padding, keyboard taps, and sticky footer layout.
-
-When a custom screen wrapper is needed, import the local hook-based `SafeAreaView` from `@/src/components/ui/safe-area-view`. It supports `className`, `edges`, normal `View` props, and additive numeric padding through `style`.
-
-```tsx
-import { SafeAreaView } from '@/src/components/ui/safe-area-view';
-
-<SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
-```
-
-Do not import `SafeAreaView` from `react-native-safe-area-context` in app UI. React Navigation warns that component can cause jumpy behavior during animations; use the local wrapper because it renders a regular `View` and applies insets with `useSafeAreaInsets`.
-
----
-
-### 2. Use ScrollView for vertical content
-
-If content can exceed screen height → ALWAYS use ScrollView.
-Use the styled wrapper for scrollable layouts:
-
-```tsx
-<StyledScrollView
-  className="flex-1"
-  contentContainerClassName="flex-grow px-4 py-6"
-/>
-```
-
-NEVER rely on View for scrollable layouts.
-
-For long or dynamic data lists, use `StyledFlatList`, `StyledBottomSheetFlatList`, or another appropriate list wrapper instead of mapping inside a `ScrollView`.
-
----
-
-### 3. Third-party style prop wrappers
-
-Components with two or more style props must use a styled wrapper. Do not import those components directly at call sites.
-
-Bad:
-
-```tsx
-import { ScrollView } from 'react-native';
-
-<ScrollView
-  style={{ flex: 1 }}
-  contentContainerStyle={{ paddingHorizontal: 16 }}
-/>;
-```
-
-Good:
-
-```tsx
-import { StyledScrollView } from '@/src/components/styled/scroll-view';
-
-<StyledScrollView className="flex-1" contentContainerClassName="px-4" />;
-```
-
-Existing wrappers include `StyledScrollView`, `StyledFlatList`, `StyledBottomSheetFlatList`, `StyledBottomSheetBackdrop`, `StyledTextInput`, and `StyledActivityIndicator`.
-
----
-
-### 4. Sticky footer layout pattern
-
-When a screen has a footer (e.g. a CTA button), use a styled scroll wrapper with a growing content container:
-
-```tsx
-import { SafeAreaView } from '@/src/components/ui/safe-area-view';
-
-<SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
-  <StyledScrollView
-    className="flex-1"
-    contentContainerClassName="flex-grow px-4 pt-6 pb-4"
-  >
-    {children}
-  </StyledScrollView>
-  <View className="border-border bg-background border-t px-4 py-4">
-    {footer}
-  </View>
-</SafeAreaView>;
-```
-
-### 4a. Screen keyboard behavior
-
-The shared `Screen` primitive already encodes the safest cross-platform keyboard handling we have found for this app's layouts.
-
-- Prefer `Screen` for standard form screens with a sticky footer instead of rebuilding `SafeAreaView` + `KeyboardAvoidingView` manually.
-- On iOS, `Screen` uses `KeyboardAvoidingView` with `behavior="padding"` because that keeps the footer moving naturally with the keyboard.
-- On Android, `Screen` uses `KeyboardAvoidingView` with `behavior="position"`.
-- Do NOT switch Android `Screen` back to `behavior="height"` unless you have re-tested footer screens carefully. In this app it caused stale bottom gaps after keyboard dismissal.
-- Do NOT add custom keyboard listeners or local footer-offset state to ordinary screens unless the shared `Screen` primitive is proven insufficient for that exact layout.
-
----
-
-### 5. Do NOT combine flex-1 with non-scroll content stacks
-
-Bad:
-
-```tsx
-<View className="flex-1">
-```
-
-Good:
-
-```tsx
-<ScrollView contentContainerClassName="flex-grow px-4 py-6">
-```
-
----
-
-### 6. Spacing system
-
-Use margin utilities:
-
-- mt-1 → tight spacing
-- mt-2 → small spacing
-- mt-3 → medium spacing
-- mt-4 → section spacing
-- mt-6 → large section break
-  Avoid random spacing values.
-
----
+- When changing schema, update Drizzle migrations.
+- Do not manually patch the local SQLite database.
 
 ## Component Structure
 
-Prefer simple reusable primitives:
+Prefer simple primitives:
 
-- Screen (wrapper)
-- Card
-- Button
-- Input
-- Badge
-- Text
-- Dialog
-- BottomSheet
-- EmptyState
-- Icon
+- `Screen`
+- `Card`
+- `Button`
+- `Input`
+- `Badge`
+- `Text`
+- `Dialog`
+- `BottomSheet`
+- `EmptyState`
+- `Icon`
 
-Current shared primitive locations:
+Shared locations:
 
-- `src/components/ui`: app primitives (`Screen`, `Button`, `Input`, `Text`, `Card`, `Dialog`, `BottomSheet`, etc.)
-- `src/components/styled`: NativeWind wrappers for React Native and third-party components with multiple style props
-- `src/components/database-provider.tsx`: SQLite/Drizzle provider and `useDrizzle`
-- `src/components/common-providers.tsx`: app-level provider composition
-
-Do NOT create deep abstraction layers early.
-
-Prefer one component per file when practical. If a component grows beyond a tiny private helper, move it into its own file near the feature or UI primitive it belongs to.
-
-Do not keep generic utility functions inside component files. If a helper is reusable outside that component or not tightly coupled to its render logic, move it under `src/lib/utils`.
-
----
-
-## Example Patterns
-
-### Card
-
-```tsx
-<View className="rounded-lg border border-border bg-card p-4">
+```txt
+src/components/ui                 app primitives
+src/components/styled             NativeWind wrappers
+src/components/database-provider.tsx
+src/components/common-providers.tsx
 ```
 
----
+Prefer one component per file when practical.
 
-### Section Title
+Small private render helpers may stay in the same file. Move larger or reusable components near the feature or UI primitive they belong to.
 
-```tsx
-<Text className="text-caption text-muted-foreground">
+Do not keep generic utilities inside component files. Move reusable utilities to:
+
+```txt
+src/lib/utils
 ```
 
----
-
-### Primary Text
-
-```tsx
-<Text className="text-h3 text-foreground">
-```
-
----
-
-### Secondary Text
-
-```tsx
-<Text className="text-small text-muted-foreground">
-```
-
----
-
-### Positive Feedback
-
-```tsx
-<Text className="text-caption text-progress-up">
-```
-
----
-
-### Button
-
-```tsx
-<Pressable className="bg-primary items-center rounded-lg px-4 py-4">
-  <Text className="text-body-medium text-primary-foreground">Action</Text>
-</Pressable>
-```
-
----
+Do not create deep abstraction layers early.
 
 ## Gorhom Bottom Sheet
 
-### Sheet types and when to use each
+### Dynamic sizing sheets
 
-Use `enableDynamicSizing` for sheets whose content height varies or is unknown
-(menus, pickers, confirmation dialogs). Use `snapPoints` for sheets with a
-fixed, predictable layout (search + list, full-screen pickers).
-
-### Keyboard behavior
-
-The correct configuration depends on the sheet type:
-
-**Dynamic sizing sheets (forms, dialogs):**
+Use for variable-height content such as forms, menus, pickers, and dialogs.
 
 ```tsx
 <BottomSheet
   enableDynamicSizing
   keyboardBehavior="interactive"
   keyboardBlurBehavior="restore"
+  androidKeyboardInputMode="adjustPan"
 >
 ```
 
-- `interactive` — sheet follows the keyboard up and down as it appears/dismisses
-- `restore` — sheet shrinks back to content height when keyboard closes
-- Do NOT pass `snapPoints` alongside `enableDynamicSizing` — they conflict
-- Do NOT use `animateOnMount={false}` — dynamic sizing measures layout during
-  mount animation; disabling it breaks the initial height calculation
-- Do NOT auto-focus inputs on sheet open — focusing triggers the keyboard before
-  dynamic sizing has measured the content, causing a blown-out layout. Let the
-  user tap the input instead
-- On Android, dynamic sizing sheets that use `keyboardBehavior="interactive"`
-  should use `androidKeyboardInputMode="adjustPan"` so the sheet can move with
-  the keyboard instead of fighting a resized window
+Rules:
 
-**Snap point sheets (search + list, tall pickers):**
+- Do not pass `snapPoints` with `enableDynamicSizing`.
+- Do not use `animateOnMount={false}` with dynamic sizing.
+- Do not auto-focus inputs on sheet open.
+- Use `keyboardBehavior="interactive"`.
+- Use `keyboardBlurBehavior="restore"`.
+
+### Snap point sheets
+
+Use for fixed, predictable layouts such as search + list or tall pickers.
 
 ```tsx
 <BottomSheet
@@ -458,150 +419,119 @@ The correct configuration depends on the sheet type:
 >
 ```
 
-- `extend` — sheet expands to fill remaining space above the keyboard
-- `restore` — sheet snaps back to the active snap point when keyboard closes
-- `interactive` with `snapPoints` adds keyboard height ON TOP of the snap point,
-  making the sheet grow unexpectedly large when the keyboard opens
-- On Android, fixed snap-point sheets with a bottom action row may also need
-  `androidKeyboardInputMode="adjustPan"` so footer buttons rise with the sheet.
-  `adjustResize` can leave the footer behind the keyboard on some form-style
-  sheets even when the content scrolls correctly
+Rules:
 
-### Bottom sheet input rules
+- Do not use `interactive` with snap points; it can add keyboard height on top of the snap point.
+- Use `androidKeyboardInputMode="adjustPan"` when footer buttons need to rise with the keyboard.
 
-- Inputs inside Gorhom sheets must use the bottom-sheet-aware input path:
-  `BottomSheetInput`, `StyledBottomSheetTextInput`, or another wrapper built on
-  `BottomSheetTextInput`
-- Do NOT use a plain React Native `TextInput` inside a keyboard-sensitive sheet
-  unless you have verified that the sheet still responds correctly on Android.
-  We saw the keyboard cover the rest timer input until it was migrated to the
-  Gorhom input primitive
-- The shared bottom-sheet text input wrapper already sets
-  `underlineColorAndroid="transparent"` to suppress Android's native blue
-  underline. Keep that behavior in the base wrapper instead of patching
-  individual call sites
+### Inputs inside sheets
 
-### Scrollable content inside sheets
+Inputs inside keyboard-sensitive Gorhom sheets must use the bottom-sheet-aware input path:
 
-`BottomSheetFlatList` must be a direct child of the sheet, not nested inside
-`BottomSheetView`. Wrapping it in `BottomSheetView` breaks scrolling because
-gorhom's internal scroll container expects the list to sit directly inside it.
+- `BottomSheetInput`
+- `StyledBottomSheetTextInput`
+- another wrapper built on `BottomSheetTextInput`
+
+Do not use plain RN `TextInput` inside keyboard-sensitive sheets unless Android behavior has been verified.
+
+### Lists inside sheets
+
+`BottomSheetFlatList` must be a direct child of the sheet.
+
+Good:
 
 ```tsx
-// ✅ correct — FlatList as direct sheet child
 <GorhomBottomSheet snapPoints={['70%', '90%']}>
-  <View>{/* header and filters */}</View>
-  <StyledBottomSheetFlatList data={items} ... />
+  <View>{/* header */}</View>
+  <StyledBottomSheetFlatList data={items} />
 </GorhomBottomSheet>
+```
 
-// ❌ wrong — FlatList inside BottomSheetView
+Bad:
+
+```tsx
 <GorhomBottomSheet snapPoints={['70%', '90%']}>
   <BottomSheetView style={{ flex: 1 }}>
-    <StyledBottomSheetFlatList data={items} ... />
+    <StyledBottomSheetFlatList data={items} />
   </BottomSheetView>
 </GorhomBottomSheet>
 ```
 
-The base `BottomSheet` component handles this automatically — it only wraps
-children in `BottomSheetView` when `enableDynamicSizing` is true. When using
-`snapPoints`, children render directly inside the sheet so `BottomSheetFlatList`
-works correctly.
+The base `BottomSheet` component handles this automatically.
 
-### Safe area padding
+### Bottom safe area
 
-For sheets with content at the bottom edge (buttons, footers), add bottom safe
-area padding manually. `BottomSheetView` does not apply it automatically:
+For bottom sheet footers/buttons, add safe-area padding manually:
 
 ```tsx
 const insets = useSafeAreaInsets();
 
-<View style={{ paddingBottom: insets.bottom + 16 }}>
-  {/* buttons or footer content */}
-</View>;
+<View style={{ paddingBottom: insets.bottom + 16 }}>{children}</View>;
 ```
-
-`insets.bottom` is the device home indicator height (34px on modern iPhones, 0
-on devices with a home button). The additional value is visual breathing room —
-adjust to taste.
 
 ## Data Display Rules
 
-For workout, progress, and exercise-summary surfaces:
+For workout, progress, and exercise-summary UI:
 
-- Show **last workout**
-- Show **progress indicator**
-- Keep numbers readable:
-  - "60 × 8, 8, 7"
-  - "+2 reps"
-  - "+2.5 kg"
+- Show last workout.
+- Show progress indicator.
+- Keep numbers compact and readable.
 
----
+Examples:
+
+```txt
+60 × 8, 8, 7
++2 reps
++2.5 kg
+```
 
 ## Interaction Rules
 
-- Use Pressable for all touch interactions
-- Ensure touch targets are large (padding ≥ 12px)
-- Avoid nested touchables unless necessary
-
----
+- Use `Pressable` for touch interactions.
+- Keep touch targets large, usually `p-3` or greater.
+- Avoid nested touchables unless necessary.
 
 ## Validation Commands
 
 This project currently has no dedicated test script in `package.json`.
 
-After code changes, run the relevant available checks:
+After code changes, run:
 
-- `pnpm run ts-check`
-- `pnpm run lint`
-- `pnpm run prettier:check`
+```sh
+pnpm run ts-check
+pnpm run lint
+pnpm run prettier:check
+```
 
-For logic changes, add or update tests when a test harness exists. If no test harness exists for the touched area, explicitly say that and rely on `ts-check`/`lint` plus focused manual verification.
+For logic changes, add or update tests when a test harness exists.
 
----
+If no test harness exists for the touched area, say so explicitly and rely on:
 
-## Common Pitfalls (MUST AVOID)
+- type check
+- lint
+- prettier check
+- focused manual verification
 
-### Missing ScrollView
+Never claim completion if checks are failing.
 
-Leads to content being hidden off-screen
+## Common Pitfalls
 
-### NativeWind className on external components for layout
+Avoid:
 
-Do not use direct imports of third-party components with multiple style props and then pass raw style objects. Use the wrappers in `src/components/styled` so `className`, `contentContainerClassName`, and related props are mapped consistently. For external components without wrappers, keep layout-critical inline style when needed.
-
-### Importing SafeAreaView from react-native-safe-area-context
-
-Do not import `SafeAreaView` directly from `react-native-safe-area-context` for app UI. Use `Screen` for normal screens, or `SafeAreaView` from `@/src/components/ui/safe-area-view` for custom roots. The local wrapper avoids the known jumpy-layout behavior by using `useSafeAreaInsets`.
-
-### Using line-height globally
-
-Breaks layout in React Native
-
-### Hardcoding colors
-
-Breaks theme consistency
-
-### Overusing flex-1
-
-Can push content out of view
-
-### Complex abstractions early
-
-Slows down development
-
-### Calling useDrizzle in screens
-
-Leaks persistence details into UI routes. Put data access in feature hooks and repositories instead.
-
-### Building Drizzle queries in components
-
-Makes live-query behavior and fallback reads inconsistent. Keep query builders in `repository.ts` files.
-
----
+- Missing `ScrollView` / list wrappers for content that can exceed screen height.
+- Importing `SafeAreaView` from `react-native-safe-area-context` in app UI.
+- Hardcoded colors or font sizes.
+- Global line-height tokens.
+- Overusing `flex-1` on non-scroll stacks.
+- Calling `useDrizzle` in route screens.
+- Building Drizzle queries in components.
+- Directly importing third-party components with multiple style props instead of using styled wrappers.
+- Adding abstractions before they are needed.
+- Adding dependencies for small problems.
 
 ## File Organization
 
-```
+```txt
 src/
   app/
     (tabs)/
@@ -624,41 +554,33 @@ src/
   theme/
 ```
 
----
-
 ## When Generating Code
 
-The agent MUST:
+The agent must:
 
-1. Use NativeWind classes for theming and spacing
-2. Respect theme tokens
-3. Use ScrollView for vertical layouts, or FlatList/SectionList for long dynamic lists
-4. Use `Screen` at screen roots, or the local `SafeAreaView` from `@/src/components/ui/safe-area-view` when a custom safe-area root is needed
-5. Keep components simple
-6. Avoid unnecessary libraries
-7. Use styled wrappers from `@/src/components/styled` for third-party components with multiple style props
-8. Avoid inline styles for core RN components **except** for animated values, unwrapped external layout-critical flex, or native APIs that require raw values from `@/src/theme/tokens`
-9. Avoid web-only assumptions
-10. Keep database reads/writes in feature hooks and repositories; do not call `useDrizzle` from route screens or presentational components
-11. Use `useLiveWithFallback` for reactive Drizzle reads, with repository `*Query` and synchronous fallback functions
-
----
+1. Use NativeWind classes for theming and spacing.
+2. Respect semantic theme tokens.
+3. Use `Screen` for standard screen roots.
+4. Use the local SafeAreaView only for custom safe-area roots.
+5. Use scroll/list wrappers for vertical content.
+6. Use styled wrappers for third-party components with multiple style props.
+7. Keep data access in feature hooks and repositories.
+8. Use `useLiveWithFallback` for reactive Drizzle reads.
+9. Keep components simple.
+10. Avoid web-only assumptions.
+11. Avoid unnecessary libraries.
+12. Follow existing file and naming patterns.
 
 ## Output Expectations
 
 When generating UI code:
 
-- Provide complete, working components
-- Use realistic data (Bench Press, Squat, etc.)
-- Follow spacing + typography rules
-- Ensure layout works on mobile screens
-
----
+- Provide complete, working components.
+- Use realistic workout data where examples are needed.
+- Follow spacing, typography, and theme rules.
+- Ensure layouts work on mobile screens.
 
 ## Goal
 
-Build a fast, minimal, high-quality workout tracking app with:
-
-- excellent UX
-- clean design system
-- maintainable code
+Build a fast, minimal, high-quality workout tracker with excellent UX, a clean design system, and maintainable code.
+````
