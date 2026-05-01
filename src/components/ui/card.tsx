@@ -1,6 +1,7 @@
-import type { ReactElement, ReactNode } from 'react';
-import { Text, View } from 'react-native';
+import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn';
+import type { ReactElement, ReactNode } from 'react';
+import { View } from 'react-native';
 
 type TextChild = string | number | ReactElement<unknown, typeof Text>;
 
@@ -29,7 +30,9 @@ export function CardHeader({ children, className }: CardProps) {
  */
 export function CardTitle({ children, className }: CardProps<TextChildren>) {
   return (
-    <Text className={cn('text-h3 text-foreground', className)}>{children}</Text>
+    <Text variant="h3" className={className}>
+      {children}
+    </Text>
   );
 }
 
@@ -42,7 +45,7 @@ export function CardDescription({
   className
 }: CardProps<TextChildren>) {
   return (
-    <Text className={cn('text-small text-muted-foreground mt-1', className)}>
+    <Text variant="small" tone="muted" className={cn('mt-1', className)}>
       {children}
     </Text>
   );
