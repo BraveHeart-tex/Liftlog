@@ -1,4 +1,5 @@
 import { StyledTextInput } from '@/src/components/styled/text-input';
+import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn';
 import {
   forwardRef,
@@ -6,7 +7,7 @@ import {
   type ComponentPropsWithoutRef,
   type ReactNode
 } from 'react';
-import { Text, View, type TextInput } from 'react-native';
+import { View, type TextInput } from 'react-native';
 
 type NativeTextInputProps = ComponentPropsWithoutRef<typeof TextInput>;
 
@@ -59,7 +60,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
   return (
     <View className={cn('w-full', className)}>
       {label ? (
-        <Text className={cn('text-small text-foreground', labelClassName)}>
+        <Text variant="small" className={labelClassName}>
           {label}
         </Text>
       ) : null}
@@ -115,15 +116,18 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
       </View>
 
       {error ? (
-        <Text className={cn('text-caption text-danger mt-2', errorClassName)}>
+        <Text
+          variant="caption"
+          tone="danger"
+          className={cn('mt-2', errorClassName)}
+        >
           {error}
         </Text>
       ) : hint ? (
         <Text
-          className={cn(
-            'text-caption text-muted-foreground mt-2',
-            hintClassName
-          )}
+          variant="caption"
+          tone="muted"
+          className={cn('mt-2', hintClassName)}
         >
           {hint}
         </Text>

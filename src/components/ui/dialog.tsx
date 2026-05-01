@@ -1,4 +1,5 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
+import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn';
 import { BlurView } from 'expo-blur';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -8,7 +9,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  Text,
   View
 } from 'react-native';
 
@@ -136,13 +136,15 @@ export function DialogHeader({ children, className }: DialogSectionProps) {
 
 export function DialogTitle({ children, className }: DialogSectionProps) {
   return (
-    <Text className={cn('text-h3 text-foreground', className)}>{children}</Text>
+    <Text variant="h3" className={className}>
+      {children}
+    </Text>
   );
 }
 
 export function DialogDescription({ children, className }: DialogSectionProps) {
   return (
-    <Text className={cn('text-small text-muted-foreground mt-1', className)}>
+    <Text variant="small" tone="muted" className={cn('mt-1', className)}>
       {children}
     </Text>
   );
