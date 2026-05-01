@@ -7,16 +7,14 @@ import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { ExerciseHistoryTab } from '@/src/features/workouts/components/exercise-history-tab';
 import { ExerciseTrackTab } from '@/src/features/workouts/components/exercise-track-tab';
-import {
-  RestTimerSheet,
-  timerRef
-} from '@/src/features/workouts/components/rest-timer-sheet';
+import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sheet';
 import { useActiveWorkoutExerciseDetail } from '@/src/features/workouts/hooks';
+import { useIsRestTimerRunning } from '@/src/features/workouts/hooks/use-is-rest-timer-running';
 import { cn } from '@/src/lib/utils/cn';
 import { getRouteParamId } from '@/src/lib/utils/route';
 import { useLocalSearchParams } from 'expo-router';
 import { TimerIcon } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -40,20 +38,12 @@ export default function ActiveWorkoutExerciseScreen() {
 
   const [selectedTab, setSelectedTab] = useState<ExerciseDetailTab>('track');
   const [isRestTimerOpen, setIsRestTimerOpen] = useState(false);
-  const [timerIndicatorTick, setTimerIndicatorTick] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const [outerScrollEnabled, setOuterScrollEnabled] = useState(true);
 
   const { width } = useWindowDimensions();
   const { item, isLoading } = useActiveWorkoutExerciseDetail(workoutExerciseId);
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setTimerIndicatorTick(tick => tick + 1);
-    }, 5000);
-
-    return () => clearInterval(intervalId);
-  }, []);
+  const isRestTimerRunning = useIsRestTimerRunning();
 
   const handleSelectTab = (tab: ExerciseDetailTab) => {
     const tabIndex = tabs.indexOf(tab);
@@ -70,12 +60,6 @@ export default function ActiveWorkoutExerciseScreen() {
 
     setSelectedTab(tabs[pageIndex] ?? 'track');
   };
-
-  const isRestTimerRunning =
-    timerRef.isRunning &&
-    timerRef.endTime !== null &&
-    timerRef.endTime > Date.now() &&
-    timerIndicatorTick >= 0;
 
   if (workoutExerciseId && isLoading) {
     return (

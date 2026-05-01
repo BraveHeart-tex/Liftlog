@@ -1,13 +1,13 @@
+import { useDrizzle } from '@/src/components/database-provider';
 import type { Workout } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
-import { timerRef } from '@/src/features/workouts/components/rest-timer-sheet';
 import {
   getWorkoutExercises,
   getWorkoutExercisesQuery
 } from '@/src/features/workouts/repository';
-import { useDrizzle } from '@/src/components/database-provider';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { useEffect, useMemo, useState } from 'react';
+import { useIsRestTimerRunning } from './use-is-rest-timer-running';
 
 interface UseActiveWorkoutContentParams {
   activeWorkout: Workout;
@@ -22,7 +22,7 @@ export function useActiveWorkoutContent({
   const [now, setNow] = useState(() => Date.now());
   const [isExercisePickerOpen, setIsExercisePickerOpen] = useState(false);
   const [isRestTimerOpen, setIsRestTimerOpen] = useState(false);
-  const [timerIndicatorTick, setTimerIndicatorTick] = useState(0);
+  const isRestTimerRunning = useIsRestTimerRunning();
   const workoutExerciseResult = useLiveWithFallback(
     () => getWorkoutExercisesQuery(db, activeWorkout.id),
     () => getWorkoutExercises(db, activeWorkout.id),
@@ -48,22 +48,6 @@ export function useActiveWorkoutContent({
       clearInterval(intervalId);
     };
   }, [activeWorkout]);
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setTimerIndicatorTick(tick => tick + 1);
-    }, 5000);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, []);
-
-  const isRestTimerRunning =
-    timerRef.isRunning &&
-    timerRef.endTime !== null &&
-    timerRef.endTime > Date.now() &&
-    timerIndicatorTick >= 0;
 
   return {
     now,

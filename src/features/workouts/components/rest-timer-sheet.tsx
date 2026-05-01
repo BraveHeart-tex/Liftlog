@@ -8,6 +8,10 @@ import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { useSettings } from '@/src/features/settings/hooks';
+import {
+  MIN_REST_TIMER_SECONDS,
+  useRestTimerStore
+} from '@/src/features/workouts/stores/rest-timer-store';
 import { formatTime } from '@/src/lib/utils/format-time';
 import {
   setAudioModeAsync,
@@ -16,38 +20,8 @@ import {
 } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import { XIcon } from 'lucide-react-native';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { View } from 'react-native';
-
-const MIN_DURATION_SECONDS = 10;
-const MAX_DURATION_SECONDS = 3600;
-const DEFAULT_DURATION_SECONDS = 90;
-
-export const timerRef = {
-  endTime: null as number | null,
-  pausedRemaining: null as number | null,
-  durationSeconds: DEFAULT_DURATION_SECONDS,
-  hasCompleted: false,
-  isRunning: false
-};
-
-type TimerStatus = 'idle' | 'running' | 'paused';
-
-function clampDuration(value: number) {
-  return Math.max(MIN_DURATION_SECONDS, Math.min(MAX_DURATION_SECONDS, value));
-}
-
-function deriveStatus(): TimerStatus {
-  if (timerRef.isRunning) {
-    return 'running';
-  }
-
-  if (!timerRef.hasCompleted && timerRef.pausedRemaining !== null) {
-    return 'paused';
-  }
-
-  return 'idle';
-}
 
 interface RestTimerSheetProps {
   isOpen: boolean;
@@ -57,23 +31,33 @@ interface RestTimerSheetProps {
 export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
   /*
    * Approach:
-   * 1. Use Gorhom's keyboard-aware text input inside the sheet.
-   * 2. Preserve the current numeric input styling and behavior.
-   * 3. Let the shared BottomSheet keyboard config handle Android lifting.
+   * 1. Keep timer state and math in the Zustand store.
+   * 2. Keep this sheet responsible for rendering and user feedback only.
+   * 3. Drive completion with a tiny interval while the component is mounted.
    */
   const { restTimerDuration: defaultDuration } = useSettings();
-  const [secondsRemaining, setSecondsRemaining] = useState(() =>
-    Math.ceil(
-      (timerRef.pausedRemaining ?? timerRef.durationSeconds * 1000) / 1000
-    )
+  const status = useRestTimerStore(state => state.status);
+  const secondsRemaining = useRestTimerStore(state => state.secondsRemaining);
+  const activeDuration = useRestTimerStore(
+    state => state.activeDurationSeconds
   );
-  const [status, setStatus] = useState<TimerStatus>(() => deriveStatus());
-  const [activeDuration, setActiveDuration] = useState(
-    timerRef.durationSeconds
+  const inputValue = useRestTimerStore(state => state.inputValue);
+  const completionCount = useRestTimerStore(state => state.completionCount);
+  const syncDefaultDuration = useRestTimerStore(
+    state => state.syncDefaultDuration
   );
-  const [inputValue, setInputValue] = useState(timerRef.durationSeconds);
+  const syncOnOpen = useRestTimerStore(state => state.syncOnOpen);
+  const tick = useRestTimerStore(state => state.tick);
+  const setInputFromText = useRestTimerStore(state => state.setInputFromText);
+  const commitInput = useRestTimerStore(state => state.commitInput);
+  const decreaseInput = useRestTimerStore(state => state.decreaseInput);
+  const increaseInput = useRestTimerStore(state => state.increaseInput);
+  const startTimer = useRestTimerStore(state => state.start);
+  const pauseTimer = useRestTimerStore(state => state.pause);
+  const resumeTimer = useRestTimerStore(state => state.resume);
+  const cancelTimer = useRestTimerStore(state => state.cancel);
   const wasOpenRef = useRef(false);
-  const statusRef = useRef(status);
+  const completionCountRef = useRef(completionCount);
   const player = useAudioPlayer(
     require('@/src/assets/sounds/rest-complete.mp3'),
     {
@@ -81,43 +65,6 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
       keepAudioSessionActive: true
     }
   );
-
-  function getSecondsRemaining(): number {
-    if (!timerRef.isRunning || timerRef.endTime === null) {
-      return Math.ceil(
-        (timerRef.pausedRemaining ?? timerRef.durationSeconds * 1000) / 1000
-      );
-    }
-
-    return Math.max(0, Math.ceil((timerRef.endTime - Date.now()) / 1000));
-  }
-
-  function startTimer(totalSeconds: number) {
-    timerRef.durationSeconds = totalSeconds;
-    timerRef.endTime = Date.now() + totalSeconds * 1000;
-    timerRef.pausedRemaining = null;
-    timerRef.isRunning = true;
-    timerRef.hasCompleted = false;
-
-    setSecondsRemaining(totalSeconds);
-    setStatus('running');
-    setActiveDuration(totalSeconds);
-    setInputValue(totalSeconds);
-  }
-
-  function setPausedInputValue(value: number) {
-    setInputValue(value);
-
-    if (status !== 'paused') {
-      return;
-    }
-
-    const remaining = clampDuration(value);
-
-    timerRef.pausedRemaining = remaining * 1000;
-    setSecondsRemaining(remaining);
-    setActiveDuration(remaining);
-  }
 
   const playCompletionFeedback = useCallback(async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -146,64 +93,25 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
   }, []);
 
   useEffect(() => {
-    statusRef.current = status;
-  }, [status]);
-
-  useEffect(() => {
     const id = setInterval(() => {
-      const remaining = getSecondsRemaining();
-
-      setSecondsRemaining(remaining);
-
-      if (timerRef.isRunning && remaining <= 0) {
-        const shouldPlayCompletionFeedback = !timerRef.hasCompleted;
-
-        timerRef.isRunning = false;
-        timerRef.hasCompleted = true;
-        timerRef.endTime = null;
-        timerRef.pausedRemaining = null;
-
-        const previousDuration = timerRef.durationSeconds;
-
-        setSecondsRemaining(previousDuration);
-        setActiveDuration(previousDuration);
-        setInputValue(previousDuration);
-        setStatus('idle');
-        statusRef.current = 'idle';
-
-        if (shouldPlayCompletionFeedback) {
-          playCompletionFeedback();
-        }
-
-        return;
-      }
-
-      const nextStatus = deriveStatus();
-
-      if (nextStatus !== statusRef.current) {
-        statusRef.current = nextStatus;
-        setStatus(nextStatus);
-
-        if (nextStatus === 'idle') {
-          setActiveDuration(timerRef.durationSeconds);
-          setInputValue(timerRef.durationSeconds);
-        }
-      }
+      tick();
     }, 500);
 
     return () => clearInterval(id);
-  }, [playCompletionFeedback]);
+  }, [tick]);
 
   useEffect(() => {
-    if (!timerRef.isRunning && !timerRef.hasCompleted) {
-      timerRef.durationSeconds = defaultDuration;
-      timerRef.pausedRemaining = null;
-      setActiveDuration(defaultDuration);
-      setInputValue(defaultDuration);
-      setSecondsRemaining(defaultDuration);
-      setStatus('idle');
+    if (completionCount === completionCountRef.current) {
+      return;
     }
-  }, [defaultDuration]);
+
+    completionCountRef.current = completionCount;
+    playCompletionFeedback();
+  }, [completionCount, playCompletionFeedback]);
+
+  useEffect(() => {
+    syncDefaultDuration(defaultDuration);
+  }, [defaultDuration, syncDefaultDuration]);
 
   useEffect(() => {
     const didOpen = isOpen && !wasOpenRef.current;
@@ -214,149 +122,42 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
       return;
     }
 
-    // When sheet opens and timer is idle, use settings default.
-    if (!timerRef.isRunning && !timerRef.hasCompleted) {
-      timerRef.durationSeconds = defaultDuration;
-    }
-
-    const currentStatus = deriveStatus();
-    const remaining = getSecondsRemaining();
-
-    setSecondsRemaining(remaining);
-    setStatus(currentStatus);
-    setActiveDuration(
-      currentStatus === 'paused' ? remaining : timerRef.durationSeconds
-    );
-    setInputValue(
-      currentStatus === 'paused' ? remaining : timerRef.durationSeconds
-    );
-  }, [defaultDuration, isOpen]);
+    syncOnOpen(defaultDuration);
+  }, [defaultDuration, isOpen, syncOnOpen]);
 
   const handleInputChange = (value: string) => {
-    if (value.trim().length === 0) {
-      setInputValue(0);
-
-      return;
-    }
-
-    const digits = value.replace(/\D/g, '');
-
-    if (digits.length === 0) {
-      setInputValue(0);
-
-      return;
-    }
-
-    const parsed = Number(digits);
-
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      setInputValue(0);
-
-      return;
-    }
-
-    setPausedInputValue(Math.min(MAX_DURATION_SECONDS, parsed));
+    setInputFromText(value);
   };
 
   const handleInputBlur = () => {
-    if (!Number.isFinite(inputValue) || inputValue <= 0) {
-      setPausedInputValue(clampDuration(defaultDuration));
-
-      return;
-    }
-
-    setPausedInputValue(clampDuration(inputValue));
+    commitInput(defaultDuration);
   };
 
   const handleDecreaseInput = () => {
-    setInputValue(current => {
-      const next = Math.max(
-        MIN_DURATION_SECONDS,
-        current - MIN_DURATION_SECONDS
-      );
-
-      if (status === 'paused') {
-        timerRef.pausedRemaining = next * 1000;
-        setSecondsRemaining(next);
-        setActiveDuration(next);
-      }
-
-      return next;
-    });
+    decreaseInput();
   };
 
   const handleIncreaseInput = () => {
-    setInputValue(current => {
-      const next = Math.min(
-        MAX_DURATION_SECONDS,
-        current + MIN_DURATION_SECONDS
-      );
-
-      if (status === 'paused') {
-        timerRef.pausedRemaining = next * 1000;
-        setSecondsRemaining(next);
-        setActiveDuration(next);
-      }
-
-      return next;
-    });
+    increaseInput();
   };
 
   const handleStart = () => {
-    const clamped = clampDuration(inputValue);
-
-    setInputValue(clamped);
-    startTimer(clamped);
+    startTimer();
   };
 
   const handlePause = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    timerRef.pausedRemaining = Math.max(0, timerRef.endTime! - Date.now());
-    timerRef.isRunning = false;
-    timerRef.endTime = null;
-
-    const remaining = getSecondsRemaining();
-
-    setSecondsRemaining(remaining);
-    setInputValue(Math.ceil(remaining));
-    setStatus('paused');
+    pauseTimer();
   };
 
   const handleResume = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    const resumeSeconds = clampDuration(
-      status === 'paused' && timerRef.pausedRemaining !== null
-        ? Math.ceil(timerRef.pausedRemaining / 1000)
-        : inputValue
-    );
-
-    timerRef.endTime = Date.now() + resumeSeconds * 1000;
-    timerRef.pausedRemaining = null;
-    timerRef.isRunning = true;
-    timerRef.hasCompleted = false;
-
-    setInputValue(resumeSeconds);
-    setSecondsRemaining(resumeSeconds);
-    setActiveDuration(resumeSeconds);
-    setStatus('running');
+    resumeTimer();
   };
 
   const handleCancel = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    timerRef.isRunning = false;
-    timerRef.hasCompleted = false;
-    timerRef.endTime = null;
-    timerRef.pausedRemaining = null;
-
-    const original = timerRef.durationSeconds;
-
-    setSecondsRemaining(original);
-    setActiveDuration(original);
-    setInputValue(original);
-    setStatus('idle');
+    cancelTimer();
   };
 
   const handleClose = () => {
@@ -391,7 +192,7 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
               <Button
                 variant="secondary"
                 size="icon"
-                disabled={inputValue <= MIN_DURATION_SECONDS}
+                disabled={inputValue <= MIN_REST_TIMER_SECONDS}
                 onPress={handleDecreaseInput}
               >
                 <Text variant="h3">-</Text>
