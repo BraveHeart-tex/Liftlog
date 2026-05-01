@@ -1,11 +1,11 @@
 import { create } from 'zustand';
 
 export const MIN_REST_TIMER_SECONDS = 10;
-export const MAX_REST_TIMER_SECONDS = 3600;
-export const DEFAULT_REST_TIMER_SECONDS = 90;
+const MAX_REST_TIMER_SECONDS = 3600;
+const DEFAULT_REST_TIMER_SECONDS = 90;
 const REST_TIMER_STEP_SECONDS = 10;
 
-export type RestTimerStatus = 'idle' | 'running' | 'paused';
+type RestTimerStatus = 'idle' | 'running' | 'paused';
 
 interface RestTimerState {
   status: RestTimerStatus;
@@ -29,7 +29,7 @@ interface RestTimerState {
   cancel: () => void;
 }
 
-export function clampRestTimerDuration(value: number) {
+function clampRestTimerDuration(value: number) {
   return Math.max(
     MIN_REST_TIMER_SECONDS,
     Math.min(MAX_REST_TIMER_SECONDS, value)
@@ -208,7 +208,8 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
     }
 
     const pausedRemainingMs = Math.max(0, state.endTime - Date.now());
-    const secondsRemaining = Math.ceil(pausedRemainingMs / 1000);
+    const secondsRemaining =
+      pausedRemainingMs <= 0 ? 0 : Math.ceil(pausedRemainingMs / 1000);
 
     set({
       status: 'paused',
@@ -220,11 +221,24 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
   },
   resume: () => {
     const state = get();
-    const resumeSeconds = clampRestTimerDuration(
-      state.status === 'paused' && state.pausedRemainingMs !== null
-        ? Math.ceil(state.pausedRemainingMs / 1000)
-        : state.inputValue
-    );
+    let resumeSeconds = clampRestTimerDuration(state.inputValue);
+
+    if (state.status === 'paused' && state.pausedRemainingMs !== null) {
+      if (state.pausedRemainingMs <= 0) {
+        set({
+          endTime: null,
+          pausedRemainingMs: 0,
+          secondsRemaining: 0,
+          inputValue: 0
+        });
+
+        return;
+      }
+
+      resumeSeconds = clampRestTimerDuration(
+        Math.ceil(state.pausedRemainingMs / 1000)
+      );
+    }
 
     set({
       status: 'running',
