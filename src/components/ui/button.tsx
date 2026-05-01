@@ -93,6 +93,7 @@ export function Button({
     >
       {loading ? (
         <Text
+          tone="inherit"
           className={cn(textClassNames[variant], textClassName)}
           style={buttonTextStyle}
         >
@@ -103,6 +104,7 @@ export function Button({
           {leftIcon}
           {label !== null ? (
             <Text
+              tone="inherit"
               className={cn(
                 textClassNames[variant],
                 isIconButton && 'text-h3',

@@ -15,7 +15,13 @@ type TextVariant =
   | 'small'
   | 'caption';
 
-type TextTone = 'default' | 'muted' | 'success' | 'warning' | 'danger';
+type TextTone =
+  | 'default'
+  | 'muted'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'inherit';
 
 const variantClassNames: Record<TextVariant, string> = {
   h1: 'text-h1',
@@ -32,7 +38,8 @@ const toneClassNames: Record<TextTone, string> = {
   muted: 'text-muted-foreground',
   success: 'text-success',
   warning: 'text-warning',
-  danger: 'text-danger'
+  danger: 'text-danger',
+  inherit: ''
 };
 
 const variantFontFamilies: Record<TextVariant, string> = {

@@ -57,6 +57,7 @@ export function ChoiceChip({
       {label !== null ? (
         <Text
           variant="small"
+          tone="inherit"
           className={cn(
             selected ? 'text-primary-foreground' : 'text-muted-foreground',
             textClassName
