@@ -63,12 +63,12 @@ const BottomSheetTextInputColorBridge = forwardRef<
   return (
     <BottomSheetTextInput
       ref={ref}
-      underlineColorAndroid="transparent"
       placeholderTextColor={
         placeholderTextColor ?? getStyleColor(placeholderStyle)
       }
       selectionColor={selectionColor ?? getStyleColor(selectionStyle)}
       {...props}
+      underlineColorAndroid="transparent"
     />
   );
 });
