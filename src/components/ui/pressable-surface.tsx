@@ -87,6 +87,7 @@ export function PressableSurface({
         accessibilityRole={accessibilityRole}
         accessibilityState={{ ...accessibilityState, disabled: isDisabled }}
         className={cn(
+          'will-change-variable',
           className,
           isDisabled && disabledClassName,
           pressed && !isDisabled && pressedClassName
