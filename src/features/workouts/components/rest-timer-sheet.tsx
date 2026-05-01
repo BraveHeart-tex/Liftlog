@@ -28,6 +28,8 @@ interface RestTimerSheetProps {
   onClose: () => void;
 }
 
+let lastPlayedCompletionCount = 0;
+
 export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
   /*
    * Approach:
@@ -57,7 +59,6 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
   const resumeTimer = useRestTimerStore(state => state.resume);
   const cancelTimer = useRestTimerStore(state => state.cancel);
   const wasOpenRef = useRef(false);
-  const completionCountRef = useRef(completionCount);
   const player = useAudioPlayer(
     require('@/src/assets/sounds/rest-complete.mp3'),
     {
@@ -93,19 +94,23 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
   }, []);
 
   useEffect(() => {
+    if (status !== 'running') {
+      return;
+    }
+
     const id = setInterval(() => {
       tick();
     }, 500);
 
     return () => clearInterval(id);
-  }, [tick]);
+  }, [status, tick]);
 
   useEffect(() => {
-    if (completionCount === completionCountRef.current) {
+    if (completionCount <= lastPlayedCompletionCount) {
       return;
     }
 
-    completionCountRef.current = completionCount;
+    lastPlayedCompletionCount = completionCount;
     playCompletionFeedback();
   }, [completionCount, playCompletionFeedback]);
 
