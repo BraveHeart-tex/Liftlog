@@ -1,0 +1,18 @@
+{
+  "React Native component from kebab filename": {
+    "scope": "typescriptreact",
+    "prefix": "rncomp",
+    "description": "Create a React Native component using the current kebab-case filename as PascalCase component name",
+    "body": [
+      "import { Text, View } from 'react-native';",
+      "",
+      "export const ${TM_FILENAME_BASE/(^|-)([a-z])/${2:/upcase}/g} = () => {",
+      "  return (",
+      "    <View>",
+      "      <Text>${TM_FILENAME_BASE}</Text>",
+      "    </View>",
+      "  );",
+      "};"
+    ]
+  }
+}

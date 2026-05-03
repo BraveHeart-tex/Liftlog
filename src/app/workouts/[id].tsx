@@ -1,11 +1,11 @@
 import { Button } from '@/src/components/ui/button';
-import { Card, CardContent } from '@/src/components/ui/card';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
 import { WorkoutDetailHeader } from '@/src/features/workouts/components/workout-detail-header';
+import { WorkoutHistoryExerciseCard } from '@/src/features/workouts/components/workout-history-exercise-card';
 import { WorkoutMetricCard } from '@/src/features/workouts/components/workout-metric-card';
 import {
   useRepeatWorkout,
@@ -267,40 +267,12 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
               setsByWorkoutExerciseId.get(workoutExercise.id) ?? [];
 
             return (
-              <Card key={workoutExercise.id} className="mt-3">
-                <CardContent>
-                  <Text variant="bodyMedium">
-                    {exercise?.name ?? 'Unknown exercise'}
-                  </Text>
-
-                  {completedSets.length === 0 ? (
-                    <Text variant="small" tone="muted" className="mt-2">
-                      No sets logged
-                    </Text>
-                  ) : (
-                    <View className="mt-3">
-                      {completedSets.map((set, index) => (
-                        <View
-                          key={set.id}
-                          className="flex-row items-center gap-3 py-1"
-                        >
-                          <Text variant="caption" tone="muted" className="w-6">
-                            {index + 1}
-                          </Text>
-                          <Text variant="caption">
-                            {formatWeightForUnit(set.weightKg, weightUnit)}{' '}
-                            {weightUnit}
-                          </Text>
-                          <Text variant="caption" tone="muted">
-                            x
-                          </Text>
-                          <Text variant="caption">{set.reps} reps</Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </CardContent>
-              </Card>
+              <WorkoutHistoryExerciseCard
+                key={workoutExercise.id}
+                exerciseName={exercise?.name ?? 'Unknown exercise'}
+                completedSets={completedSets}
+                weightUnit={weightUnit}
+              />
             );
           })
         )}
