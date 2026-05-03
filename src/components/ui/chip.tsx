@@ -48,7 +48,9 @@ export function ChoiceChip({
       className={cn(
         'border-border min-h-11 items-center justify-center border px-4 py-3',
         shapeClassNames[shape],
-        selected ? 'bg-primary border-primary' : 'bg-background/50',
+        selected
+          ? 'bg-primary border-primary'
+          : 'bg-card/50 dark:bg-background/50',
         className
       )}
       disabled={disabled}
