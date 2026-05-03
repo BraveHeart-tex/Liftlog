@@ -33,7 +33,44 @@ export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const workoutId = getRouteParamId(id);
 
+  const detail = useWorkoutHistoryDetail(workoutId);
+
+  if (workoutId && detail.isLoading) {
+    return (
+      <Screen withPadding={false}>
+        <LoadingState label="Loading workout..." />
+      </Screen>
+    );
+  }
+
+  if (!detail.workout) {
+    return (
+      <Screen
+        withPadding={false}
+        contentClassName="items-center justify-center px-6"
+      >
+        <Text variant="h3" className="text-center">
+          Workout not found
+        </Text>
+        <Text variant="small" tone="muted" className="mt-2 text-center">
+          This workout may have been deleted.
+        </Text>
+      </Screen>
+    );
+  }
+
+  return <WorkoutDetailLoaded detail={detail} />;
+}
+
+interface WorkoutDetailLoadedProps {
+  detail: NonNullable<ReturnType<typeof useWorkoutHistoryDetail>> & {
+    workout: NonNullable<ReturnType<typeof useWorkoutHistoryDetail>['workout']>;
+  };
+}
+
+function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
+
   const {
     workout,
     activeWorkout,
@@ -43,10 +80,8 @@ export default function WorkoutDetailScreen() {
     totalVolume,
     totalCompletedSets,
     weightUnit,
-    isLoading,
     canRepeatWorkout
-  } = useWorkoutHistoryDetail(workoutId);
-
+  } = detail;
   const renameWorkout = useWorkoutRename();
   const {
     inputRef: renameInputRef,
@@ -103,33 +138,9 @@ export default function WorkoutDetailScreen() {
     totalCompletedSets,
     totalVolume,
     weightUnit,
-    workout?.completedAt,
-    workout?.startedAt
+    workout.completedAt,
+    workout.startedAt
   ]);
-
-  if (workoutId && isLoading) {
-    return (
-      <Screen withPadding={false}>
-        <LoadingState label="Loading workout..." />
-      </Screen>
-    );
-  }
-
-  if (!workout) {
-    return (
-      <Screen
-        withPadding={false}
-        contentClassName="items-center justify-center px-6"
-      >
-        <Text variant="h3" className="text-center">
-          Workout not found
-        </Text>
-        <Text variant="small" tone="muted" className="mt-2 text-center">
-          This workout may have been deleted.
-        </Text>
-      </Screen>
-    );
-  }
 
   const confirmDeleteWorkout = () => {
     Alert.alert(
