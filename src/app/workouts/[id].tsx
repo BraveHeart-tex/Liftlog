@@ -107,8 +107,8 @@ export default function WorkoutDetailScreen() {
     totalCompletedSets,
     totalVolume,
     weightUnit,
-    workout.completedAt,
-    workout.startedAt
+    workout?.completedAt,
+    workout?.startedAt
   ]);
 
   if (workoutId && isLoading) {
