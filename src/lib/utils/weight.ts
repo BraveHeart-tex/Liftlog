@@ -18,14 +18,26 @@ export function convertWeightToKg(weight: number, unit: WeightUnit) {
   return weight;
 }
 
-function formatWeight(weight: number) {
-  if (Number.isInteger(weight)) {
-    return String(weight);
-  }
-
-  return weight.toFixed(1);
+interface FormatWeightOptions {
+  useGrouping?: boolean;
+  maximumFractionDigits?: number;
 }
 
-export function formatWeightForUnit(weightKg: number, unit: WeightUnit) {
-  return formatWeight(convertWeightFromKg(weightKg, unit));
+function formatWeight(weight: number, options: FormatWeightOptions = {}) {
+  const maximumFractionDigits =
+    options.maximumFractionDigits ?? (Number.isInteger(weight) ? 0 : 1);
+
+  return new Intl.NumberFormat(undefined, {
+    useGrouping: options.useGrouping ?? false,
+    minimumFractionDigits: 0,
+    maximumFractionDigits
+  }).format(weight);
+}
+
+export function formatWeightForUnit(
+  weightKg: number,
+  unit: WeightUnit,
+  options?: FormatWeightOptions
+) {
+  return formatWeight(convertWeightFromKg(weightKg, unit), options);
 }
