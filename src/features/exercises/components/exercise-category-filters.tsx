@@ -5,7 +5,7 @@ import {
   type CategoryFilter
 } from '@/src/features/exercises/constants';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ScrollView } from 'react-native';
+import { View, type ScrollView } from 'react-native';
 
 interface ExerciseCategoryFiltersProps {
   selectedCategory: CategoryFilter;
@@ -33,13 +33,16 @@ export const ExerciseCategoryFilters = ({
 
   const scrollCategoryIntoView = useCallback(
     (category: CategoryFilter) => {
-      const layout = categoryLayoutsRef.current[category];
+      const filterItemLayout = categoryLayoutsRef.current[category];
 
-      if (!layout || categoryViewportWidth === 0) {
+      if (!filterItemLayout || categoryViewportWidth === 0) {
         return;
       }
 
-      const centeredX = layout.x - (categoryViewportWidth - layout.width) / 2;
+      const centeredX =
+        filterItemLayout.x +
+        filterItemLayout.width / 2 -
+        categoryViewportWidth / 2;
 
       categoryScrollRef.current?.scrollTo({
         x: Math.max(0, centeredX),
@@ -68,19 +71,22 @@ export const ExerciseCategoryFilters = ({
         const isSelected = category.value === selectedCategory;
 
         return (
-          <ChoiceChip
+          <View
             key={category.value}
-            selected={isSelected}
-            className={isSelected ? 'bg-card border-border' : 'bg-background'}
             onLayout={event => {
               categoryLayoutsRef.current[category.value] =
                 event.nativeEvent.layout;
             }}
-            onPress={() => setSelectedCategory(category.value)}
-            textClassName={isSelected ? 'text-foreground' : undefined}
           >
-            {category.label}
-          </ChoiceChip>
+            <ChoiceChip
+              selected={isSelected}
+              className={isSelected ? 'bg-card border-border' : 'bg-background'}
+              onPress={() => setSelectedCategory(category.value)}
+              textClassName={isSelected ? 'text-foreground' : undefined}
+            >
+              {category.label}
+            </ChoiceChip>
+          </View>
         );
       })}
     </StyledScrollView>
