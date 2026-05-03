@@ -30,10 +30,9 @@ export default function HistoryScreen() {
     [workoutRows]
   );
 
-  const initialDateKey = workoutRows[0]
-    ? toLocalDateKey(workoutRows[0].startedAt)
-    : toLocalDateKey(Date.now());
-  const [selectedDateKey, setSelectedDateKey] = useState(initialDateKey);
+  const [selectedDateKey, setSelectedDateKey] = useState(
+    toLocalDateKey(Date.now())
+  );
 
   const selectedWorkouts = useMemo(
     () =>
