@@ -1,7 +1,10 @@
 import { StyledTextInput } from '@/src/components/styled/text-input';
 import { BackButton } from '@/src/components/ui/back-button';
+import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { formatWorkoutDate } from '@/src/lib/utils/date';
+import { EllipsisVerticalIcon } from 'lucide-react-native';
 import { forwardRef } from 'react';
 import { Pressable, View, type TextInput } from 'react-native';
 
@@ -9,8 +12,10 @@ interface WorkoutDetailHeaderProps {
   name: string;
   startedAt: number;
   isRenaming: boolean;
+  actionsDisabled?: boolean;
   draftName: string;
   renameError?: string;
+  onOpenActions: () => void;
   onBeginRename: () => void;
   onCancelRename: () => void;
   onChangeDraftName: (name: string) => void;
@@ -25,12 +30,14 @@ export const WorkoutDetailHeader = forwardRef<
     name,
     startedAt,
     isRenaming,
+    actionsDisabled = false,
     draftName,
     renameError,
-    onBeginRename,
+    onOpenActions,
     onCancelRename,
     onChangeDraftName,
-    onSubmitRename
+    onSubmitRename,
+    onBeginRename
   },
   renameInputRef
 ) {
@@ -79,6 +86,22 @@ export const WorkoutDetailHeader = forwardRef<
           </Text>
         ) : null}
       </View>
+
+      {!isRenaming ? (
+        <Button
+          variant="ghost"
+          size="icon"
+          accessibilityLabel="Workout actions"
+          disabled={actionsDisabled}
+          onPress={onOpenActions}
+        >
+          <Icon
+            icon={EllipsisVerticalIcon}
+            size={20}
+            className="text-foreground"
+          />
+        </Button>
+      ) : null}
     </View>
   );
 });
