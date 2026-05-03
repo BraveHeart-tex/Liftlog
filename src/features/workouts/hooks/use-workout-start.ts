@@ -11,8 +11,8 @@ import {
   deleteWorkoutTemplate,
   getActiveWorkout,
   getActiveWorkoutQuery,
-  getWorkouts,
-  getWorkoutsQuery,
+  getRecentWorkouts,
+  getRecentWorkoutsQuery,
   getWorkoutTemplateExercisesForTemplates,
   getWorkoutTemplateExercisesForTemplatesQuery,
   getWorkoutTemplates,
@@ -25,6 +25,7 @@ import { router, type Href } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 
 const activeWorkoutRoute = '/(tabs)/workout/active' as Href;
+const RECENT_WORKOUT_LIMIT = 3;
 
 export interface WorkoutStartTemplateItem {
   template: WorkoutTemplate;
@@ -63,9 +64,9 @@ export function useWorkoutStart() {
     },
     [db]
   );
-  const completedWorkoutsResult = useLiveWithFallback(
-    () => getWorkoutsQuery(db),
-    () => getWorkouts(db),
+  const recentWorkoutResult = useLiveWithFallback(
+    () => getRecentWorkoutsQuery(db, RECENT_WORKOUT_LIMIT),
+    () => getRecentWorkouts(db, RECENT_WORKOUT_LIMIT),
     [db]
   );
   const templateResult = useLiveWithFallback(
@@ -108,10 +109,6 @@ export function useWorkoutStart() {
   );
 
   const activeWorkout = activeWorkoutResult.data[0];
-  const recentWorkouts = useMemo(
-    () => completedWorkoutsResult.data.slice(0, 5),
-    [completedWorkoutsResult.data]
-  );
   const exerciseById = useMemo(
     () =>
       new Map<ExerciseListItem['id'], ExerciseListItem>(
@@ -206,7 +203,7 @@ export function useWorkoutStart() {
 
   return {
     activeWorkout,
-    recentWorkouts,
+    recentWorkouts: recentWorkoutResult.data,
     templates,
     startWorkout,
     resumeWorkout,
