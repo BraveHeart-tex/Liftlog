@@ -15,7 +15,8 @@ export default function ExercisesScreen() {
     setQuery,
     selectedCategory,
     setSelectedCategory,
-    filteredExercises
+    filteredExercises,
+    hasCustomExercise
   } = useExercisesScreen();
 
   return (
@@ -49,7 +50,6 @@ export default function ExercisesScreen() {
         />
       </View>
 
-      {/* keyboardShouldPersistTaps="handled" on FlatList handles this */}
       <StyledFlatList
         data={filteredExercises}
         keyExtractor={item => item.id}
@@ -62,6 +62,7 @@ export default function ExercisesScreen() {
             <ExerciseCategoryFilters
               selectedCategory={selectedCategory}
               setSelectedCategory={setSelectedCategory}
+              shouldShowCustomExerciseFilter={hasCustomExercise}
             />
 
             <View className="mt-4">

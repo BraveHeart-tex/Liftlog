@@ -34,5 +34,8 @@ export const CATEGORY_FILTERS = [
   { label: 'Bodyweight', value: 'bodyweight' }
 ] as const;
 
-export type CategoryFilter = (typeof CATEGORY_FILTERS)[number]['value'];
-export type ExerciseCategory = Exclude<CategoryFilter, 'all'>;
+type BaseCategoryFilter = (typeof CATEGORY_FILTERS)[number]['value'];
+
+export type CategoryFilter = BaseCategoryFilter | 'custom';
+
+export type ExerciseCategory = Exclude<BaseCategoryFilter, 'all'>;
