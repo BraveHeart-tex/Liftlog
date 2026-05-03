@@ -3,12 +3,13 @@ import { Text } from '@/src/components/ui/text';
 import type { Set } from '@/src/db';
 import { getDisplaySetGroups } from '@/src/lib/utils/set';
 import { formatWeightForUnit, type WeightUnit } from '@/src/lib/utils/weight';
-import { View } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 
 interface WorkoutHistoryExerciseCardProps {
   exerciseName: string;
   completedSets: Set[];
   weightUnit: WeightUnit;
+  personalRecordSetIds?: ReadonlySet<string>;
 }
 
 type DisplaySetGroup = ReturnType<typeof getDisplaySetGroups>[number];
@@ -43,12 +44,26 @@ function toRenderItems(groups: DisplaySetGroup[]): RenderItem[] {
   return items;
 }
 
+function groupHasPersonalRecord(
+  group: DisplaySetGroup,
+  personalRecordSetIds?: ReadonlySet<string>
+) {
+  if (!personalRecordSetIds) {
+    return false;
+  }
+
+  return group.setIds.some(setId => personalRecordSetIds.has(setId));
+}
+
 export const WorkoutHistoryExerciseCard = ({
   exerciseName,
   completedSets,
-  weightUnit
+  weightUnit,
+  personalRecordSetIds
 }: WorkoutHistoryExerciseCardProps) => {
-  const displayGroups = getDisplaySetGroups(completedSets);
+  const displayGroups = getDisplaySetGroups(completedSets, {
+    personalRecordSetIds
+  });
   const renderItems = toRenderItems(displayGroups);
   const exerciseVolume = completedSets.reduce(
     (sum, set) => sum + set.weightKg * set.reps,
@@ -78,6 +93,10 @@ export const WorkoutHistoryExerciseCard = ({
                   key={item.group.setIds.join('-')}
                   group={item.group}
                   weightUnit={weightUnit}
+                  hasPersonalRecord={groupHasPersonalRecord(
+                    item.group,
+                    personalRecordSetIds
+                  )}
                 />
               );
             }
@@ -87,12 +106,20 @@ export const WorkoutHistoryExerciseCard = ({
                 <SingleSetPill
                   group={item.left}
                   weightUnit={weightUnit}
+                  hasPersonalRecord={groupHasPersonalRecord(
+                    item.left,
+                    personalRecordSetIds
+                  )}
                   style={{ flex: 1 }}
                 />
                 {item.right ? (
                   <SingleSetPill
                     group={item.right}
                     weightUnit={weightUnit}
+                    hasPersonalRecord={groupHasPersonalRecord(
+                      item.right,
+                      personalRecordSetIds
+                    )}
                     style={{ flex: 1 }}
                   />
                 ) : (
@@ -107,6 +134,16 @@ export const WorkoutHistoryExerciseCard = ({
   );
 };
 
+function PersonalRecordBadge() {
+  return (
+    <View className="border-warning bg-warning/15 rounded-md border px-1.5 py-0.5">
+      <Text variant="caption" className="text-warning font-medium">
+        PR
+      </Text>
+    </View>
+  );
+}
+
 function SetBadge({ index }: { index: number }) {
   return (
     <View className="bg-secondary mr-2.5 h-6 w-6 shrink-0 items-center justify-center rounded-full">
@@ -120,11 +157,13 @@ function SetBadge({ index }: { index: number }) {
 function SingleSetPill({
   group,
   weightUnit,
+  hasPersonalRecord,
   style
 }: {
   group: DisplaySetGroup;
   weightUnit: WeightUnit;
-  style?: object;
+  hasPersonalRecord?: boolean;
+  style?: StyleProp<ViewStyle>;
 }) {
   return (
     <View
@@ -139,33 +178,41 @@ function SingleSetPill({
         {weightUnit}
       </Text>
       <Text variant="small" tone="muted" className="mr-1">
-        x
+        ×
       </Text>
       <Text variant="small" className="text-foreground font-medium">
         {group.reps}
       </Text>
+      {hasPersonalRecord ? (
+        <View className="ml-auto">
+          <PersonalRecordBadge />
+        </View>
+      ) : null}
     </View>
   );
 }
 
 function RangeSetRow({
   group,
-  weightUnit
+  weightUnit,
+  hasPersonalRecord
 }: {
   group: DisplaySetGroup;
   weightUnit: WeightUnit;
+  hasPersonalRecord?: boolean;
 }) {
   return (
     <View className="bg-muted flex-row items-center justify-between rounded-xl px-3 py-2.5">
       <Text variant="small" tone="muted">
-        Sets {group.startIndex}-{group.endIndex}
+        Sets {group.startIndex}–{group.endIndex}
       </Text>
       <View className="flex-row items-center gap-1">
+        {hasPersonalRecord ? <PersonalRecordBadge /> : null}
         <Text variant="small" className="text-foreground font-medium">
           {formatWeightForUnit(group.weightKg, weightUnit)} {weightUnit}
         </Text>
         <Text variant="small" tone="muted">
-          x {group.reps} each
+          × {group.reps} each
         </Text>
       </View>
     </View>
