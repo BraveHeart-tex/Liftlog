@@ -28,6 +28,7 @@ export function useWorkoutRenameFlow<TWorkout extends { name: string }>({
 
   const [isRenaming, setIsRenaming] = useState(false);
   const [draftName, setDraftNameState] = useState('');
+  const draftNameRef = useRef(draftName);
   const [renameError, setRenameError] = useState<string | undefined>();
   const [isSavingRename, setIsSavingRename] = useState(false);
   const [optimisticWorkoutName, setOptimisticWorkoutName] = useState<
@@ -47,20 +48,21 @@ export function useWorkoutRenameFlow<TWorkout extends { name: string }>({
   }, [optimisticWorkoutName, workout.name]);
 
   useEffect(() => {
+    draftNameRef.current = draftName;
+  }, [draftName]);
+
+  useEffect(() => {
     if (!isRenaming) {
       return;
     }
 
-    setDraftNameState(name);
-    setRenameError(undefined);
-
     const focusTimer = setTimeout(() => {
       inputRef.current?.focus();
-      inputRef.current?.setSelection(0, name.length);
+      inputRef.current?.setSelection(0, draftNameRef.current.length);
     }, 50);
 
     return () => clearTimeout(focusTimer);
-  }, [isRenaming, name]);
+  }, [isRenaming]);
 
   const actions = useMemo(() => {
     const setDraftName = (nextName: string) => {
