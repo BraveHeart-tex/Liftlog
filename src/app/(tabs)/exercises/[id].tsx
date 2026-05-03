@@ -359,7 +359,7 @@ export default function ExerciseDetailScreen() {
                     accessibilityLabel="Edit exercise details"
                     onPress={() =>
                       router.push({
-                        pathname: '/(tabs)/exercises/edit/[id]',
+                        pathname: '/exercises/edit/[id]',
                         params: { id: exercise.id }
                       })
                     }
