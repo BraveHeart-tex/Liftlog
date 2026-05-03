@@ -19,8 +19,25 @@
   "search.exclude": {
     "**/node_modules": true,
     "**/bower_components": true,
-    "**/*.code-search": true,
-    "**/ios/": true,
-    "**/android/": true
+    "**/.expo": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/coverage": true,
+    "**/.turbo": true,
+    "**/.next": true,
+    "**/ios": true,
+    "**/android": true,
+    "**/*.code-search": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.expo/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/coverage/**": true,
+    "**/.turbo/**": true,
+    "**/.next/**": true,
+    "**/ios/**": true,
+    "**/android/**": true
   }
 }
