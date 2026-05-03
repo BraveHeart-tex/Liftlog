@@ -4,7 +4,7 @@ import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { formatWorkoutDate } from '@/src/lib/utils/date';
-import { EllipsisVerticalIcon } from 'lucide-react-native';
+import { EllipsisVerticalIcon, XIcon } from 'lucide-react-native';
 import { forwardRef } from 'react';
 import { Pressable, View, type TextInput } from 'react-native';
 
@@ -43,7 +43,10 @@ export const WorkoutDetailHeader = forwardRef<
 ) {
   return (
     <View className="flex-row items-center gap-3">
-      <BackButton onPress={isRenaming ? onCancelRename : undefined} />
+      <BackButton
+        onPress={isRenaming ? onCancelRename : undefined}
+        icon={isRenaming ? XIcon : undefined}
+      />
 
       <View className="flex-1">
         {isRenaming ? (
