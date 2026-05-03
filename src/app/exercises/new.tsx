@@ -35,10 +35,13 @@ export default function NewExerciseScreen() {
 
     const createdExercise = createCustomExercise(newExercise);
 
-    router.replace({
-      pathname: '/(tabs)/exercises/[id]',
-      params: { id: createdExercise.id }
-    });
+    router.replace(
+      {
+        pathname: '/(tabs)/exercises/[id]',
+        params: { id: createdExercise.id }
+      },
+      { withAnchor: true }
+    );
   };
 
   const submit = () => {
