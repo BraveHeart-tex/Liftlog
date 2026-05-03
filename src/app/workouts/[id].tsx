@@ -250,9 +250,20 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
       </View>
 
       <View className="mt-6">
-        <Text variant="caption" tone="muted" className="mb-3">
-          Exercises
-        </Text>
+        <View className="flex-row items-center justify-between">
+          <Text
+            variant="caption"
+            tone="muted"
+            className="tracking-widest uppercase"
+          >
+            Exercises
+          </Text>
+          {workoutExerciseRows.length > 0 && (
+            <Text variant="caption" tone="muted">
+              {workoutExerciseRows.length} total
+            </Text>
+          )}
+        </View>
 
         {workoutExerciseRows.length === 0 ? (
           <View className="mt-3 items-center py-8">

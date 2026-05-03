@@ -30,3 +30,46 @@ export function formatCompletedSets(sets: Set[], unit: WeightUnit = 'kg') {
     }, [])
     .join(', ');
 }
+
+interface DisplaySetGroup {
+  type: 'single' | 'range';
+  startIndex: number;
+  endIndex: number;
+  weightKg: number;
+  reps: number;
+  setIds: string[];
+}
+
+export function getDisplaySetGroups(sets: Set[]): DisplaySetGroup[] {
+  const groups: DisplaySetGroup[] = [];
+
+  for (const set of sets) {
+    const previousGroup = groups.at(-1);
+    const setIndex =
+      groups.reduce((count, group) => count + group.setIds.length, 0) + 1;
+
+    if (
+      previousGroup &&
+      previousGroup.weightKg === set.weightKg &&
+      previousGroup.reps === set.reps
+    ) {
+      previousGroup.endIndex = setIndex;
+      previousGroup.setIds.push(set.id);
+      continue;
+    }
+
+    groups.push({
+      type: 'single',
+      startIndex: setIndex,
+      endIndex: setIndex,
+      weightKg: set.weightKg,
+      reps: set.reps,
+      setIds: [set.id]
+    });
+  }
+
+  return groups.map(group => ({
+    ...group,
+    type: group.setIds.length > 1 ? 'range' : 'single'
+  }));
+}
