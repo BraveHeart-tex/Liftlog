@@ -51,6 +51,19 @@ export function getWorkouts(db: DrizzleDb): Workout[] {
   return getWorkoutsQuery(db).all();
 }
 
+export function getRecentWorkoutsQuery(db: DrizzleDb, limit: number) {
+  return db
+    .select()
+    .from(workouts)
+    .where(eq(workouts.status, 'completed'))
+    .orderBy(desc(workouts.startedAt))
+    .limit(limit);
+}
+
+export function getRecentWorkouts(db: DrizzleDb, limit: number): Workout[] {
+  return getRecentWorkoutsQuery(db, limit).all();
+}
+
 export function getActiveWorkoutQuery(db: DrizzleDb) {
   return db
     .select()
