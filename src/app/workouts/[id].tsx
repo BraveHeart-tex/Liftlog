@@ -19,9 +19,11 @@ import { getRouteParamId } from '@/src/lib/utils/route';
 import { formatWeightForUnit } from '@/src/lib/utils/weight';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
+  BookmarkIcon,
   ClockIcon,
   DumbbellIcon,
   LayersIcon,
+  RepeatIcon,
   Trash2Icon
 } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -224,7 +226,20 @@ export default function WorkoutDetailScreen() {
   };
 
   return (
-    <Screen scroll>
+    <Screen
+      scroll
+      footer={
+        !activeWorkout ? (
+          <Button
+            disabled={isRenaming || isSavingRename || !canRepeatWorkout}
+            onPress={repeatWorkout}
+            leftIcon={<Icon icon={RepeatIcon} />}
+          >
+            Repeat this workout
+          </Button>
+        ) : undefined
+      }
+    >
       <View className="flex-row items-center gap-3">
         <BackButton onPress={isRenaming ? cancelRename : undefined} />
         <View className="flex-1">
@@ -282,16 +297,36 @@ export default function WorkoutDetailScreen() {
         ))}
       </View>
 
-      <Button
-        variant="secondary"
-        className="mt-6 w-full"
-        disabled={
-          isRenaming || isSavingRename || workoutExerciseRows.length === 0
-        }
-        onPress={() => setIsTemplateSheetOpen(true)}
-      >
-        Save as template
-      </Button>
+      <View className="mt-6 flex-row items-center gap-2">
+        <View className="flex-1">
+          <Button
+            variant="secondary"
+            className="w-full"
+            disabled={
+              isRenaming || isSavingRename || workoutExerciseRows.length === 0
+            }
+            onPress={() => setIsTemplateSheetOpen(true)}
+            leftIcon={
+              <Icon
+                icon={BookmarkIcon}
+                size={18}
+                className="text-secondary-foreground"
+              />
+            }
+          >
+            Save as template
+          </Button>
+        </View>
+
+        <Button
+          variant="secondary"
+          size="icon"
+          disabled={isRenaming || isSavingRename}
+          onPress={confirmDeleteWorkout}
+        >
+          <Icon icon={Trash2Icon} size={18} className="text-danger" />
+        </Button>
+      </View>
 
       <View className="mt-6">
         <Text variant="caption" tone="muted" className="mb-3">
@@ -349,31 +384,6 @@ export default function WorkoutDetailScreen() {
           })
         )}
       </View>
-
-      <Button
-        variant="secondary"
-        className="mt-6 w-full"
-        disabled={isRenaming || isSavingRename || !canRepeatWorkout}
-        onPress={repeatWorkout}
-      >
-        {activeWorkout ? 'Resume active workout' : 'Repeat this workout'}
-      </Button>
-
-      <Button
-        variant="destructive"
-        className="mt-3 w-full"
-        disabled={isRenaming || isSavingRename}
-        leftIcon={
-          <Icon
-            icon={Trash2Icon}
-            size={18}
-            className="text-danger-foreground"
-          />
-        }
-        onPress={confirmDeleteWorkout}
-      >
-        Delete workout
-      </Button>
 
       <SaveWorkoutTemplateSheet
         isOpen={isTemplateSheetOpen}
