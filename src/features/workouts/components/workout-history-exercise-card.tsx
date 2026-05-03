@@ -146,8 +146,11 @@ function PersonalRecordBadge() {
 
 function SetBadge({ index }: { index: number }) {
   return (
-    <View className="bg-secondary mr-2.5 h-6 w-6 shrink-0 items-center justify-center rounded-full">
-      <Text variant="caption" className="text-secondary-foreground">
+    <View className="bg-secondary dark:bg-primary/20 mr-2.5 h-6 w-6 shrink-0 items-center justify-center rounded-full">
+      <Text
+        variant="caption"
+        className="text-secondary-foreground dark:text-primary-foreground"
+      >
         {index}
       </Text>
     </View>
@@ -174,7 +177,7 @@ function SingleSetPill({
       <Text variant="small" className="text-foreground font-medium">
         {formatWeightForUnit(group.weightKg, weightUnit)}
       </Text>
-      <Text variant="small" tone="muted" className="mr-1.5 ml-0.5">
+      <Text variant="small" className="mr-1.5 ml-0.5">
         {weightUnit}
       </Text>
       <Text variant="small" tone="muted" className="mr-1">
@@ -211,8 +214,8 @@ function RangeSetRow({
         <Text variant="small" className="text-foreground font-medium">
           {formatWeightForUnit(group.weightKg, weightUnit)} {weightUnit}
         </Text>
-        <Text variant="small" tone="muted">
-          × {group.reps} each
+        <Text variant="small">
+          × {group.reps} rep{group.reps > 1 && 's'}
         </Text>
       </View>
     </View>
