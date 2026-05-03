@@ -7,6 +7,7 @@ import {
 } from '@/src/components/ui/bottom-sheet';
 import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
+import { SearchInputIcon } from '@/src/components/ui/search-input-icon';
 import { Text } from '@/src/components/ui/text';
 import { ExerciseCategoryFilters } from '@/src/features/exercises/components/exercise-category-filters';
 import type { CategoryFilter } from '@/src/features/exercises/constants';
@@ -116,6 +117,7 @@ export function ExercisePickerSheet({
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="search"
+          leftIcon={<SearchInputIcon />}
         />
 
         <ExerciseCategoryFilters
