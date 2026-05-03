@@ -40,18 +40,31 @@ interface DisplaySetGroup {
   setIds: string[];
 }
 
-export function getDisplaySetGroups(sets: Set[]): DisplaySetGroup[] {
+interface GetDisplaySetGroupsOptions {
+  personalRecordSetIds?: ReadonlySet<string>;
+}
+
+export function getDisplaySetGroups(
+  sets: Set[],
+  options: GetDisplaySetGroupsOptions = {}
+): DisplaySetGroup[] {
   const groups: DisplaySetGroup[] = [];
 
   for (const set of sets) {
     const previousGroup = groups.at(-1);
     const setIndex =
       groups.reduce((count, group) => count + group.setIds.length, 0) + 1;
+    const isCurrentPr = options.personalRecordSetIds?.has(set.id) ?? false;
+    const isPreviousPr =
+      previousGroup?.setIds.some(
+        setId => options.personalRecordSetIds?.has(setId) ?? false
+      ) ?? false;
 
     if (
       previousGroup &&
       previousGroup.weightKg === set.weightKg &&
-      previousGroup.reps === set.reps
+      previousGroup.reps === set.reps &&
+      isCurrentPr === isPreviousPr
     ) {
       previousGroup.endIndex = setIndex;
       previousGroup.setIds.push(set.id);
