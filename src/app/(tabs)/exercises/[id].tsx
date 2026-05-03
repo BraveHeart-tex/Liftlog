@@ -1,10 +1,10 @@
+import { StyledTextInput } from '@/src/components/styled/text-input';
 import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import { StyledTextInput } from '@/src/components/styled/text-input';
 import {
   useExerciseActions,
   useExerciseDetail
@@ -17,8 +17,8 @@ import { toTitleCase } from '@/src/lib/utils/string';
 import { formatWeightForUnit } from '@/src/lib/utils/weight';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Keyboard, Pressable, View } from 'react-native';
 import type { TextInput } from 'react-native';
+import { Alert, Keyboard, Pressable, View } from 'react-native';
 
 function formatUsageBreakdown({
   workoutUsageCount,
@@ -235,7 +235,7 @@ export default function ExerciseDetailScreen() {
           }
 
           if (result === 'archived' || result === 'deleted') {
-            router.replace('/(tabs)/exercises');
+            router.back();
 
             return;
           }
