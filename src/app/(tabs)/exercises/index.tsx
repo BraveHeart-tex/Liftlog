@@ -2,6 +2,7 @@ import { StyledFlatList } from '@/src/components/styled/flat-list';
 import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
 import { Screen } from '@/src/components/ui/screen';
+import { SearchInputIcon } from '@/src/components/ui/search-input-icon';
 import { Text } from '@/src/components/ui/text';
 import { ExerciseCategoryFilters } from '@/src/features/exercises/components/exercise-category-filters';
 import { ExerciseListRow } from '@/src/features/exercises/components/exercise-list-row';
@@ -47,6 +48,7 @@ export default function ExercisesScreen() {
           autoCorrect={false}
           returnKeyType="search"
           className="mt-4 mb-2"
+          leftIcon={<SearchInputIcon />}
         />
       </View>
 
