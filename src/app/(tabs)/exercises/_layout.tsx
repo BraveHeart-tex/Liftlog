@@ -14,7 +14,6 @@ export default function ExercisesLayout() {
       }}
     >
       <Stack.Screen name="index" />
-      <Stack.Screen name="edit/[id]" />
       <Stack.Screen name="[id]" />
     </Stack>
   );
