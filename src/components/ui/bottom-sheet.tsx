@@ -4,11 +4,14 @@ import {
 } from '@/src/components/styled/bottom-sheet';
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn';
+import { useAppTheme } from '@/src/theme/app-theme-provider';
 import {
+  BottomSheetFooter,
   BottomSheetModal,
   BottomSheetView,
   type BottomSheetBackdropProps,
-  type BottomSheetBackgroundProps
+  type BottomSheetBackgroundProps,
+  type BottomSheetFooterProps
 } from '@gorhom/bottom-sheet';
 import {
   memo,
@@ -29,6 +32,7 @@ interface BottomSheetComponentProps {
   keyboardBehavior?: 'interactive' | 'extend' | 'fillParent';
   androidKeyboardInputMode?: 'adjustPan' | 'adjustResize';
   children: ReactNode;
+  footer?: ReactNode;
   className?: string;
 }
 
@@ -69,9 +73,11 @@ export function BottomSheet({
   keyboardBehavior = 'extend',
   androidKeyboardInputMode,
   children,
+  footer,
   className
 }: BottomSheetComponentProps) {
   const sheetRef = useRef<BottomSheetModal>(null);
+  const { colors } = useAppTheme();
 
   const resolvedAndroidKeyboardInputMode =
     androidKeyboardInputMode ??
@@ -108,6 +114,15 @@ export function BottomSheet({
     []
   );
 
+  const renderFooter = useCallback(
+    (props: BottomSheetFooterProps) => (
+      <BottomSheetFooter {...props} style={{ backgroundColor: colors.card }}>
+        {footer}
+      </BottomSheetFooter>
+    ),
+    [colors.card, footer]
+  );
+
   useEffect(() => {
     if (isOpen) {
       sheetRef.current?.present();
@@ -128,6 +143,7 @@ export function BottomSheet({
       enableDismissOnClose
       enableBlurKeyboardOnGesture
       enablePanDownToClose={enablePanDownToClose}
+      footerComponent={footer ? renderFooter : undefined}
       handleComponent={SheetHandle}
       index={0}
       keyboardBehavior={keyboardBehavior}

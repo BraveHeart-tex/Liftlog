@@ -5,14 +5,16 @@ import {
   BottomSheetHeader,
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
-import { ChoiceChip } from '@/src/components/ui/chip';
+import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
-import { Button } from '@/src/components/ui/button';
+import { ExerciseCategoryFilters } from '@/src/features/exercises/components/exercise-category-filters';
+import type { CategoryFilter } from '@/src/features/exercises/constants';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { ExercisePickerRow } from '@/src/features/workouts/components/exercise-picker-row';
 import { useEffect, useMemo, useState } from 'react';
 import { Keyboard, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ExercisePickerSheetProps {
   isOpen: boolean;
@@ -24,12 +26,6 @@ interface ExercisePickerSheetProps {
 }
 
 const SNAP_POINTS = ['70%', '90%'];
-const SOURCE_FILTERS = [
-  { label: 'All', value: 'all' },
-  { label: 'Custom', value: 'custom' }
-] as const;
-
-type ExerciseSourceFilter = (typeof SOURCE_FILTERS)[number]['value'];
 
 export function ExercisePickerSheet({
   isOpen,
@@ -39,12 +35,15 @@ export function ExercisePickerSheet({
   onSelectExercise,
   onCreateCustomExercise
 }: ExercisePickerSheetProps) {
+  const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
-  const [sourceFilter, setSourceFilter] = useState<ExerciseSourceFilter>('all');
+  const [selectedCategory, setSelectedCategory] =
+    useState<CategoryFilter>('all');
 
   useEffect(() => {
     if (!isOpen) {
       setQuery('');
+      setSelectedCategory('all');
     }
   }, [isOpen]);
 
@@ -59,31 +58,49 @@ export function ExercisePickerSheet({
 
     return exercises.filter(exercise => {
       const isAlreadySelected = selectedExerciseIdSet.has(exercise.id);
-      const matchesSource = sourceFilter === 'all' || exercise.isCustom === 1;
+      const matchesCategory =
+        selectedCategory === 'all' ||
+        (selectedCategory === 'custom'
+          ? exercise.isCustom === 1
+          : exercise.category === selectedCategory);
       const matchesQuery =
         normalizedQuery.length === 0 ||
         exercise.name.toLocaleLowerCase().includes(normalizedQuery);
 
-      return !isAlreadySelected && matchesSource && matchesQuery;
+      return !isAlreadySelected && matchesCategory && matchesQuery;
     });
-  }, [exercises, query, selectedExerciseIds, sourceFilter]);
+  }, [exercises, query, selectedCategory, selectedExerciseIds]);
 
   const emptyTitle =
-    sourceFilter === 'custom'
+    selectedCategory === 'custom'
       ? query.trim().length > 0
         ? 'No custom exercises found'
         : 'No custom exercises yet'
       : 'No exercises found';
 
   const emptyDescription =
-    sourceFilter === 'custom'
+    selectedCategory === 'custom'
       ? query.trim().length > 0
         ? 'Try a different search or switch to All.'
         : 'Custom exercises you create will show here.'
       : 'Try a different search.';
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} snapPoints={SNAP_POINTS}>
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      snapPoints={SNAP_POINTS}
+      footer={
+        <View
+          style={{ paddingBottom: insets.bottom }}
+          className="border-border bg-card border-t px-4 pt-3"
+        >
+          <Button variant="secondary" onPress={onCreateCustomExercise}>
+            Create custom exercise
+          </Button>
+        </View>
+      }
+    >
       <BottomSheetHeader>
         <BottomSheetTitle>Add exercise</BottomSheetTitle>
         <BottomSheetDescription>
@@ -101,45 +118,20 @@ export function ExercisePickerSheet({
           returnKeyType="search"
         />
 
-        <View className="mt-3 flex-row gap-2">
-          {SOURCE_FILTERS.map(filter => {
-            const isSelected = sourceFilter === filter.value;
-            const label =
-              filter.value === 'custom'
-                ? `${filter.label} (${customExerciseCount})`
-                : filter.label;
-
-            return (
-              <ChoiceChip
-                key={filter.value}
-                selected={isSelected}
-                shape="rounded"
-                fullWidth
-                onPress={() => {
-                  Keyboard.dismiss();
-                  setSourceFilter(filter.value);
-                }}
-                className={!isSelected ? 'bg-card' : undefined}
-              >
-                {label}
-              </ChoiceChip>
-            );
-          })}
-        </View>
-
-        <Button
-          variant="secondary"
-          className="mt-3 w-full"
-          onPress={onCreateCustomExercise}
-        >
-          Create custom exercise
-        </Button>
+        <ExerciseCategoryFilters
+          selectedCategory={selectedCategory}
+          setSelectedCategory={category => {
+            Keyboard.dismiss();
+            setSelectedCategory(category);
+          }}
+          shouldShowCustomExerciseFilter={customExerciseCount > 0}
+        />
       </View>
 
       <StyledBottomSheetFlatList
         data={filteredExercises}
         keyExtractor={(item: ExerciseListItem) => item.id}
-        contentContainerClassName="px-4 pb-8"
+        contentContainerClassName="px-4 pb-32"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         onScrollBeginDrag={Keyboard.dismiss}
