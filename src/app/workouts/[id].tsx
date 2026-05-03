@@ -184,17 +184,17 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
     <Screen
       scroll
       footer={
-        !activeWorkout ? (
-          <Button
-            disabled={isRenaming || isSavingRename || !canRepeatWorkout}
-            onPress={repeatWorkout}
-            leftIcon={
+        <Button
+          disabled={isRenaming || isSavingRename || !canRepeatWorkout}
+          onPress={repeatWorkout}
+          leftIcon={
+            activeWorkout ? undefined : (
               <Icon icon={RepeatIcon} className="text-primary-foreground" />
-            }
-          >
-            Repeat this workout
-          </Button>
-        ) : undefined
+            )
+          }
+        >
+          {activeWorkout ? 'Resume active workout' : 'Repeat this workout'}
+        </Button>
       }
     >
       <WorkoutDetailHeader
