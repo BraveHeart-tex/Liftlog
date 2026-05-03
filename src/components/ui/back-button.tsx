@@ -5,7 +5,7 @@ import { ChevronLeftIcon } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Animated, Pressable, type GestureResponderEvent } from 'react-native';
 import { Button } from './button';
-import { Icon } from './icon';
+import { Icon, type IconComponent } from './icon';
 
 type BackButtonVariant = 'icon' | 'text';
 
@@ -14,13 +14,15 @@ interface BackButtonProps {
   children?: ReactNode;
   className?: string;
   onPress?: (event: GestureResponderEvent) => void;
+  icon?: IconComponent;
 }
 
 export function BackButton({
   variant = 'icon',
   children = 'Go back',
   className,
-  onPress
+  onPress,
+  icon = ChevronLeftIcon
 }: BackButtonProps) {
   const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();
 
@@ -56,7 +58,7 @@ export function BackButton({
           className
         )}
       >
-        <Icon icon={ChevronLeftIcon} size={20} className="text-foreground" />
+        <Icon icon={icon} size={20} className="text-foreground" />
       </Pressable>
     </Animated.View>
   );

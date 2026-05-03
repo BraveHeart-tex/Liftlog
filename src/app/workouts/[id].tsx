@@ -4,6 +4,7 @@ import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
+import { WorkoutDetailActionsSheet } from '@/src/features/workouts/components/workout-detail-actions-sheet';
 import { WorkoutDetailHeader } from '@/src/features/workouts/components/workout-detail-header';
 import { WorkoutHistoryExerciseCard } from '@/src/features/workouts/components/workout-history-exercise-card';
 import { WorkoutMetricCard } from '@/src/features/workouts/components/workout-metric-card';
@@ -23,8 +24,7 @@ import {
   ClockIcon,
   DumbbellIcon,
   LayersIcon,
-  RepeatIcon,
-  Trash2Icon
+  RepeatIcon
 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Alert, View } from 'react-native';
@@ -70,6 +70,7 @@ interface WorkoutDetailLoadedProps {
 
 function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
+  const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
 
   const {
     workout,
@@ -201,8 +202,10 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
         name={workoutName}
         startedAt={workout.startedAt}
         isRenaming={isRenaming}
+        actionsDisabled={isSavingRename}
         draftName={draftName}
         renameError={renameError}
+        onOpenActions={() => setIsActionSheetOpen(true)}
         onBeginRename={beginRename}
         onCancelRename={cancelRename}
         onChangeDraftName={setDraftName}
@@ -220,34 +223,23 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
         ))}
       </View>
 
-      <View className="mt-6 flex-row items-center gap-2">
-        <View className="flex-1">
-          <Button
-            variant="secondary"
-            className="w-full"
-            disabled={
-              isRenaming || isSavingRename || workoutExerciseRows.length === 0
-            }
-            onPress={() => setIsTemplateSheetOpen(true)}
-            leftIcon={
-              <Icon
-                icon={BookmarkIcon}
-                size={18}
-                className="text-secondary-foreground"
-              />
-            }
-          >
-            Save as template
-          </Button>
-        </View>
-
+      <View className="mt-6">
         <Button
           variant="secondary"
-          size="icon"
-          disabled={isRenaming || isSavingRename}
-          onPress={confirmDeleteWorkout}
+          className="w-full"
+          disabled={
+            isRenaming || isSavingRename || workoutExerciseRows.length === 0
+          }
+          onPress={() => setIsTemplateSheetOpen(true)}
+          leftIcon={
+            <Icon
+              icon={BookmarkIcon}
+              size={18}
+              className="text-secondary-foreground"
+            />
+          }
         >
-          <Icon icon={Trash2Icon} size={18} className="text-danger" />
+          Save as template
         </Button>
       </View>
 
@@ -299,6 +291,13 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
           order: workoutExercise.order
         }))}
         onClose={() => setIsTemplateSheetOpen(false)}
+      />
+
+      <WorkoutDetailActionsSheet
+        isOpen={isActionSheetOpen}
+        onClose={() => setIsActionSheetOpen(false)}
+        onRename={beginRename}
+        onDelete={confirmDeleteWorkout}
       />
     </Screen>
   );
