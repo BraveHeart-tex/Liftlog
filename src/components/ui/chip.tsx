@@ -2,7 +2,7 @@ import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
-import type { Pressable } from 'react-native';
+import type { Pressable, TextStyle } from 'react-native';
 
 type NativePressableProps = ComponentPropsWithoutRef<typeof Pressable>;
 
@@ -23,6 +23,10 @@ interface ChoiceChipProps extends Omit<
 const shapeClassNames: Record<ChipShape, string> = {
   pill: 'rounded-full',
   rounded: 'rounded-lg'
+};
+
+const ChipTextStyle: TextStyle = {
+  fontFamily: 'Inter_500Medium'
 };
 
 export function ChoiceChip({
@@ -65,6 +69,7 @@ export function ChoiceChip({
             textClassName
           )}
           numberOfLines={1}
+          style={ChipTextStyle}
         >
           {label}
         </Text>
