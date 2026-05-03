@@ -4,8 +4,8 @@ import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { ExerciseMetadataForm } from '@/src/features/exercises/components/exercise-metadata-form';
 import {
-  useExerciseActions,
-  useCustomExerciseForm
+  useCustomExerciseForm,
+  useExerciseActions
 } from '@/src/features/exercises/hooks';
 import { router } from 'expo-router';
 import { Keyboard, View } from 'react-native';
@@ -37,7 +37,7 @@ export default function NewExerciseScreen() {
 
     router.replace(
       {
-        pathname: '/(tabs)/exercises/[id]',
+        pathname: '/exercises/[id]',
         params: { id: createdExercise.id }
       },
       { withAnchor: true }

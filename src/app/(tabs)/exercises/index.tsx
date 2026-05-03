@@ -81,7 +81,7 @@ export default function ExercisesScreen() {
             exercise={item}
             onPress={exercise =>
               router.push({
-                pathname: '/(tabs)/exercises/[id]',
+                pathname: '/exercises/[id]',
                 params: { id: exercise.id }
               })
             }
