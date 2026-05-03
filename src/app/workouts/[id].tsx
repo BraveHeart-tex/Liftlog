@@ -7,6 +7,7 @@ import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
+import { WorkoutMetricCard } from '@/src/features/workouts/components/workout-metric-card';
 import {
   useRepeatWorkout,
   useWorkoutDelete,
@@ -17,8 +18,13 @@ import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date';
 import { getRouteParamId } from '@/src/lib/utils/route';
 import { formatWeightForUnit } from '@/src/lib/utils/weight';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Trash2Icon } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
+import {
+  ClockIcon,
+  DumbbellIcon,
+  LayersIcon,
+  Trash2Icon
+} from 'lucide-react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Keyboard, Pressable, View, type TextInput } from 'react-native';
 
 export default function WorkoutDetailScreen() {
@@ -66,6 +72,42 @@ export default function WorkoutDetailScreen() {
 
     return () => clearTimeout(focusTimer);
   }, [isRenaming, workout]);
+
+  const workoutMetrics = useMemo(() => {
+    if (!workout?.startedAt) {
+      return [];
+    }
+
+    return [
+      {
+        label: 'Duration',
+        value: formatDuration({
+          startedAt: workout.startedAt,
+          completedAt: workout.completedAt
+        }),
+        icon: ClockIcon
+      },
+      {
+        label: 'Sets',
+        value: totalCompletedSets,
+        icon: DumbbellIcon
+      },
+      {
+        label: 'Volume',
+        value: `${formatWeightForUnit(totalVolume, weightUnit, {
+          useGrouping: true,
+          maximumFractionDigits: 0
+        })} ${weightUnit}`,
+        icon: LayersIcon
+      }
+    ];
+  }, [
+    totalCompletedSets,
+    totalVolume,
+    weightUnit,
+    workout.completedAt,
+    workout.startedAt
+  ]);
 
   if (workoutId && isLoading) {
     return (
@@ -230,41 +272,14 @@ export default function WorkoutDetailScreen() {
       </View>
 
       <View className="mt-6 flex-row gap-3">
-        <Card className="flex-1">
-          <CardContent>
-            <Text variant="caption" tone="muted">
-              Duration
-            </Text>
-            <Text variant="h3" className="mt-1">
-              {formatDuration({
-                startedAt: workout.startedAt,
-                completedAt: workout.completedAt
-              })}
-            </Text>
-          </CardContent>
-        </Card>
-
-        <Card className="flex-1">
-          <CardContent>
-            <Text variant="caption" tone="muted">
-              Sets
-            </Text>
-            <Text variant="h3" className="mt-1">
-              {totalCompletedSets}
-            </Text>
-          </CardContent>
-        </Card>
-
-        <Card className="flex-1">
-          <CardContent>
-            <Text variant="caption" tone="muted">
-              Volume
-            </Text>
-            <Text variant="h3" className="mt-1">
-              {formatWeightForUnit(totalVolume, weightUnit)} {weightUnit}
-            </Text>
-          </CardContent>
-        </Card>
+        {workoutMetrics.map(metric => (
+          <WorkoutMetricCard
+            key={metric.label}
+            label={metric.label}
+            value={metric.value}
+            icon={metric.icon}
+          />
+        ))}
       </View>
 
       <Button

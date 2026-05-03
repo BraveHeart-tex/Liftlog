@@ -1,7 +1,7 @@
 import type { LucideIcon, LucideProps } from 'lucide-react-native';
 import { styled } from 'nativewind';
 
-type IconComponent = LucideIcon & {
+export type IconComponent = LucideIcon & {
   defaultProps?: Partial<LucideProps>;
 };
 
