@@ -1,22 +1,25 @@
+import { StyledTextInput } from '@/src/components/styled/text-input';
 import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
+import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
-import { StyledTextInput } from '@/src/components/styled/text-input';
 import { Text } from '@/src/components/ui/text';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
 import {
-  useWorkoutRename,
   useRepeatWorkout,
-  useWorkoutHistoryDetail
+  useWorkoutDelete,
+  useWorkoutHistoryDetail,
+  useWorkoutRename
 } from '@/src/features/workouts/hooks';
 import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date';
 import { getRouteParamId } from '@/src/lib/utils/route';
 import { formatWeightForUnit } from '@/src/lib/utils/weight';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { Trash2Icon } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { Keyboard, Pressable, View, type TextInput } from 'react-native';
+import { Alert, Keyboard, Pressable, View, type TextInput } from 'react-native';
 
 export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
@@ -41,6 +44,7 @@ export default function WorkoutDetailScreen() {
     canRepeatWorkout
   } = useWorkoutHistoryDetail(workoutId);
   const renameWorkout = useWorkoutRename();
+  const deleteWorkout = useWorkoutDelete();
   const repeatWorkout = useRepeatWorkout({
     workout,
     activeWorkout,
@@ -104,6 +108,43 @@ export default function WorkoutDetailScreen() {
     setRenameError(undefined);
     setIsSavingRename(false);
     setIsRenaming(false);
+  };
+
+  const confirmDeleteWorkout = () => {
+    Alert.alert(
+      'Delete workout?',
+      `${workout.name} and its logged sets will be permanently removed.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            try {
+              const didDelete = deleteWorkout(workout.id);
+
+              if (!didDelete) {
+                Alert.alert(
+                  'Workout not found',
+                  'This workout may have already been deleted.'
+                );
+
+                return;
+              }
+
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)/history');
+              }
+            } catch (error) {
+              console.error('Failed to delete workout', error);
+              Alert.alert('Could not delete workout', 'Please try again.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const submitRename = () => {
@@ -301,6 +342,22 @@ export default function WorkoutDetailScreen() {
         onPress={repeatWorkout}
       >
         {activeWorkout ? 'Resume active workout' : 'Repeat this workout'}
+      </Button>
+
+      <Button
+        variant="destructive"
+        className="mt-3 w-full"
+        disabled={isRenaming || isSavingRename}
+        leftIcon={
+          <Icon
+            icon={Trash2Icon}
+            size={18}
+            className="text-danger-foreground"
+          />
+        }
+        onPress={confirmDeleteWorkout}
+      >
+        Delete workout
       </Button>
 
       <SaveWorkoutTemplateSheet
