@@ -7,18 +7,29 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ScrollView } from 'react-native';
 
-export const ExerciseCategoryFilters = ({
-  selectedCategory,
-  setSelectedCategory
-}: {
+interface ExerciseCategoryFiltersProps {
   selectedCategory: CategoryFilter;
   setSelectedCategory: (categoryValue: CategoryFilter) => void;
-}) => {
+  shouldShowCustomExerciseFilter: boolean;
+}
+
+export const ExerciseCategoryFilters = ({
+  selectedCategory,
+  setSelectedCategory,
+  shouldShowCustomExerciseFilter
+}: ExerciseCategoryFiltersProps) => {
   const categoryScrollRef = useRef<ScrollView>(null);
   const categoryLayoutsRef = useRef<
     Partial<Record<CategoryFilter, { x: number; width: number }>>
   >({});
   const [categoryViewportWidth, setCategoryViewportWidth] = useState(0);
+  const visibleCategoryFilters = shouldShowCustomExerciseFilter
+    ? [
+        CATEGORY_FILTERS[0],
+        { label: 'Custom', value: 'custom' as const },
+        ...CATEGORY_FILTERS.slice(1)
+      ]
+    : CATEGORY_FILTERS;
 
   const scrollCategoryIntoView = useCallback(
     (category: CategoryFilter) => {
@@ -53,7 +64,7 @@ export const ExerciseCategoryFilters = ({
         setCategoryViewportWidth(event.nativeEvent.layout.width);
       }}
     >
-      {CATEGORY_FILTERS.map(category => {
+      {visibleCategoryFilters.map(category => {
         const isSelected = category.value === selectedCategory;
 
         return (
