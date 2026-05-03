@@ -113,7 +113,7 @@ export default function EditExerciseScreen() {
       }
 
       router.replace({
-        pathname: '/(tabs)/exercises/[id]',
+        pathname: '/exercises/[id]',
         params: { id: updatedExercise.id }
       });
     } catch (error) {
