@@ -187,7 +187,9 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
           <Button
             disabled={isRenaming || isSavingRename || !canRepeatWorkout}
             onPress={repeatWorkout}
-            leftIcon={<Icon icon={RepeatIcon} />}
+            leftIcon={
+              <Icon icon={RepeatIcon} className="text-primary-foreground" />
+            }
           >
             Repeat this workout
           </Button>

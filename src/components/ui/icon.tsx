@@ -1,3 +1,4 @@
+import { cn } from '@/src/lib/utils/cn';
 import type { LucideIcon, LucideProps } from 'lucide-react-native';
 import { styled } from 'nativewind';
 
@@ -54,7 +55,7 @@ export function Icon({
 
   return (
     <StyledIcon
-      className={className}
+      className={cn('text-inherit', className)}
       size={size}
       color={color}
       strokeWidth={strokeWidth}
