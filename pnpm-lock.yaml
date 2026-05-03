@@ -44,6 +44,9 @@ importers:
       expo-constants:
         specifier: ~18.0.13
         version: 18.0.13(expo@54.0.34)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))
+      expo-drizzle-studio-plugin:
+        specifier: ^0.2.1
+        version: 0.2.1(expo-sqlite@16.0.10(expo@54.0.34)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(expo@54.0.34)
       expo-font:
         specifier: ^14.0.11
         version: 14.0.11(expo@54.0.34)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
@@ -3459,6 +3462,12 @@ packages:
     peerDependencies:
       expo: '*'
       react-native: '*'
+
+  expo-drizzle-studio-plugin@0.2.1:
+    resolution: {integrity: sha512-AjMC7SOutMAv/MkeJSp/26gnHLAA17SG8EtsjIKW6tDcBkq4plDVhjMLusoGe9f0vzYK8KrOvWjEWZ/R+KvIGg==}
+    peerDependencies:
+      expo: '>=53.0.5'
+      expo-sqlite: '>=15.2.9'
 
   expo-file-system@19.0.22:
     resolution: {integrity: sha512-l9pgahSc7sJD0bP9vBNeXvZjy8QKDpVHVxWmei/ESQOrzmoj5BidziqLVsyZdxsi+PfdbTtttLTAmddH/JafYA==}
@@ -9388,6 +9397,11 @@ snapshots:
       react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0)
     transitivePeerDependencies:
       - supports-color
+
+  expo-drizzle-studio-plugin@0.2.1(expo-sqlite@16.0.10(expo@54.0.34)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(expo@54.0.34):
+    dependencies:
+      expo: 54.0.34(@babel/core@7.29.0)(@expo/metro-runtime@6.1.2)(expo-router@6.0.23)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      expo-sqlite: 16.0.10(expo@54.0.34)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
 
   expo-file-system@19.0.22(expo@54.0.34)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0)):
     dependencies:

@@ -1,5 +1,6 @@
 import '@/global.css';
 import { CommonProviders } from '@/src/components/common-providers';
+import { DrizzleStudio } from '@/src/components/drizzle-studio';
 import { ScreenErrorBoundary } from '@/src/components/screen-error-boundary';
 import {
   Inter_400Regular,
@@ -35,6 +36,7 @@ export default function RootLayout() {
   return (
     <CommonProviders>
       <ScreenErrorBoundary>
+        <DrizzleStudio />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="onboarding" />
