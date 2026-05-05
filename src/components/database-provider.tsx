@@ -60,6 +60,12 @@ async function migrateAsync(db: SQLiteDatabase) {
 
   try {
     runSeedIfNeeded(drizzleDb);
+
+    if (__DEV__) {
+      const { runDevSeedIfNeeded } = await import('@/src/db/dev-seed');
+
+      runDevSeedIfNeeded(drizzleDb);
+    }
   } catch (error) {
     console.error('Database seed failed', error);
 
