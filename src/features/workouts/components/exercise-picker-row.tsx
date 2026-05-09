@@ -15,6 +15,8 @@ export const ExercisePickerRow = ({
   onPress
 }: ExercisePickerRowProps) => {
   const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();
+  const metadataLabel =
+    exercise.isCustom === 1 ? 'Custom' : getCategoryLabel(exercise.category);
 
   return (
     <Animated.View style={scaleStyle}>
@@ -29,7 +31,7 @@ export const ExercisePickerRow = ({
       >
         <Text variant="bodyMedium">{exercise.name}</Text>
         <Text variant="small" tone="muted" className="mt-1">
-          {getCategoryLabel(exercise.category)}
+          {metadataLabel}
         </Text>
       </Pressable>
     </Animated.View>
