@@ -3,7 +3,6 @@ import { useSettings } from '@/src/features/settings/hooks';
 import { useRemoveWorkoutExercise } from '@/src/features/workouts/hooks';
 import { usePressScale } from '@/src/lib/animations/use-press-scale';
 import { cn } from '@/src/lib/utils/cn';
-import { formatWeightForUnit } from '@/src/lib/utils/weight';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Animated, Pressable, View } from 'react-native';
@@ -11,6 +10,7 @@ import ReanimatedSwipeable, {
   type SwipeableMethods
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import type { WorkoutExerciseWithSets } from './types';
+import { WorkoutExerciseSummary } from './workout-exercise-summary';
 
 interface ExerciseCardProps {
   item: WorkoutExerciseWithSets;
@@ -147,40 +147,13 @@ export function ExerciseCard({ item, className }: ExerciseCardProps) {
                 isSelected && 'bg-muted/50'
               )}
             >
-              <View className="flex-row items-center justify-between gap-3 p-4 pb-0">
-                <Text variant="bodyMedium" className="flex-1">
-                  {item.exercise?.name ?? 'Unknown exercise'}
-                </Text>
-              </View>
-
-              <View className="p-4">
-                {completedSets.length > 0 ? (
-                  <View>
-                    {completedSets.map((set, index) => (
-                      <View
-                        key={set.id}
-                        className="flex-row items-center gap-3"
-                      >
-                        <Text variant="caption" tone="muted" className="w-6">
-                          {index + 1}
-                        </Text>
-                        <Text variant="caption">
-                          {formatWeightForUnit(set.weightKg, weightUnit)}{' '}
-                          {weightUnit}
-                        </Text>
-                        <Text variant="caption" tone="muted">
-                          x
-                        </Text>
-                        <Text variant="caption">{set.reps}</Text>
-                      </View>
-                    ))}
-                  </View>
-                ) : (
-                  <Text variant="small" tone="muted">
-                    Tap to log sets
-                  </Text>
-                )}
-              </View>
+              <WorkoutExerciseSummary
+                exerciseName={item.exercise?.name ?? 'Unknown exercise'}
+                completedSets={completedSets}
+                weightUnit={weightUnit}
+                emptyText="Tap to log sets"
+                className="p-4"
+              />
             </View>
           </Pressable>
         </Animated.View>
