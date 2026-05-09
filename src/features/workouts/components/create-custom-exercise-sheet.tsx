@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface CreateCustomExerciseSheetProps {
   isOpen: boolean;
+  initialName?: string;
   onClose: () => void;
   onSave: (exercise: NewExercise) => void;
 }
@@ -23,6 +24,7 @@ const SNAP_POINTS = ['72%'];
 
 export function CreateCustomExerciseSheet({
   isOpen,
+  initialName = '',
   onClose,
   onSave
 }: CreateCustomExerciseSheetProps) {
@@ -40,13 +42,9 @@ export function CreateCustomExerciseSheet({
     toggleSecondaryMuscle,
     submit,
     reset
-  } = useCustomExerciseForm();
+  } = useCustomExerciseForm({ initialName });
 
   useEffect(() => {
-    if (isOpen) {
-      return;
-    }
-
     reset();
   }, [isOpen, reset]);
 

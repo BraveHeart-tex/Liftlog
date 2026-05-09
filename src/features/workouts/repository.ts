@@ -1,5 +1,6 @@
 import type { DrizzleDb } from '@/src/db/client';
 import {
+  exercises,
   sets,
   workoutExercises,
   workouts,
@@ -15,7 +16,7 @@ import {
   type WorkoutTemplateExercise
 } from '@/src/db/schema';
 import { resolveTemplateName } from '@/src/lib/utils/workout';
-import { asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, notInArray } from 'drizzle-orm';
 
 function getWorkoutRecordById(
   db: DrizzleDb,
@@ -62,6 +63,53 @@ export function getRecentWorkoutsQuery(db: DrizzleDb, limit: number) {
 
 export function getRecentWorkouts(db: DrizzleDb, limit: number): Workout[] {
   return getRecentWorkoutsQuery(db, limit).all();
+}
+
+export function getRecentExerciseIdsQuery(
+  db: DrizzleDb,
+  excludedExerciseIds: string[] = []
+) {
+  return db
+    .select({ exerciseId: workoutExercises.exerciseId })
+    .from(workoutExercises)
+    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
+    .innerJoin(exercises, eq(workoutExercises.exerciseId, exercises.id))
+    .where(
+      and(
+        eq(workouts.status, 'completed'),
+        eq(exercises.isArchived, 0),
+        excludedExerciseIds.length > 0
+          ? notInArray(workoutExercises.exerciseId, excludedExerciseIds)
+          : undefined
+      )
+    )
+    .orderBy(desc(workouts.startedAt), asc(workoutExercises.order));
+}
+
+export function getRecentExerciseIdRows(
+  db: DrizzleDb,
+  excludedExerciseIds: string[] = []
+): { exerciseId: string }[] {
+  return getRecentExerciseIdsQuery(db, excludedExerciseIds).all();
+}
+
+export function getRecentExerciseIds(
+  db: DrizzleDb,
+  excludedExerciseIds: string[] = []
+): string[] {
+  const seenExerciseIds = new Set<string>();
+  const recentExerciseIds: string[] = [];
+
+  for (const row of getRecentExerciseIdRows(db, excludedExerciseIds)) {
+    if (seenExerciseIds.has(row.exerciseId)) {
+      continue;
+    }
+
+    seenExerciseIds.add(row.exerciseId);
+    recentExerciseIds.push(row.exerciseId);
+  }
+
+  return recentExerciseIds;
 }
 
 export function getActiveWorkoutQuery(db: DrizzleDb) {

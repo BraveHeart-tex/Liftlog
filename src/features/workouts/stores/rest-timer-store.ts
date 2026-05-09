@@ -16,6 +16,8 @@ interface RestTimerState {
   activeDurationSeconds: number;
   inputValue: number;
   completionCount: number;
+  isSheetOpen: boolean;
+  setSheetOpen: (isOpen: boolean) => void;
   syncDefaultDuration: (defaultDuration: number) => void;
   syncOnOpen: (defaultDuration: number) => void;
   tick: (now?: number) => void;
@@ -73,6 +75,10 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
   activeDurationSeconds: DEFAULT_REST_TIMER_SECONDS,
   inputValue: DEFAULT_REST_TIMER_SECONDS,
   completionCount: 0,
+  isSheetOpen: false,
+  setSheetOpen: isSheetOpen => {
+    set({ isSheetOpen });
+  },
   syncDefaultDuration: defaultDuration => {
     if (get().status !== 'idle') {
       return;
