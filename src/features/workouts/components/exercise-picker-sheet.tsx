@@ -9,10 +9,13 @@ import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
 import { SearchInputIcon } from '@/src/components/ui/search-input-icon';
 import { Text } from '@/src/components/ui/text';
-import { ExerciseCategoryFilters } from '@/src/features/exercises/components/exercise-category-filters';
-import type { CategoryFilter } from '@/src/features/exercises/constants';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
+import {
+  ExercisePickerFilters,
+  type ExercisePickerFilter
+} from '@/src/features/workouts/components/exercise-picker-filters';
 import { ExercisePickerRow } from '@/src/features/workouts/components/exercise-picker-row';
+import { getCategoryLabel } from '@/src/features/workouts/components/utils';
 import { useEffect, useMemo, useState } from 'react';
 import { Keyboard, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,17 +23,63 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 interface ExercisePickerSheetProps {
   isOpen: boolean;
   exercises: ExerciseListItem[];
+  recentExerciseIds: ExerciseListItem['id'][];
   selectedExerciseIds: ExerciseListItem['id'][];
   onClose: () => void;
   onSelectExercise: (exercise: ExerciseListItem) => void;
-  onCreateCustomExercise: () => void;
+  onCreateCustomExercise: (initialName?: string) => void;
 }
 
 const SNAP_POINTS = ['70%', '90%'];
 
+function normalizeSearchValue(value: string) {
+  return value.trim().toLocaleLowerCase();
+}
+
+function exerciseMatchesSearch(
+  exercise: ExerciseListItem,
+  normalizedQuery: string
+) {
+  if (normalizedQuery.length === 0) {
+    return true;
+  }
+
+  const searchableValues = [
+    exercise.name,
+    exercise.category,
+    getCategoryLabel(exercise.category),
+    ...(exercise.isCustom === 1 ? ['custom'] : [])
+  ];
+
+  return searchableValues.some(value =>
+    value.toLocaleLowerCase().includes(normalizedQuery)
+  );
+}
+
+function exerciseMatchesFilter(
+  exercise: ExerciseListItem,
+  selectedFilter: ExercisePickerFilter,
+  recentExerciseIdSet: Set<ExerciseListItem['id']>
+) {
+  if (selectedFilter === 'all') {
+    return true;
+  }
+
+  if (selectedFilter === 'recent') {
+    return recentExerciseIdSet.has(exercise.id);
+  }
+
+  if (selectedFilter === 'custom') {
+    return exercise.isCustom === 1;
+  }
+
+  return exercise.category === selectedFilter;
+}
+
 export function ExercisePickerSheet({
   isOpen,
   exercises,
+  recentExerciseIds,
   selectedExerciseIds,
   onClose,
   onSelectExercise,
@@ -38,53 +87,110 @@ export function ExercisePickerSheet({
 }: ExercisePickerSheetProps) {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] =
-    useState<CategoryFilter>('all');
+  const [selectedFilter, setSelectedFilter] =
+    useState<ExercisePickerFilter>('all');
 
   useEffect(() => {
     if (!isOpen) {
       setQuery('');
-      setSelectedCategory('all');
+      setSelectedFilter('all');
     }
   }, [isOpen]);
 
-  const customExerciseCount = useMemo(
-    () => exercises.filter(exercise => exercise.isCustom === 1).length,
-    [exercises]
-  );
+  const trimmedQuery = query.trim();
 
   const filteredExercises = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase();
+    const normalizedQuery = normalizeSearchValue(query);
     const selectedExerciseIdSet = new Set(selectedExerciseIds);
+    const recentExerciseIdSet = new Set(recentExerciseIds);
+    const recentExerciseOrderById = new Map(
+      recentExerciseIds.map((exerciseId, index) => [exerciseId, index])
+    );
 
-    return exercises.filter(exercise => {
-      const isAlreadySelected = selectedExerciseIdSet.has(exercise.id);
-      const matchesCategory =
-        selectedCategory === 'all' ||
-        (selectedCategory === 'custom'
-          ? exercise.isCustom === 1
-          : exercise.category === selectedCategory);
-      const matchesQuery =
-        normalizedQuery.length === 0 ||
-        exercise.name.toLocaleLowerCase().includes(normalizedQuery);
-
-      return !isAlreadySelected && matchesCategory && matchesQuery;
+    const matches = exercises.filter(exercise => {
+      return (
+        !selectedExerciseIdSet.has(exercise.id) &&
+        exerciseMatchesFilter(exercise, selectedFilter, recentExerciseIdSet) &&
+        exerciseMatchesSearch(exercise, normalizedQuery)
+      );
     });
-  }, [exercises, query, selectedCategory, selectedExerciseIds]);
 
-  const emptyTitle =
-    selectedCategory === 'custom'
-      ? query.trim().length > 0
-        ? 'No custom exercises found'
-        : 'No custom exercises yet'
-      : 'No exercises found';
+    if (selectedFilter !== 'recent') {
+      return matches;
+    }
 
-  const emptyDescription =
-    selectedCategory === 'custom'
-      ? query.trim().length > 0
-        ? 'Try a different search or switch to All.'
-        : 'Custom exercises you create will show here.'
-      : 'Try a different search.';
+    return matches.sort(
+      (firstExercise, secondExercise) =>
+        (recentExerciseOrderById.get(firstExercise.id) ?? 0) -
+        (recentExerciseOrderById.get(secondExercise.id) ?? 0)
+    );
+  }, [
+    exercises,
+    query,
+    recentExerciseIds,
+    selectedExerciseIds,
+    selectedFilter
+  ]);
+
+  const hasHiddenSelectedMatches = useMemo(() => {
+    const normalizedQuery = normalizeSearchValue(query);
+    const selectedExerciseIdSet = new Set(selectedExerciseIds);
+    const recentExerciseIdSet = new Set(recentExerciseIds);
+
+    return exercises.some(
+      exercise =>
+        selectedExerciseIdSet.has(exercise.id) &&
+        exerciseMatchesFilter(exercise, selectedFilter, recentExerciseIdSet) &&
+        exerciseMatchesSearch(exercise, normalizedQuery)
+    );
+  }, [
+    exercises,
+    query,
+    recentExerciseIds,
+    selectedExerciseIds,
+    selectedFilter
+  ]);
+
+  const emptyTitle = (() => {
+    if (trimmedQuery.length > 0) {
+      return 'No exercises found';
+    }
+
+    if (selectedFilter === 'custom') {
+      return 'No custom exercises yet';
+    }
+
+    if (selectedFilter === 'recent') {
+      return 'No recent exercises yet';
+    }
+
+    return 'No exercises found';
+  })();
+
+  const emptyDescription = (() => {
+    if (hasHiddenSelectedMatches) {
+      return 'Matching exercises may already be in this workout.';
+    }
+
+    if (trimmedQuery.length > 0) {
+      return `Create "${trimmedQuery}" or try a different search.`;
+    }
+
+    if (selectedFilter === 'custom') {
+      return 'Custom exercises you create will show here.';
+    }
+
+    if (selectedFilter === 'recent') {
+      return 'Finish a workout and your recently used exercises will show here.';
+    }
+
+    return 'Try a different filter or search.';
+  })();
+
+  const createButtonLabel =
+    trimmedQuery.length > 0
+      ? `Create "${trimmedQuery}"`
+      : 'Create custom exercise';
 
   return (
     <BottomSheet
@@ -96,8 +202,11 @@ export function ExercisePickerSheet({
           style={{ paddingBottom: insets.bottom }}
           className="border-border bg-card border-t px-4 pt-3"
         >
-          <Button variant="secondary" onPress={onCreateCustomExercise}>
-            Create custom exercise
+          <Button
+            variant="secondary"
+            onPress={() => onCreateCustomExercise(trimmedQuery)}
+          >
+            {createButtonLabel}
           </Button>
         </View>
       }
@@ -120,13 +229,12 @@ export function ExercisePickerSheet({
           leftIcon={<SearchInputIcon />}
         />
 
-        <ExerciseCategoryFilters
-          selectedCategory={selectedCategory}
-          setSelectedCategory={category => {
+        <ExercisePickerFilters
+          selectedFilter={selectedFilter}
+          setSelectedFilter={filter => {
             Keyboard.dismiss();
-            setSelectedCategory(category);
+            setSelectedFilter(filter);
           }}
-          shouldShowCustomExerciseFilter={customExerciseCount > 0}
         />
       </View>
 
