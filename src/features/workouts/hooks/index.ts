@@ -12,5 +12,6 @@ export { useRepeatWorkout } from './use-repeat-workout';
 export { useSaveWorkoutTemplate } from './use-save-workout-template';
 export { useWorkoutDelete } from './use-workout-delete';
 export { useWorkoutRename } from './use-workout-rename';
+export { useWorkoutRenameFlow } from './use-workout-rename-flow';
 export { useWorkoutHistoryDetail } from './use-workout-history-detail';
 export { useWorkoutStart } from './use-workout-start';
