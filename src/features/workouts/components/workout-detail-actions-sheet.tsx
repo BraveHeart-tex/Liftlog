@@ -37,29 +37,33 @@ export function WorkoutDetailActionsSheet({
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} enableDynamicSizing>
-      <BottomSheetHeader>
-        <BottomSheetTitle>Workout actions</BottomSheetTitle>
+      <BottomSheetHeader className="items-center">
+        <BottomSheetTitle className="text-center">
+          Workout actions
+        </BottomSheetTitle>
       </BottomSheetHeader>
 
       <View className="px-4 pt-2" style={{ paddingBottom: insets.bottom + 8 }}>
         <PressableSurface
           accessibilityLabel="Rename workout"
-          className="min-h-14 flex-row items-center gap-3 rounded-lg px-3 py-3"
+          className="min-h-14 flex-row items-center justify-center gap-3 rounded-lg px-3 py-3"
           onPress={handleRename}
         >
           <Icon icon={PencilIcon} size={20} className="text-foreground" />
-          <Text variant="bodyMedium">Rename workout</Text>
+          <Text variant="bodyMedium" className="text-center">
+            Rename workout
+          </Text>
         </PressableSurface>
 
         <View className="border-border my-1 border-t" />
 
         <PressableSurface
           accessibilityLabel="Delete workout"
-          className="min-h-14 flex-row items-center gap-3 rounded-lg px-3 py-3"
+          className="min-h-14 flex-row items-center justify-center gap-3 rounded-lg px-3 py-3"
           onPress={handleDelete}
         >
           <Icon icon={Trash2Icon} size={20} className="text-danger" />
-          <Text variant="bodyMedium" tone="danger">
+          <Text variant="bodyMedium" tone="danger" className="text-center">
             Delete workout
           </Text>
         </PressableSurface>

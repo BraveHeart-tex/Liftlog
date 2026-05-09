@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const TAB_BAR_HEIGHT = 66;
 const TAB_BAR_TOP_PADDING = 8;
 const TAB_BAR_BOTTOM_PADDING = 10;
-const ANDROID_TAB_BAR_EXTRA_BOTTOM_PADDING = 8;
+const ANDROID_TAB_BAR_EXTRA_BOTTOM_PADDING = 16;
 const TAB_ICON_SIZE = 22;
 
 export default function TabLayout() {
