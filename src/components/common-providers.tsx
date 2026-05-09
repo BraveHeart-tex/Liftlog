@@ -1,4 +1,6 @@
 import { DatabaseProvider } from '@/src/components/database-provider';
+import { SnackbarHost } from '@/src/components/ui/snackbar';
+import { RestTimerHost } from '@/src/features/workouts/components/rest-timer-host';
 import { AppThemeProvider } from '@/src/theme/app-theme-provider';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import type { PropsWithChildren } from 'react';
@@ -17,7 +19,11 @@ export function CommonProviders({ children }: PropsWithChildren) {
       >
         <DatabaseProvider>
           <AppThemeProvider>
-            <BottomSheetModalProvider>{children}</BottomSheetModalProvider>
+            <BottomSheetModalProvider>
+              {children}
+              <RestTimerHost />
+              <SnackbarHost />
+            </BottomSheetModalProvider>
           </AppThemeProvider>
         </DatabaseProvider>
       </SafeAreaProvider>

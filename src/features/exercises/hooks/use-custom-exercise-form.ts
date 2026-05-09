@@ -18,11 +18,17 @@ interface UseCustomExerciseFormResult {
   reset: () => void;
 }
 
+interface UseCustomExerciseFormParams {
+  initialName?: string;
+}
+
 const DEFAULT_CATEGORY: ExerciseCategory = 'barbell';
 
-export function useCustomExerciseForm(): UseCustomExerciseFormResult {
+export function useCustomExerciseForm({
+  initialName = ''
+}: UseCustomExerciseFormParams = {}): UseCustomExerciseFormResult {
   const exercises = useExercises();
-  const [name, setName] = useState('');
+  const [name, setName] = useState(initialName);
   const [category, setCategory] = useState<ExerciseCategory>(DEFAULT_CATEGORY);
   const [selectedPrimaryMuscles, setSelectedPrimaryMuscles] = useState<
     string[]
@@ -106,12 +112,12 @@ export function useCustomExerciseForm(): UseCustomExerciseFormResult {
   ]);
 
   const reset = useCallback(() => {
-    setName('');
+    setName(initialName);
     setCategory(DEFAULT_CATEGORY);
     setSelectedPrimaryMuscles([]);
     setSelectedSecondaryMuscles([]);
     setAttemptedSubmit(false);
-  }, []);
+  }, [initialName]);
 
   return {
     name,

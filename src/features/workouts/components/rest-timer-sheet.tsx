@@ -13,14 +13,9 @@ import {
   useRestTimerStore
 } from '@/src/features/workouts/stores/rest-timer-store';
 import { formatTime } from '@/src/lib/utils/format-time';
-import {
-  setAudioModeAsync,
-  setIsAudioActiveAsync,
-  useAudioPlayer
-} from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import { XIcon } from 'lucide-react-native';
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 
 interface RestTimerSheetProps {
@@ -28,14 +23,12 @@ interface RestTimerSheetProps {
   onClose: () => void;
 }
 
-let lastPlayedCompletionCount = 0;
-
 export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
   /*
    * Approach:
    * 1. Keep timer state and math in the Zustand store.
-   * 2. Keep this sheet responsible for rendering and user feedback only.
-   * 3. Drive completion with a tiny interval while the component is mounted.
+   * 2. Keep this sheet responsible for rendering timer controls only.
+   * 3. Let the app-level RestTimerHost drive ticking and completion feedback.
    */
   const { restTimerDuration: defaultDuration } = useSettings();
   const status = useRestTimerStore(state => state.status);
@@ -44,12 +37,11 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
     state => state.activeDurationSeconds
   );
   const inputValue = useRestTimerStore(state => state.inputValue);
-  const completionCount = useRestTimerStore(state => state.completionCount);
   const syncDefaultDuration = useRestTimerStore(
     state => state.syncDefaultDuration
   );
   const syncOnOpen = useRestTimerStore(state => state.syncOnOpen);
-  const tick = useRestTimerStore(state => state.tick);
+  const setSheetOpen = useRestTimerStore(state => state.setSheetOpen);
   const setInputFromText = useRestTimerStore(state => state.setInputFromText);
   const commitInput = useRestTimerStore(state => state.commitInput);
   const decreaseInput = useRestTimerStore(state => state.decreaseInput);
@@ -59,64 +51,33 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
   const resumeTimer = useRestTimerStore(state => state.resume);
   const cancelTimer = useRestTimerStore(state => state.cancel);
   const wasOpenRef = useRef(false);
-  const player = useAudioPlayer(
-    require('@/src/assets/sounds/rest-complete.mp3'),
-    {
-      downloadFirst: true,
-      keepAudioSessionActive: true
-    }
-  );
-
-  const playCompletionFeedback = useCallback(async () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setTimeout(() => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }, 200);
-    setTimeout(() => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }, 400);
-
-    try {
-      await setIsAudioActiveAsync(true);
-      await player.seekTo(0);
-      player.volume = 1;
-      player.play();
-    } catch {
-      // Sound file may be missing — haptics still work.
-    }
-  }, [player]);
-
-  useEffect(() => {
-    setAudioModeAsync({
-      playsInSilentMode: true,
-      interruptionMode: 'duckOthers'
-    }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (status !== 'running') {
-      return;
-    }
-
-    const id = setInterval(() => {
-      tick();
-    }, 500);
-
-    return () => clearInterval(id);
-  }, [status, tick]);
-
-  useEffect(() => {
-    if (completionCount <= lastPlayedCompletionCount) {
-      return;
-    }
-
-    lastPlayedCompletionCount = completionCount;
-    playCompletionFeedback();
-  }, [completionCount, playCompletionFeedback]);
+  const registeredOpenRef = useRef(false);
 
   useEffect(() => {
     syncDefaultDuration(defaultDuration);
   }, [defaultDuration, syncDefaultDuration]);
+
+  useEffect(() => {
+    if (isOpen && !registeredOpenRef.current) {
+      registeredOpenRef.current = true;
+      setSheetOpen(true);
+    }
+
+    if (!isOpen && registeredOpenRef.current) {
+      registeredOpenRef.current = false;
+      setSheetOpen(false);
+    }
+  }, [isOpen, setSheetOpen]);
+
+  useEffect(
+    () => () => {
+      if (registeredOpenRef.current) {
+        registeredOpenRef.current = false;
+        setSheetOpen(false);
+      }
+    },
+    [setSheetOpen]
+  );
 
   useEffect(() => {
     const didOpen = isOpen && !wasOpenRef.current;
@@ -151,17 +112,23 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
   };
 
   const handlePause = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(error => {
+      console.error('Failed to trigger rest timer pause haptics', error);
+    });
     pauseTimer();
   };
 
   const handleResume = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(error => {
+      console.error('Failed to trigger rest timer resume haptics', error);
+    });
     resumeTimer();
   };
 
   const handleCancel = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(error => {
+      console.error('Failed to trigger rest timer cancel haptics', error);
+    });
     cancelTimer();
   };
 

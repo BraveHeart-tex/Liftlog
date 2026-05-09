@@ -41,6 +41,8 @@ export function ActiveWorkoutContent({
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
   const [isCreateCustomExerciseOpen, setIsCreateCustomExerciseOpen] =
     useState(false);
+  const [initialCustomExerciseName, setInitialCustomExerciseName] =
+    useState('');
   const {
     now,
     isExercisePickerOpen,
@@ -48,6 +50,7 @@ export function ActiveWorkoutContent({
     isRestTimerOpen,
     setIsRestTimerOpen,
     workoutExerciseRows,
+    recentExerciseIds,
     isLoadingWorkoutExercises,
     exerciseById,
     isRestTimerRunning
@@ -243,13 +246,15 @@ export function ActiveWorkoutContent({
       <ExercisePickerSheet
         isOpen={isExercisePickerOpen}
         exercises={exerciseRows}
+        recentExerciseIds={recentExerciseIds}
         selectedExerciseIds={workoutExerciseRows.map(
           workoutExercise => workoutExercise.exerciseId
         )}
         onClose={() => setIsExercisePickerOpen(false)}
         onSelectExercise={selectExercise}
-        onCreateCustomExercise={() => {
+        onCreateCustomExercise={initialName => {
           Keyboard.dismiss();
+          setInitialCustomExerciseName(initialName ?? '');
           setIsExercisePickerOpen(false);
           setIsCreateCustomExerciseOpen(true);
         }}
@@ -257,6 +262,7 @@ export function ActiveWorkoutContent({
 
       <CreateCustomExerciseSheet
         isOpen={isCreateCustomExerciseOpen}
+        initialName={initialCustomExerciseName}
         onClose={() => setIsCreateCustomExerciseOpen(false)}
         onSave={exercise => {
           const createdExercise = createAndSelectCustomExercise(exercise);

@@ -2,6 +2,8 @@ import { useDrizzle } from '@/src/components/database-provider';
 import type { Workout } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import {
+  getRecentExerciseIdRows,
+  getRecentExerciseIdsQuery,
   getWorkoutExercises,
   getWorkoutExercisesQuery
 } from '@/src/features/workouts/repository';
@@ -28,6 +30,34 @@ export function useActiveWorkoutContent({
     () => getWorkoutExercises(db, activeWorkout.id),
     [db, activeWorkout.id]
   );
+  const selectedExerciseIds = useMemo(
+    () =>
+      workoutExerciseResult.data.map(
+        workoutExercise => workoutExercise.exerciseId
+      ),
+    [workoutExerciseResult.data]
+  );
+  const selectedExerciseIdsKey = selectedExerciseIds.join('|');
+  const recentExerciseRowResult = useLiveWithFallback(
+    () => getRecentExerciseIdsQuery(db, selectedExerciseIds),
+    () => getRecentExerciseIdRows(db, selectedExerciseIds),
+    [db, selectedExerciseIdsKey]
+  );
+  const recentExerciseIds = useMemo(() => {
+    const seenExerciseIds = new Set<ExerciseListItem['id']>();
+    const exerciseIds: ExerciseListItem['id'][] = [];
+
+    for (const row of recentExerciseRowResult.data) {
+      if (seenExerciseIds.has(row.exerciseId)) {
+        continue;
+      }
+
+      seenExerciseIds.add(row.exerciseId);
+      exerciseIds.push(row.exerciseId);
+    }
+
+    return exerciseIds;
+  }, [recentExerciseRowResult.data]);
 
   const exerciseById = useMemo(
     () =>
@@ -56,6 +86,7 @@ export function useActiveWorkoutContent({
     isRestTimerOpen,
     setIsRestTimerOpen,
     workoutExerciseRows: workoutExerciseResult.data,
+    recentExerciseIds,
     isLoadingWorkoutExercises: !workoutExerciseResult.isLive,
     exerciseById,
     isRestTimerRunning
