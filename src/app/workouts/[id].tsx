@@ -245,12 +245,8 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
 
       <View className="mt-6">
         <View className="flex-row items-center justify-between">
-          <Text
-            variant="caption"
-            tone="muted"
-            className="tracking-widest uppercase"
-          >
-            Exercises
+          <Text variant="caption" tone="muted" className="tracking-widest">
+            EXERCISES
           </Text>
           {workoutExerciseRows.length > 0 && (
             <Text variant="caption" tone="muted">
