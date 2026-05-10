@@ -49,6 +49,25 @@ export function getExerciseHistoryWorkoutsQuery(
     .orderBy(desc(workouts.startedAt));
 }
 
+export function getRecentExerciseHistoryWorkoutsQuery(
+  db: DrizzleDb,
+  exerciseId: Exercise['id'],
+  limit: number
+) {
+  return db
+    .selectDistinct({ workout: workouts })
+    .from(workouts)
+    .innerJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
+    .where(
+      and(
+        eq(workouts.status, 'completed'),
+        eq(workoutExercises.exerciseId, exerciseId)
+      )
+    )
+    .orderBy(desc(workouts.startedAt))
+    .limit(limit);
+}
+
 export function getExerciseHistorySetsQuery(
   db: DrizzleDb,
   exerciseId: Exercise['id'],
