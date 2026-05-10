@@ -9,6 +9,8 @@ interface StepperButtonProps {
   onStep: () => void;
   onStartRepeating: (onStep: () => void) => void;
   onStopRepeating: () => void;
+  buttonClassName?: string;
+  textClassName?: string;
 }
 
 const stepperButtonClassName =
@@ -19,7 +21,9 @@ export const StepperButton = ({
   accessibilityLabel,
   onStep,
   onStartRepeating,
-  onStopRepeating
+  onStopRepeating,
+  buttonClassName,
+  textClassName = 'text-body'
 }: StepperButtonProps) => {
   const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();
 
@@ -36,9 +40,15 @@ export const StepperButton = ({
           onPressOut();
           onStopRepeating();
         }}
-        className={cn(pressed && 'opacity-80', stepperButtonClassName)}
+        className={cn(
+          pressed && 'opacity-80',
+          stepperButtonClassName,
+          buttonClassName
+        )}
       >
-        <Text variant="h3">{label}</Text>
+        <Text variant="h3" className={textClassName}>
+          {label}
+        </Text>
       </Pressable>
     </Animated.View>
   );
