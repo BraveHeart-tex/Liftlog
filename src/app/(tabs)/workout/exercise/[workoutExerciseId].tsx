@@ -40,6 +40,7 @@ export default function ActiveWorkoutExerciseScreen() {
   const [isRestTimerOpen, setIsRestTimerOpen] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const [outerScrollEnabled, setOuterScrollEnabled] = useState(true);
+  const [hasOpenedHistory, setHasOpenedHistory] = useState(false);
 
   const { width } = useWindowDimensions();
   const { item, isLoading } = useActiveWorkoutExerciseDetail(workoutExerciseId);
@@ -48,10 +49,13 @@ export default function ActiveWorkoutExerciseScreen() {
     Platform.OS === 'ios' ? ('padding' as const) : undefined;
 
   const handleSelectTab = (tab: ExerciseDetailTab) => {
+    if (tab === 'history') {
+      setHasOpenedHistory(true);
+    }
+
     const tabIndex = tabs.indexOf(tab);
 
     setSelectedTab(tab);
-
     scrollRef.current?.scrollTo({ x: tabIndex * width, animated: true });
   };
 
@@ -59,8 +63,13 @@ export default function ActiveWorkoutExerciseScreen() {
     event: NativeSyntheticEvent<NativeScrollEvent>
   ) => {
     const pageIndex = Math.round(event.nativeEvent.contentOffset.x / width);
+    const nextTab = tabs[pageIndex] ?? 'track';
 
-    setSelectedTab(tabs[pageIndex] ?? 'track');
+    if (nextTab === 'history') {
+      setHasOpenedHistory(true);
+    }
+
+    setSelectedTab(nextTab);
   };
 
   if (workoutExerciseId && isLoading) {
@@ -164,11 +173,15 @@ export default function ActiveWorkoutExerciseScreen() {
             />
           </View>
           <View className="flex-1" style={{ width }}>
-            <ExerciseHistoryTab
-              exerciseId={item.workoutExercise.exerciseId}
-              onVerticalScrollStart={() => setOuterScrollEnabled(false)}
-              onVerticalScrollEnd={() => setOuterScrollEnabled(true)}
-            />
+            {hasOpenedHistory ? (
+              <ExerciseHistoryTab
+                exerciseId={item.workoutExercise.exerciseId}
+                onVerticalScrollStart={() => setOuterScrollEnabled(false)}
+                onVerticalScrollEnd={() => setOuterScrollEnabled(true)}
+              />
+            ) : (
+              <LoadingState label="Loading exercise history" />
+            )}
           </View>
         </StyledScrollView>
       </KeyboardAvoidingView>
