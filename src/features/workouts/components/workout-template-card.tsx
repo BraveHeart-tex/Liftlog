@@ -58,7 +58,7 @@ export const WorkoutTemplateCard = ({
               accessibilityLabel={`Rename ${item.template.name}`}
               onPress={onRename}
             >
-              <Icon icon={PencilIcon} size={18} className="text-foreground" />
+              <Icon icon={PencilIcon} className="text-foreground" />
             </Button>
 
             <Button
@@ -67,7 +67,7 @@ export const WorkoutTemplateCard = ({
               accessibilityLabel={`Delete ${item.template.name}`}
               onPress={onDelete}
             >
-              <Icon icon={Trash2Icon} size={18} className="text-danger" />
+              <Icon icon={Trash2Icon} className="text-danger" />
             </Button>
           </View>
         </View>

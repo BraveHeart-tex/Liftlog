@@ -248,7 +248,6 @@ export function SetForm({
             leftIcon={
               <Icon
                 icon={isEditing ? PencilIcon : PlusIcon}
-                size={18}
                 className="text-primary-foreground"
               />
             }
@@ -284,7 +283,6 @@ export function SetForm({
               <Icon
                 icon={isEditing ? Trash2Icon : XIcon}
                 className="text-danger"
-                size={18}
               />
             }
             disabled={!isEditing && !getValidatedValues()}

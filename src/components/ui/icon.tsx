@@ -46,7 +46,7 @@ type AppIconProps = Omit<LucideProps, 'ref'> & {
 export function Icon({
   icon,
   className,
-  size = 24,
+  size = 18,
   color,
   strokeWidth = 2,
   ...props
