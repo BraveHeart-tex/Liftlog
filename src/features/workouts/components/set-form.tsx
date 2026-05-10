@@ -24,6 +24,7 @@ const weightStepByUnit = {
 
 interface SetFormProps {
   editingSet: Set | undefined;
+  prefillValues?: SetValues & { requestId: number };
   onAddSet: (data: SetValues) => void;
   onUpdateSet: (data: SetValues & { setId: Set['id'] }) => void;
   onClear: () => void;
@@ -32,6 +33,7 @@ interface SetFormProps {
 
 export function SetForm({
   editingSet,
+  prefillValues,
   onAddSet,
   onUpdateSet,
   onClear,
@@ -55,6 +57,15 @@ export function SetForm({
     setWeightValue('');
     setRepsValue('');
   }, [editingSet, weightUnit]);
+
+  useLayoutEffect(() => {
+    if (editingSet || !prefillValues) {
+      return;
+    }
+
+    setWeightValue(formatWeightForUnit(prefillValues.weightKg, weightUnit));
+    setRepsValue(String(prefillValues.reps));
+  }, [editingSet, prefillValues, weightUnit]);
 
   useEffect(() => {
     return () => {
