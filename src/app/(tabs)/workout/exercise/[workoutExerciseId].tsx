@@ -13,7 +13,7 @@ import { useIsRestTimerRunning } from '@/src/features/workouts/hooks/use-is-rest
 import { cn } from '@/src/lib/utils/cn';
 import { getRouteParamId } from '@/src/lib/utils/route';
 import { useLocalSearchParams } from 'expo-router';
-import { TimerIcon } from 'lucide-react-native';
+import { ClockIcon, NotebookPenIcon, TimerIcon } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -118,12 +118,22 @@ export default function ActiveWorkoutExerciseScreen() {
                 isSelected && 'border-primary border-b-2'
               )}
             >
-              <Text
-                variant="bodyMedium"
-                tone={isSelected ? 'default' : 'muted'}
-              >
-                {tab === 'track' ? 'Track' : 'History'}
-              </Text>
+              <View className="flex-row items-center gap-2">
+                <Icon
+                  icon={tab === 'track' ? NotebookPenIcon : ClockIcon}
+                  size={20}
+                  className={cn(
+                    'will-change-variable',
+                    isSelected ? 'text-foreground' : 'text-muted-foreground'
+                  )}
+                />
+                <Text
+                  variant="bodyMedium"
+                  tone={isSelected ? 'default' : 'muted'}
+                >
+                  {tab === 'track' ? 'Track' : 'History'}
+                </Text>
+              </View>
             </Pressable>
           );
         })}
