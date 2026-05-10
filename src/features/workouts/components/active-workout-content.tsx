@@ -90,6 +90,20 @@ export function ActiveWorkoutContent({
     setIsTemplateSheetOpen(true);
   };
 
+  const confirmFinishWorkout = () => {
+    Alert.alert(
+      'Finish workout?',
+      `"${workoutName}" will be saved to your workout history.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Finish',
+          onPress: finishWorkout
+        }
+      ]
+    );
+  };
+
   const confirmDiscardWorkout = () => {
     Alert.alert(
       'Discard workout?',
@@ -194,7 +208,7 @@ export function ActiveWorkoutContent({
             isLoadingWorkoutExercises ||
             workoutExerciseRows.length === 0
           }
-          onPress={finishWorkout}
+          onPress={confirmFinishWorkout}
         >
           Finish
         </Button>
