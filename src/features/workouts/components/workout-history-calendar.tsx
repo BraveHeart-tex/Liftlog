@@ -93,13 +93,13 @@ export function WorkoutHistoryCalendar({
         arrowColor: foreground,
         dotColor: primary,
         selectedDotColor: primaryForeground,
-        textDayFontFamily: 'Inter_400Regular',
+        textDayFontFamily: 'Inter_500Medium',
         textMonthFontFamily: 'Inter_600SemiBold',
         textDayHeaderFontFamily: 'Inter_500Medium',
         textDayFontSize: 14,
         textMonthFontSize: 18,
         textDayHeaderFontSize: 12,
-        textDayFontWeight: 500,
+        textDayFontWeight: '500',
         textMonthFontWeight: 600,
         textDayHeaderFontWeight: 500,
         'stylesheet.calendar-list.main': {
@@ -131,11 +131,11 @@ export function WorkoutHistoryCalendar({
       onLayout={handleLayout}
       style={{ borderRadius: 16, overflow: 'hidden' }}
     >
-      <View style={{ opacity: calendarWidth !== null ? 1 : 0 }}>
+      {calendarWidth !== null ? (
         <CalendarList
           key={colorSchemeRef.current}
           animateScroll
-          calendarWidth={calendarWidth ?? 0}
+          calendarWidth={calendarWidth}
           current={selectedDateKey}
           maxDate={TODAY}
           firstDay={1}
@@ -152,7 +152,7 @@ export function WorkoutHistoryCalendar({
           theme={calendarTheme}
           windowSize={5}
         />
-      </View>
+      ) : null}
     </View>
   );
 }
