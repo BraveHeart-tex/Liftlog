@@ -12,6 +12,8 @@ function getCompletedSets(sets: Set[]) {
   return sets.filter(set => set.status === 'completed');
 }
 
+const MAX_HISTORY_ITEM_LIMIT = 20;
+
 export function useExerciseHistoryTab(exerciseId: Exercise['id']) {
   const db = useDrizzle();
   const workoutResult = useLiveWithFallback(
@@ -40,7 +42,7 @@ export function useExerciseHistoryTab(exerciseId: Exercise['id']) {
           sets: getCompletedSets(historyEntry.sets)
         }))
         .filter(historyEntry => historyEntry.sets.length > 0)
-        .slice(0, 10),
+        .slice(0, MAX_HISTORY_ITEM_LIMIT),
     [setResult.data, workoutRows]
   );
 
