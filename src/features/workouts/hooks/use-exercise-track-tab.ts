@@ -2,9 +2,9 @@ import type { Set } from '@/src/db/schema';
 import {
   buildExerciseHistory,
   getExerciseHistorySetsQuery,
-  getExerciseHistoryWorkoutsQuery,
   getPersonalRecordsByExercise,
-  getPersonalRecordsByExerciseQuery
+  getPersonalRecordsByExerciseQuery,
+  getRecentExerciseHistoryWorkoutsQuery
 } from '@/src/features/progress/repository';
 import { useDrizzle } from '@/src/components/database-provider';
 import { useSettings } from '@/src/features/settings/hooks';
@@ -36,17 +36,23 @@ export function useExerciseTrackTab(item: WorkoutExerciseWithSets) {
     [prResult.data]
   );
   const workoutResult = useLiveWithFallback(
-    () => getExerciseHistoryWorkoutsQuery(db, exerciseId),
-    () => getExerciseHistoryWorkoutsQuery(db, exerciseId).all(),
+    () =>
+      getRecentExerciseHistoryWorkoutsQuery(
+        db,
+        exerciseId,
+        PROGRESSION_HISTORY_LIMIT
+      ),
+    () =>
+      getRecentExerciseHistoryWorkoutsQuery(
+        db,
+        exerciseId,
+        PROGRESSION_HISTORY_LIMIT
+      ).all(),
     [db, exerciseId]
   );
   const workoutRows = workoutResult.data;
   const workoutIds = useMemo(
-    () =>
-      Array.from(new Set(workoutRows.map(row => row.workout.id))).slice(
-        0,
-        PROGRESSION_HISTORY_LIMIT
-      ),
+    () => workoutRows.map(row => row.workout.id),
     [workoutRows]
   );
   const workoutIdKey = useMemo(() => workoutIds.join(','), [workoutIds]);
