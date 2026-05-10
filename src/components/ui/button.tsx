@@ -35,14 +35,14 @@ const variantClassNames: Record<ButtonVariant, string> = {
   primary: 'bg-primary border-primary',
   secondary: 'border-border bg-card',
   ghost: 'bg-transparent border-transparent',
-  destructive: 'bg-danger border-danger'
+  destructive: 'bg-card border-border'
 };
 
 const textClassNames: Record<ButtonVariant, string> = {
   primary: 'text-body-medium text-primary-foreground',
   secondary: 'text-body-medium text-foreground',
   ghost: 'text-body-medium text-foreground',
-  destructive: 'text-body-medium text-danger-foreground'
+  destructive: 'text-body-medium text-danger'
 };
 
 const buttonTextStyle: TextStyle = {

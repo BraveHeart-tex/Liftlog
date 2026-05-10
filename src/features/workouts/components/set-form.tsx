@@ -6,7 +6,7 @@ import type { Set } from '@/src/db/schema';
 import { useSettings } from '@/src/features/settings/hooks';
 import { StepperButton } from '@/src/features/workouts/components/stepper-button';
 import { convertWeightToKg, formatWeightForUnit } from '@/src/lib/utils/weight';
-import { PlusIcon } from 'lucide-react-native';
+import { PencilIcon, PlusIcon, Trash2Icon, XIcon } from 'lucide-react-native';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Alert, View } from 'react-native';
 import type { SetValues } from './types';
@@ -189,6 +189,8 @@ export function SetForm({
               onStep={() => updateWeightValue(weightStepByUnit[weightUnit])}
               onStartRepeating={startRepeatingStep}
               onStopRepeating={stopRepeatingStep}
+              buttonClassName="border-primary"
+              textClassName="text-primary"
             />
           </View>
         </View>
@@ -230,6 +232,8 @@ export function SetForm({
               onStep={() => updateRepsValue(1)}
               onStartRepeating={startRepeatingStep}
               onStopRepeating={stopRepeatingStep}
+              buttonClassName="border-primary"
+              textClassName="text-primary"
             />
           </View>
         </View>
@@ -242,13 +246,11 @@ export function SetForm({
             size="sm"
             className="w-full"
             leftIcon={
-              !isEditing ? (
-                <Icon
-                  icon={PlusIcon}
-                  size={14}
-                  className="text-primary-foreground"
-                />
-              ) : null
+              <Icon
+                icon={isEditing ? PencilIcon : PlusIcon}
+                size={18}
+                className="text-primary-foreground"
+              />
             }
             onPress={() => {
               const data = getValidatedValues();
@@ -275,9 +277,17 @@ export function SetForm({
 
         <View className="flex-1">
           <Button
-            variant={isEditing ? 'destructive' : 'secondary'}
+            variant={'destructive'}
             size="sm"
             onPress={isEditing ? handleDelete : handleClear}
+            leftIcon={
+              <Icon
+                icon={isEditing ? Trash2Icon : XIcon}
+                className="text-danger"
+                size={18}
+              />
+            }
+            disabled={!isEditing && !getValidatedValues()}
           >
             {isEditing ? 'Delete' : 'Clear'}
           </Button>

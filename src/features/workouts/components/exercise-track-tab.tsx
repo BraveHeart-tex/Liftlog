@@ -62,7 +62,11 @@ export function ExerciseTrackTab({
       />
       <View className="border-border mt-4 border-t" />
       <View className="mt-4 flex-1">
-        <Text variant="caption" tone="muted">
+        <Text
+          variant="caption"
+          tone="muted"
+          className="tracking-widest uppercase"
+        >
           Sets
         </Text>
         {item.sets.length > 0 ? (
