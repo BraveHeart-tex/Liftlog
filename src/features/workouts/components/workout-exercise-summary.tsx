@@ -14,6 +14,14 @@ interface WorkoutExerciseSummaryProps {
   className?: string;
 }
 
+interface WorkoutSetSummaryProps {
+  completedSets: Set[];
+  weightUnit: WeightUnit;
+  personalRecordSetIds?: ReadonlySet<string>;
+  emptyText?: string;
+  className?: string;
+}
+
 type DisplaySetGroup = ReturnType<typeof getDisplaySetGroups>[number];
 
 type RenderItem =
@@ -65,10 +73,6 @@ export function WorkoutExerciseSummary({
   emptyText,
   className
 }: WorkoutExerciseSummaryProps) {
-  const displayGroups = getDisplaySetGroups(completedSets, {
-    personalRecordSetIds
-  });
-  const renderItems = toRenderItems(displayGroups);
   const exerciseVolume = completedSets.reduce(
     (sum, set) => sum + set.weightKg * set.reps,
     0
@@ -90,51 +94,73 @@ export function WorkoutExerciseSummary({
         ) : null}
       </View>
 
-      {renderItems.length > 0 ? (
-        <View className="gap-2">
-          {renderItems.map(item => {
-            if (item.kind === 'range') {
-              return (
-                <RangeSetRow
-                  key={item.group.setIds.join('-')}
-                  group={item.group}
-                  weightUnit={weightUnit}
-                  hasPersonalRecord={groupHasPersonalRecord(
-                    item.group,
-                    personalRecordSetIds
-                  )}
-                />
-              );
-            }
+      <WorkoutSetSummary
+        completedSets={completedSets}
+        weightUnit={weightUnit}
+        personalRecordSetIds={personalRecordSetIds}
+        emptyText={emptyText}
+      />
+    </View>
+  );
+}
 
+export function WorkoutSetSummary({
+  completedSets,
+  weightUnit,
+  personalRecordSetIds,
+  emptyText,
+  className
+}: WorkoutSetSummaryProps) {
+  const displayGroups = getDisplaySetGroups(completedSets, {
+    personalRecordSetIds
+  });
+  const renderItems = toRenderItems(displayGroups);
+
+  return (
+    <View className={cn('gap-2', className)}>
+      {renderItems.length > 0 ? (
+        renderItems.map(item => {
+          if (item.kind === 'range') {
             return (
-              <View key={item.left.setIds[0]} className="flex-row gap-2">
+              <RangeSetRow
+                key={item.group.setIds.join('-')}
+                group={item.group}
+                weightUnit={weightUnit}
+                hasPersonalRecord={groupHasPersonalRecord(
+                  item.group,
+                  personalRecordSetIds
+                )}
+              />
+            );
+          }
+
+          return (
+            <View key={item.left.setIds[0]} className="flex-row gap-2">
+              <SingleSetPill
+                group={item.left}
+                weightUnit={weightUnit}
+                hasPersonalRecord={groupHasPersonalRecord(
+                  item.left,
+                  personalRecordSetIds
+                )}
+                style={{ flex: 1 }}
+              />
+              {item.right ? (
                 <SingleSetPill
-                  group={item.left}
+                  group={item.right}
                   weightUnit={weightUnit}
                   hasPersonalRecord={groupHasPersonalRecord(
-                    item.left,
+                    item.right,
                     personalRecordSetIds
                   )}
                   style={{ flex: 1 }}
                 />
-                {item.right ? (
-                  <SingleSetPill
-                    group={item.right}
-                    weightUnit={weightUnit}
-                    hasPersonalRecord={groupHasPersonalRecord(
-                      item.right,
-                      personalRecordSetIds
-                    )}
-                    style={{ flex: 1 }}
-                  />
-                ) : (
-                  <View style={{ flex: 1 }} />
-                )}
-              </View>
-            );
-          })}
-        </View>
+              ) : (
+                <View style={{ flex: 1 }} />
+              )}
+            </View>
+          );
+        })
       ) : emptyText ? (
         <Text variant="small" tone="muted">
           {emptyText}
@@ -146,8 +172,8 @@ export function WorkoutExerciseSummary({
 
 function PersonalRecordBadge() {
   return (
-    <View className="border-warning bg-warning/15 rounded-md border px-1.5 py-0.5">
-      <Text variant="caption" className="text-warning font-medium">
+    <View className="border-success bg-success/15 rounded-md border px-1.5 py-0.5">
+      <Text variant="caption" className="text-success font-medium">
         PR
       </Text>
     </View>
