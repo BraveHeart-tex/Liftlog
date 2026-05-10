@@ -44,6 +44,8 @@ export default function ActiveWorkoutExerciseScreen() {
   const { width } = useWindowDimensions();
   const { item, isLoading } = useActiveWorkoutExerciseDetail(workoutExerciseId);
   const isRestTimerRunning = useIsRestTimerRunning();
+  const keyboardAvoidingBehavior =
+    Platform.OS === 'ios' ? ('padding' as const) : undefined;
 
   const handleSelectTab = (tab: ExerciseDetailTab) => {
     const tabIndex = tabs.indexOf(tab);
@@ -138,10 +140,9 @@ export default function ActiveWorkoutExerciseScreen() {
           );
         })}
       </View>
-      {/* KAV only wraps the tab content area, not the header/tab bar */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={keyboardAvoidingBehavior}
       >
         <StyledScrollView
           ref={scrollRef}
@@ -155,15 +156,19 @@ export default function ActiveWorkoutExerciseScreen() {
           keyboardShouldPersistTaps="handled"
           scrollEventThrottle={16}
         >
-          <View className="w-screen flex-1">
+          <View className="flex-1" style={{ width }}>
             <ExerciseTrackTab
               item={item}
               onVerticalScrollStart={() => setOuterScrollEnabled(false)}
               onVerticalScrollEnd={() => setOuterScrollEnabled(true)}
             />
           </View>
-          <View className="w-screen flex-1">
-            <ExerciseHistoryTab exerciseId={item.workoutExercise.exerciseId} />
+          <View className="flex-1" style={{ width }}>
+            <ExerciseHistoryTab
+              exerciseId={item.workoutExercise.exerciseId}
+              onVerticalScrollStart={() => setOuterScrollEnabled(false)}
+              onVerticalScrollEnd={() => setOuterScrollEnabled(true)}
+            />
           </View>
         </StyledScrollView>
       </KeyboardAvoidingView>

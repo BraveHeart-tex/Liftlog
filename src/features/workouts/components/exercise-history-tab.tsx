@@ -8,6 +8,8 @@ import { View } from 'react-native';
 
 interface ExerciseHistoryTabProps {
   exerciseId: Exercise['id'];
+  onVerticalScrollStart?: () => void;
+  onVerticalScrollEnd?: () => void;
 }
 
 function formatWorkoutDate(timestamp: number) {
@@ -18,7 +20,11 @@ function formatWorkoutDate(timestamp: number) {
   }).format(new Date(timestamp));
 }
 
-export function ExerciseHistoryTab({ exerciseId }: ExerciseHistoryTabProps) {
+export function ExerciseHistoryTab({
+  exerciseId,
+  onVerticalScrollStart,
+  onVerticalScrollEnd
+}: ExerciseHistoryTabProps) {
   const { weightUnit } = useSettings();
   const { history } = useExerciseHistoryTab(exerciseId);
 
@@ -26,7 +32,13 @@ export function ExerciseHistoryTab({ exerciseId }: ExerciseHistoryTabProps) {
     <StyledScrollView
       className="flex-1"
       contentContainerClassName="px-4 pb-8"
+      directionalLockEnabled={true}
+      keyboardShouldPersistTaps="handled"
+      nestedScrollEnabled={true}
       showsVerticalScrollIndicator={false}
+      onScrollBeginDrag={onVerticalScrollStart}
+      onScrollEndDrag={onVerticalScrollEnd}
+      onMomentumScrollEnd={onVerticalScrollEnd}
     >
       {history.length === 0 ? (
         <View className="mt-6 items-center">
