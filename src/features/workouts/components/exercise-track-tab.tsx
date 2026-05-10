@@ -3,11 +3,13 @@ import {
   useExerciseTrackActions,
   useExerciseTrackTab
 } from '@/src/features/workouts/hooks';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Keyboard, Platform, ScrollView, View } from 'react-native';
+import { ProgressionSuggestion } from './progression-suggestion';
+import type { ProgressionSuggestionData } from './progression-suggestion-utils';
 import { SetEntryRow } from './set-entry-row';
 import { SetForm } from './set-form';
-import type { WorkoutExerciseWithSets } from './types';
+import type { SetValues, WorkoutExerciseWithSets } from './types';
 
 interface ExerciseTrackTabProps {
   item: WorkoutExerciseWithSets;
@@ -20,8 +22,16 @@ export function ExerciseTrackTab({
   onVerticalScrollStart,
   onVerticalScrollEnd
 }: ExerciseTrackTabProps) {
-  const { editingSetId, editingSet, setEditingSetId, prSetIds } =
-    useExerciseTrackTab(item);
+  const {
+    editingSetId,
+    editingSet,
+    setEditingSetId,
+    prSetIds,
+    progressionSuggestion
+  } = useExerciseTrackTab(item);
+  const [prefillValues, setPrefillValues] = useState<
+    (SetValues & { requestId: number }) | undefined
+  >();
   const scrollViewRef = useRef<ScrollView>(null);
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -50,11 +60,24 @@ export function ExerciseTrackTab({
     _handleUpdateSet(data);
     scrollToBottom();
   };
+  const handleUseSuggestion = (suggestion: ProgressionSuggestionData) => {
+    setEditingSetId(null);
+    setPrefillValues(currentValue => ({
+      weightKg: suggestion.suggestedWeightKg,
+      reps: suggestion.suggestedReps,
+      requestId: (currentValue?.requestId ?? 0) + 1
+    }));
+  };
 
   return (
     <View className="flex-1 px-4">
+      <ProgressionSuggestion
+        suggestion={progressionSuggestion}
+        onUseSuggestion={handleUseSuggestion}
+      />
       <SetForm
         editingSet={editingSet}
+        prefillValues={prefillValues}
         onAddSet={handleAddSet}
         onUpdateSet={handleUpdateSet}
         onClear={() => setEditingSetId(null)}
