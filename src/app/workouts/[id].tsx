@@ -232,11 +232,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
           }
           onPress={() => setIsTemplateSheetOpen(true)}
           leftIcon={
-            <Icon
-              icon={BookmarkIcon}
-              size={18}
-              className="text-secondary-foreground"
-            />
+            <Icon icon={BookmarkIcon} className="text-secondary-foreground" />
           }
         >
           Save as template
