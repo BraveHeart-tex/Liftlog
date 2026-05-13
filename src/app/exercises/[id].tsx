@@ -17,7 +17,6 @@ import { cn } from '@/src/lib/utils/cn';
 import { formatWorkoutDate } from '@/src/lib/utils/date';
 import { formatMuscleList } from '@/src/lib/utils/muscle';
 import { getRouteParamId } from '@/src/lib/utils/route';
-import { formatCompletedSets } from '@/src/lib/utils/set';
 import { toTitleCase } from '@/src/lib/utils/string';
 import { formatWeightForUnit, type WeightUnit } from '@/src/lib/utils/weight';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -489,53 +488,6 @@ export default function ExerciseDetailScreen() {
                           </Text>
                         </View>
                       ) : null}
-                    </View>
-                  </View>
-                ))}
-              </View>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="mt-4">
-          <CardContent>
-            <Text variant="caption" tone="muted">
-              Recent history
-            </Text>
-
-            {history.length === 0 ? (
-              <View className="mt-4">
-                <Text variant="h3">No history yet</Text>
-                <Text variant="small" tone="muted" className="mt-2">
-                  Log a workout to see recent sets here.
-                </Text>
-              </View>
-            ) : (
-              <View className="mt-4">
-                {history.map((historyEntry, index) => (
-                  <View
-                    key={historyEntry.workout.id}
-                    className={cn(
-                      'flex-row items-center justify-between py-3',
-                      index < history.length - 1 && 'border-border border-b'
-                    )}
-                  >
-                    <View className="flex-1">
-                      <Text variant="bodyMedium">
-                        {formatCompletedSets(historyEntry.sets, weightUnit)}
-                      </Text>
-                      <Text variant="caption" tone="muted" className="mt-1">
-                        {formatWorkoutDate(historyEntry.workout.startedAt)}
-                      </Text>
-                    </View>
-
-                    <View className="items-end">
-                      <Text variant="caption" tone="muted">
-                        Sets
-                      </Text>
-                      <Text variant="bodyMedium" className="mt-1">
-                        {historyEntry.sets.length}
-                      </Text>
                     </View>
                   </View>
                 ))}
