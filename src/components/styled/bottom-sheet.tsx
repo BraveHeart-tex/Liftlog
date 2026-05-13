@@ -91,14 +91,21 @@ export const StyledBottomSheetFlatList = StyledBottomSheetFlatListBase as <
   props: FlatListProps<ItemT> & BottomSheetFlatListClassNameProps
 ) => ReactNode;
 
+type StyledBottomSheetScrollViewRef = ComponentRef<
+  typeof BottomSheetScrollView
+>;
+
 const StyledBottomSheetScrollViewBase = styled(BottomSheetScrollView, {
   className: 'style',
   contentContainerClassName: 'contentContainerStyle'
 });
 
-export const StyledBottomSheetScrollView = StyledBottomSheetScrollViewBase as (
-  props: ScrollViewProps & BottomSheetScrollViewClassNameProps
-) => ReactNode;
+export const StyledBottomSheetScrollView =
+  StyledBottomSheetScrollViewBase as ForwardRefExoticComponent<
+    ScrollViewProps &
+      BottomSheetScrollViewClassNameProps &
+      RefAttributes<StyledBottomSheetScrollViewRef>
+  >;
 
 const StyledBottomSheetTextInputBase = styled(BottomSheetTextInputColorBridge, {
   className: {

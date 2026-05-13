@@ -1,12 +1,13 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { cn } from '@/src/lib/utils/cn';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode, type Ref } from 'react';
 import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
   View,
   type KeyboardEvent,
+  type ScrollView,
   type ScrollViewProps
 } from 'react-native';
 import { useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
@@ -20,6 +21,7 @@ interface ScreenProps {
   withPadding?: boolean;
   edges?: Edge[];
   footer?: ReactNode;
+  scrollRef?: Ref<ScrollView>;
   /**
    * Determines when the keyboard should stay visible after a tap.
    *
@@ -43,6 +45,7 @@ export function Screen({
   withPadding = true,
   edges = ['top'],
   footer,
+  scrollRef,
   keyboardShouldPersistTaps = 'handled'
 }: ScreenProps) {
   const insets = useSafeAreaInsets();
@@ -93,6 +96,7 @@ export function Screen({
     <View className={cn('flex-1', sharedContentClassName)}>{children}</View>
   ) : footer ? (
     <StyledScrollView
+      ref={scrollRef}
       className="flex-1"
       contentContainerClassName={scrollContentClassName}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps}
@@ -101,6 +105,7 @@ export function Screen({
     </StyledScrollView>
   ) : (
     <StyledScrollView
+      ref={scrollRef}
       className="flex-1"
       contentContainerClassName={scrollContentClassName}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps}

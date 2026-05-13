@@ -8,7 +8,8 @@ import {
   type ExerciseCategory
 } from '@/src/features/exercises/constants';
 import { toTitleCase } from '@/src/lib/utils/string';
-import { View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Keyboard, View, type LayoutChangeEvent } from 'react-native';
 
 interface ExerciseMetadataFormProps {
   category: ExerciseCategory;
@@ -19,6 +20,8 @@ interface ExerciseMetadataFormProps {
   primaryMusclesError?: string;
   secondaryMusclesError?: string;
   inputVariant?: 'default' | 'bottom-sheet';
+  errorScrollRequestId?: number;
+  onScrollToError?: (y: number) => void;
   setName?: (name: string) => void;
   setCategory: (category: ExerciseCategory) => void;
   togglePrimaryMuscle: (muscle: string) => void;
@@ -67,6 +70,7 @@ interface MuscleSelectorSectionProps {
   muscles: readonly string[];
   selectedMuscles: string[];
   error?: string;
+  onLayout?: (event: LayoutChangeEvent) => void;
   onToggleMuscle: (muscle: string) => void;
 }
 
@@ -76,10 +80,11 @@ function MuscleSelectorSection({
   muscles,
   selectedMuscles,
   error,
+  onLayout,
   onToggleMuscle
 }: MuscleSelectorSectionProps) {
   return (
-    <View className="mt-6">
+    <View className="mt-6" onLayout={onLayout}>
       <Text variant="small">{title}</Text>
       <Text variant="caption" tone="muted" className="mt-1">
         {hint}
@@ -110,6 +115,14 @@ function MuscleSelectorSection({
   );
 }
 
+type ErrorTarget = 'name' | 'primaryMuscles' | 'secondaryMuscles';
+
+interface FocusableInput {
+  focus: () => void;
+}
+
+const ERROR_SCROLL_OFFSET = 16;
+
 export function ExerciseMetadataForm({
   category,
   selectedPrimaryMuscles,
@@ -119,27 +132,104 @@ export function ExerciseMetadataForm({
   primaryMusclesError,
   secondaryMusclesError,
   inputVariant = 'default',
+  errorScrollRequestId,
+  onScrollToError,
   setName,
   setCategory,
   togglePrimaryMuscle,
   toggleSecondaryMuscle
 }: ExerciseMetadataFormProps) {
   const shouldShowNameField = typeof name === 'string' && Boolean(setName);
-  const NameInput = inputVariant === 'bottom-sheet' ? BottomSheetInput : Input;
+  const nameInputRef = useRef<FocusableInput | null>(null);
+  const lastHandledErrorScrollRequestId = useRef<number | undefined>(undefined);
+  const sectionYByTarget = useRef<Record<ErrorTarget, number>>({
+    name: 0,
+    primaryMuscles: 0,
+    secondaryMuscles: 0
+  });
+
+  const recordSectionLayout =
+    (target: ErrorTarget) => (event: LayoutChangeEvent) => {
+      sectionYByTarget.current[target] = event.nativeEvent.layout.y;
+    };
+  const setNameInputRef = (input: FocusableInput | null | undefined) => {
+    nameInputRef.current = input ?? null;
+  };
+
+  useEffect(() => {
+    if (
+      errorScrollRequestId === undefined ||
+      errorScrollRequestId === lastHandledErrorScrollRequestId.current
+    ) {
+      return;
+    }
+
+    const firstErrorTarget = nameError
+      ? 'name'
+      : primaryMusclesError
+        ? 'primaryMuscles'
+        : secondaryMusclesError
+          ? 'secondaryMuscles'
+          : undefined;
+
+    if (!firstErrorTarget) {
+      return;
+    }
+
+    lastHandledErrorScrollRequestId.current = errorScrollRequestId;
+
+    const targetY = Math.max(
+      sectionYByTarget.current[firstErrorTarget] - ERROR_SCROLL_OFFSET,
+      0
+    );
+
+    if (firstErrorTarget !== 'name') {
+      Keyboard.dismiss();
+    }
+
+    onScrollToError?.(targetY);
+
+    if (firstErrorTarget === 'name') {
+      nameInputRef.current?.focus();
+    }
+  }, [
+    errorScrollRequestId,
+    nameError,
+    onScrollToError,
+    primaryMusclesError,
+    secondaryMusclesError
+  ]);
 
   return (
     <View>
       {shouldShowNameField ? (
-        <NameInput
-          label="Name"
-          value={name}
-          onChangeText={setName}
-          placeholder="Incline Bench Press"
-          autoCapitalize="words"
-          autoCorrect={false}
-          returnKeyType="done"
-          error={nameError}
-        />
+        <View onLayout={recordSectionLayout('name')}>
+          {inputVariant === 'bottom-sheet' ? (
+            <BottomSheetInput
+              ref={setNameInputRef}
+              label="Name"
+              value={name}
+              onChangeText={setName}
+              placeholder="Incline Bench Press"
+              autoCapitalize="words"
+              autoCorrect={false}
+              returnKeyType="done"
+              error={nameError}
+            />
+          ) : (
+            <Input
+              ref={setNameInputRef}
+              label="Name"
+              value={name}
+              onChangeText={setName}
+              placeholder="Incline Bench Press"
+              autoCapitalize="words"
+              autoCorrect={false}
+              returnKeyType="done"
+              error={nameError}
+            />
+          )}
+        </View>
       ) : null}
 
       <View className={shouldShowNameField ? 'mt-6' : undefined}>
@@ -167,6 +257,7 @@ export function ExerciseMetadataForm({
         muscles={MUSCLE_OPTIONS}
         selectedMuscles={selectedPrimaryMuscles}
         error={primaryMusclesError}
+        onLayout={recordSectionLayout('primaryMuscles')}
         onToggleMuscle={togglePrimaryMuscle}
       />
 
@@ -176,6 +267,7 @@ export function ExerciseMetadataForm({
         muscles={MUSCLE_OPTIONS}
         selectedMuscles={selectedSecondaryMuscles}
         error={secondaryMusclesError}
+        onLayout={recordSectionLayout('secondaryMuscles')}
         onToggleMuscle={toggleSecondaryMuscle}
       />
     </View>
