@@ -12,8 +12,7 @@ import {
   type Set,
   type Workout,
   type WorkoutExercise,
-  type WorkoutTemplate,
-  type WorkoutTemplateExercise
+  type WorkoutTemplate
 } from '@/src/db/schema';
 import { resolveTemplateName } from '@/src/lib/utils/workout';
 import {
@@ -58,10 +57,6 @@ export function getWorkoutsQuery(db: DrizzleDb) {
     .orderBy(desc(workouts.startedAt));
 }
 
-export function getWorkouts(db: DrizzleDb): Workout[] {
-  return getWorkoutsQuery(db).all();
-}
-
 export function getCompletedWorkoutDateRowsQuery(db: DrizzleDb) {
   return db
     .select({
@@ -71,12 +66,6 @@ export function getCompletedWorkoutDateRowsQuery(db: DrizzleDb) {
     .from(workouts)
     .where(eq(workouts.status, 'completed'))
     .orderBy(desc(workouts.startedAt));
-}
-
-export function getCompletedWorkoutDateRows(
-  db: DrizzleDb
-): Pick<Workout, 'id' | 'startedAt'>[] {
-  return getCompletedWorkoutDateRowsQuery(db).all();
 }
 
 export function getCompletedWorkoutsForDateRangeQuery(
@@ -95,14 +84,6 @@ export function getCompletedWorkoutsForDateRangeQuery(
       )
     )
     .orderBy(desc(workouts.startedAt));
-}
-
-export function getCompletedWorkoutsForDateRange(
-  db: DrizzleDb,
-  startAt: number,
-  endAt: number
-): Workout[] {
-  return getCompletedWorkoutsForDateRangeQuery(db, startAt, endAt).all();
 }
 
 export function getCompletedSetCountsForWorkoutsQuery(
@@ -132,13 +113,6 @@ export function getCompletedSetCountsForWorkoutsQuery(
     .groupBy(workoutExercises.workoutId);
 }
 
-export function getCompletedSetCountsForWorkouts(
-  db: DrizzleDb,
-  workoutIds: Workout['id'][]
-): { workoutId: Workout['id']; setCount: number }[] {
-  return getCompletedSetCountsForWorkoutsQuery(db, workoutIds).all();
-}
-
 export function getRecentWorkoutsQuery(db: DrizzleDb, limit: number) {
   return db
     .select()
@@ -146,10 +120,6 @@ export function getRecentWorkoutsQuery(db: DrizzleDb, limit: number) {
     .where(eq(workouts.status, 'completed'))
     .orderBy(desc(workouts.startedAt))
     .limit(limit);
-}
-
-export function getRecentWorkouts(db: DrizzleDb, limit: number): Workout[] {
-  return getRecentWorkoutsQuery(db, limit).all();
 }
 
 export function getRecentExerciseIdsQuery(
@@ -233,13 +203,6 @@ export function getWorkoutExercisesQuery(
     .orderBy(asc(workoutExercises.order));
 }
 
-export function getWorkoutExercises(
-  db: DrizzleDb,
-  workoutId: Workout['id']
-): WorkoutExercise[] {
-  return getWorkoutExercisesQuery(db, workoutId).all();
-}
-
 export function getWorkoutExercisesForWorkoutsQuery(
   db: DrizzleDb,
   workoutIds: Workout['id'][]
@@ -253,13 +216,6 @@ export function getWorkoutExercisesForWorkoutsQuery(
     .from(workoutExercises)
     .where(inArray(workoutExercises.workoutId, workoutIds))
     .orderBy(asc(workoutExercises.order));
-}
-
-export function getWorkoutExercisesForWorkouts(
-  db: DrizzleDb,
-  workoutIds: Workout['id'][]
-): WorkoutExercise[] {
-  return getWorkoutExercisesForWorkoutsQuery(db, workoutIds).all();
 }
 
 export function getWorkoutExerciseByIdQuery(
@@ -284,10 +240,6 @@ export function getWorkoutTemplatesQuery(db: DrizzleDb) {
       desc(workoutTemplates.updatedAt),
       desc(workoutTemplates.createdAt)
     );
-}
-
-export function getWorkoutTemplates(db: DrizzleDb): WorkoutTemplate[] {
-  return getWorkoutTemplatesQuery(db).all();
 }
 
 export function getWorkoutTemplateByIdQuery(
@@ -315,13 +267,6 @@ export function getWorkoutTemplateExercisesQuery(
     .orderBy(asc(workoutTemplateExercises.order));
 }
 
-export function getWorkoutTemplateExercises(
-  db: DrizzleDb,
-  templateId: WorkoutTemplate['id']
-): WorkoutTemplateExercise[] {
-  return getWorkoutTemplateExercisesQuery(db, templateId).all();
-}
-
 export function getWorkoutTemplateExercisesForTemplatesQuery(
   db: DrizzleDb,
   templateIds: WorkoutTemplate['id'][]
@@ -337,13 +282,6 @@ export function getWorkoutTemplateExercisesForTemplatesQuery(
     .orderBy(asc(workoutTemplateExercises.order));
 }
 
-export function getWorkoutTemplateExercisesForTemplates(
-  db: DrizzleDb,
-  templateIds: WorkoutTemplate['id'][]
-): WorkoutTemplateExercise[] {
-  return getWorkoutTemplateExercisesForTemplatesQuery(db, templateIds).all();
-}
-
 export function getSetsByWorkoutExerciseIdQuery(
   db: DrizzleDb,
   workoutExerciseId: WorkoutExercise['id']
@@ -353,13 +291,6 @@ export function getSetsByWorkoutExerciseIdQuery(
     .from(sets)
     .where(eq(sets.workoutExerciseId, workoutExerciseId))
     .orderBy(asc(sets.order));
-}
-
-export function getSetsByWorkoutExerciseId(
-  db: DrizzleDb,
-  workoutExerciseId: WorkoutExercise['id']
-): Set[] {
-  return getSetsByWorkoutExerciseIdQuery(db, workoutExerciseId).all();
 }
 
 export function getSetsForWorkoutExercisesQuery(
@@ -379,13 +310,6 @@ export function getSetsForWorkoutExercisesQuery(
     .from(sets)
     .where(inArray(sets.workoutExerciseId, workoutExerciseIds))
     .orderBy(asc(sets.order));
-}
-
-export function getSetsForWorkoutExercises(
-  db: DrizzleDb,
-  workoutExerciseIds: WorkoutExercise['id'][]
-): Set[] {
-  return getSetsForWorkoutExercisesQuery(db, workoutExerciseIds).all();
 }
 
 export function createWorkout(db: DrizzleDb, data: NewWorkout): Workout {

@@ -1,19 +1,14 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { Set, WorkoutExercise } from '@/src/db/schema';
 import {
-  getExercisesByIds,
   getExercisesByIdsQuery,
   type ExerciseListItem
 } from '@/src/features/exercises/repository';
 import { useSettings } from '@/src/features/settings/hooks';
 import {
-  getActiveWorkout,
   getActiveWorkoutQuery,
-  getSetsForWorkoutExercises,
   getSetsForWorkoutExercisesQuery,
-  getWorkoutById,
   getWorkoutByIdQuery,
-  getWorkoutExercises,
   getWorkoutExercisesQuery
 } from '@/src/features/workouts/repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
@@ -25,30 +20,18 @@ export function useWorkoutHistoryDetail(workoutId: string | undefined) {
   const resolvedWorkoutId = workoutId ?? '';
 
   const workoutResult = useLiveWithFallback(
-    () => getWorkoutByIdQuery(db, resolvedWorkoutId),
-    () => {
-      const workout = getWorkoutById(db, resolvedWorkoutId);
-
-      return workout ? [workout] : [];
-    },
+    getWorkoutByIdQuery(db, resolvedWorkoutId),
     [db, resolvedWorkoutId]
   );
   const workout = workoutResult.data[0];
 
-  const activeWorkoutResult = useLiveWithFallback(
-    () => getActiveWorkoutQuery(db),
-    () => {
-      const activeWorkout = getActiveWorkout(db);
-
-      return activeWorkout ? [activeWorkout] : [];
-    },
-    [db]
-  );
+  const activeWorkoutResult = useLiveWithFallback(getActiveWorkoutQuery(db), [
+    db
+  ]);
   const activeWorkout = activeWorkoutResult.data[0];
 
   const workoutExerciseResult = useLiveWithFallback(
-    () => getWorkoutExercisesQuery(db, resolvedWorkoutId),
-    () => getWorkoutExercises(db, resolvedWorkoutId),
+    getWorkoutExercisesQuery(db, resolvedWorkoutId),
     [db, resolvedWorkoutId]
   );
   const workoutExerciseRows = workoutExerciseResult.data;
@@ -62,8 +45,7 @@ export function useWorkoutHistoryDetail(workoutId: string | undefined) {
     [workoutExerciseIds]
   );
   const setResult = useLiveWithFallback(
-    () => getSetsForWorkoutExercisesQuery(db, workoutExerciseIds),
-    () => getSetsForWorkoutExercises(db, workoutExerciseIds),
+    getSetsForWorkoutExercisesQuery(db, workoutExerciseIds),
     [db, workoutExerciseIdKey]
   );
   const setRows = setResult.data;
@@ -75,8 +57,7 @@ export function useWorkoutHistoryDetail(workoutId: string | undefined) {
   );
   const exerciseIdKey = useMemo(() => exerciseIds.join(','), [exerciseIds]);
   const exerciseResult = useLiveWithFallback(
-    () => getExercisesByIdsQuery(db, exerciseIds),
-    () => getExercisesByIds(db, exerciseIds),
+    getExercisesByIdsQuery(db, exerciseIds),
     [db, exerciseIdKey]
   );
 

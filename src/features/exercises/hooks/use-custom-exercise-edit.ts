@@ -1,8 +1,5 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import {
-  getExerciseById,
-  getExerciseByIdQuery
-} from '@/src/features/exercises/repository';
+import { getExerciseByIdQuery } from '@/src/features/exercises/repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { parseMuscleList } from '@/src/lib/utils/muscle';
 import { useMemo } from 'react';
@@ -11,12 +8,7 @@ export function useCustomExerciseEdit(exerciseId: string | undefined) {
   const db = useDrizzle();
   const resolvedExerciseId = exerciseId ?? '';
   const exerciseResult = useLiveWithFallback(
-    () => getExerciseByIdQuery(db, resolvedExerciseId),
-    () => {
-      const exercise = getExerciseById(db, resolvedExerciseId);
-
-      return exercise ? [exercise] : [];
-    },
+    getExerciseByIdQuery(db, resolvedExerciseId),
     [db, resolvedExerciseId]
   );
   const exercise = exerciseResult.data[0];
