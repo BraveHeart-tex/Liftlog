@@ -1,22 +1,60 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import type { Set, Workout, WorkoutExercise } from '@/src/db/schema';
 import {
-  getSetsForWorkoutExercises,
-  getSetsForWorkoutExercisesQuery,
-  getWorkoutExercisesForWorkouts,
-  getWorkoutExercisesForWorkoutsQuery,
-  getWorkouts,
-  getWorkoutsQuery
+  getCompletedSetCountsForWorkouts,
+  getCompletedSetCountsForWorkoutsQuery,
+  getCompletedWorkoutDateRows,
+  getCompletedWorkoutDateRowsQuery,
+  getCompletedWorkoutsForDateRange,
+  getCompletedWorkoutsForDateRangeQuery
 } from '@/src/features/workouts/repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
+import { toLocalDateKey } from '@/src/lib/utils/date';
 import { useMemo } from 'react';
 
-export function useHistoryList() {
+function getDateRange(dateKey: string): { endAt: number; startAt: number } {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const startDate = new Date(year, month - 1, day);
+  const endDate = new Date(year, month - 1, day + 1);
+
+  return {
+    startAt: startDate.getTime(),
+    endAt: endDate.getTime()
+  };
+}
+
+export function useHistoryList(selectedDateKey: string) {
   const db = useDrizzle();
-  const workoutResult = useLiveWithFallback(
-    () => getWorkoutsQuery(db),
-    () => getWorkouts(db),
+
+  const workoutDateResult = useLiveWithFallback(
+    () => getCompletedWorkoutDateRowsQuery(db),
+    () => getCompletedWorkoutDateRows(db),
     [db]
+  );
+
+  const workoutCountByDateKey = useMemo(() => {
+    const nextWorkoutCountByDateKey = new Map<string, number>();
+
+    for (const workout of workoutDateResult.data) {
+      const dateKey = toLocalDateKey(workout.startedAt);
+
+      nextWorkoutCountByDateKey.set(
+        dateKey,
+        (nextWorkoutCountByDateKey.get(dateKey) ?? 0) + 1
+      );
+    }
+
+    return nextWorkoutCountByDateKey;
+  }, [workoutDateResult.data]);
+
+  const { endAt, startAt } = useMemo(
+    () => getDateRange(selectedDateKey),
+    [selectedDateKey]
+  );
+
+  const workoutResult = useLiveWithFallback(
+    () => getCompletedWorkoutsForDateRangeQuery(db, startAt, endAt),
+    () => getCompletedWorkoutsForDateRange(db, startAt, endAt),
+    [db, startAt, endAt]
   );
   const workoutRows = workoutResult.data;
 
@@ -25,61 +63,25 @@ export function useHistoryList() {
     [workoutRows]
   );
   const workoutIdKey = useMemo(() => workoutIds.join(','), [workoutIds]);
-  const workoutExerciseResult = useLiveWithFallback(
-    () => getWorkoutExercisesForWorkoutsQuery(db, workoutIds),
-    () => getWorkoutExercisesForWorkouts(db, workoutIds),
+  const setCountResult = useLiveWithFallback(
+    () => getCompletedSetCountsForWorkoutsQuery(db, workoutIds),
+    () => getCompletedSetCountsForWorkouts(db, workoutIds),
     [db, workoutIdKey]
-  );
-  const workoutExerciseRows = workoutExerciseResult.data;
-
-  const workoutExerciseIds = useMemo(
-    () => workoutExerciseRows.map(workoutExercise => workoutExercise.id),
-    [workoutExerciseRows]
-  );
-  const workoutExerciseIdKey = useMemo(
-    () => workoutExerciseIds.join(','),
-    [workoutExerciseIds]
-  );
-  const setResult = useLiveWithFallback(
-    () => getSetsForWorkoutExercisesQuery(db, workoutExerciseIds),
-    () => getSetsForWorkoutExercises(db, workoutExerciseIds),
-    [db, workoutExerciseIdKey]
   );
 
   const setCountByWorkoutId = useMemo(() => {
-    const workoutIdByExerciseId = new Map<
-      WorkoutExercise['id'],
-      Workout['id']
-    >();
+    const nextSetCountByWorkoutId = new Map<string, number>();
 
-    for (const workoutExercise of workoutExerciseRows) {
-      workoutIdByExerciseId.set(workoutExercise.id, workoutExercise.workoutId);
-    }
-
-    const nextSetCountByWorkoutId = new Map<Workout['id'], number>();
-
-    for (const set of setResult.data as Set[]) {
-      if (set.status !== 'completed') {
-        continue;
-      }
-
-      const workoutId = workoutIdByExerciseId.get(set.workoutExerciseId);
-
-      if (!workoutId) {
-        continue;
-      }
-
-      nextSetCountByWorkoutId.set(
-        workoutId,
-        (nextSetCountByWorkoutId.get(workoutId) ?? 0) + 1
-      );
+    for (const row of setCountResult.data) {
+      nextSetCountByWorkoutId.set(row.workoutId, row.setCount);
     }
 
     return nextSetCountByWorkoutId;
-  }, [setResult.data, workoutExerciseRows]);
+  }, [setCountResult.data]);
 
   return {
     workoutRows,
+    workoutCountByDateKey,
     setCountByWorkoutId,
     isLoading: !workoutResult.isLive
   };
