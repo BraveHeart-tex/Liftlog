@@ -2,23 +2,29 @@ import { StyledTextInput } from '@/src/components/styled/text-input';
 import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
+import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
+import { ExerciseDetailActionsSheet } from '@/src/features/exercises/components/exercise-detail-actions-sheet';
+import { ExerciseProgressChart } from '@/src/features/exercises/components/exercise-progress-chart';
 import {
   useExerciseActions,
-  useExerciseDetail
+  useExerciseDetail,
+  type ExercisePersonalRecordSummaryItem
 } from '@/src/features/exercises/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { formatWorkoutDate } from '@/src/lib/utils/date';
 import { formatMuscleList } from '@/src/lib/utils/muscle';
 import { getRouteParamId } from '@/src/lib/utils/route';
+import { formatCompletedSets } from '@/src/lib/utils/set';
 import { toTitleCase } from '@/src/lib/utils/string';
-import { formatWeightForUnit } from '@/src/lib/utils/weight';
+import { formatWeightForUnit, type WeightUnit } from '@/src/lib/utils/weight';
 import { router, useLocalSearchParams } from 'expo-router';
+import { EllipsisVerticalIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import type { TextInput } from 'react-native';
-import { Alert, Keyboard, Pressable, View } from 'react-native';
+import { Alert, Keyboard, View } from 'react-native';
 
 function formatUsageBreakdown({
   workoutUsageCount,
@@ -56,6 +62,23 @@ function formatUsageBreakdown({
   return `${parts[0]} and ${parts[1]}`;
 }
 
+function formatRecordValue(
+  record: ExercisePersonalRecordSummaryItem,
+  weightUnit: WeightUnit
+) {
+  if (record.id === 'best-set' && record.weightKg !== undefined) {
+    return `${formatWeightForUnit(record.weightKg, weightUnit)} ${weightUnit} x ${
+      record.reps ?? 0
+    }`;
+  }
+
+  if (record.id === 'heaviest-weight' && record.weightKg !== undefined) {
+    return `${formatWeightForUnit(record.weightKg, weightUnit)} ${weightUnit}`;
+  }
+
+  return record.count === 1 ? '1 set' : `${record.count ?? 0} sets`;
+}
+
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const exerciseId = getRouteParamId(id);
@@ -65,6 +88,7 @@ export default function ExerciseDetailScreen() {
   const [draftName, setDraftName] = useState('');
   const [renameError, setRenameError] = useState<string | undefined>();
   const [isSavingRename, setIsSavingRename] = useState(false);
+  const [isActionsOpen, setIsActionsOpen] = useState(false);
   const {
     exercise,
     exercises,
@@ -72,12 +96,12 @@ export default function ExerciseDetailScreen() {
     workoutUsageCount,
     templateUsageCount,
     history,
-    prRows,
+    progressPoints,
+    personalRecordsSummary,
+    topSetPerformances,
     primaryMuscles,
     secondaryMuscles,
     instructions,
-    mostRecentHistory,
-    completedSetSummary,
     weightUnit,
     isLoading
   } = useExerciseDetail(exerciseId);
@@ -249,6 +273,17 @@ export default function ExerciseDetailScreen() {
     ]);
   };
 
+  const handleEditDetails = () => {
+    if (!isCustomExercise || isRenaming) {
+      return;
+    }
+
+    router.push({
+      pathname: '/exercises/edit/[id]',
+      params: { id: exercise.id }
+    });
+  };
+
   return (
     <>
       <Screen scroll>
@@ -278,18 +313,9 @@ export default function ExerciseDetailScreen() {
                   onSubmitEditing={submitRename}
                 />
               ) : (
-                <Pressable
-                  accessibilityRole={isCustomExercise ? 'button' : undefined}
-                  accessibilityLabel={
-                    isCustomExercise ? 'Rename exercise' : undefined
-                  }
-                  disabled={!isCustomExercise}
-                  onPress={beginRename}
-                >
-                  <Text variant="h1" numberOfLines={2} ellipsizeMode="tail">
-                    {exercise.name}
-                  </Text>
-                </Pressable>
+                <Text variant="h1" numberOfLines={2} ellipsizeMode="tail">
+                  {exercise.name}
+                </Text>
               )}
               <Text variant="small" tone="muted">
                 {toTitleCase(exercise.category)}
@@ -326,64 +352,200 @@ export default function ExerciseDetailScreen() {
                 </View>
               ) : null}
             </View>
+
+            {isCustomExercise && !isRenaming ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                accessibilityLabel="Exercise actions"
+                onPress={() => setIsActionsOpen(true)}
+              >
+                <Icon
+                  icon={EllipsisVerticalIcon}
+                  size={20}
+                  className="text-foreground"
+                />
+              </Button>
+            ) : null}
           </View>
         </View>
 
-        {isCustomExercise ? (
-          <Card className="mt-6">
-            <CardContent>
-              <Text variant="caption" tone="muted">
-                Custom exercise
-              </Text>
+        <ExerciseProgressChart
+          points={progressPoints}
+          weightUnit={weightUnit}
+        />
 
-              <Text variant="small" tone="muted" className="mt-3">
-                {exerciseUsageCount > 0
-                  ? `Used in ${usageLabel}. Archive keeps workout history and saved templates safe.`
-                  : 'Not used in any workouts or templates yet. You can delete it permanently.'}
-              </Text>
+        <Card className="mt-4">
+          <CardContent>
+            <Text variant="caption" tone="muted">
+              Personal records
+            </Text>
 
-              <View className="mt-4 flex-row gap-3">
-                <View className="flex-1">
-                  <Button
-                    variant="secondary"
-                    accessibilityLabel="Rename exercise"
-                    onPress={beginRename}
-                    disabled={isRenaming}
-                  >
-                    Rename
-                  </Button>
-                </View>
-                <View className="flex-1">
-                  <Button
-                    variant="secondary"
-                    accessibilityLabel="Edit exercise details"
-                    onPress={() =>
-                      router.push({
-                        pathname: '/exercises/edit/[id]',
-                        params: { id: exercise.id }
-                      })
-                    }
-                    disabled={isRenaming}
-                  >
-                    Edit details
-                  </Button>
-                </View>
+            {personalRecordsSummary.length === 0 ? (
+              <View className="mt-4">
+                <Text variant="h3">No records yet</Text>
+                <Text variant="small" tone="muted" className="mt-2">
+                  Complete sets for this exercise to build your records.
+                </Text>
               </View>
+            ) : (
+              <View className="mt-4">
+                {personalRecordsSummary.map((record, index) => (
+                  <View
+                    key={record.id}
+                    className={cn(
+                      'flex-row items-center justify-between gap-3 py-3',
+                      index < personalRecordsSummary.length - 1 &&
+                        'border-border border-b'
+                    )}
+                  >
+                    <View className="flex-1">
+                      <Text variant="bodyMedium">
+                        {formatRecordValue(record, weightUnit)}
+                      </Text>
+                      <Text variant="caption" tone="muted" className="mt-1">
+                        {record.label}
+                      </Text>
+                    </View>
 
-              <View className="mt-3">
-                <Button
-                  variant="destructive"
-                  onPress={handleRemoveCustomExercise}
-                  disabled={isRenaming}
-                >
-                  {removeActionLabel}
-                </Button>
+                    <Text variant="caption" tone="muted">
+                      {formatWorkoutDate(record.achievedAt)}
+                    </Text>
+
+                    <View className="w-16 items-end">
+                      {record.isNewRecord ? (
+                        <View className="bg-success/15 rounded-md px-2 py-1">
+                          <Text variant="caption" className="text-success">
+                            PR
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </View>
+                ))}
               </View>
-            </CardContent>
-          </Card>
-        ) : null}
+            )}
+          </CardContent>
+        </Card>
 
-        <Card className={isCustomExercise ? 'mt-4' : 'mt-6'}>
+        <Card className="mt-4">
+          <CardContent>
+            <Text variant="caption" tone="muted">
+              Top set performance
+            </Text>
+
+            {topSetPerformances.length === 0 ? (
+              <View className="mt-4">
+                <Text variant="h3">No top sets yet</Text>
+                <Text variant="small" tone="muted" className="mt-2">
+                  Complete a set to see your best performances.
+                </Text>
+              </View>
+            ) : (
+              <View className="mt-4">
+                {topSetPerformances.map((performance, index) => (
+                  <View
+                    key={performance.id}
+                    className={cn(
+                      'flex-row items-center gap-3 py-3',
+                      index < topSetPerformances.length - 1 &&
+                        'border-border border-b'
+                    )}
+                  >
+                    <View
+                      className={cn(
+                        'bg-muted h-10 w-10 items-center justify-center rounded-lg',
+                        index === 0 && 'bg-primary/15'
+                      )}
+                    >
+                      <Text
+                        variant="caption"
+                        className={cn(index === 0 && 'text-primary')}
+                      >
+                        {index + 1}
+                      </Text>
+                    </View>
+
+                    <View className="flex-1">
+                      <Text variant="bodyMedium">
+                        {formatWeightForUnit(performance.weightKg, weightUnit)}{' '}
+                        {weightUnit} x {performance.reps}
+                      </Text>
+                      <Text variant="caption" tone="muted" className="mt-1">
+                        Est. 1RM{' '}
+                        {formatWeightForUnit(
+                          performance.estimated1rm,
+                          weightUnit
+                        )}{' '}
+                        {weightUnit} ·{' '}
+                        {formatWorkoutDate(performance.achievedAt)}
+                      </Text>
+                    </View>
+
+                    <View className="w-12 items-end">
+                      {index === 0 ? (
+                        <View className="bg-success/15 rounded-md px-2 py-1">
+                          <Text variant="caption" className="text-success">
+                            Best
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="mt-4">
+          <CardContent>
+            <Text variant="caption" tone="muted">
+              Recent history
+            </Text>
+
+            {history.length === 0 ? (
+              <View className="mt-4">
+                <Text variant="h3">No history yet</Text>
+                <Text variant="small" tone="muted" className="mt-2">
+                  Log a workout to see recent sets here.
+                </Text>
+              </View>
+            ) : (
+              <View className="mt-4">
+                {history.map((historyEntry, index) => (
+                  <View
+                    key={historyEntry.workout.id}
+                    className={cn(
+                      'flex-row items-center justify-between py-3',
+                      index < history.length - 1 && 'border-border border-b'
+                    )}
+                  >
+                    <View className="flex-1">
+                      <Text variant="bodyMedium">
+                        {formatCompletedSets(historyEntry.sets, weightUnit)}
+                      </Text>
+                      <Text variant="caption" tone="muted" className="mt-1">
+                        {formatWorkoutDate(historyEntry.workout.startedAt)}
+                      </Text>
+                    </View>
+
+                    <View className="items-end">
+                      <Text variant="caption" tone="muted">
+                        Sets
+                      </Text>
+                      <Text variant="bodyMedium" className="mt-1">
+                        {historyEntry.sets.length}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="mt-4">
           <CardContent>
             <Text variant="caption" tone="muted">
               Muscle groups
@@ -423,155 +585,16 @@ export default function ExerciseDetailScreen() {
             </CardContent>
           </Card>
         ) : null}
-
-        <Card className="mt-4">
-          <CardContent>
-            <Text variant="caption" tone="muted">
-              Last performed
-            </Text>
-
-            {mostRecentHistory && completedSetSummary ? (
-              <View className="mt-4">
-                <Text variant="h3">{completedSetSummary}</Text>
-                <Text variant="small" tone="muted" className="mt-2">
-                  {formatWorkoutDate(mostRecentHistory.workout.startedAt)}
-                </Text>
-              </View>
-            ) : (
-              <View className="mt-4">
-                <Text variant="h3">No history yet</Text>
-                <Text variant="small" tone="muted" className="mt-2">
-                  Log a workout to see stats
-                </Text>
-              </View>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="mt-4">
-          <CardContent>
-            <Text variant="caption" tone="muted">
-              History
-            </Text>
-
-            {history.length === 0 ? (
-              <View className="mt-4">
-                <Text variant="h3">No history yet</Text>
-                <Text variant="small" tone="muted" className="mt-2">
-                  Log a workout to see your history here.
-                </Text>
-              </View>
-            ) : (
-              history.map((historyEntry, historyIndex) => {
-                return (
-                  <View key={historyEntry.workout.id}>
-                    <Text variant="caption" tone="muted" className="mt-4 mb-2">
-                      {formatWorkoutDate(historyEntry.workout.startedAt)} ·{' '}
-                      {historyEntry.sets.length} sets
-                    </Text>
-
-                    {historyEntry.sets.map((set, index) => {
-                      const isBestSet = set.id === historyEntry.bestSetId;
-
-                      return (
-                        <View
-                          key={set.id}
-                          className={cn(
-                            'flex-row items-center gap-3 py-1',
-                            isBestSet && 'bg-success/10 rounded-md'
-                          )}
-                        >
-                          <Text variant="caption" tone="muted" className="w-6">
-                            {index + 1}
-                          </Text>
-                          <Text variant="caption">
-                            {formatWeightForUnit(set.weightKg, weightUnit)}{' '}
-                            {weightUnit}
-                          </Text>
-                          <Text variant="caption" tone="muted">
-                            x
-                          </Text>
-                          <Text variant="caption">{set.reps} reps</Text>
-                          <View className="ml-1 w-10">
-                            {isBestSet ? (
-                              <Text variant="caption" className="text-success">
-                                Best
-                              </Text>
-                            ) : null}
-                          </View>
-                        </View>
-                      );
-                    })}
-
-                    {historyIndex < history.length - 1 && (
-                      <View className="border-border mt-4 border-b" />
-                    )}
-                  </View>
-                );
-              })
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="mt-4">
-          <CardContent>
-            <Text variant="caption" tone="muted">
-              Personal records
-            </Text>
-
-            {prRows.length === 0 ? (
-              <View className="mt-4">
-                <Text variant="h3">No PRs yet</Text>
-                <Text variant="small" tone="muted" className="mt-2">
-                  Beat your best estimated 1RM to set a PR.
-                </Text>
-              </View>
-            ) : (
-              <View className="mt-4">
-                {prRows.map((pr, index) => (
-                  <View
-                    key={pr.id}
-                    className={cn(
-                      'flex-row items-center justify-between py-3',
-                      index < prRows.length - 1 && 'border-border border-b'
-                    )}
-                  >
-                    <View className="flex-1">
-                      <Text variant="bodyMedium">
-                        {formatWeightForUnit(pr.weightKg, weightUnit)}{' '}
-                        {weightUnit} x {pr.reps}
-                      </Text>
-                      <Text variant="caption" tone="muted" className="mt-1">
-                        {formatWorkoutDate(pr.achievedAt)}
-                      </Text>
-                    </View>
-
-                    <View className="items-end">
-                      <Text variant="caption" tone="muted">
-                        Est. 1RM
-                      </Text>
-                      <Text variant="bodyMedium" className="mt-1">
-                        {formatWeightForUnit(pr.estimated1rm, weightUnit)}{' '}
-                        {weightUnit}
-                      </Text>
-                    </View>
-
-                    <View className="ml-3 w-12 items-end">
-                      {index === 0 ? (
-                        <View className="bg-success/15 rounded-md px-2 py-1">
-                          <Text variant="caption" className="text-success">
-                            Best
-                          </Text>
-                        </View>
-                      ) : null}
-                    </View>
-                  </View>
-                ))}
-              </View>
-            )}
-          </CardContent>
-        </Card>
       </Screen>
+
+      <ExerciseDetailActionsSheet
+        isOpen={isActionsOpen}
+        removeActionLabel={removeActionLabel}
+        onClose={() => setIsActionsOpen(false)}
+        onRename={beginRename}
+        onEditDetails={handleEditDetails}
+        onRemove={handleRemoveCustomExercise}
+      />
     </>
   );
 }
