@@ -282,8 +282,6 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     [exercise?.secondaryMuscles]
   );
 
-  const instructions = exercise?.instructions?.trim();
-
   const mostRecentHistory = useMemo(
     () =>
       buildExerciseHistory(workoutRows, setResult.data).find(
@@ -311,7 +309,6 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     topSetPerformances,
     primaryMuscles,
     secondaryMuscles,
-    instructions,
     mostRecentHistory,
     completedSetSummary,
     weightUnit,
