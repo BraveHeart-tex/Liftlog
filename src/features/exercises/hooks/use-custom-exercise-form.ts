@@ -99,7 +99,6 @@ export function useCustomExerciseForm({
       category,
       primaryMuscles: JSON.stringify(selectedPrimaryMuscles),
       secondaryMuscles: JSON.stringify(selectedSecondaryMuscles),
-      instructions: null,
       isCustom: 1,
       isArchived: 0
     };

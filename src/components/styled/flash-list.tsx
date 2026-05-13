@@ -13,7 +13,6 @@ interface FlashListClassNameProps {
 const StyledFlashListBase = styled(FlashList, {
   className: 'style',
   contentContainerClassName: 'contentContainerStyle',
-  ListEmptyComponentClassName: 'ListEmptyComponentStyle',
   ListHeaderComponentClassName: 'ListHeaderComponentStyle',
   ListFooterComponentClassName: 'ListFooterComponentStyle'
 });

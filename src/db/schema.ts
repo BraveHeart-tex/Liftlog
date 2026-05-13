@@ -22,7 +22,6 @@ export const exercises = sqliteTable(
     category: text('category').notNull(),
     primaryMuscles: text('primary_muscles').notNull().default('[]'),
     secondaryMuscles: text('secondary_muscles').notNull().default('[]'),
-    instructions: text('instructions'),
     isCustom: integer('is_custom').notNull().default(0),
     isArchived: integer('is_archived').notNull().default(0),
     createdAt: integer('created_at')

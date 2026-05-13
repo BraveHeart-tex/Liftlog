@@ -101,7 +101,6 @@ export default function ExerciseDetailScreen() {
     topSetPerformances,
     primaryMuscles,
     secondaryMuscles,
-    instructions,
     weightUnit,
     isLoading
   } = useExerciseDetail(exerciseId);
@@ -572,19 +571,6 @@ export default function ExerciseDetailScreen() {
             ) : null}
           </CardContent>
         </Card>
-
-        {instructions ? (
-          <Card className="mt-4">
-            <CardContent>
-              <Text variant="caption" tone="muted">
-                Instructions
-              </Text>
-              <Text variant="body" className="mt-4">
-                {instructions}
-              </Text>
-            </CardContent>
-          </Card>
-        ) : null}
       </Screen>
 
       <ExerciseDetailActionsSheet
