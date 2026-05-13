@@ -15,3 +15,4 @@ export { useWorkoutRename } from './use-workout-rename';
 export { useWorkoutRenameFlow } from './use-workout-rename-flow';
 export { useWorkoutHistoryDetail } from './use-workout-history-detail';
 export { useWorkoutStart } from './use-workout-start';
+export { useWorkoutTemplateDetail } from './use-workout-template-detail';
