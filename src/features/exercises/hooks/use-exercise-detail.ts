@@ -3,8 +3,6 @@ import type { Set } from '@/src/db/schema';
 import {
   getExerciseById,
   getExerciseByIdQuery,
-  getExercises,
-  getExercisesQuery,
   getExerciseTemplateUsageRowsQuery,
   getExerciseUsageRowsQuery
 } from '@/src/features/exercises/repository';
@@ -17,7 +15,7 @@ import {
 import { useSettings } from '@/src/features/settings/hooks';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { parseMuscleList } from '@/src/lib/utils/muscle';
-import { formatCompletedSets, getCompletedSets } from '@/src/lib/utils/set';
+import { formatCompletedSets } from '@/src/lib/utils/set';
 import { useMemo } from 'react';
 
 const EXERCISE_HISTORY_LIMIT = 20;
@@ -200,12 +198,6 @@ export function useExerciseDetail(exerciseId: string | undefined) {
   );
   const exercise = exerciseResult.data[0];
 
-  const exerciseListResult = useLiveWithFallback(
-    () => getExercisesQuery(db),
-    () => getExercises(db),
-    [db]
-  );
-
   const exerciseUsageResult = useLiveWithFallback(
     () => getExerciseUsageRowsQuery(db, resolvedExerciseId),
     () => getExerciseUsageRowsQuery(db, resolvedExerciseId).all(),
@@ -293,23 +285,14 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     [exercise?.secondaryMuscles]
   );
 
-  const mostRecentHistory = useMemo(
-    () =>
-      buildExerciseHistory(workoutRows, setResult.data).find(
-        historyEntry => getCompletedSets(historyEntry.sets).length > 0
-      ),
-    [setResult.data, workoutRows]
-  );
+  const mostRecentHistory = fullHistory[0];
 
-  const completedSets = mostRecentHistory
-    ? getCompletedSets(mostRecentHistory.sets)
-    : [];
+  const completedSets = mostRecentHistory?.sets ?? [];
 
   const completedSetSummary = formatCompletedSets(completedSets, weightUnit);
 
   return {
     exercise,
-    exercises: exerciseListResult.data,
     exerciseUsageCount:
       exerciseUsageResult.data.length + templateUsageResult.data.length,
     workoutUsageCount: exerciseUsageResult.data.length,
