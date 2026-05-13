@@ -16,7 +16,17 @@ import {
   type WorkoutTemplateExercise
 } from '@/src/db/schema';
 import { resolveTemplateName } from '@/src/lib/utils/workout';
-import { and, asc, desc, eq, inArray, notInArray } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  inArray,
+  lt,
+  notInArray
+} from 'drizzle-orm';
 
 function getWorkoutRecordById(
   db: DrizzleDb,
@@ -50,6 +60,83 @@ export function getWorkoutsQuery(db: DrizzleDb) {
 
 export function getWorkouts(db: DrizzleDb): Workout[] {
   return getWorkoutsQuery(db).all();
+}
+
+export function getCompletedWorkoutDateRowsQuery(db: DrizzleDb) {
+  return db
+    .select({
+      id: workouts.id,
+      startedAt: workouts.startedAt
+    })
+    .from(workouts)
+    .where(eq(workouts.status, 'completed'))
+    .orderBy(desc(workouts.startedAt));
+}
+
+export function getCompletedWorkoutDateRows(
+  db: DrizzleDb
+): Pick<Workout, 'id' | 'startedAt'>[] {
+  return getCompletedWorkoutDateRowsQuery(db).all();
+}
+
+export function getCompletedWorkoutsForDateRangeQuery(
+  db: DrizzleDb,
+  startAt: number,
+  endAt: number
+) {
+  return db
+    .select()
+    .from(workouts)
+    .where(
+      and(
+        eq(workouts.status, 'completed'),
+        gte(workouts.startedAt, startAt),
+        lt(workouts.startedAt, endAt)
+      )
+    )
+    .orderBy(desc(workouts.startedAt));
+}
+
+export function getCompletedWorkoutsForDateRange(
+  db: DrizzleDb,
+  startAt: number,
+  endAt: number
+): Workout[] {
+  return getCompletedWorkoutsForDateRangeQuery(db, startAt, endAt).all();
+}
+
+export function getCompletedSetCountsForWorkoutsQuery(
+  db: DrizzleDb,
+  workoutIds: Workout['id'][]
+) {
+  const baseQuery = db
+    .select({
+      workoutId: workoutExercises.workoutId,
+      setCount: count(sets.id)
+    })
+    .from(sets)
+    .innerJoin(
+      workoutExercises,
+      eq(sets.workoutExerciseId, workoutExercises.id)
+    );
+
+  return baseQuery
+    .where(
+      and(
+        workoutIds.length > 0
+          ? inArray(workoutExercises.workoutId, workoutIds)
+          : eq(workoutExercises.workoutId, ''),
+        eq(sets.status, 'completed')
+      )
+    )
+    .groupBy(workoutExercises.workoutId);
+}
+
+export function getCompletedSetCountsForWorkouts(
+  db: DrizzleDb,
+  workoutIds: Workout['id'][]
+): { workoutId: Workout['id']; setCount: number }[] {
+  return getCompletedSetCountsForWorkoutsQuery(db, workoutIds).all();
 }
 
 export function getRecentWorkoutsQuery(db: DrizzleDb, limit: number) {

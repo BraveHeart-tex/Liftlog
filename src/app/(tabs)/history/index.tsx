@@ -6,9 +6,8 @@ import { HistoryWorkoutRow } from '@/src/features/workouts/components/history-wo
 import { WorkoutHistoryCalendar } from '@/src/features/workouts/components/workout-history-calendar';
 import { useHistoryList } from '@/src/features/workouts/hooks';
 import { toLocalDateKey } from '@/src/lib/utils/date';
-import { getWorkoutCountByDateKey } from '@/src/lib/utils/workout';
 import { router, type Href } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
 
 function formatSelectedDate(dateKey: string): string {
@@ -23,24 +22,11 @@ function formatSelectedDate(dateKey: string): string {
 }
 
 export default function HistoryScreen() {
-  const { workoutRows, setCountByWorkoutId, isLoading } = useHistoryList();
-
-  const workoutCountByDateKey = useMemo(
-    () => getWorkoutCountByDateKey(workoutRows),
-    [workoutRows]
-  );
-
   const [selectedDateKey, setSelectedDateKey] = useState(
     toLocalDateKey(Date.now())
   );
-
-  const selectedWorkouts = useMemo(
-    () =>
-      workoutRows.filter(
-        workout => toLocalDateKey(workout.startedAt) === selectedDateKey
-      ),
-    [selectedDateKey, workoutRows]
-  );
+  const { workoutRows, workoutCountByDateKey, setCountByWorkoutId, isLoading } =
+    useHistoryList(selectedDateKey);
 
   if (isLoading) {
     return (
@@ -57,7 +43,7 @@ export default function HistoryScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
       <StyledFlatList
-        data={selectedWorkouts}
+        data={workoutRows}
         keyExtractor={item => item.id}
         style={{ flex: 1 }}
         contentContainerClassName="px-4 py-6"
@@ -88,8 +74,8 @@ export default function HistoryScreen() {
                 </Text>
               </View>
               <Text variant="caption" tone="muted">
-                {selectedWorkouts.length}{' '}
-                {selectedWorkouts.length === 1 ? 'workout' : 'workouts'}
+                {workoutRows.length}{' '}
+                {workoutRows.length === 1 ? 'workout' : 'workouts'}
               </Text>
             </View>
           </View>
