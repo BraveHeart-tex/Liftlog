@@ -12,13 +12,15 @@ import {
   buildExerciseHistory,
   computeEstimated1RM,
   getExerciseHistorySetsQuery,
-  getExerciseHistoryWorkoutsQuery
+  getRecentExerciseHistoryWorkoutsQuery
 } from '@/src/features/progress/repository';
 import { useSettings } from '@/src/features/settings/hooks';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { parseMuscleList } from '@/src/lib/utils/muscle';
 import { formatCompletedSets, getCompletedSets } from '@/src/lib/utils/set';
 import { useMemo } from 'react';
+
+const EXERCISE_HISTORY_LIMIT = 20;
 
 function getBestSetId(sets: Set[]) {
   if (sets.length === 0) {
@@ -217,15 +219,24 @@ export function useExerciseDetail(exerciseId: string | undefined) {
   );
 
   const workoutResult = useLiveWithFallback(
-    () => getExerciseHistoryWorkoutsQuery(db, resolvedExerciseId),
-    () => getExerciseHistoryWorkoutsQuery(db, resolvedExerciseId).all(),
+    () =>
+      getRecentExerciseHistoryWorkoutsQuery(
+        db,
+        resolvedExerciseId,
+        EXERCISE_HISTORY_LIMIT
+      ),
+    () =>
+      getRecentExerciseHistoryWorkoutsQuery(
+        db,
+        resolvedExerciseId,
+        EXERCISE_HISTORY_LIMIT
+      ).all(),
     [db, resolvedExerciseId]
   );
 
   const workoutRows = workoutResult.data;
   const workoutIds = useMemo(
-    () =>
-      Array.from(new Set(workoutRows.map(row => row.workout.id))).slice(0, 20),
+    () => Array.from(new Set(workoutRows.map(row => row.workout.id))),
     [workoutRows]
   );
 
