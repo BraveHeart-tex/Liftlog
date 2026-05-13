@@ -12,9 +12,7 @@ import {
   buildExerciseHistory,
   computeEstimated1RM,
   getExerciseHistorySetsQuery,
-  getExerciseHistoryWorkoutsQuery,
-  getPersonalRecordsByExercise,
-  getPersonalRecordsByExerciseQuery
+  getExerciseHistoryWorkoutsQuery
 } from '@/src/features/progress/repository';
 import { useSettings } from '@/src/features/settings/hooks';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
@@ -33,6 +31,156 @@ function getBestSetId(sets: Set[]) {
       ? set
       : best
   ).id;
+}
+
+interface CompletedHistoryEntry {
+  workout: ReturnType<typeof buildExerciseHistory>[number]['workout'];
+  sets: Set[];
+  bestSetId: Set['id'] | undefined;
+}
+
+export interface ExerciseProgressPoint {
+  workoutId: string;
+  date: number;
+  bestWeightKg: number;
+  reps: number;
+}
+
+export interface ExercisePersonalRecordSummaryItem {
+  id: 'best-set' | 'heaviest-weight' | 'most-sets';
+  label: string;
+  weightKg?: number;
+  reps?: number;
+  count?: number;
+  achievedAt: number;
+  isNewRecord: boolean;
+}
+
+export interface ExerciseTopSetPerformance {
+  id: Set['id'];
+  weightKg: number;
+  reps: number;
+  estimated1rm: number;
+  achievedAt: number;
+}
+
+function getSetAchievedAt(set: Set, workoutStartedAt: number) {
+  return set.completedAt ?? workoutStartedAt;
+}
+
+function getLatestAchievedAt(sets: Set[], workoutStartedAt: number) {
+  return sets.reduce(
+    (latest, set) => Math.max(latest, getSetAchievedAt(set, workoutStartedAt)),
+    workoutStartedAt
+  );
+}
+
+function buildProgressPoints(history: CompletedHistoryEntry[]) {
+  return [...history].reverse().map(entry => {
+    const bestWeightSet = entry.sets.reduce((best, set) =>
+      set.weightKg > best.weightKg ? set : best
+    );
+
+    return {
+      workoutId: entry.workout.id,
+      date: entry.workout.startedAt,
+      bestWeightKg: bestWeightSet.weightKg,
+      reps: bestWeightSet.reps
+    };
+  });
+}
+
+function buildTopSetPerformances(history: CompletedHistoryEntry[]) {
+  return history
+    .flatMap(entry =>
+      entry.sets.map(set => ({
+        id: set.id,
+        weightKg: set.weightKg,
+        reps: set.reps,
+        estimated1rm: computeEstimated1RM(set.weightKg, set.reps),
+        achievedAt: getSetAchievedAt(set, entry.workout.startedAt)
+      }))
+    )
+    .sort((left, right) => {
+      const estimateDiff = right.estimated1rm - left.estimated1rm;
+
+      if (estimateDiff !== 0) {
+        return estimateDiff;
+      }
+
+      return right.achievedAt - left.achievedAt;
+    })
+    .slice(0, 3);
+}
+
+function buildPersonalRecordSummary(history: CompletedHistoryEntry[]) {
+  const topSets = buildTopSetPerformances(history);
+  const bestSet = topSets[0];
+
+  if (!bestSet) {
+    return [];
+  }
+
+  const heaviestSet = history
+    .flatMap(entry =>
+      entry.sets.map(set => ({
+        set,
+        achievedAt: getSetAchievedAt(set, entry.workout.startedAt)
+      }))
+    )
+    .reduce((best, item) => {
+      if (item.set.weightKg !== best.set.weightKg) {
+        return item.set.weightKg > best.set.weightKg ? item : best;
+      }
+
+      return item.achievedAt > best.achievedAt ? item : best;
+    });
+
+  const mostSetsWorkout = history.reduce((best, entry) => {
+    if (entry.sets.length !== best.sets.length) {
+      return entry.sets.length > best.sets.length ? entry : best;
+    }
+
+    return entry.workout.startedAt > best.workout.startedAt ? entry : best;
+  });
+
+  const latestWorkoutDate = Math.max(
+    ...history.map(entry =>
+      getLatestAchievedAt(entry.sets, entry.workout.startedAt)
+    )
+  );
+
+  return [
+    {
+      id: 'best-set',
+      label: 'Best set',
+      weightKg: bestSet.weightKg,
+      reps: bestSet.reps,
+      achievedAt: bestSet.achievedAt,
+      isNewRecord: bestSet.achievedAt === latestWorkoutDate
+    },
+    {
+      id: 'heaviest-weight',
+      label: 'Heaviest weight',
+      weightKg: heaviestSet.set.weightKg,
+      achievedAt: heaviestSet.achievedAt,
+      isNewRecord: heaviestSet.achievedAt === latestWorkoutDate
+    },
+    {
+      id: 'most-sets',
+      label: 'Most sets',
+      count: mostSetsWorkout.sets.length,
+      achievedAt: getLatestAchievedAt(
+        mostSetsWorkout.sets,
+        mostSetsWorkout.workout.startedAt
+      ),
+      isNewRecord:
+        getLatestAchievedAt(
+          mostSetsWorkout.sets,
+          mostSetsWorkout.workout.startedAt
+        ) === latestWorkoutDate
+    }
+  ] satisfies ExercisePersonalRecordSummaryItem[];
 }
 
 export function useExerciseDetail(exerciseId: string | undefined) {
@@ -89,13 +237,7 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     [db, resolvedExerciseId, workoutIdKey]
   );
 
-  const prResult = useLiveWithFallback(
-    () => getPersonalRecordsByExerciseQuery(db, resolvedExerciseId),
-    () => getPersonalRecordsByExercise(db, resolvedExerciseId),
-    [db, resolvedExerciseId]
-  );
-
-  const history = useMemo(
+  const fullHistory = useMemo(
     () =>
       buildExerciseHistory(workoutRows, setResult.data)
         .map(entry => {
@@ -109,9 +251,25 @@ export function useExerciseDetail(exerciseId: string | undefined) {
             bestSetId: getBestSetId(completedSets)
           };
         })
-        .filter(entry => entry.sets.length > 0)
-        .slice(0, 10),
+        .filter(entry => entry.sets.length > 0),
     [setResult.data, workoutRows]
+  );
+
+  const history = useMemo(() => fullHistory.slice(0, 3), [fullHistory]);
+
+  const progressPoints = useMemo(
+    () => buildProgressPoints(fullHistory),
+    [fullHistory]
+  );
+
+  const personalRecordsSummary = useMemo(
+    () => buildPersonalRecordSummary(fullHistory),
+    [fullHistory]
+  );
+
+  const topSetPerformances = useMemo(
+    () => buildTopSetPerformances(fullHistory),
+    [fullHistory]
   );
 
   const primaryMuscles = useMemo(
@@ -148,7 +306,9 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     workoutUsageCount: exerciseUsageResult.data.length,
     templateUsageCount: templateUsageResult.data.length,
     history,
-    prRows: prResult.data,
+    progressPoints,
+    personalRecordsSummary,
+    topSetPerformances,
     primaryMuscles,
     secondaryMuscles,
     instructions,

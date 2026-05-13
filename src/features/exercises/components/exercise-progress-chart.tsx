@@ -4,9 +4,22 @@ import type { ExerciseProgressPoint } from '@/src/features/exercises/hooks/use-e
 import { formatWorkoutDate } from '@/src/lib/utils/date';
 import { formatWeightForUnit, type WeightUnit } from '@/src/lib/utils/weight';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
-import { matchFont } from '@shopify/react-native-skia';
+import {
+  Circle,
+  Line as SkiaLine,
+  matchFont
+} from '@shopify/react-native-skia';
+import * as Haptics from 'expo-haptics';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { CartesianChart, Line, Scatter } from 'victory-native';
+import { useAnimatedReaction } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
+import {
+  CartesianChart,
+  Line,
+  Scatter,
+  useChartPressState
+} from 'victory-native';
 
 interface ExerciseProgressChartProps {
   points: ExerciseProgressPoint[];
@@ -44,17 +57,40 @@ export function ExerciseProgressChart({
   weightUnit
 }: ExerciseProgressChartProps) {
   const { colors } = useAppTheme();
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const { state: pressState, isActive: isPressActive } = useChartPressState({
+    x: points[0]?.date ?? 0,
+    y: { bestWeightKg: points[0]?.bestWeightKg ?? 0 }
+  });
   const axisFont = matchFont({ fontFamily: 'Inter', fontSize: 10 });
   const chartData: ChartPoint[] = points.map(point => ({
     date: point.date,
     bestWeightKg: point.bestWeightKg
   }));
   const latestPoint = points.at(-1);
+  const selectedPoint =
+    isPressActive && selectedIndex >= 0 ? points[selectedIndex] : latestPoint;
+
+  useAnimatedReaction(
+    () => pressState.matchedIndex.value,
+    nextIndex => {
+      scheduleOnRN(setSelectedIndex, nextIndex);
+    },
+    [pressState]
+  );
+
+  useEffect(() => {
+    if (!isPressActive || selectedIndex < 0) {
+      return;
+    }
+
+    void Haptics.selectionAsync();
+  }, [isPressActive, selectedIndex]);
 
   return (
     <Card className="mt-6">
       <CardContent>
-        <View className="flex-row items-start justify-between gap-3">
+        <View>
           <View className="flex-1">
             <Text variant="caption" tone="muted">
               Progress over time
@@ -64,14 +100,34 @@ export function ExerciseProgressChart({
             </Text>
           </View>
 
-          {latestPoint ? (
-            <View className="bg-primary/10 rounded-md px-3 py-2">
-              <Text variant="caption" className="text-primary">
-                Latest
-              </Text>
-              <Text variant="bodyMedium" className="text-primary mt-1">
-                {formatWeightForUnit(latestPoint.bestWeightKg, weightUnit)}{' '}
-                {weightUnit}
+          {selectedPoint ? (
+            <View className="bg-muted mt-5 rounded-lg px-4 py-3">
+              <View className="flex-row items-start justify-between gap-3">
+                <View>
+                  <Text variant="caption" tone="muted">
+                    Date
+                  </Text>
+                  <Text variant="bodyMedium" className="mt-1">
+                    {formatWorkoutDate(selectedPoint.date)}
+                  </Text>
+                </View>
+
+                <View className="items-end">
+                  <Text variant="caption" tone="muted">
+                    Weight
+                  </Text>
+                  <Text variant="bodyMedium" className="text-primary mt-1">
+                    {formatWeightForUnit(
+                      selectedPoint.bestWeightKg,
+                      weightUnit
+                    )}{' '}
+                    {weightUnit}
+                  </Text>
+                </View>
+              </View>
+
+              <Text variant="caption" tone="muted" className="mt-3">
+                {isPressActive ? 'Selected point' : 'Latest point'}
               </Text>
             </View>
           ) : null}
@@ -93,6 +149,7 @@ export function ExerciseProgressChart({
                 data={chartData}
                 xKey="date"
                 yKeys={['bestWeightKg']}
+                chartPressState={pressState}
                 domain={{ y: getChartDomain(points) }}
                 domainPadding={{ left: 12, right: 12, top: 8, bottom: 4 }}
                 padding={{ left: 2, right: 6, top: 8, bottom: 2 }}
@@ -118,22 +175,52 @@ export function ExerciseProgressChart({
                   }
                 ]}
               >
-                {({ points: chartPoints }) => (
-                  <>
-                    <Line
-                      points={chartPoints.bestWeightKg}
-                      color={colors.primary}
-                      strokeWidth={3}
-                      curveType="natural"
-                      animate={{ type: 'timing', duration: 350 }}
-                    />
-                    <Scatter
-                      points={chartPoints.bestWeightKg}
-                      color={colors.primary}
-                      radius={4}
-                    />
-                  </>
-                )}
+                {({ points: chartPoints, chartBounds }) => {
+                  const selectedPoint =
+                    isPressActive && selectedIndex >= 0
+                      ? chartPoints.bestWeightKg[selectedIndex]
+                      : undefined;
+
+                  return (
+                    <>
+                      <Line
+                        points={chartPoints.bestWeightKg}
+                        color={colors.primary}
+                        strokeWidth={2}
+                        curveType="natural"
+                        animate={{ type: 'timing', duration: 350 }}
+                      />
+                      <Scatter
+                        points={chartPoints.bestWeightKg}
+                        color={colors.primary}
+                        radius={4.5}
+                      />
+                      {selectedPoint?.y ? (
+                        <>
+                          <SkiaLine
+                            p1={{ x: selectedPoint.x, y: chartBounds.top }}
+                            p2={{ x: selectedPoint.x, y: chartBounds.bottom }}
+                            color={colors.mutedForeground}
+                            strokeWidth={1}
+                            opacity={0.35}
+                          />
+                          <Circle
+                            cx={selectedPoint.x}
+                            cy={selectedPoint.y}
+                            r={8}
+                            color={colors.card}
+                          />
+                          <Circle
+                            cx={selectedPoint.x}
+                            cy={selectedPoint.y}
+                            r={5}
+                            color={colors.primary}
+                          />
+                        </>
+                      ) : null}
+                    </>
+                  );
+                }}
               </CartesianChart>
             </View>
 
@@ -144,11 +231,6 @@ export function ExerciseProgressChart({
                   Best set weight
                 </Text>
               </View>
-              {latestPoint ? (
-                <Text variant="caption" tone="muted">
-                  Last: {formatWorkoutDate(latestPoint.date)}
-                </Text>
-              ) : null}
             </View>
           </>
         )}
