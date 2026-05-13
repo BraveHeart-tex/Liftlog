@@ -90,11 +90,9 @@ export default function ExerciseDetailScreen() {
   const [isActionsOpen, setIsActionsOpen] = useState(false);
   const {
     exercise,
-    exercises,
     exerciseUsageCount,
     workoutUsageCount,
     templateUsageCount,
-    history,
     progressPoints,
     personalRecordsSummary,
     topSetPerformances,
@@ -103,8 +101,11 @@ export default function ExerciseDetailScreen() {
     weightUnit,
     isLoading
   } = useExerciseDetail(exerciseId);
-  const { renameCustomExercise, removeCustomExerciseById } =
-    useExerciseActions();
+  const {
+    hasCustomExerciseNameConflict,
+    renameCustomExercise,
+    removeCustomExerciseById
+  } = useExerciseActions();
 
   useEffect(() => {
     if (!isRenaming || !exercise) {
@@ -153,12 +154,6 @@ export default function ExerciseDetailScreen() {
   const removeActionLabel = exerciseUsageCount > 0 ? 'Archive' : 'Delete';
   const trimmedDraftName = draftName.trim();
   const hasRenameChanged = trimmedDraftName !== exercise.name.trim();
-  const hasDuplicateName = exercises.some(
-    exerciseRow =>
-      exerciseRow.id !== exercise.id &&
-      exerciseRow.name.trim().toLocaleLowerCase() ===
-        trimmedDraftName.toLocaleLowerCase()
-  );
   const canSaveRename =
     trimmedDraftName.length > 0 && hasRenameChanged && !isSavingRename;
 
@@ -186,7 +181,7 @@ export default function ExerciseDetailScreen() {
       return;
     }
 
-    if (hasDuplicateName) {
+    if (hasCustomExerciseNameConflict(exercise.id, trimmedDraftName)) {
       setRenameError('An exercise with this name already exists.');
 
       return;

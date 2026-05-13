@@ -2,6 +2,7 @@ import { useDrizzle } from '@/src/components/database-provider';
 import type { Exercise, NewExercise } from '@/src/db/schema';
 import {
   createExercise,
+  hasExerciseNameConflict,
   removeCustomExercise,
   updateCustomExerciseDetails,
   updateCustomExerciseName
@@ -12,6 +13,13 @@ export function useExerciseActions() {
 
   const renameCustomExercise = (id: Exercise['id'], name: Exercise['name']) => {
     return updateCustomExerciseName(db, id, name);
+  };
+
+  const hasCustomExerciseNameConflict = (
+    id: Exercise['id'],
+    name: Exercise['name']
+  ) => {
+    return hasExerciseNameConflict(db, id, name);
   };
 
   const removeCustomExerciseById = (id: Exercise['id']) => {
@@ -31,6 +39,7 @@ export function useExerciseActions() {
 
   return {
     createCustomExercise,
+    hasCustomExerciseNameConflict,
     renameCustomExercise,
     removeCustomExerciseById,
     updateCustomExerciseDetails: updateExerciseDetails

@@ -6,7 +6,7 @@ import {
   type Exercise,
   type NewExercise
 } from '@/src/db/schema';
-import { asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray, ne, sql } from 'drizzle-orm';
 import type { InferColumnsDataTypes } from 'drizzle-orm/column';
 
 const exerciseListFields = {
@@ -70,6 +70,33 @@ export function getExercisesByIds(
   ids: Exercise['id'][]
 ): ExerciseListItem[] {
   return getExercisesByIdsQuery(db, ids).all();
+}
+
+export function hasExerciseNameConflict(
+  db: DrizzleDb,
+  id: Exercise['id'],
+  name: Exercise['name']
+): boolean {
+  const normalizedName = name.trim().toLocaleLowerCase();
+
+  if (normalizedName.length === 0) {
+    return false;
+  }
+
+  const existingExercise = db
+    .select({ id: exercises.id })
+    .from(exercises)
+    .where(
+      and(
+        eq(exercises.isArchived, 0),
+        ne(exercises.id, id),
+        sql`lower(trim(${exercises.name})) = ${normalizedName}`
+      )
+    )
+    .limit(1)
+    .get();
+
+  return Boolean(existingExercise);
 }
 
 export function getExerciseById(
