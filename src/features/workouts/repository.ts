@@ -203,7 +203,21 @@ export function getWorkoutTemplates(db: DrizzleDb): WorkoutTemplate[] {
   return getWorkoutTemplatesQuery(db).all();
 }
 
-function getWorkoutTemplateExercisesQuery(
+export function getWorkoutTemplateByIdQuery(
+  db: DrizzleDb,
+  id: WorkoutTemplate['id']
+) {
+  return db.select().from(workoutTemplates).where(eq(workoutTemplates.id, id));
+}
+
+export function getWorkoutTemplateById(
+  db: DrizzleDb,
+  id: WorkoutTemplate['id']
+): WorkoutTemplate | undefined {
+  return getWorkoutTemplateRecordById(db, id);
+}
+
+export function getWorkoutTemplateExercisesQuery(
   db: DrizzleDb,
   templateId: WorkoutTemplate['id']
 ) {
@@ -212,6 +226,13 @@ function getWorkoutTemplateExercisesQuery(
     .from(workoutTemplateExercises)
     .where(eq(workoutTemplateExercises.templateId, templateId))
     .orderBy(asc(workoutTemplateExercises.order));
+}
+
+export function getWorkoutTemplateExercises(
+  db: DrizzleDb,
+  templateId: WorkoutTemplate['id']
+): WorkoutTemplateExercise[] {
+  return getWorkoutTemplateExercisesQuery(db, templateId).all();
 }
 
 export function getWorkoutTemplateExercisesForTemplatesQuery(
