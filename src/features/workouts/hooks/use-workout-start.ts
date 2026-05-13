@@ -1,7 +1,6 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { WorkoutTemplate, WorkoutTemplateExercise } from '@/src/db/schema';
 import {
-  getExercisesByIds,
   getExercisesByIdsQuery,
   type ExerciseListItem
 } from '@/src/features/exercises/repository';
@@ -9,13 +8,9 @@ import {
   createWorkout,
   createWorkoutFromTemplate,
   deleteWorkoutTemplate,
-  getActiveWorkout,
   getActiveWorkoutQuery,
-  getRecentWorkouts,
   getRecentWorkoutsQuery,
-  getWorkoutTemplateExercisesForTemplates,
   getWorkoutTemplateExercisesForTemplatesQuery,
-  getWorkoutTemplates,
   getWorkoutTemplatesQuery,
   updateWorkoutTemplateName
 } from '@/src/features/workouts/repository';
@@ -55,25 +50,16 @@ function buildTemplateSummary(
 
 export function useWorkoutStart() {
   const db = useDrizzle();
-  const activeWorkoutResult = useLiveWithFallback(
-    () => getActiveWorkoutQuery(db),
-    () => {
-      const activeWorkout = getActiveWorkout(db);
-
-      return activeWorkout ? [activeWorkout] : [];
-    },
-    [db]
-  );
+  const activeWorkoutResult = useLiveWithFallback(getActiveWorkoutQuery(db), [
+    db
+  ]);
   const recentWorkoutResult = useLiveWithFallback(
-    () => getRecentWorkoutsQuery(db, RECENT_WORKOUT_LIMIT),
-    () => getRecentWorkouts(db, RECENT_WORKOUT_LIMIT),
+    getRecentWorkoutsQuery(db, RECENT_WORKOUT_LIMIT),
     [db]
   );
-  const templateResult = useLiveWithFallback(
-    () => getWorkoutTemplatesQuery(db),
-    () => getWorkoutTemplates(db),
-    [db]
-  );
+  const templateResult = useLiveWithFallback(getWorkoutTemplatesQuery(db), [
+    db
+  ]);
 
   const templateIds = useMemo(
     () => templateResult.data.map(template => template.id),
@@ -83,8 +69,7 @@ export function useWorkoutStart() {
   const templateIdKey = useMemo(() => templateIds.join(','), [templateIds]);
 
   const templateExerciseResult = useLiveWithFallback(
-    () => getWorkoutTemplateExercisesForTemplatesQuery(db, templateIds),
-    () => getWorkoutTemplateExercisesForTemplates(db, templateIds),
+    getWorkoutTemplateExercisesForTemplatesQuery(db, templateIds),
     [db, templateIdKey]
   );
 
@@ -103,8 +88,7 @@ export function useWorkoutStart() {
   const exerciseIdKey = useMemo(() => exerciseIds.join(','), [exerciseIds]);
 
   const exerciseResult = useLiveWithFallback(
-    () => getExercisesByIdsQuery(db, exerciseIds),
-    () => getExercisesByIds(db, exerciseIds),
+    getExercisesByIdsQuery(db, exerciseIds),
     [db, exerciseIdKey]
   );
 

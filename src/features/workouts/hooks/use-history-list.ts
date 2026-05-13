@@ -1,10 +1,7 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import {
-  getCompletedSetCountsForWorkouts,
   getCompletedSetCountsForWorkoutsQuery,
-  getCompletedWorkoutDateRows,
   getCompletedWorkoutDateRowsQuery,
-  getCompletedWorkoutsForDateRange,
   getCompletedWorkoutsForDateRangeQuery
 } from '@/src/features/workouts/repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
@@ -26,8 +23,7 @@ export function useHistoryList(selectedDateKey: string) {
   const db = useDrizzle();
 
   const workoutDateResult = useLiveWithFallback(
-    () => getCompletedWorkoutDateRowsQuery(db),
-    () => getCompletedWorkoutDateRows(db),
+    getCompletedWorkoutDateRowsQuery(db),
     [db]
   );
 
@@ -52,8 +48,7 @@ export function useHistoryList(selectedDateKey: string) {
   );
 
   const workoutResult = useLiveWithFallback(
-    () => getCompletedWorkoutsForDateRangeQuery(db, startAt, endAt),
-    () => getCompletedWorkoutsForDateRange(db, startAt, endAt),
+    getCompletedWorkoutsForDateRangeQuery(db, startAt, endAt),
     [db, startAt, endAt]
   );
   const workoutRows = workoutResult.data;
@@ -64,8 +59,7 @@ export function useHistoryList(selectedDateKey: string) {
   );
   const workoutIdKey = useMemo(() => workoutIds.join(','), [workoutIds]);
   const setCountResult = useLiveWithFallback(
-    () => getCompletedSetCountsForWorkoutsQuery(db, workoutIds),
-    () => getCompletedSetCountsForWorkouts(db, workoutIds),
+    getCompletedSetCountsForWorkoutsQuery(db, workoutIds),
     [db, workoutIdKey]
   );
 

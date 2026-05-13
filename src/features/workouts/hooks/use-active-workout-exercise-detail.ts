@@ -1,12 +1,7 @@
 import { useDrizzle } from '@/src/components/database-provider';
+import { getExerciseByIdQuery } from '@/src/features/exercises/repository';
 import {
-  getExerciseById,
-  getExerciseByIdQuery
-} from '@/src/features/exercises/repository';
-import {
-  getSetsByWorkoutExerciseId,
   getSetsByWorkoutExerciseIdQuery,
-  getWorkoutExerciseById,
   getWorkoutExerciseByIdQuery
 } from '@/src/features/workouts/repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
@@ -19,35 +14,17 @@ export function useActiveWorkoutExerciseDetail(
   const db = useDrizzle();
   const resolvedWorkoutExerciseId = workoutExerciseId ?? '';
   const workoutExerciseResult = useLiveWithFallback(
-    () => getWorkoutExerciseByIdQuery(db, resolvedWorkoutExerciseId),
-    () => {
-      const workoutExercise = getWorkoutExerciseById(
-        db,
-        resolvedWorkoutExerciseId
-      );
-
-      return workoutExercise ? [workoutExercise] : [];
-    },
+    getWorkoutExerciseByIdQuery(db, resolvedWorkoutExerciseId),
     [db, resolvedWorkoutExerciseId]
   );
   const workoutExercise = workoutExerciseResult.data[0];
   const exerciseId = workoutExercise?.exerciseId ?? null;
   const setResult = useLiveWithFallback(
-    () => getSetsByWorkoutExerciseIdQuery(db, resolvedWorkoutExerciseId),
-    () => getSetsByWorkoutExerciseId(db, resolvedWorkoutExerciseId),
+    getSetsByWorkoutExerciseIdQuery(db, resolvedWorkoutExerciseId),
     [db, resolvedWorkoutExerciseId]
   );
   const exerciseResult = useLiveWithFallback(
-    () => getExerciseByIdQuery(db, exerciseId ?? ''),
-    () => {
-      if (!exerciseId) {
-        return [];
-      }
-
-      const exercise = getExerciseById(db, exerciseId);
-
-      return exercise ? [exercise] : [];
-    },
+    getExerciseByIdQuery(db, exerciseId ?? ''),
     [db, exerciseId]
   );
   const exercise = exerciseResult.data[0] ?? null;

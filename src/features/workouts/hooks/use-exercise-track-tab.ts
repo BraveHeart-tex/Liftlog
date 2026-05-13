@@ -2,7 +2,6 @@ import type { Set } from '@/src/db/schema';
 import {
   buildExerciseHistory,
   getExerciseHistorySetsQuery,
-  getPersonalRecordsByExercise,
   getPersonalRecordsByExerciseQuery,
   getRecentExerciseHistoryWorkoutsQuery
 } from '@/src/features/progress/repository';
@@ -27,8 +26,7 @@ export function useExerciseTrackTab(item: WorkoutExerciseWithSets) {
   const editingSet = item.sets.find(set => set.id === editingSetId);
   const exerciseId = item.workoutExercise.exerciseId;
   const prResult = useLiveWithFallback(
-    () => getPersonalRecordsByExerciseQuery(db, exerciseId),
-    () => getPersonalRecordsByExercise(db, exerciseId),
+    getPersonalRecordsByExerciseQuery(db, exerciseId),
     [db, exerciseId]
   );
   const prSetIds = useMemo(
@@ -36,18 +34,11 @@ export function useExerciseTrackTab(item: WorkoutExerciseWithSets) {
     [prResult.data]
   );
   const workoutResult = useLiveWithFallback(
-    () =>
-      getRecentExerciseHistoryWorkoutsQuery(
-        db,
-        exerciseId,
-        PROGRESSION_HISTORY_LIMIT
-      ),
-    () =>
-      getRecentExerciseHistoryWorkoutsQuery(
-        db,
-        exerciseId,
-        PROGRESSION_HISTORY_LIMIT
-      ).all(),
+    getRecentExerciseHistoryWorkoutsQuery(
+      db,
+      exerciseId,
+      PROGRESSION_HISTORY_LIMIT
+    ),
     [db, exerciseId]
   );
   const workoutRows = workoutResult.data;
@@ -57,8 +48,7 @@ export function useExerciseTrackTab(item: WorkoutExerciseWithSets) {
   );
   const workoutIdKey = useMemo(() => workoutIds.join(','), [workoutIds]);
   const setResult = useLiveWithFallback(
-    () => getExerciseHistorySetsQuery(db, exerciseId, workoutIds),
-    () => getExerciseHistorySetsQuery(db, exerciseId, workoutIds).all(),
+    getExerciseHistorySetsQuery(db, exerciseId, workoutIds),
     [db, exerciseId, workoutIdKey]
   );
   const progressionSuggestion = useMemo(() => {

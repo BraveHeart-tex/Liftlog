@@ -5,7 +5,6 @@ import {
   SETTINGS_DEFAULTS,
   SETTINGS_KEYS,
   getRestTimerDuration,
-  getSettings,
   getSettingsQuery,
   getThemePreference,
   getWeightUnit,
@@ -27,11 +26,9 @@ export function useSettings() {
     }),
     [db]
   );
-  const { data: rows, isLive } = useLiveWithFallback(
-    () => getSettingsQuery(db),
-    () => getSettings(db),
-    [db]
-  );
+  const { data: rows, isLive } = useLiveWithFallback(getSettingsQuery(db), [
+    db
+  ]);
 
   const weightUnit: WeightUnit = useMemo(() => {
     if (!isLive) {

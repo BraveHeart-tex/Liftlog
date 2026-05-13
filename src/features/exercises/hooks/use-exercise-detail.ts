@@ -1,7 +1,6 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { Set } from '@/src/db/schema';
 import {
-  getExerciseById,
   getExerciseByIdQuery,
   getExerciseTemplateUsageRowsQuery,
   getExerciseUsageRowsQuery
@@ -188,41 +187,27 @@ export function useExerciseDetail(exerciseId: string | undefined) {
   const { weightUnit } = useSettings();
   const resolvedExerciseId = exerciseId ?? '';
   const exerciseResult = useLiveWithFallback(
-    () => getExerciseByIdQuery(db, resolvedExerciseId),
-    () => {
-      const exercise = getExerciseById(db, resolvedExerciseId);
-
-      return exercise ? [exercise] : [];
-    },
+    getExerciseByIdQuery(db, resolvedExerciseId),
     [db, resolvedExerciseId]
   );
   const exercise = exerciseResult.data[0];
 
   const exerciseUsageResult = useLiveWithFallback(
-    () => getExerciseUsageRowsQuery(db, resolvedExerciseId),
-    () => getExerciseUsageRowsQuery(db, resolvedExerciseId).all(),
+    getExerciseUsageRowsQuery(db, resolvedExerciseId),
     [db, resolvedExerciseId]
   );
 
   const templateUsageResult = useLiveWithFallback(
-    () => getExerciseTemplateUsageRowsQuery(db, resolvedExerciseId),
-    () => getExerciseTemplateUsageRowsQuery(db, resolvedExerciseId).all(),
+    getExerciseTemplateUsageRowsQuery(db, resolvedExerciseId),
     [db, resolvedExerciseId]
   );
 
   const workoutResult = useLiveWithFallback(
-    () =>
-      getRecentExerciseHistoryWorkoutsQuery(
-        db,
-        resolvedExerciseId,
-        EXERCISE_HISTORY_LIMIT
-      ),
-    () =>
-      getRecentExerciseHistoryWorkoutsQuery(
-        db,
-        resolvedExerciseId,
-        EXERCISE_HISTORY_LIMIT
-      ).all(),
+    getRecentExerciseHistoryWorkoutsQuery(
+      db,
+      resolvedExerciseId,
+      EXERCISE_HISTORY_LIMIT
+    ),
     [db, resolvedExerciseId]
   );
 
@@ -235,8 +220,7 @@ export function useExerciseDetail(exerciseId: string | undefined) {
   const workoutIdKey = useMemo(() => workoutIds.join(','), [workoutIds]);
 
   const setResult = useLiveWithFallback(
-    () => getExerciseHistorySetsQuery(db, resolvedExerciseId, workoutIds),
-    () => getExerciseHistorySetsQuery(db, resolvedExerciseId, workoutIds).all(),
+    getExerciseHistorySetsQuery(db, resolvedExerciseId, workoutIds),
     [db, resolvedExerciseId, workoutIdKey]
   );
 

@@ -5,7 +5,6 @@ import {
   computeEstimated1RM,
   getExerciseHistorySetsQuery,
   getExerciseHistoryWorkoutsQuery,
-  getPersonalRecordsByExercise,
   getPersonalRecordsByExerciseQuery
 } from '@/src/features/progress/repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
@@ -30,8 +29,7 @@ function getBestEstimated1RM(sets: Set[]) {
 export function useExerciseHistoryTab(exerciseId: Exercise['id']) {
   const db = useDrizzle();
   const prResult = useLiveWithFallback(
-    () => getPersonalRecordsByExerciseQuery(db, exerciseId),
-    () => getPersonalRecordsByExercise(db, exerciseId),
+    getPersonalRecordsByExerciseQuery(db, exerciseId),
     [db, exerciseId]
   );
   const prSetIds = useMemo(
@@ -39,8 +37,7 @@ export function useExerciseHistoryTab(exerciseId: Exercise['id']) {
     [prResult.data]
   );
   const workoutResult = useLiveWithFallback(
-    () => getExerciseHistoryWorkoutsQuery(db, exerciseId),
-    () => getExerciseHistoryWorkoutsQuery(db, exerciseId).all(),
+    getExerciseHistoryWorkoutsQuery(db, exerciseId),
     [db, exerciseId]
   );
   const workoutRows = workoutResult.data;
@@ -71,8 +68,7 @@ export function useExerciseHistoryTab(exerciseId: Exercise['id']) {
   );
   const workoutIdKey = useMemo(() => workoutIds.join(','), [workoutIds]);
   const setResult = useLiveWithFallback(
-    () => getExerciseHistorySetsQuery(db, exerciseId, workoutIds),
-    () => getExerciseHistorySetsQuery(db, exerciseId, workoutIds).all(),
+    getExerciseHistorySetsQuery(db, exerciseId, workoutIds),
     [db, exerciseId, workoutIdKey]
   );
 

@@ -2,9 +2,7 @@ import { useDrizzle } from '@/src/components/database-provider';
 import type { Workout } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import {
-  getRecentExerciseIdRows,
   getRecentExerciseIdsQuery,
-  getWorkoutExercises,
   getWorkoutExercisesQuery
 } from '@/src/features/workouts/repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
@@ -26,8 +24,7 @@ export function useActiveWorkoutContent({
   const [isRestTimerOpen, setIsRestTimerOpen] = useState(false);
   const isRestTimerRunning = useIsRestTimerRunning();
   const workoutExerciseResult = useLiveWithFallback(
-    () => getWorkoutExercisesQuery(db, activeWorkout.id),
-    () => getWorkoutExercises(db, activeWorkout.id),
+    getWorkoutExercisesQuery(db, activeWorkout.id),
     [db, activeWorkout.id]
   );
   const selectedExerciseIds = useMemo(
@@ -39,8 +36,7 @@ export function useActiveWorkoutContent({
   );
   const selectedExerciseIdsKey = selectedExerciseIds.join('|');
   const recentExerciseRowResult = useLiveWithFallback(
-    () => getRecentExerciseIdsQuery(db, selectedExerciseIds),
-    () => getRecentExerciseIdRows(db, selectedExerciseIds),
+    getRecentExerciseIdsQuery(db, selectedExerciseIds),
     [db, selectedExerciseIdsKey]
   );
   const recentExerciseIds = useMemo(() => {

@@ -1,10 +1,7 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { Set, WorkoutExercise } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
-import {
-  getSetsForWorkoutExercises,
-  getSetsForWorkoutExercisesQuery
-} from '@/src/features/workouts/repository';
+import { getSetsForWorkoutExercisesQuery } from '@/src/features/workouts/repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { useMemo } from 'react';
 import type { WorkoutExerciseWithSets } from '../components/types';
@@ -28,8 +25,7 @@ export function useActiveWorkoutExerciseList({
     [workoutExerciseIds]
   );
   const setResult = useLiveWithFallback(
-    () => getSetsForWorkoutExercisesQuery(db, workoutExerciseIds),
-    () => getSetsForWorkoutExercises(db, workoutExerciseIds),
+    getSetsForWorkoutExercisesQuery(db, workoutExerciseIds),
     [db, workoutExerciseIdKey]
   );
 

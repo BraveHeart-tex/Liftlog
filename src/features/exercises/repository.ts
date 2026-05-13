@@ -47,10 +47,6 @@ export function getExercisesQuery(db: DrizzleDb) {
     .orderBy(asc(exercises.name));
 }
 
-export function getExercises(db: DrizzleDb): ExerciseListItem[] {
-  return getExercisesQuery(db).all();
-}
-
 export function getExercisesByIdsQuery(db: DrizzleDb, ids: Exercise['id'][]) {
   if (ids.length === 0) {
     return db
@@ -63,13 +59,6 @@ export function getExercisesByIdsQuery(db: DrizzleDb, ids: Exercise['id'][]) {
     .select(exerciseListFields)
     .from(exercises)
     .where(inArray(exercises.id, ids));
-}
-
-export function getExercisesByIds(
-  db: DrizzleDb,
-  ids: Exercise['id'][]
-): ExerciseListItem[] {
-  return getExercisesByIdsQuery(db, ids).all();
 }
 
 export function hasExerciseNameConflict(

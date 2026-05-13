@@ -1,18 +1,14 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { WorkoutTemplate } from '@/src/db/schema';
 import {
-  getExercisesByIds,
   getExercisesByIdsQuery,
   type ExerciseListItem
 } from '@/src/features/exercises/repository';
 import {
   createWorkoutFromTemplate,
   deleteWorkoutTemplate,
-  getActiveWorkout,
   getActiveWorkoutQuery,
-  getWorkoutTemplateById,
   getWorkoutTemplateByIdQuery,
-  getWorkoutTemplateExercises,
   getWorkoutTemplateExercisesQuery,
   updateWorkoutTemplateName
 } from '@/src/features/workouts/repository';
@@ -27,30 +23,18 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
   const resolvedTemplateId = templateId ?? '';
 
   const templateResult = useLiveWithFallback(
-    () => getWorkoutTemplateByIdQuery(db, resolvedTemplateId),
-    () => {
-      const template = getWorkoutTemplateById(db, resolvedTemplateId);
-
-      return template ? [template] : [];
-    },
+    getWorkoutTemplateByIdQuery(db, resolvedTemplateId),
     [db, resolvedTemplateId]
   );
   const template = templateResult.data[0];
 
-  const activeWorkoutResult = useLiveWithFallback(
-    () => getActiveWorkoutQuery(db),
-    () => {
-      const activeWorkout = getActiveWorkout(db);
-
-      return activeWorkout ? [activeWorkout] : [];
-    },
-    [db]
-  );
+  const activeWorkoutResult = useLiveWithFallback(getActiveWorkoutQuery(db), [
+    db
+  ]);
   const activeWorkout = activeWorkoutResult.data[0];
 
   const templateExerciseResult = useLiveWithFallback(
-    () => getWorkoutTemplateExercisesQuery(db, resolvedTemplateId),
-    () => getWorkoutTemplateExercises(db, resolvedTemplateId),
+    getWorkoutTemplateExercisesQuery(db, resolvedTemplateId),
     [db, resolvedTemplateId]
   );
   const templateExerciseRows = templateExerciseResult.data;
@@ -62,8 +46,7 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
   );
   const exerciseIdKey = useMemo(() => exerciseIds.join(','), [exerciseIds]);
   const exerciseResult = useLiveWithFallback(
-    () => getExercisesByIdsQuery(db, exerciseIds),
-    () => getExercisesByIds(db, exerciseIds),
+    getExercisesByIdsQuery(db, exerciseIds),
     [db, exerciseIdKey]
   );
 
