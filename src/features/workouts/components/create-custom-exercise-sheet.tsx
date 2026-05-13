@@ -9,7 +9,7 @@ import { Button } from '@/src/components/ui/button';
 import type { NewExercise } from '@/src/db/schema';
 import { ExerciseMetadataForm } from '@/src/features/exercises/components/exercise-metadata-form';
 import { useCustomExerciseForm } from '@/src/features/exercises/hooks';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { Keyboard, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -29,6 +29,9 @@ export function CreateCustomExerciseSheet({
   onSave
 }: CreateCustomExerciseSheetProps) {
   const insets = useSafeAreaInsets();
+  const scrollRef =
+    useRef<ComponentRef<typeof StyledBottomSheetScrollView>>(null);
+  const [errorScrollRequestId, setErrorScrollRequestId] = useState(0);
   const {
     name,
     category,
@@ -46,6 +49,7 @@ export function CreateCustomExerciseSheet({
 
   useEffect(() => {
     reset();
+    setErrorScrollRequestId(0);
   }, [isOpen, reset]);
 
   const handleClose = () => {
@@ -57,6 +61,8 @@ export function CreateCustomExerciseSheet({
     const newExercise = submit();
 
     if (!newExercise) {
+      setErrorScrollRequestId(current => current + 1);
+
       return;
     }
 
@@ -80,6 +86,7 @@ export function CreateCustomExerciseSheet({
       </BottomSheetHeader>
 
       <StyledBottomSheetScrollView
+        ref={scrollRef}
         contentContainerClassName="px-4 pb-4"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator
@@ -92,6 +99,10 @@ export function CreateCustomExerciseSheet({
           selectedSecondaryMuscles={selectedSecondaryMuscles}
           nameError={nameError}
           primaryMusclesError={primaryMusclesError}
+          errorScrollRequestId={errorScrollRequestId}
+          onScrollToError={y =>
+            scrollRef.current?.scrollTo({ y, animated: true })
+          }
           setName={setName}
           setCategory={setCategory}
           togglePrimaryMuscle={togglePrimaryMuscle}

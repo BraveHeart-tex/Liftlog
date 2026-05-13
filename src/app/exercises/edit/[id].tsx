@@ -11,8 +11,8 @@ import {
 } from '@/src/features/exercises/hooks';
 import { getRouteParamId } from '@/src/lib/utils/route';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Keyboard, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Keyboard, View, type ScrollView } from 'react-native';
 
 export default function EditExerciseScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
@@ -20,6 +20,7 @@ export default function EditExerciseScreen() {
   const { exercise, primaryMuscles, secondaryMuscles, isLoading } =
     useCustomExerciseEdit(exerciseId);
   const { updateCustomExerciseDetails } = useExerciseActions();
+  const scrollRef = useRef<ScrollView>(null);
   const [category, setCategory] = useState<ExerciseCategory>('barbell');
   const [selectedPrimaryMuscles, setSelectedPrimaryMuscles] = useState<
     string[]
@@ -28,6 +29,7 @@ export default function EditExerciseScreen() {
     string[]
   >([]);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  const [errorScrollRequestId, setErrorScrollRequestId] = useState(0);
   const [saveError, setSaveError] = useState<string | undefined>();
   const [isSaving, setIsSaving] = useState(false);
 
@@ -91,6 +93,8 @@ export default function EditExerciseScreen() {
       exercise.isCustom !== 1 ||
       selectedPrimaryMuscles.length === 0
     ) {
+      setErrorScrollRequestId(current => current + 1);
+
       return;
     }
 
@@ -166,6 +170,7 @@ export default function EditExerciseScreen() {
   return (
     <Screen
       scroll
+      scrollRef={scrollRef}
       footer={
         <View className="flex-row gap-3">
           <View className="flex-1">
@@ -198,6 +203,10 @@ export default function EditExerciseScreen() {
             selectedPrimaryMuscles={selectedPrimaryMuscles}
             selectedSecondaryMuscles={selectedSecondaryMuscles}
             primaryMusclesError={primaryMusclesError}
+            errorScrollRequestId={errorScrollRequestId}
+            onScrollToError={y =>
+              scrollRef.current?.scrollTo({ y, animated: true })
+            }
             setCategory={handleCategoryChange}
             togglePrimaryMuscle={togglePrimaryMuscle}
             toggleSecondaryMuscle={toggleSecondaryMuscle}

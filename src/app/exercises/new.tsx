@@ -2,16 +2,20 @@ import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
+import type { NewExercise } from '@/src/db/schema';
 import { ExerciseMetadataForm } from '@/src/features/exercises/components/exercise-metadata-form';
 import {
   useCustomExerciseForm,
   useExerciseActions
 } from '@/src/features/exercises/hooks';
 import { router } from 'expo-router';
-import { Keyboard, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Keyboard, View, type ScrollView } from 'react-native';
 
 export default function NewExerciseScreen() {
   const { createCustomExercise } = useExerciseActions();
+  const scrollRef = useRef<ScrollView>(null);
+  const [errorScrollRequestId, setErrorScrollRequestId] = useState(0);
   const {
     name,
     category,
@@ -26,13 +30,7 @@ export default function NewExerciseScreen() {
     submit: buildExercise
   } = useCustomExerciseForm();
 
-  const createExercise = () => {
-    const newExercise = buildExercise();
-
-    if (!newExercise) {
-      return;
-    }
-
+  const createExercise = (newExercise: NewExercise) => {
     const createdExercise = createCustomExercise(newExercise);
 
     router.replace(
@@ -45,13 +43,22 @@ export default function NewExerciseScreen() {
   };
 
   const submit = () => {
+    const newExercise = buildExercise();
+
+    if (!newExercise) {
+      setErrorScrollRequestId(current => current + 1);
+
+      return;
+    }
+
     Keyboard.dismiss();
-    createExercise();
+    createExercise(newExercise);
   };
 
   return (
     <Screen
       scroll
+      scrollRef={scrollRef}
       footer={
         <View className="flex-row gap-3">
           <View className="flex-1">
@@ -84,6 +91,10 @@ export default function NewExerciseScreen() {
             selectedSecondaryMuscles={selectedSecondaryMuscles}
             nameError={nameError}
             primaryMusclesError={primaryMusclesError}
+            errorScrollRequestId={errorScrollRequestId}
+            onScrollToError={y =>
+              scrollRef.current?.scrollTo({ y, animated: true })
+            }
             setName={setName}
             setCategory={setCategory}
             togglePrimaryMuscle={togglePrimaryMuscle}
