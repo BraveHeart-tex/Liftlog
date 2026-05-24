@@ -1,9 +1,9 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
-import { StyledTextInput } from '@/src/components/styled/text-input';
 import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
+import { RenameSheet } from '@/src/components/ui/rename-sheet';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import type { Workout } from '@/src/db/schema';
@@ -12,8 +12,7 @@ import {
   useActiveWorkoutActions,
   useActiveWorkoutContent as useActiveWorkoutContentData,
   useWorkoutDelete,
-  useWorkoutRename,
-  useWorkoutRenameFlow
+  useWorkoutRename
 } from '@/src/features/workouts/hooks';
 import { ActiveWorkoutActionsSheet } from '@/src/features/workouts/components/active-workout-actions-sheet';
 import { ActiveWorkoutExerciseList } from '@/src/features/workouts/components/active-workout-exercise-list';
@@ -38,6 +37,7 @@ export function ActiveWorkoutContent({
   exerciseRows
 }: ActiveWorkoutContentProps) {
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
+  const [isRenameSheetOpen, setIsRenameSheetOpen] = useState(false);
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
   const [isCreateCustomExerciseOpen, setIsCreateCustomExerciseOpen] =
     useState(false);
@@ -64,21 +64,7 @@ export function ActiveWorkoutContent({
     });
   const renameWorkout = useWorkoutRename();
   const deleteWorkout = useWorkoutDelete();
-  const {
-    inputRef: renameInputRef,
-    name: workoutName,
-    draftName,
-    renameError,
-    isRenaming,
-    isSavingRename,
-    beginRename,
-    cancelRename,
-    setDraftName,
-    submitRename
-  } = useWorkoutRenameFlow({
-    workout: activeWorkout,
-    renameWorkout
-  });
+  const workoutName = activeWorkout.name;
   const canSaveTemplate =
     !isLoadingWorkoutExercises && workoutExerciseRows.length > 0;
 
@@ -137,46 +123,36 @@ export function ActiveWorkoutContent({
     );
   };
 
+  const handleRenameWorkout = (nextName: string) => {
+    try {
+      const updatedWorkout = renameWorkout(activeWorkout, nextName);
+
+      if (!updatedWorkout) {
+        return 'Could not rename workout. Try again.';
+      }
+    } catch (error) {
+      console.error('Failed to rename workout', error);
+
+      return 'Could not rename workout. Try again.';
+    }
+
+    return undefined;
+  };
+
   return (
     <Screen withPadding={false}>
       <View className="flex-row items-center justify-between gap-2 px-4 pt-4 pb-2">
-        <BackButton onPress={isRenaming ? cancelRename : undefined} />
+        <BackButton />
 
         <View className="flex-1">
-          {isRenaming ? (
-            <StyledTextInput
-              ref={renameInputRef}
-              className="text-h2 text-foreground border-border rounded-md border-b py-1"
-              selectionClassName="text-primary"
-              value={draftName}
-              onChangeText={setDraftName}
-              accessibilityLabel="Workout name"
-              autoCapitalize="words"
-              autoCorrect={false}
-              blurOnSubmit={false}
-              enterKeyHint="done"
-              returnKeyType="done"
-              maxLength={80}
-              selectTextOnFocus
-              submitBehavior="submit"
-              onSubmitEditing={submitRename}
-            />
-          ) : (
-            <Text variant="h2" numberOfLines={1}>
-              {workoutName}
-            </Text>
-          )}
-          {renameError ? (
-            <Text variant="caption" tone="danger" className="mt-2">
-              {renameError}
-            </Text>
-          ) : null}
+          <Text variant="h2" numberOfLines={1}>
+            {workoutName}
+          </Text>
         </View>
 
         <Button
           variant="ghost"
           size="icon"
-          disabled={isRenaming || isSavingRename}
           onPress={() => setIsRestTimerOpen(true)}
         >
           <Icon icon={TimerIcon} size={20} className="text-foreground" />
@@ -189,7 +165,6 @@ export function ActiveWorkoutContent({
           variant="ghost"
           size="icon"
           accessibilityLabel="Workout actions"
-          disabled={isRenaming || isSavingRename}
           onPress={() => setIsActionSheetOpen(true)}
         >
           <Icon
@@ -203,10 +178,7 @@ export function ActiveWorkoutContent({
           variant="secondary"
           size="sm"
           disabled={
-            isRenaming ||
-            isSavingRename ||
-            isLoadingWorkoutExercises ||
-            workoutExerciseRows.length === 0
+            isLoadingWorkoutExercises || workoutExerciseRows.length === 0
           }
           onPress={confirmFinishWorkout}
         >
@@ -298,9 +270,21 @@ export function ActiveWorkoutContent({
         isOpen={isActionSheetOpen}
         canSaveTemplate={canSaveTemplate}
         onClose={() => setIsActionSheetOpen(false)}
-        onRename={beginRename}
+        onRename={() => setIsRenameSheetOpen(true)}
         onSaveTemplate={openTemplateDialog}
         onDiscard={confirmDiscardWorkout}
+      />
+
+      <RenameSheet
+        isOpen={isRenameSheetOpen}
+        title="Rename workout"
+        description="Update the name shown while this workout is in progress."
+        inputLabel="Workout name"
+        initialName={workoutName}
+        requiredMessage="Workout name is required."
+        fallbackErrorMessage="Could not rename workout. Try again."
+        onClose={() => setIsRenameSheetOpen(false)}
+        onSubmit={handleRenameWorkout}
       />
 
       <SaveWorkoutTemplateSheet

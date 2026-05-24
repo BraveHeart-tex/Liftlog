@@ -1,6 +1,7 @@
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
+import { RenameSheet } from '@/src/components/ui/rename-sheet';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
@@ -15,7 +16,6 @@ import {
   useWorkoutHistoryDetail,
   useWorkoutRename
 } from '@/src/features/workouts/hooks';
-import { useWorkoutRenameFlow } from '@/src/features/workouts/hooks/use-workout-rename-flow';
 import { formatDuration } from '@/src/lib/utils/date';
 import { getRouteParamId } from '@/src/lib/utils/route';
 import { formatWeightForUnit } from '@/src/lib/utils/weight';
@@ -72,6 +72,7 @@ interface WorkoutDetailLoadedProps {
 function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
+  const [isRenameSheetOpen, setIsRenameSheetOpen] = useState(false);
 
   const {
     workout,
@@ -85,21 +86,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
     canRepeatWorkout
   } = detail;
   const renameWorkout = useWorkoutRename();
-  const {
-    inputRef: renameInputRef,
-    name: workoutName,
-    draftName,
-    renameError,
-    isRenaming,
-    isSavingRename,
-    beginRename,
-    cancelRename,
-    setDraftName,
-    submitRename
-  } = useWorkoutRenameFlow({
-    workout,
-    renameWorkout
-  });
+  const workoutName = workout.name;
   const deleteWorkout = useWorkoutDelete();
   const repeatWorkout = useRepeatWorkout({
     workout,
@@ -181,12 +168,28 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
     );
   };
 
+  const handleRenameWorkout = (nextName: string) => {
+    try {
+      const updatedWorkout = renameWorkout(workout, nextName);
+
+      if (!updatedWorkout) {
+        return 'Could not rename workout. Try again.';
+      }
+    } catch (error) {
+      console.error('Failed to rename workout', error);
+
+      return 'Could not rename workout. Try again.';
+    }
+
+    return undefined;
+  };
+
   return (
     <Screen
       scroll
       footer={
         <Button
-          disabled={isRenaming || isSavingRename || !canRepeatWorkout}
+          disabled={!canRepeatWorkout}
           onPress={repeatWorkout}
           leftIcon={
             activeWorkout ? undefined : (
@@ -199,18 +202,9 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
       }
     >
       <WorkoutDetailHeader
-        ref={renameInputRef}
         name={workoutName}
         startedAt={workout.startedAt}
-        isRenaming={isRenaming}
-        actionsDisabled={isSavingRename}
-        draftName={draftName}
-        renameError={renameError}
         onOpenActions={() => setIsActionSheetOpen(true)}
-        onBeginRename={beginRename}
-        onCancelRename={cancelRename}
-        onChangeDraftName={setDraftName}
-        onSubmitRename={submitRename}
       />
 
       <View className="mt-6 flex-row gap-3">
@@ -228,9 +222,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
         <Button
           variant="secondary"
           className="w-full"
-          disabled={
-            isRenaming || isSavingRename || workoutExerciseRows.length === 0
-          }
+          disabled={workoutExerciseRows.length === 0}
           onPress={() => setIsTemplateSheetOpen(true)}
           leftIcon={
             <Icon icon={BookmarkIcon} className="text-secondary-foreground" />
@@ -290,8 +282,20 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
       <WorkoutDetailActionsSheet
         isOpen={isActionSheetOpen}
         onClose={() => setIsActionSheetOpen(false)}
-        onRename={beginRename}
+        onRename={() => setIsRenameSheetOpen(true)}
         onDelete={confirmDeleteWorkout}
+      />
+
+      <RenameSheet
+        isOpen={isRenameSheetOpen}
+        title="Rename workout"
+        description="Update the name shown in your workout history."
+        inputLabel="Workout name"
+        initialName={workoutName}
+        requiredMessage="Workout name is required."
+        fallbackErrorMessage="Could not rename workout. Try again."
+        onClose={() => setIsRenameSheetOpen(false)}
+        onSubmit={handleRenameWorkout}
       />
     </Screen>
   );

@@ -1,9 +1,9 @@
-import { StyledTextInput } from '@/src/components/styled/text-input';
 import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
+import { RenameSheet } from '@/src/components/ui/rename-sheet';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { ExerciseDetailActionsSheet } from '@/src/features/exercises/components/exercise-detail-actions-sheet';
@@ -19,9 +19,8 @@ import { getRouteParamId } from '@/src/lib/utils/route';
 import { toTitleCase } from '@/src/lib/utils/string';
 import { router, useLocalSearchParams } from 'expo-router';
 import { EllipsisVerticalIcon } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
-import type { TextInput } from 'react-native';
-import { Alert, Keyboard, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, View } from 'react-native';
 
 function formatUsageBreakdown({
   workoutUsageCount,
@@ -62,13 +61,8 @@ function formatUsageBreakdown({
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const exerciseId = getRouteParamId(id);
-  const renameInputRef = useRef<TextInput>(null);
-  const isSavingRenameRef = useRef(false);
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [draftName, setDraftName] = useState('');
-  const [renameError, setRenameError] = useState<string | undefined>();
-  const [isSavingRename, setIsSavingRename] = useState(false);
   const [isActionsOpen, setIsActionsOpen] = useState(false);
+  const [isRenameSheetOpen, setIsRenameSheetOpen] = useState(false);
   const {
     exercise,
     exerciseUsageCount,
@@ -88,21 +82,6 @@ export default function ExerciseDetailScreen() {
     renameCustomExercise,
     removeCustomExerciseById
   } = useExerciseActions();
-
-  useEffect(() => {
-    if (!isRenaming || !exercise) {
-      return;
-    }
-
-    setDraftName(exercise.name);
-    setRenameError(undefined);
-    const focusTimer = setTimeout(() => {
-      renameInputRef.current?.focus();
-      renameInputRef.current?.setSelection(0, exercise.name.length);
-    }, 50);
-
-    return () => clearTimeout(focusTimer);
-  }, [exercise, isRenaming]);
 
   if (exerciseId && isLoading) {
     return (
@@ -134,75 +113,33 @@ export default function ExerciseDetailScreen() {
     templateUsageCount
   });
   const removeActionLabel = exerciseUsageCount > 0 ? 'Archive' : 'Delete';
-  const trimmedDraftName = draftName.trim();
-  const hasRenameChanged = trimmedDraftName !== exercise.name.trim();
-  const canSaveRename =
-    trimmedDraftName.length > 0 && hasRenameChanged && !isSavingRename;
 
-  const beginRename = () => {
-    if (!isCustomExercise || isRenaming) {
-      return;
+  const handleRenameExercise = (nextName: string) => {
+    if (!isCustomExercise) {
+      return 'Only custom exercises can be renamed.';
     }
 
-    setDraftName(exercise.name);
-    setRenameError(undefined);
-    setIsRenaming(true);
-  };
-
-  const cancelRename = () => {
-    Keyboard.dismiss();
-    isSavingRenameRef.current = false;
-    setDraftName(exercise.name);
-    setRenameError(undefined);
-    setIsSavingRename(false);
-    setIsRenaming(false);
-  };
-
-  const submitRename = async () => {
-    if (!canSaveRename || isSavingRenameRef.current) {
-      return;
+    if (hasCustomExerciseNameConflict(exercise.id, nextName)) {
+      return 'An exercise with this name already exists.';
     }
-
-    if (hasCustomExerciseNameConflict(exercise.id, trimmedDraftName)) {
-      setRenameError('An exercise with this name already exists.');
-
-      return;
-    }
-
-    isSavingRenameRef.current = true;
-    setIsSavingRename(true);
-    setRenameError(undefined);
 
     try {
-      const updatedExercise = renameCustomExercise(
-        exercise.id,
-        trimmedDraftName
-      );
+      const updatedExercise = renameCustomExercise(exercise.id, nextName);
 
       if (!updatedExercise) {
-        setRenameError('Only custom exercises can be renamed.');
-        isSavingRenameRef.current = false;
-        setIsSavingRename(false);
-
-        return;
+        return 'Only custom exercises can be renamed.';
       }
     } catch (error) {
       console.error('Failed to rename custom exercise', error);
-      setRenameError('Could not rename exercise. Try again.');
-      isSavingRenameRef.current = false;
-      setIsSavingRename(false);
 
-      return;
+      return 'Could not rename exercise. Try again.';
     }
 
-    Keyboard.dismiss();
-    isSavingRenameRef.current = false;
-    setIsSavingRename(false);
-    setIsRenaming(false);
+    return undefined;
   };
 
   const handleRemoveCustomExercise = () => {
-    if (!isCustomExercise || isRenaming) {
+    if (!isCustomExercise) {
       return;
     }
 
@@ -249,7 +186,7 @@ export default function ExerciseDetailScreen() {
   };
 
   const handleEditDetails = () => {
-    if (!isCustomExercise || isRenaming) {
+    if (!isCustomExercise) {
       return;
     }
 
@@ -264,71 +201,17 @@ export default function ExerciseDetailScreen() {
       <Screen scroll>
         <View>
           <View className="flex-row items-center gap-3">
-            <BackButton onPress={isRenaming ? cancelRename : undefined} />
+            <BackButton />
             <View className="flex-1">
-              {isRenaming ? (
-                <StyledTextInput
-                  ref={renameInputRef}
-                  className="text-h1 text-foreground border-border rounded-md border-b py-1"
-                  selectionClassName="text-primary"
-                  value={draftName}
-                  onChangeText={nextName => {
-                    setDraftName(nextName);
-                    setRenameError(undefined);
-                  }}
-                  accessibilityLabel="Exercise name"
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                  blurOnSubmit={false}
-                  enterKeyHint="done"
-                  returnKeyType="done"
-                  maxLength={80}
-                  selectTextOnFocus
-                  submitBehavior="submit"
-                  onSubmitEditing={submitRename}
-                />
-              ) : (
-                <Text variant="h1" numberOfLines={2} ellipsizeMode="tail">
-                  {exercise.name}
-                </Text>
-              )}
+              <Text variant="h1" numberOfLines={2} ellipsizeMode="tail">
+                {exercise.name}
+              </Text>
               <Text variant="small" tone="muted">
                 {toTitleCase(exercise.category)}
               </Text>
-              {renameError ? (
-                <Text variant="caption" tone="danger" className="mt-2">
-                  {renameError}
-                </Text>
-              ) : null}
-              {isRenaming ? (
-                <View className="mt-3 flex-row gap-3">
-                  <View className="flex-1">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      accessibilityLabel="Cancel rename"
-                      onPress={cancelRename}
-                      disabled={isSavingRename}
-                    >
-                      Cancel
-                    </Button>
-                  </View>
-                  <View className="flex-1">
-                    <Button
-                      size="sm"
-                      accessibilityLabel="Save exercise name"
-                      onPress={submitRename}
-                      disabled={!canSaveRename}
-                      loading={isSavingRename}
-                    >
-                      Save
-                    </Button>
-                  </View>
-                </View>
-              ) : null}
             </View>
 
-            {isCustomExercise && !isRenaming ? (
+            {isCustomExercise ? (
               <Button
                 variant="ghost"
                 size="icon"
@@ -497,9 +380,21 @@ export default function ExerciseDetailScreen() {
         isOpen={isActionsOpen}
         removeActionLabel={removeActionLabel}
         onClose={() => setIsActionsOpen(false)}
-        onRename={beginRename}
+        onRename={() => setIsRenameSheetOpen(true)}
         onEditDetails={handleEditDetails}
         onRemove={handleRemoveCustomExercise}
+      />
+
+      <RenameSheet
+        isOpen={isRenameSheetOpen}
+        title="Rename exercise"
+        description="Update the custom exercise name shown in workouts and history."
+        inputLabel="Exercise name"
+        initialName={exercise.name}
+        requiredMessage="Exercise name is required."
+        fallbackErrorMessage="Could not rename exercise. Try again."
+        onClose={() => setIsRenameSheetOpen(false)}
+        onSubmit={handleRenameExercise}
       />
     </>
   );
