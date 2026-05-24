@@ -2,6 +2,7 @@ import { iconSizes, nativeFontSizes } from '@/src/theme/sizes';
 import { useTabBarTheme } from '@/src/theme/app-theme-provider';
 import { Tabs } from 'expo-router';
 import {
+  ActivityIcon,
   ClockIcon,
   DumbbellIcon,
   ListIcon,
@@ -84,6 +85,19 @@ export default function TabLayout() {
               style={[styles.iconCapsule, focused && styles.activeIconCapsule]}
             >
               <ClockIcon color={color} size={TAB_ICON_SIZE} />
+            </View>
+          )
+        }}
+      />
+      <Tabs.Screen
+        name="activity"
+        options={{
+          title: 'Activity',
+          tabBarIcon: ({ color, focused }) => (
+            <View
+              style={[styles.iconCapsule, focused && styles.activeIconCapsule]}
+            >
+              <ActivityIcon color={color} size={TAB_ICON_SIZE} />
             </View>
           )
         }}

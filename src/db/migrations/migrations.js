@@ -2,10 +2,12 @@
 
 import journal from './meta/_journal.json';
 import m0000 from './0000_fancy_robin_chapel.sql';
+import m0001 from './0001_optimal_gressill.sql';
 
 export default {
   journal,
   migrations: {
-    m0000
+    m0000,
+    m0001
   }
 };

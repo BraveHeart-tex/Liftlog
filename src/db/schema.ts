@@ -183,6 +183,21 @@ export const personalRecords = sqliteTable(
   ]
 );
 
+export const healthStepDays = sqliteTable(
+  'health_step_days',
+  {
+    dateKey: text('date_key').primaryKey(),
+    steps: integer('steps').notNull().default(0),
+    startAt: integer('start_at').notNull(),
+    endAt: integer('end_at').notNull(),
+    syncedAt: integer('synced_at').notNull()
+  },
+  table => [
+    index('health_step_days_start_at_idx').on(table.startAt),
+    index('health_step_days_synced_at_idx').on(table.syncedAt)
+  ]
+);
+
 export type AppMeta = typeof appMeta.$inferSelect;
 export type NewAppMeta = typeof appMeta.$inferInsert;
 
@@ -208,3 +223,6 @@ export type NewSet = typeof sets.$inferInsert;
 
 export type PersonalRecord = typeof personalRecords.$inferSelect;
 export type NewPersonalRecord = typeof personalRecords.$inferInsert;
+
+export type HealthStepDay = typeof healthStepDays.$inferSelect;
+export type NewHealthStepDay = typeof healthStepDays.$inferInsert;

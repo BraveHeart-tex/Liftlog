@@ -10,13 +10,20 @@ export type ThemePreference = 'system' | 'light' | 'dark';
 export const SETTINGS_KEYS = {
   weightUnit: 'settings.weight_unit',
   restTimerDuration: 'settings.rest_timer',
-  themePreference: 'settings.theme_preference'
+  themePreference: 'settings.theme_preference',
+  healthConnectStepsEnabled: 'settings.health_connect_steps_enabled',
+  stepsNotificationEnabled: 'settings.steps_notification_enabled',
+  stepGoal: 'settings.step_goal',
+  stepsLastSyncAt: 'settings.steps_last_sync_at'
 } as const;
 
 export const SETTINGS_DEFAULTS = {
   weightUnit: 'kg' as WeightUnit,
   restTimerDuration: 90,
-  themePreference: 'system' as ThemePreference
+  themePreference: 'system' as ThemePreference,
+  healthConnectStepsEnabled: false,
+  stepsNotificationEnabled: false,
+  stepGoal: 10000
 };
 
 export function parseThemePreference(
@@ -81,4 +88,54 @@ export function setThemePreference(
   preference: ThemePreference
 ): void {
   setSetting(db, SETTINGS_KEYS.themePreference, preference);
+}
+
+export function parseBooleanSetting(value: string | undefined): boolean {
+  return value === 'true';
+}
+
+export function parseStepGoal(value: string | undefined): number {
+  if (!value) {
+    return SETTINGS_DEFAULTS.stepGoal;
+  }
+
+  const parsed = parseInt(value, 10);
+
+  return Number.isFinite(parsed) && parsed >= 1000
+    ? parsed
+    : SETTINGS_DEFAULTS.stepGoal;
+}
+
+export function getHealthConnectStepsEnabled(db: DrizzleDb): boolean {
+  return parseBooleanSetting(
+    getSetting(db, SETTINGS_KEYS.healthConnectStepsEnabled)
+  );
+}
+
+export function setHealthConnectStepsEnabled(
+  db: DrizzleDb,
+  isEnabled: boolean
+): void {
+  setSetting(db, SETTINGS_KEYS.healthConnectStepsEnabled, String(isEnabled));
+}
+
+export function getStepsNotificationEnabled(db: DrizzleDb): boolean {
+  return parseBooleanSetting(
+    getSetting(db, SETTINGS_KEYS.stepsNotificationEnabled)
+  );
+}
+
+export function setStepsNotificationEnabled(
+  db: DrizzleDb,
+  isEnabled: boolean
+): void {
+  setSetting(db, SETTINGS_KEYS.stepsNotificationEnabled, String(isEnabled));
+}
+
+export function getStepGoal(db: DrizzleDb): number {
+  return parseStepGoal(getSetting(db, SETTINGS_KEYS.stepGoal));
+}
+
+export function setStepGoal(db: DrizzleDb, goal: number): void {
+  setSetting(db, SETTINGS_KEYS.stepGoal, String(goal));
 }

@@ -36,7 +36,29 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-health-connect",
+      "./plugins/with-step-activity-permissions",
+      [
+        "react-native-notify-kit",
+        {
+          "android": {
+            "foregroundService": {
+              "types": ["dataSync"]
+            }
+          }
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "minSdkVersion": 26
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

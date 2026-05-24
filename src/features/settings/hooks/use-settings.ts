@@ -4,12 +4,20 @@ import { useCallback, useMemo } from 'react';
 import {
   SETTINGS_DEFAULTS,
   SETTINGS_KEYS,
+  getHealthConnectStepsEnabled,
   getRestTimerDuration,
   getSettingsQuery,
+  getStepGoal,
+  getStepsNotificationEnabled,
   getThemePreference,
   getWeightUnit,
+  parseBooleanSetting,
+  parseStepGoal,
   parseThemePreference,
+  setHealthConnectStepsEnabled as setHealthConnectStepsEnabledRepo,
   setRestTimerDuration as setRestTimerDurationRepo,
+  setStepGoal as setStepGoalRepo,
+  setStepsNotificationEnabled as setStepsNotificationEnabledRepo,
   setThemePreference as setThemePreferenceRepo,
   setWeightUnit as setWeightUnitRepo,
   type ThemePreference,
@@ -22,7 +30,10 @@ export function useSettings() {
     () => ({
       weightUnit: getWeightUnit(db),
       restTimerDuration: getRestTimerDuration(db),
-      themePreference: getThemePreference(db)
+      themePreference: getThemePreference(db),
+      healthConnectStepsEnabled: getHealthConnectStepsEnabled(db),
+      stepsNotificationEnabled: getStepsNotificationEnabled(db),
+      stepGoal: getStepGoal(db)
     }),
     [db]
   );
@@ -68,6 +79,40 @@ export function useSettings() {
     return parseThemePreference(row?.value);
   }, [initialSettings.themePreference, isLive, rows]);
 
+  const healthConnectStepsEnabled = useMemo(() => {
+    if (!isLive) {
+      return initialSettings.healthConnectStepsEnabled;
+    }
+
+    const row = rows.find(
+      row => row.key === SETTINGS_KEYS.healthConnectStepsEnabled
+    );
+
+    return parseBooleanSetting(row?.value);
+  }, [initialSettings.healthConnectStepsEnabled, isLive, rows]);
+
+  const stepsNotificationEnabled = useMemo(() => {
+    if (!isLive) {
+      return initialSettings.stepsNotificationEnabled;
+    }
+
+    const row = rows.find(
+      row => row.key === SETTINGS_KEYS.stepsNotificationEnabled
+    );
+
+    return parseBooleanSetting(row?.value);
+  }, [initialSettings.stepsNotificationEnabled, isLive, rows]);
+
+  const stepGoal = useMemo(() => {
+    if (!isLive) {
+      return initialSettings.stepGoal;
+    }
+
+    const row = rows.find(row => row.key === SETTINGS_KEYS.stepGoal);
+
+    return parseStepGoal(row?.value);
+  }, [initialSettings.stepGoal, isLive, rows]);
+
   const setWeightUnit = useCallback(
     (unit: WeightUnit) => {
       setWeightUnitRepo(db, unit);
@@ -89,12 +134,39 @@ export function useSettings() {
     [db]
   );
 
+  const setHealthConnectStepsEnabled = useCallback(
+    (isEnabled: boolean) => {
+      setHealthConnectStepsEnabledRepo(db, isEnabled);
+    },
+    [db]
+  );
+
+  const setStepsNotificationEnabled = useCallback(
+    (isEnabled: boolean) => {
+      setStepsNotificationEnabledRepo(db, isEnabled);
+    },
+    [db]
+  );
+
+  const setStepGoal = useCallback(
+    (goal: number) => {
+      setStepGoalRepo(db, goal);
+    },
+    [db]
+  );
+
   return {
     weightUnit,
     restTimerDuration,
     themePreference,
+    healthConnectStepsEnabled,
+    stepsNotificationEnabled,
+    stepGoal,
     setWeightUnit,
     setRestTimerDuration,
-    setThemePreference
+    setThemePreference,
+    setHealthConnectStepsEnabled,
+    setStepsNotificationEnabled,
+    setStepGoal
   };
 }

@@ -2,6 +2,11 @@ import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
+import { openStepHealthConnectSettings } from '@/src/features/activity/health-connect';
+import {
+  requestStepNotificationPermission,
+  stopStepNotification
+} from '@/src/features/activity/notifications';
 import { ThemeOptionCard } from '@/src/features/settings/components/theme-option-card';
 import {
   SETTINGS_DEFAULTS,
@@ -10,7 +15,7 @@ import {
 } from '@/src/features/settings/hooks';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import Constants from 'expo-constants';
-import { Switch, View } from 'react-native';
+import { Alert, Switch, View } from 'react-native';
 
 const THEME_OPTIONS: {
   value: ThemePreference;
@@ -39,9 +44,15 @@ export default function SettingsScreen() {
     weightUnit,
     restTimerDuration,
     themePreference,
+    healthConnectStepsEnabled,
+    stepsNotificationEnabled,
+    stepGoal,
     setWeightUnit,
     setRestTimerDuration,
-    setThemePreference
+    setThemePreference,
+    setHealthConnectStepsEnabled,
+    setStepsNotificationEnabled,
+    setStepGoal
   } = useSettings();
   const { colors } = useAppTheme();
 
@@ -51,6 +62,28 @@ export default function SettingsScreen() {
       true: colors.primary
     },
     thumb: colors.primaryForeground
+  };
+
+  const handleStepsNotificationChange = async (isEnabled: boolean) => {
+    if (!isEnabled) {
+      setStepsNotificationEnabled(false);
+      await stopStepNotification();
+
+      return;
+    }
+
+    const isGranted = await requestStepNotificationPermission();
+
+    if (!isGranted) {
+      Alert.alert(
+        'Notification permission needed',
+        "Allow notifications to keep today's steps visible."
+      );
+
+      return;
+    }
+
+    setStepsNotificationEnabled(true);
   };
 
   return (
@@ -178,6 +211,89 @@ export default function SettingsScreen() {
                 </Button>
               </View>
             </View>
+          </CardContent>
+        </Card>
+      </View>
+
+      <View className="mt-6">
+        <Text variant="caption" tone="muted" className="mb-3">
+          Activity
+        </Text>
+        <Card>
+          <CardContent>
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text variant="bodyMedium">Health Connect steps</Text>
+                <Text variant="caption" tone="muted" className="mt-1">
+                  Cache daily step totals from Health Connect
+                </Text>
+              </View>
+              <Switch
+                value={healthConnectStepsEnabled}
+                onValueChange={setHealthConnectStepsEnabled}
+                trackColor={switchColors.track}
+                thumbColor={switchColors.thumb}
+              />
+            </View>
+
+            <View className="border-border mt-4 border-t pt-4">
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1">
+                  <Text variant="bodyMedium">Daily goal</Text>
+                  <Text variant="caption" tone="muted" className="mt-1">
+                    Used for progress bars and notification progress
+                  </Text>
+                </View>
+                <View className="ml-4 flex-row items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    disabled={stepGoal <= 1000}
+                    onPress={() => setStepGoal(Math.max(1000, stepGoal - 500))}
+                  >
+                    <Text variant="h3">−</Text>
+                  </Button>
+                  <Text variant="bodyMedium" className="w-16 text-center">
+                    {new Intl.NumberFormat().format(stepGoal)}
+                  </Text>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    disabled={stepGoal >= 50000}
+                    onPress={() => setStepGoal(Math.min(50000, stepGoal + 500))}
+                  >
+                    <Text variant="h3">+</Text>
+                  </Button>
+                </View>
+              </View>
+            </View>
+
+            <View className="border-border mt-4 border-t pt-4">
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1">
+                  <Text variant="bodyMedium">Persistent step notification</Text>
+                  <Text variant="caption" tone="muted" className="mt-1">
+                    Keep today&apos;s step count visible on Android
+                  </Text>
+                </View>
+                <Switch
+                  value={stepsNotificationEnabled}
+                  onValueChange={value => {
+                    void handleStepsNotificationChange(value);
+                  }}
+                  trackColor={switchColors.track}
+                  thumbColor={switchColors.thumb}
+                />
+              </View>
+            </View>
+
+            <Button
+              variant="secondary"
+              className="mt-4 w-full"
+              onPress={openStepHealthConnectSettings}
+            >
+              Open Health Connect settings
+            </Button>
           </CardContent>
         </Card>
       </View>
