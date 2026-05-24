@@ -345,7 +345,14 @@ App code should not call these outside provider setup:
 
 - Schema lives in `src/db/schema.ts`.
 - Migrations live in `src/db/migrations`.
-- When changing schema, update Drizzle migrations.
+- When changing schema, update `src/db/schema.ts` first, then generate migrations with:
+
+```sh
+npx drizzle-kit generate
+```
+
+- Never write or edit migration SQL, migration snapshots, `_journal.json`, or `migrations.js` by hand.
+- Never manually generate migration files. Always use `npx drizzle-kit generate`.
 - Do not manually patch the local SQLite database.
 
 ## Component Structure
