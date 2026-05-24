@@ -27,7 +27,7 @@ interface CalendarMarkedDate {
 }
 
 const CALENDAR_HEIGHT = 360;
-const CALENDAR_DRAW_DISTANCE_MONTHS = 5;
+const CALENDAR_DRAW_DISTANCE_MONTHS = 4;
 const PAST_SCROLL_RANGE = 24;
 const EMPTY_WORKOUT_MARKS: WorkoutDateMark[] = [];
 
@@ -52,7 +52,6 @@ interface MonthCalendarProps {
   todayKey: string;
   width: number;
   workoutMarks: WorkoutDateMark[];
-  workoutSignature: string;
 }
 
 function parseDateKey(dateKey: string): Date {
@@ -107,21 +106,6 @@ function getWorkoutMarksByMonth(workoutCountByDateKey: Map<string, number>) {
   }
 
   return workoutMarksByMonth;
-}
-
-function getWorkoutSignatureByMonth(
-  workoutMarksByMonth: Map<string, WorkoutDateMark[]>
-) {
-  const workoutSignatureByMonth = new Map<string, string>();
-
-  for (const [monthKey, workoutMarks] of workoutMarksByMonth) {
-    workoutSignatureByMonth.set(
-      monthKey,
-      workoutMarks.map(mark => `${mark.dateKey}:${mark.workoutCount}`).join('|')
-    );
-  }
-
-  return workoutSignatureByMonth;
 }
 
 function getMarkedDatesForMonth({
@@ -247,6 +231,7 @@ const MonthCalendar = memo(
     return (
       <View style={{ height: CALENDAR_HEIGHT, width }}>
         <Calendar
+          key={dateKey}
           disableMonthChange
           firstDay={1}
           hideArrows
@@ -273,7 +258,7 @@ const MonthCalendar = memo(
       prevProps.primaryForegroundColor !== nextProps.primaryForegroundColor ||
       prevProps.todayKey !== nextProps.todayKey ||
       prevProps.width !== nextProps.width ||
-      prevProps.workoutSignature !== nextProps.workoutSignature
+      prevProps.workoutMarks !== nextProps.workoutMarks
     ) {
       return false;
     }
@@ -309,10 +294,6 @@ export function WorkoutHistoryCalendar({
   const workoutMarksByMonth = useMemo(
     () => getWorkoutMarksByMonth(workoutCountByDateKey),
     [workoutCountByDateKey]
-  );
-  const workoutSignatureByMonth = useMemo(
-    () => getWorkoutSignatureByMonth(workoutMarksByMonth),
-    [workoutMarksByMonth]
   );
 
   const calendarTheme = useMemo(
@@ -353,7 +334,6 @@ export function WorkoutHistoryCalendar({
         workoutMarks={
           workoutMarksByMonth.get(item.monthKey) ?? EMPTY_WORKOUT_MARKS
         }
-        workoutSignature={workoutSignatureByMonth.get(item.monthKey) ?? ''}
       />
     ),
     [
@@ -364,8 +344,7 @@ export function WorkoutHistoryCalendar({
       primaryForeground,
       selectedDateKey,
       todayKey,
-      workoutMarksByMonth,
-      workoutSignatureByMonth
+      workoutMarksByMonth
     ]
   );
 

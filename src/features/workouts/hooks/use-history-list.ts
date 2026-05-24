@@ -77,6 +77,6 @@ export function useHistoryList(selectedDateKey: string) {
     workoutRows,
     workoutCountByDateKey,
     setCountByWorkoutId,
-    isLoading: !workoutResult.isLive
+    isLoading: !workoutDateResult.isLive
   };
 }
