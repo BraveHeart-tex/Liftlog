@@ -20,6 +20,7 @@ Tech stack:
 - Optimise for mobile UX: large touch targets, fast interactions, minimal typing, readable density.
 - Prefer working features over perfect architecture. Iterate later.
 - Use the existing project patterns before introducing new ones.
+- Avoid code comments unless they are absolutely necessary to explain a non-obvious edge case or decision.
 - Do not add production dependencies without confirmation.
 
 ## TypeScript
