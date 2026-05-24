@@ -1,0 +1,4 @@
+packages:
+  - liftlog
+overrides:
+  'lightningcss': '1.30.1'
