@@ -1,20 +1,35 @@
 import type { Set } from '@/src/db';
-import { formatWeightForUnit, type WeightUnit } from '@/src/lib/utils/weight';
+import {
+  areSameTrackingValues,
+  formatTrackingValue,
+  getSetValues,
+  resolveTrackingType,
+  type TrackingType
+} from '@/src/features/progress/tracking';
+import type { WeightUnit } from '@/src/lib/utils/weight';
 
 export function getCompletedSets(sets: Set[]) {
   return sets.filter(set => set.status === 'completed');
 }
 
-export function formatCompletedSets(sets: Set[], unit: WeightUnit = 'kg') {
+export function formatCompletedSets(
+  sets: Set[],
+  unit: WeightUnit = 'kg',
+  trackingType: TrackingType = 'weight_reps'
+) {
   if (sets.length === 0) {
     return undefined;
   }
+
+  const resolvedTrackingType = resolveTrackingType(trackingType);
 
   return sets
     .reduce<string[]>((parts, set, index) => {
       const previousSet = index > 0 ? sets[index - 1] : undefined;
       const hasSameWeightAsPrevious =
-        previousSet && previousSet.weightKg === set.weightKg;
+        previousSet &&
+        resolvedTrackingType === 'weight_reps' &&
+        previousSet.weightKg === set.weightKg;
 
       if (hasSameWeightAsPrevious) {
         parts.push(String(set.reps));
@@ -23,7 +38,7 @@ export function formatCompletedSets(sets: Set[], unit: WeightUnit = 'kg') {
       }
 
       parts.push(
-        `${formatWeightForUnit(set.weightKg, unit)} ${unit} x ${set.reps}`
+        formatTrackingValue(resolvedTrackingType, getSetValues(set), unit)
       );
 
       return parts;
@@ -35,8 +50,7 @@ interface DisplaySetGroup {
   type: 'single' | 'range';
   startIndex: number;
   endIndex: number;
-  weightKg: number;
-  reps: number;
+  set: Set;
   setIds: string[];
 }
 
@@ -46,9 +60,11 @@ interface GetDisplaySetGroupsOptions {
 
 export function getDisplaySetGroups(
   sets: Set[],
-  options: GetDisplaySetGroupsOptions = {}
+  options: GetDisplaySetGroupsOptions = {},
+  trackingType: TrackingType = 'weight_reps'
 ): DisplaySetGroup[] {
   const groups: DisplaySetGroup[] = [];
+  const resolvedTrackingType = resolveTrackingType(trackingType);
 
   for (const set of sets) {
     const previousGroup = groups.at(-1);
@@ -62,8 +78,7 @@ export function getDisplaySetGroups(
 
     if (
       previousGroup &&
-      previousGroup.weightKg === set.weightKg &&
-      previousGroup.reps === set.reps &&
+      areSameTrackingValues(resolvedTrackingType, previousGroup.set, set) &&
       isCurrentPr === isPreviousPr
     ) {
       previousGroup.endIndex = setIndex;
@@ -75,8 +90,7 @@ export function getDisplaySetGroups(
       type: 'single',
       startIndex: setIndex,
       endIndex: setIndex,
-      weightKg: set.weightKg,
-      reps: set.reps,
+      set,
       setIds: [set.id]
     });
   }

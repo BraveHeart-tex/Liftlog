@@ -20,6 +20,7 @@ export const exercises = sqliteTable(
       .$defaultFn(() => generateUuid()),
     name: text('name').notNull(),
     category: text('category').notNull(),
+    trackingType: text('tracking_type').notNull().default('weight_reps'),
     primaryMuscles: text('primary_muscles').notNull().default('[]'),
     secondaryMuscles: text('secondary_muscles').notNull().default('[]'),
     isCustom: integer('is_custom').notNull().default(0),
@@ -135,8 +136,10 @@ export const sets = sqliteTable(
       .notNull()
       .references(() => workoutExercises.id, { onDelete: 'cascade' }),
     order: integer('order').notNull(),
-    weightKg: real('weight_kg').notNull(),
-    reps: integer('reps').notNull(),
+    weightKg: real('weight_kg'),
+    reps: integer('reps'),
+    distanceMeters: real('distance_meters'),
+    durationSeconds: integer('duration_seconds'),
     rpe: integer('rpe'),
     status: text('status').notNull().default('pending'),
     completedAt: integer('completed_at')
@@ -162,8 +165,12 @@ export const personalRecords = sqliteTable(
     setId: text('set_id')
       .notNull()
       .references(() => sets.id, { onDelete: 'cascade' }),
-    weightKg: real('weight_kg').notNull(),
-    reps: integer('reps').notNull(),
+    trackingType: text('tracking_type').notNull().default('weight_reps'),
+    score: real('score').notNull(),
+    weightKg: real('weight_kg'),
+    reps: integer('reps'),
+    distanceMeters: real('distance_meters'),
+    durationSeconds: integer('duration_seconds'),
     estimated1rm: real('estimated_1rm').notNull(),
     achievedAt: integer('achieved_at').notNull()
   },

@@ -10,15 +10,13 @@ import { ExerciseDetailActionsSheet } from '@/src/features/exercises/components/
 import { ExerciseProgressChart } from '@/src/features/exercises/components/exercise-progress-chart';
 import {
   useExerciseActions,
-  useExerciseDetail,
-  type ExercisePersonalRecordSummaryItem
+  useExerciseDetail
 } from '@/src/features/exercises/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { formatWorkoutDate } from '@/src/lib/utils/date';
 import { formatMuscleList } from '@/src/lib/utils/muscle';
 import { getRouteParamId } from '@/src/lib/utils/route';
 import { toTitleCase } from '@/src/lib/utils/string';
-import { formatWeightForUnit, type WeightUnit } from '@/src/lib/utils/weight';
 import { router, useLocalSearchParams } from 'expo-router';
 import { EllipsisVerticalIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
@@ -61,23 +59,6 @@ function formatUsageBreakdown({
   return `${parts[0]} and ${parts[1]}`;
 }
 
-function formatRecordValue(
-  record: ExercisePersonalRecordSummaryItem,
-  weightUnit: WeightUnit
-) {
-  if (record.id === 'best-set' && record.weightKg !== undefined) {
-    return `${formatWeightForUnit(record.weightKg, weightUnit)} ${weightUnit} x ${
-      record.reps ?? 0
-    }`;
-  }
-
-  if (record.id === 'heaviest-weight' && record.weightKg !== undefined) {
-    return `${formatWeightForUnit(record.weightKg, weightUnit)} ${weightUnit}`;
-  }
-
-  return record.count === 1 ? '1 set' : `${record.count ?? 0} sets`;
-}
-
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const exerciseId = getRouteParamId(id);
@@ -99,6 +80,7 @@ export default function ExerciseDetailScreen() {
     primaryMuscles,
     secondaryMuscles,
     weightUnit,
+    trackingType,
     isLoading
   } = useExerciseDetail(exerciseId);
   const {
@@ -366,6 +348,7 @@ export default function ExerciseDetailScreen() {
         <ExerciseProgressChart
           points={progressPoints}
           weightUnit={weightUnit}
+          trackingType={trackingType}
         />
 
         <Card className="mt-4">
@@ -393,9 +376,7 @@ export default function ExerciseDetailScreen() {
                     )}
                   >
                     <View className="flex-1">
-                      <Text variant="bodyMedium">
-                        {formatRecordValue(record, weightUnit)}
-                      </Text>
+                      <Text variant="bodyMedium">{record.value}</Text>
                       <Text variant="caption" tone="muted" className="mt-1">
                         {record.label}
                       </Text>
@@ -460,17 +441,9 @@ export default function ExerciseDetailScreen() {
                     </View>
 
                     <View className="flex-1">
-                      <Text variant="bodyMedium">
-                        {formatWeightForUnit(performance.weightKg, weightUnit)}{' '}
-                        {weightUnit} x {performance.reps}
-                      </Text>
+                      <Text variant="bodyMedium">{performance.value}</Text>
                       <Text variant="caption" tone="muted" className="mt-1">
-                        Est. 1RM{' '}
-                        {formatWeightForUnit(
-                          performance.estimated1rm,
-                          weightUnit
-                        )}{' '}
-                        {weightUnit} ·{' '}
+                        {performance.scoreLabel} ·{' '}
                         {formatWorkoutDate(performance.achievedAt)}
                       </Text>
                     </View>

@@ -1,12 +1,17 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { Exercise, Set } from '@/src/db/schema';
+import { getExerciseByIdQuery } from '@/src/features/exercises/repository';
 import {
   buildExerciseHistory,
-  computeEstimated1RM,
   getExerciseHistorySetsQuery,
   getExerciseHistoryWorkoutsQuery,
   getPersonalRecordsByExerciseQuery
 } from '@/src/features/progress/repository';
+import {
+  getSetScore,
+  resolveTrackingType,
+  type TrackingType
+} from '@/src/features/progress/tracking';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { useMemo } from 'react';
 
@@ -18,16 +23,23 @@ const MAX_HISTORY_ITEM_LIMIT = 20;
 const VISIBLE_WORKOUT_LIMIT = 10;
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
-function getBestEstimated1RM(sets: Set[]) {
+function getBestScore(sets: Set[], trackingType: TrackingType) {
   return sets.reduce((best, set) => {
-    const estimated1rm = computeEstimated1RM(set.weightKg, set.reps);
+    const score = getSetScore(trackingType, set);
 
-    return Math.max(best, estimated1rm);
+    return Math.max(best, score ?? 0);
   }, 0);
 }
 
 export function useExerciseHistoryTab(exerciseId: Exercise['id']) {
   const db = useDrizzle();
+  const exerciseResult = useLiveWithFallback(
+    getExerciseByIdQuery(db, exerciseId),
+    [db, exerciseId]
+  );
+  const trackingType = resolveTrackingType(
+    exerciseResult.data[0]?.trackingType
+  );
   const prResult = useLiveWithFallback(
     getPersonalRecordsByExerciseQuery(db, exerciseId),
     [db, exerciseId]
@@ -119,26 +131,29 @@ export function useExerciseHistoryTab(exerciseId: Exercise['id']) {
         ? (setsByWorkoutId.get(row.workout.id) ?? [])
         : []
     );
-    const currentBestEstimated1RM = getBestEstimated1RM(
-      getCompletedSets(currentSets)
+    const currentBestScore = getBestScore(
+      getCompletedSets(currentSets),
+      trackingType
     );
-    const previousBestEstimated1RM = getBestEstimated1RM(
-      getCompletedSets(previousSets)
+    const previousBestScore = getBestScore(
+      getCompletedSets(previousSets),
+      trackingType
     );
 
-    if (currentBestEstimated1RM === 0 || previousBestEstimated1RM === 0) {
+    if (currentBestScore === 0 || previousBestScore === 0) {
       return null;
     }
 
     return {
-      deltaKg: currentBestEstimated1RM - previousBestEstimated1RM
+      delta: currentBestScore - previousBestScore
     };
-  }, [setResult.data, workoutRows]);
+  }, [setResult.data, trackingType, workoutRows]);
 
   return {
     history,
     latestPersonalRecord: prResult.data[0],
     monthlyProgression,
-    prSetIds
+    prSetIds,
+    trackingType
   };
 }

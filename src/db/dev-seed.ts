@@ -280,7 +280,10 @@ function buildSetRows({
 
 function maybeCreatePr(
   bestByExerciseId: Map<string, number>,
-  record: Omit<NewPersonalRecord, 'estimated1rm'> & { estimated1rm: number }
+  record: Omit<NewPersonalRecord, 'estimated1rm' | 'score'> & {
+    estimated1rm: number;
+    score: number;
+  }
 ): NewPersonalRecord | null {
   const currentBest = bestByExerciseId.get(record.exerciseId) ?? 0;
 
@@ -385,10 +388,15 @@ export function runDevSeedIfNeeded(db: DrizzleDb): void {
 
         for (const setRow of setRows) {
           const set = tx.insert(sets).values(setRow).returning().get();
-          const estimated1rm = computeEstimated1RM(set.weightKg, set.reps);
+          const estimated1rm = computeEstimated1RM(
+            set.weightKg ?? 0,
+            set.reps ?? 0
+          );
           const personalRecord = maybeCreatePr(bestPrByExerciseId, {
             exerciseId: exercise.id,
             setId: set.id,
+            trackingType: 'weight_reps',
+            score: estimated1rm,
             weightKg: set.weightKg,
             reps: set.reps,
             estimated1rm,

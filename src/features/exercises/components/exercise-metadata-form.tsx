@@ -7,12 +7,18 @@ import {
   MUSCLE_GROUP,
   type ExerciseCategory
 } from '@/src/features/exercises/constants';
+import {
+  TRACKING_TYPE_DEFINITIONS,
+  TRACKING_TYPES,
+  type TrackingType
+} from '@/src/features/progress/tracking';
 import { toTitleCase } from '@/src/lib/utils/string';
 import { useEffect, useRef } from 'react';
 import { Keyboard, View, type LayoutChangeEvent } from 'react-native';
 
 interface ExerciseMetadataFormProps {
   category: ExerciseCategory;
+  trackingType: TrackingType;
   selectedPrimaryMuscles: string[];
   selectedSecondaryMuscles: string[];
   name?: string;
@@ -24,6 +30,7 @@ interface ExerciseMetadataFormProps {
   onScrollToError?: (y: number) => void;
   setName?: (name: string) => void;
   setCategory: (category: ExerciseCategory) => void;
+  setTrackingType: (trackingType: TrackingType) => void;
   togglePrimaryMuscle: (muscle: string) => void;
   toggleSecondaryMuscle: (muscle: string) => void;
 }
@@ -125,6 +132,7 @@ const ERROR_SCROLL_OFFSET = 16;
 
 export function ExerciseMetadataForm({
   category,
+  trackingType,
   selectedPrimaryMuscles,
   selectedSecondaryMuscles,
   name,
@@ -136,6 +144,7 @@ export function ExerciseMetadataForm({
   onScrollToError,
   setName,
   setCategory,
+  setTrackingType,
   togglePrimaryMuscle,
   toggleSecondaryMuscle
 }: ExerciseMetadataFormProps) {
@@ -248,6 +257,21 @@ export function ExerciseMetadataForm({
               </ChoiceChip>
             );
           })}
+        </View>
+      </View>
+
+      <View className="mt-6">
+        <Text variant="small">Tracking</Text>
+        <View className="mt-3 flex-row flex-wrap gap-2">
+          {TRACKING_TYPES.map(option => (
+            <ChoiceChip
+              key={option}
+              selected={trackingType === option}
+              onPress={() => setTrackingType(option)}
+            >
+              {TRACKING_TYPE_DEFINITIONS[option].label}
+            </ChoiceChip>
+          ))}
         </View>
       </View>
 

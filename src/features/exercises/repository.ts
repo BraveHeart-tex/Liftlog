@@ -6,6 +6,7 @@ import {
   type Exercise,
   type NewExercise
 } from '@/src/db/schema';
+import { rebuildPersonalRecordsForExercise } from '@/src/features/progress/repository';
 import { and, asc, eq, inArray, ne, sql } from 'drizzle-orm';
 import type { InferColumnsDataTypes } from 'drizzle-orm/column';
 
@@ -13,6 +14,7 @@ const exerciseListFields = {
   id: exercises.id,
   name: exercises.name,
   category: exercises.category,
+  trackingType: exercises.trackingType,
   primaryMuscles: exercises.primaryMuscles,
   secondaryMuscles: exercises.secondaryMuscles,
   isCustom: exercises.isCustom,
@@ -24,6 +26,7 @@ export type ExerciseListItem = InferColumnsDataTypes<typeof exerciseListFields>;
 
 export interface CustomExerciseDetailsUpdate {
   category: Exercise['category'];
+  trackingType: Exercise['trackingType'];
   primaryMuscles: string[];
   secondaryMuscles: string[];
 }
@@ -150,11 +153,18 @@ export function updateCustomExerciseDetails(
     return undefined;
   }
 
-  return updateExercise(db, id, {
+  const updatedExercise = updateExercise(db, id, {
     category: details.category,
+    trackingType: details.trackingType,
     primaryMuscles: JSON.stringify(details.primaryMuscles),
     secondaryMuscles: JSON.stringify(details.secondaryMuscles)
   });
+
+  if (updatedExercise && exercise.trackingType !== details.trackingType) {
+    rebuildPersonalRecordsForExercise(db, id);
+  }
+
+  return updatedExercise;
 }
 
 function archiveExercise(db: DrizzleDb, id: Exercise['id']): void {

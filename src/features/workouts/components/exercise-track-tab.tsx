@@ -27,6 +27,7 @@ export function ExerciseTrackTab({
     editingSet,
     setEditingSetId,
     prSetIds,
+    trackingType,
     progressionSuggestion
   } = useExerciseTrackTab(item);
   const [prefillValues, setPrefillValues] = useState<
@@ -76,6 +77,7 @@ export function ExerciseTrackTab({
         onUseSuggestion={handleUseSuggestion}
       />
       <SetForm
+        trackingType={trackingType}
         editingSet={editingSet}
         prefillValues={prefillValues}
         onAddSet={handleAddSet}
@@ -114,6 +116,7 @@ export function ExerciseTrackTab({
                   setNumber={index + 1}
                   isPR={prSetIds.has(set.id)}
                   isEditing={set.id === editingSetId}
+                  trackingType={trackingType}
                   onEdit={() =>
                     setEditingSetId(prev => (prev === set.id ? null : set.id))
                   }

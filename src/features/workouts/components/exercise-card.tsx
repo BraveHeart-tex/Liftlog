@@ -1,5 +1,6 @@
 import { Text } from '@/src/components/ui/text';
 import { useSettings } from '@/src/features/settings/hooks';
+import { resolveTrackingType } from '@/src/features/progress/tracking';
 import { useRemoveWorkoutExercise } from '@/src/features/workouts/hooks';
 import { usePressScale } from '@/src/lib/animations/use-press-scale';
 import { cn } from '@/src/lib/utils/cn';
@@ -151,6 +152,7 @@ export function ExerciseCard({ item, className }: ExerciseCardProps) {
                 exerciseName={item.exercise?.name ?? 'Unknown exercise'}
                 completedSets={completedSets}
                 weightUnit={weightUnit}
+                trackingType={resolveTrackingType(item.exercise?.trackingType)}
                 emptyText="Tap to log sets"
                 className="p-4"
               />

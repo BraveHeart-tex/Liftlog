@@ -91,7 +91,11 @@ export function useWorkoutHistoryDetail(workoutId: string | undefined) {
 
   const totalVolume = useMemo(() => {
     const volume = setRows.reduce((total, set) => {
-      if (set.status !== 'completed') {
+      if (
+        set.status !== 'completed' ||
+        set.weightKg === null ||
+        set.reps === null
+      ) {
         return total;
       }
 

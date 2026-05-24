@@ -8,6 +8,7 @@ import { WorkoutDetailActionsSheet } from '@/src/features/workouts/components/wo
 import { WorkoutDetailHeader } from '@/src/features/workouts/components/workout-detail-header';
 import { WorkoutHistoryExerciseCard } from '@/src/features/workouts/components/workout-history-exercise-card';
 import { WorkoutMetricCard } from '@/src/features/workouts/components/workout-metric-card';
+import { resolveTrackingType } from '@/src/features/progress/tracking';
 import {
   useRepeatWorkout,
   useWorkoutDelete,
@@ -269,6 +270,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
                 exerciseName={exercise?.name ?? 'Unknown exercise'}
                 completedSets={completedSets}
                 weightUnit={weightUnit}
+                trackingType={resolveTrackingType(exercise?.trackingType)}
               />
             );
           })

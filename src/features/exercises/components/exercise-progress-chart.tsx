@@ -1,8 +1,13 @@
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Text } from '@/src/components/ui/text';
 import type { ExerciseProgressPoint } from '@/src/features/exercises/hooks/use-exercise-detail';
+import {
+  TRACKING_TYPE_DEFINITIONS,
+  formatScore,
+  type TrackingType
+} from '@/src/features/progress/tracking';
 import { formatWorkoutDate } from '@/src/lib/utils/date';
-import { formatWeightForUnit, type WeightUnit } from '@/src/lib/utils/weight';
+import type { WeightUnit } from '@/src/lib/utils/weight';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import {
   Circle,
@@ -24,11 +29,12 @@ import {
 interface ExerciseProgressChartProps {
   points: ExerciseProgressPoint[];
   weightUnit: WeightUnit;
+  trackingType: TrackingType;
 }
 
 type ChartPoint = Record<string, number> & {
   date: number;
-  bestWeightKg: number;
+  value: number;
 };
 
 function formatAxisDate(timestamp: number) {
@@ -39,7 +45,7 @@ function formatAxisDate(timestamp: number) {
 }
 
 function getChartDomain(points: ExerciseProgressPoint[]) {
-  const values = points.map(point => point.bestWeightKg);
+  const values = points.map(point => point.value);
   const min = Math.min(...values);
   const max = Math.max(...values);
 
@@ -54,18 +60,19 @@ function getChartDomain(points: ExerciseProgressPoint[]) {
 
 export function ExerciseProgressChart({
   points,
-  weightUnit
+  weightUnit,
+  trackingType
 }: ExerciseProgressChartProps) {
   const { colors } = useAppTheme();
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const { state: pressState, isActive: isPressActive } = useChartPressState({
     x: points[0]?.date ?? 0,
-    y: { bestWeightKg: points[0]?.bestWeightKg ?? 0 }
+    y: { value: points[0]?.value ?? 0 }
   });
   const axisFont = matchFont({ fontFamily: 'Inter', fontSize: 10 });
   const chartData: ChartPoint[] = points.map(point => ({
     date: point.date,
-    bestWeightKg: point.bestWeightKg
+    value: point.value
   }));
   const latestPoint = points.at(-1);
   const selectedPoint =
@@ -96,7 +103,7 @@ export function ExerciseProgressChart({
               Progress over time
             </Text>
             <Text variant="small" tone="muted" className="mt-2">
-              Best completed set weight per workout.
+              Best completed set score per workout.
             </Text>
           </View>
 
@@ -114,14 +121,10 @@ export function ExerciseProgressChart({
 
                 <View className="items-end">
                   <Text variant="caption" tone="muted">
-                    Weight
+                    {TRACKING_TYPE_DEFINITIONS[trackingType].scoreLabel}
                   </Text>
                   <Text variant="bodyMedium" className="text-primary mt-1">
-                    {formatWeightForUnit(
-                      selectedPoint.bestWeightKg,
-                      weightUnit
-                    )}{' '}
-                    {weightUnit}
+                    {selectedPoint.valueLabel}
                   </Text>
                 </View>
               </View>
@@ -145,10 +148,10 @@ export function ExerciseProgressChart({
         ) : (
           <>
             <View className="mt-5 h-56">
-              <CartesianChart<ChartPoint, 'date', 'bestWeightKg'>
+              <CartesianChart<ChartPoint, 'date', 'value'>
                 data={chartData}
                 xKey="date"
-                yKeys={['bestWeightKg']}
+                yKeys={['value']}
                 chartPressState={pressState}
                 domain={{ y: getChartDomain(points) }}
                 domainPadding={{ left: 12, right: 12, top: 8, bottom: 4 }}
@@ -166,32 +169,32 @@ export function ExerciseProgressChart({
                   {
                     font: axisFont,
                     formatYLabel: value =>
-                      `${formatWeightForUnit(Number(value), weightUnit)} ${weightUnit}`,
+                      formatScore(trackingType, Number(value), weightUnit),
                     labelColor: colors.mutedForeground,
                     lineColor: colors.border,
                     lineWidth: 1,
                     tickCount: 4,
-                    yKeys: ['bestWeightKg']
+                    yKeys: ['value']
                   }
                 ]}
               >
                 {({ points: chartPoints, chartBounds }) => {
                   const selectedPoint =
                     isPressActive && selectedIndex >= 0
-                      ? chartPoints.bestWeightKg[selectedIndex]
+                      ? chartPoints.value[selectedIndex]
                       : undefined;
 
                   return (
                     <>
                       <Line
-                        points={chartPoints.bestWeightKg}
+                        points={chartPoints.value}
                         color={colors.primary}
                         strokeWidth={2}
                         curveType="natural"
                         animate={{ type: 'timing', duration: 350 }}
                       />
                       <Scatter
-                        points={chartPoints.bestWeightKg}
+                        points={chartPoints.value}
                         color={colors.primary}
                         radius={4.5}
                       />
@@ -228,7 +231,7 @@ export function ExerciseProgressChart({
               <View className="flex-row items-center gap-2">
                 <View className="bg-primary h-2 w-2 rounded-full" />
                 <Text variant="caption" tone="muted">
-                  Best set weight
+                  {TRACKING_TYPE_DEFINITIONS[trackingType].scoreLabel}
                 </Text>
               </View>
             </View>

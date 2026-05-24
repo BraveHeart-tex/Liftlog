@@ -1,11 +1,14 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { Set } from '@/src/db/schema';
 import {
-  computeEstimated1RM,
   getPersonalRecordsByExercise,
   maybeRebuildPersonalRecords,
   rebuildPersonalRecordsForExercise
 } from '@/src/features/progress/repository';
+import {
+  getSetScore,
+  resolveTrackingType
+} from '@/src/features/progress/tracking';
 import {
   createSet,
   deleteSet,
@@ -28,18 +31,25 @@ export function useExerciseTrackActions({
 }: UseExerciseTrackActionsParams) {
   const db = useDrizzle();
   const exerciseId = item.workoutExercise.exerciseId;
+  const trackingType = resolveTrackingType(item.exercise?.trackingType);
 
   const checkAndCreatePR = useCallback(
-    (setId: Set['id'], weightKg: number, reps: number): boolean => {
-      if (weightKg <= 0 || reps <= 0) {
+    (setId: Set['id'], values: SetValues): boolean => {
+      const score = getSetScore(trackingType, {
+        weightKg: values.weightKg ?? null,
+        reps: values.reps ?? null,
+        distanceMeters: values.distanceMeters ?? null,
+        durationSeconds: values.durationSeconds ?? null
+      });
+
+      if (score === null) {
         rebuildPersonalRecordsForExercise(db, exerciseId);
 
         return false;
       }
 
-      const estimated1rm = computeEstimated1RM(weightKg, reps);
       const currentPR = getPersonalRecordsByExercise(db, exerciseId)[0];
-      const isNewPR = !currentPR || estimated1rm > currentPR.estimated1rm;
+      const isNewPR = !currentPR || score > currentPR.score;
 
       rebuildPersonalRecordsForExercise(db, exerciseId);
 
@@ -49,36 +59,40 @@ export function useExerciseTrackActions({
 
       return getPersonalRecordsByExercise(db, exerciseId)[0]?.setId === setId;
     },
-    [db, exerciseId]
+    [db, exerciseId, trackingType]
   );
 
   const checkAndCreatePRForNewSet = useCallback(
-    (setId: Set['id'], weightKg: number, reps: number): boolean => {
-      if (weightKg <= 0 || reps <= 0) {
+    (setId: Set['id'], values: SetValues): boolean => {
+      const score = getSetScore(trackingType, {
+        weightKg: values.weightKg ?? null,
+        reps: values.reps ?? null,
+        distanceMeters: values.distanceMeters ?? null,
+        durationSeconds: values.durationSeconds ?? null
+      });
+
+      if (score === null) {
         return false;
       }
 
-      const estimated1rm = computeEstimated1RM(weightKg, reps);
-
-      maybeRebuildPersonalRecords(db, exerciseId, estimated1rm);
+      maybeRebuildPersonalRecords(db, exerciseId, score);
 
       return getPersonalRecordsByExercise(db, exerciseId)[0]?.setId === setId;
     },
-    [db, exerciseId]
+    [db, exerciseId, trackingType]
   );
 
   const addSet = useCallback(
-    ({ weightKg, reps }: SetValues) => {
+    (values: SetValues) => {
       const newSet = createSet(db, {
         workoutExerciseId: item.workoutExercise.id,
-        weightKg,
-        reps,
+        ...values,
         order: item.sets.length,
         status: 'completed',
         completedAt: Date.now()
       });
 
-      const isPR = checkAndCreatePRForNewSet(newSet.id, weightKg, reps);
+      const isPR = checkAndCreatePRForNewSet(newSet.id, values);
 
       if (isPR) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -90,14 +104,17 @@ export function useExerciseTrackActions({
   );
 
   const updateExistingSet = useCallback(
-    ({ setId, weightKg, reps }: SetValues & { setId: Set['id'] }) => {
+    ({ setId, ...values }: SetValues & { setId: Set['id'] }) => {
       updateSet(db, setId, {
-        weightKg,
-        reps,
+        weightKg: null,
+        reps: null,
+        distanceMeters: null,
+        durationSeconds: null,
+        ...values,
         status: 'completed',
         completedAt: Date.now()
       });
-      const isPR = checkAndCreatePR(setId, weightKg, reps);
+      const isPR = checkAndCreatePR(setId, values);
 
       if (isPR) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

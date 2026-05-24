@@ -1,17 +1,20 @@
 import type { NewExercise } from '@/src/db/schema';
 import type { ExerciseCategory } from '@/src/features/exercises/constants';
 import { useExercises } from '@/src/features/exercises/hooks/use-exercises';
+import type { TrackingType } from '@/src/features/progress/tracking';
 import { useCallback, useState } from 'react';
 
 interface UseCustomExerciseFormResult {
   name: string;
   category: ExerciseCategory;
+  trackingType: TrackingType;
   selectedPrimaryMuscles: string[];
   selectedSecondaryMuscles: string[];
   nameError?: string;
   primaryMusclesError?: string;
   setName: (name: string) => void;
   setCategory: (category: ExerciseCategory) => void;
+  setTrackingType: (trackingType: TrackingType) => void;
   togglePrimaryMuscle: (muscle: string) => void;
   toggleSecondaryMuscle: (muscle: string) => void;
   submit: () => NewExercise | null;
@@ -23,6 +26,7 @@ interface UseCustomExerciseFormParams {
 }
 
 const DEFAULT_CATEGORY: ExerciseCategory = 'barbell';
+const DEFAULT_TRACKING_TYPE: TrackingType = 'weight_reps';
 
 export function useCustomExerciseForm({
   initialName = ''
@@ -30,6 +34,9 @@ export function useCustomExerciseForm({
   const exercises = useExercises();
   const [name, setName] = useState(initialName);
   const [category, setCategory] = useState<ExerciseCategory>(DEFAULT_CATEGORY);
+  const [trackingType, setTrackingType] = useState<TrackingType>(
+    DEFAULT_TRACKING_TYPE
+  );
   const [selectedPrimaryMuscles, setSelectedPrimaryMuscles] = useState<
     string[]
   >([]);
@@ -97,6 +104,7 @@ export function useCustomExerciseForm({
     return {
       name: trimmedName,
       category,
+      trackingType,
       primaryMuscles: JSON.stringify(selectedPrimaryMuscles),
       secondaryMuscles: JSON.stringify(selectedSecondaryMuscles),
       isCustom: 1,
@@ -107,12 +115,14 @@ export function useCustomExerciseForm({
     hasDuplicateName,
     selectedPrimaryMuscles,
     selectedSecondaryMuscles,
+    trackingType,
     trimmedName
   ]);
 
   const reset = useCallback(() => {
     setName(initialName);
     setCategory(DEFAULT_CATEGORY);
+    setTrackingType(DEFAULT_TRACKING_TYPE);
     setSelectedPrimaryMuscles([]);
     setSelectedSecondaryMuscles([]);
     setAttemptedSubmit(false);
@@ -121,12 +131,14 @@ export function useCustomExerciseForm({
   return {
     name,
     category,
+    trackingType,
     selectedPrimaryMuscles,
     selectedSecondaryMuscles,
     nameError,
     primaryMusclesError,
     setName,
     setCategory,
+    setTrackingType,
     togglePrimaryMuscle,
     toggleSecondaryMuscle,
     submit,

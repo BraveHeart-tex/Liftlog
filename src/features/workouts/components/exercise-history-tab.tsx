@@ -2,10 +2,15 @@ import { StyledFlashList } from '@/src/components/styled/flash-list';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import type { Exercise } from '@/src/db/schema';
+import {
+  formatPersonalRecordValue,
+  formatScore,
+  type TrackingType
+} from '@/src/features/progress/tracking';
 import { useSettings } from '@/src/features/settings/hooks';
 import { useExerciseHistoryTab } from '@/src/features/workouts/hooks';
 import { cn } from '@/src/lib/utils/cn';
-import { formatWeightForUnit, type WeightUnit } from '@/src/lib/utils/weight';
+import type { WeightUnit } from '@/src/lib/utils/weight';
 import {
   MinusIcon,
   StarIcon,
@@ -41,39 +46,45 @@ type MonthlyProgression = ReturnType<
   typeof useExerciseHistoryTab
 >['monthlyProgression'];
 
-function formatSignedWeight(valueKg: number, unit: WeightUnit) {
-  const formattedValue = formatWeightForUnit(Math.abs(valueKg), unit);
-  const sign = valueKg > 0 ? '+' : valueKg < 0 ? '-' : '';
+function formatSignedScore(
+  trackingType: TrackingType,
+  value: number,
+  unit: WeightUnit
+) {
+  const formattedValue = formatScore(trackingType, Math.abs(value), unit);
+  const sign = value > 0 ? '+' : value < 0 ? '-' : '';
 
-  return `${sign}${formattedValue} ${unit}`;
+  return `${sign}${formattedValue}`;
 }
 
-function getProgressionIcon(deltaKg: number | null) {
-  if (deltaKg === null || deltaKg === 0) {
+function getProgressionIcon(delta: number | null) {
+  if (delta === null || delta === 0) {
     return MinusIcon;
   }
 
-  return deltaKg > 0 ? TrendingUpIcon : TrendingDownIcon;
+  return delta > 0 ? TrendingUpIcon : TrendingDownIcon;
 }
 
-function getProgressionToneClassName(deltaKg: number | null) {
-  if (deltaKg === null || deltaKg === 0) {
+function getProgressionToneClassName(delta: number | null) {
+  if (delta === null || delta === 0) {
     return 'text-progress-same';
   }
 
-  return deltaKg > 0 ? 'text-progress-up' : 'text-progress-down';
+  return delta > 0 ? 'text-progress-up' : 'text-progress-down';
 }
 
 function ExerciseHistoryWidgets({
   latestPersonalRecord,
   monthlyProgression,
+  trackingType,
   weightUnit
 }: {
   latestPersonalRecord: LatestPersonalRecord;
   monthlyProgression: MonthlyProgression;
+  trackingType: TrackingType;
   weightUnit: WeightUnit;
 }) {
-  const progressionDelta = monthlyProgression?.deltaKg ?? null;
+  const progressionDelta = monthlyProgression?.delta ?? null;
   const ProgressionIcon = getProgressionIcon(progressionDelta);
   const progressionToneClassName =
     getProgressionToneClassName(progressionDelta);
@@ -87,10 +98,7 @@ function ExerciseHistoryWidgets({
             <View className="min-w-0 flex-1">
               <Text variant="bodyMedium" numberOfLines={1}>
                 {latestPersonalRecord
-                  ? `${formatWeightForUnit(
-                      latestPersonalRecord.weightKg,
-                      weightUnit
-                    )} ${weightUnit} × ${latestPersonalRecord.reps}`
+                  ? formatPersonalRecordValue(latestPersonalRecord, weightUnit)
                   : 'No PR yet'}
               </Text>
               <Text variant="caption" tone="muted" className="mt-1">
@@ -114,8 +122,9 @@ function ExerciseHistoryWidgets({
                 className={cn(monthlyProgression && progressionToneClassName)}
               >
                 {monthlyProgression
-                  ? `${formatSignedWeight(
-                      monthlyProgression.deltaKg,
+                  ? `${formatSignedScore(
+                      trackingType,
+                      monthlyProgression.delta,
                       weightUnit
                     )} from last month`
                   : 'No last month data'}
@@ -137,8 +146,13 @@ export function ExerciseHistoryTab({
   onVerticalScrollEnd
 }: ExerciseHistoryTabProps) {
   const { weightUnit } = useSettings();
-  const { history, latestPersonalRecord, monthlyProgression, prSetIds } =
-    useExerciseHistoryTab(exerciseId);
+  const {
+    history,
+    latestPersonalRecord,
+    monthlyProgression,
+    prSetIds,
+    trackingType
+  } = useExerciseHistoryTab(exerciseId);
 
   const renderHistoryEntry = ({ item }: { item: ExerciseHistoryEntry }) => (
     <View className="border-border bg-card mt-4 rounded-lg border p-4">
@@ -154,6 +168,7 @@ export function ExerciseHistoryTab({
       <WorkoutSetSummary
         completedSets={item.sets}
         weightUnit={weightUnit}
+        trackingType={trackingType}
         personalRecordSetIds={prSetIds}
       />
     </View>
@@ -171,6 +186,7 @@ export function ExerciseHistoryTab({
           <ExerciseHistoryWidgets
             latestPersonalRecord={latestPersonalRecord}
             monthlyProgression={monthlyProgression}
+            trackingType={trackingType}
             weightUnit={weightUnit}
           />
         ) : null

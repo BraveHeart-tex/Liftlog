@@ -1,8 +1,13 @@
 import { Text } from '@/src/components/ui/text';
 import type { Set } from '@/src/db/schema';
+import {
+  TRACKING_TYPE_DEFINITIONS,
+  formatTrackingValue,
+  getSetValues,
+  type TrackingType
+} from '@/src/features/progress/tracking';
 import { useSettings } from '@/src/features/settings/hooks';
 import { cn } from '@/src/lib/utils/cn';
-import { formatWeightForUnit } from '@/src/lib/utils/weight';
 import { Pressable, View } from 'react-native';
 
 interface SetEntryRowProps {
@@ -10,6 +15,7 @@ interface SetEntryRowProps {
   setNumber: number;
   isPR: boolean;
   isEditing: boolean;
+  trackingType: TrackingType;
   onEdit: () => void;
 }
 
@@ -18,9 +24,11 @@ export function SetEntryRow({
   setNumber,
   isPR,
   isEditing,
+  trackingType,
   onEdit
 }: SetEntryRowProps) {
   const { weightUnit } = useSettings();
+  const trackingDefinition = TRACKING_TYPE_DEFINITIONS[trackingType];
 
   return (
     <Pressable onPress={onEdit}>
@@ -38,18 +46,10 @@ export function SetEntryRow({
         </View>
         <View className="flex-1">
           <Text variant="caption" tone="muted">
-            Weight
+            {trackingDefinition.label}
           </Text>
           <Text variant="bodyMedium" className="mt-1">
-            {formatWeightForUnit(set.weightKg, weightUnit)} {weightUnit}
-          </Text>
-        </View>
-        <View className="flex-1">
-          <Text variant="caption" tone="muted">
-            Reps
-          </Text>
-          <Text variant="bodyMedium" className="mt-1">
-            {set.reps}
+            {formatTrackingValue(trackingType, getSetValues(set), weightUnit)}
           </Text>
         </View>
         {isPR ? (

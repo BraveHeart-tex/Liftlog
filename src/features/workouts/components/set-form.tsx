@@ -3,13 +3,19 @@ import { Icon } from '@/src/components/ui/icon';
 import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
 import type { Set } from '@/src/db/schema';
+import {
+  TRACKING_TYPE_DEFINITIONS,
+  formatTrackingValue,
+  type SetValues,
+  type TrackingFieldDefinition,
+  type TrackingType
+} from '@/src/features/progress/tracking';
 import { useSettings } from '@/src/features/settings/hooks';
 import { StepperButton } from '@/src/features/workouts/components/stepper-button';
 import { convertWeightToKg, formatWeightForUnit } from '@/src/lib/utils/weight';
 import { PencilIcon, PlusIcon, Trash2Icon, XIcon } from 'lucide-react-native';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Alert, View } from 'react-native';
-import type { SetValues } from './types';
 import { formatInputNumber } from './utils';
 
 const inputClassName = 'text-body-medium text-foreground flex-1 px-3 py-3';
@@ -17,12 +23,8 @@ const inputClassName = 'text-body-medium text-foreground flex-1 px-3 py-3';
 const inputContainerClassName =
   'border-border min-h-14 flex-row items-center rounded-lg border';
 
-const weightStepByUnit = {
-  kg: 2.5,
-  lb: 5
-};
-
 interface SetFormProps {
+  trackingType: TrackingType;
   editingSet: Set | undefined;
   prefillValues?: SetValues & { requestId: number };
   onAddSet: (data: SetValues) => void;
@@ -32,6 +34,7 @@ interface SetFormProps {
 }
 
 export function SetForm({
+  trackingType,
   editingSet,
   prefillValues,
   onAddSet,
@@ -40,32 +43,42 @@ export function SetForm({
   onDeleteSet
 }: SetFormProps) {
   const { weightUnit } = useSettings();
-  const [weightValue, setWeightValue] = useState('');
-  const [repsValue, setRepsValue] = useState('');
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const repeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isEditing = Boolean(editingSet);
+  const trackingDefinition = TRACKING_TYPE_DEFINITIONS[trackingType];
 
   useLayoutEffect(() => {
     if (editingSet) {
-      setWeightValue(formatWeightForUnit(editingSet.weightKg, weightUnit));
-      setRepsValue(String(editingSet.reps));
+      setFieldValues(
+        getInitialFieldValues(
+          trackingType,
+          {
+            weightKg: editingSet.weightKg ?? undefined,
+            reps: editingSet.reps ?? undefined,
+            distanceMeters: editingSet.distanceMeters ?? undefined,
+            durationSeconds: editingSet.durationSeconds ?? undefined
+          },
+          weightUnit
+        )
+      );
 
       return;
     }
 
-    setWeightValue('');
-    setRepsValue('');
-  }, [editingSet, weightUnit]);
+    setFieldValues({});
+  }, [editingSet, trackingType, weightUnit]);
 
   useLayoutEffect(() => {
     if (editingSet || !prefillValues) {
       return;
     }
 
-    setWeightValue(formatWeightForUnit(prefillValues.weightKg, weightUnit));
-    setRepsValue(String(prefillValues.reps));
-  }, [editingSet, prefillValues, weightUnit]);
+    setFieldValues(
+      getInitialFieldValues(trackingType, prefillValues, weightUnit)
+    );
+  }, [editingSet, prefillValues, trackingType, weightUnit]);
 
   useEffect(() => {
     return () => {
@@ -94,29 +107,22 @@ export function SetForm({
     }, 300);
   };
 
-  const updateWeightValue = (delta: number) => {
-    setWeightValue(currentValue => {
-      const parsedValue = Number(currentValue.trim().replace(',', '.'));
-      const currentWeight = Number.isFinite(parsedValue) ? parsedValue : 0;
-      const nextWeight = Math.max(0, currentWeight + delta);
+  const updateFieldValue = (field: TrackingFieldDefinition, delta: number) => {
+    setFieldValues(currentValues => {
+      const currentValue = currentValues[field.key] ?? '';
+      const parsedValue = parseFieldValue(field, currentValue, weightUnit);
+      const currentNumber = parsedValue ?? 0;
+      const nextValue = Math.max(field.minimum, currentNumber + delta);
 
-      return formatInputNumber(Math.round(nextWeight * 10) / 10);
-    });
-  };
-
-  const updateRepsValue = (delta: number) => {
-    setRepsValue(currentValue => {
-      const parsedValue = Number(currentValue.trim());
-      const currentReps = Number.isFinite(parsedValue) ? parsedValue : 0;
-      const nextReps = Math.max(1, Math.round(currentReps) + delta);
-
-      return String(nextReps);
+      return {
+        ...currentValues,
+        [field.key]: formatFieldValue(field, nextValue, weightUnit)
+      };
     });
   };
 
   const handleClear = () => {
-    setWeightValue('');
-    setRepsValue('');
+    setFieldValues({});
     onClear();
   };
 
@@ -136,118 +142,81 @@ export function SetForm({
   };
 
   const getValidatedValues = () => {
-    const trimmedWeight = weightValue.trim().replace(',', '.');
-    const trimmedReps = repsValue.trim();
-    const weight = Number(trimmedWeight);
-    const reps = Number(trimmedReps);
+    const values: SetValues = {};
 
-    if (trimmedWeight.length === 0) {
-      return undefined;
+    for (const field of trackingDefinition.fields) {
+      const value = parseFieldValue(
+        field,
+        fieldValues[field.key] ?? '',
+        weightUnit
+      );
+
+      if (value === undefined || value < field.minimum) {
+        return undefined;
+      }
+
+      if (field.integer && !Number.isInteger(value)) {
+        return undefined;
+      }
+
+      values[field.key] = value;
     }
 
-    if (!Number.isFinite(weight) || weight < 0) {
-      return undefined;
-    }
-
-    if (trimmedReps.length === 0) {
-      return undefined;
-    }
-
-    if (!Number.isInteger(reps) || reps < 1) {
-      return undefined;
-    }
-
-    return { weightKg: convertWeightToKg(weight, weightUnit), reps };
+    return values;
   };
 
   return (
     <View>
       <View className="mt-2 gap-4">
-        <View>
-          <Text variant="caption" tone="muted" className="mb-1">
-            Weight ({weightUnit})
-          </Text>
-          <View className="flex-row items-center gap-2">
-            <StepperButton
-              label="-"
-              accessibilityLabel="Decrease weight"
-              onStep={() => updateWeightValue(-weightStepByUnit[weightUnit])}
-              onStartRepeating={startRepeatingStep}
-              onStopRepeating={stopRepeatingStep}
-            />
+        {trackingDefinition.fields.map(field => (
+          <View key={field.key}>
+            <Text variant="caption" tone="muted" className="mb-1">
+              {field.label}
+            </Text>
+            <View className="flex-row items-center gap-2">
+              <StepperButton
+                label="-"
+                accessibilityLabel={`Decrease ${field.label.toLowerCase()}`}
+                onStep={() => updateFieldValue(field, -field.step(weightUnit))}
+                onStartRepeating={startRepeatingStep}
+                onStopRepeating={stopRepeatingStep}
+              />
 
-            <Input
-              value={weightValue}
-              onChangeText={setWeightValue}
-              keyboardType="decimal-pad"
-              placeholder="0"
-              className="flex-1"
-              withContainerDefaults={false}
-              containerClassName={inputContainerClassName}
-              inputClassName={inputClassName}
-              accessibilityLabel={`Next set weight in ${weightUnit}`}
-              rightIconContainerClassName="ml-0"
-              rightIcon={
-                <Text variant="bodyMedium" tone="muted" className="pr-3">
-                  {weightUnit}
-                </Text>
-              }
-            />
+              <Input
+                value={fieldValues[field.key] ?? ''}
+                onChangeText={value =>
+                  setFieldValues(currentValues => ({
+                    ...currentValues,
+                    [field.key]: value
+                  }))
+                }
+                keyboardType={field.keyboardType}
+                placeholder="0"
+                className="flex-1"
+                withContainerDefaults={false}
+                containerClassName={inputContainerClassName}
+                inputClassName={inputClassName}
+                accessibilityLabel={`Next set ${field.label.toLowerCase()}`}
+                rightIconContainerClassName="ml-0"
+                rightIcon={
+                  <Text variant="bodyMedium" tone="muted" className="pr-3">
+                    {getFieldUnitLabel(field, weightUnit)}
+                  </Text>
+                }
+              />
 
-            <StepperButton
-              label="+"
-              accessibilityLabel="Increase weight"
-              onStep={() => updateWeightValue(weightStepByUnit[weightUnit])}
-              onStartRepeating={startRepeatingStep}
-              onStopRepeating={stopRepeatingStep}
-              buttonClassName="border-primary"
-              textClassName="text-primary"
-            />
+              <StepperButton
+                label="+"
+                accessibilityLabel={`Increase ${field.label.toLowerCase()}`}
+                onStep={() => updateFieldValue(field, field.step(weightUnit))}
+                onStartRepeating={startRepeatingStep}
+                onStopRepeating={stopRepeatingStep}
+                buttonClassName="border-primary"
+                textClassName="text-primary"
+              />
+            </View>
           </View>
-        </View>
-
-        <View>
-          <Text variant="caption" tone="muted" className="mb-1">
-            Reps
-          </Text>
-          <View className="flex-row items-center gap-2">
-            <StepperButton
-              label="-"
-              accessibilityLabel="Decrease reps"
-              onStep={() => updateRepsValue(-1)}
-              onStartRepeating={startRepeatingStep}
-              onStopRepeating={stopRepeatingStep}
-            />
-
-            <Input
-              value={repsValue}
-              onChangeText={setRepsValue}
-              keyboardType="number-pad"
-              placeholder="0"
-              className="flex-1"
-              withContainerDefaults={false}
-              containerClassName={inputContainerClassName}
-              inputClassName={inputClassName}
-              accessibilityLabel="Next set reps"
-              rightIconContainerClassName="ml-0"
-              rightIcon={
-                <Text variant="bodyMedium" tone="muted" className="pr-3">
-                  reps
-                </Text>
-              }
-            />
-
-            <StepperButton
-              label="+"
-              accessibilityLabel="Increase reps"
-              onStep={() => updateRepsValue(1)}
-              onStartRepeating={startRepeatingStep}
-              onStopRepeating={stopRepeatingStep}
-              buttonClassName="border-primary"
-              textClassName="text-primary"
-            />
-          </View>
-        </View>
+        ))}
       </View>
 
       <View className="mt-3 flex-row gap-3">
@@ -304,4 +273,96 @@ export function SetForm({
       </View>
     </View>
   );
+}
+
+function getInitialFieldValues(
+  trackingType: TrackingType,
+  values: SetValues,
+  weightUnit: ReturnType<typeof useSettings>['weightUnit']
+) {
+  const nextValues: Record<string, string> = {};
+
+  for (const field of TRACKING_TYPE_DEFINITIONS[trackingType].fields) {
+    const value = values[field.key];
+
+    if (value !== undefined) {
+      nextValues[field.key] = formatFieldValue(field, value, weightUnit);
+    }
+  }
+
+  return nextValues;
+}
+
+function getFieldUnitLabel(
+  field: TrackingFieldDefinition,
+  weightUnit: ReturnType<typeof useSettings>['weightUnit']
+) {
+  return field.key === 'weightKg' ? weightUnit : field.unitLabel;
+}
+
+function parseFieldValue(
+  field: TrackingFieldDefinition,
+  value: string,
+  weightUnit: ReturnType<typeof useSettings>['weightUnit']
+) {
+  const trimmedValue = value.trim();
+
+  if (trimmedValue.length === 0) {
+    return undefined;
+  }
+
+  if (field.key === 'durationSeconds' && trimmedValue.includes(':')) {
+    const [minutesValue, secondsValue] = trimmedValue.split(':');
+    const minutes = Number(minutesValue);
+    const seconds = Number(secondsValue);
+
+    if (
+      !Number.isInteger(minutes) ||
+      !Number.isInteger(seconds) ||
+      minutes < 0 ||
+      seconds < 0 ||
+      seconds > 59
+    ) {
+      return undefined;
+    }
+
+    return minutes * 60 + seconds;
+  }
+
+  const parsedValue = Number(trimmedValue.replace(',', '.'));
+
+  if (!Number.isFinite(parsedValue)) {
+    return undefined;
+  }
+
+  if (field.key === 'weightKg') {
+    return convertWeightToKg(parsedValue, weightUnit);
+  }
+
+  return field.integer ? Math.round(parsedValue) : parsedValue;
+}
+
+function formatFieldValue(
+  field: TrackingFieldDefinition,
+  value: number,
+  weightUnit: ReturnType<typeof useSettings>['weightUnit']
+) {
+  if (field.key === 'durationSeconds') {
+    return formatTrackingValue(
+      'reps_time',
+      {
+        reps: 1,
+        durationSeconds: Math.round(value)
+      },
+      weightUnit
+    ).replace('1 reps in ', '');
+  }
+
+  if (field.key === 'weightKg') {
+    return formatWeightForUnit(value, weightUnit);
+  }
+
+  return field.integer
+    ? String(Math.round(value))
+    : formatInputNumber(Math.round(value * 10) / 10);
 }

@@ -1,5 +1,10 @@
 import { Text } from '@/src/components/ui/text';
 import type { Set } from '@/src/db';
+import {
+  formatTrackingValue,
+  getSetValues,
+  type TrackingType
+} from '@/src/features/progress/tracking';
 import { cn } from '@/src/lib/utils/cn';
 import { getDisplaySetGroups } from '@/src/lib/utils/set';
 import { formatWeightForUnit, type WeightUnit } from '@/src/lib/utils/weight';
@@ -9,6 +14,7 @@ interface WorkoutExerciseSummaryProps {
   exerciseName: string;
   completedSets: Set[];
   weightUnit: WeightUnit;
+  trackingType?: TrackingType;
   personalRecordSetIds?: ReadonlySet<string>;
   emptyText?: string;
   className?: string;
@@ -17,6 +23,7 @@ interface WorkoutExerciseSummaryProps {
 interface WorkoutSetSummaryProps {
   completedSets: Set[];
   weightUnit: WeightUnit;
+  trackingType?: TrackingType;
   personalRecordSetIds?: ReadonlySet<string>;
   emptyText?: string;
   className?: string;
@@ -69,14 +76,19 @@ export function WorkoutExerciseSummary({
   exerciseName,
   completedSets,
   weightUnit,
+  trackingType = 'weight_reps',
   personalRecordSetIds,
   emptyText,
   className
 }: WorkoutExerciseSummaryProps) {
-  const exerciseVolume = completedSets.reduce(
-    (sum, set) => sum + set.weightKg * set.reps,
-    0
-  );
+  const exerciseVolume = completedSets.reduce((sum, set) => {
+    if (set.weightKg === null || set.reps === null) {
+      return sum;
+    }
+
+    return sum + set.weightKg * set.reps;
+  }, 0);
+  const shouldShowVolume = trackingType === 'weight_reps';
 
   return (
     <View className={cn('gap-3', className)}>
@@ -84,12 +96,13 @@ export function WorkoutExerciseSummary({
         <Text variant="h3">{exerciseName}</Text>
         {completedSets.length > 0 ? (
           <Text variant="small" tone="muted" className="mt-0.5">
-            {completedSets.length} sets ·{' '}
-            {formatWeightForUnit(exerciseVolume, weightUnit, {
-              useGrouping: true,
-              maximumFractionDigits: 0
-            })}{' '}
-            {weightUnit}
+            {completedSets.length} sets
+            {shouldShowVolume
+              ? ` · ${formatWeightForUnit(exerciseVolume, weightUnit, {
+                  useGrouping: true,
+                  maximumFractionDigits: 0
+                })} ${weightUnit}`
+              : ''}
           </Text>
         ) : null}
       </View>
@@ -97,6 +110,7 @@ export function WorkoutExerciseSummary({
       <WorkoutSetSummary
         completedSets={completedSets}
         weightUnit={weightUnit}
+        trackingType={trackingType}
         personalRecordSetIds={personalRecordSetIds}
         emptyText={emptyText}
       />
@@ -107,13 +121,18 @@ export function WorkoutExerciseSummary({
 export function WorkoutSetSummary({
   completedSets,
   weightUnit,
+  trackingType = 'weight_reps',
   personalRecordSetIds,
   emptyText,
   className
 }: WorkoutSetSummaryProps) {
-  const displayGroups = getDisplaySetGroups(completedSets, {
-    personalRecordSetIds
-  });
+  const displayGroups = getDisplaySetGroups(
+    completedSets,
+    {
+      personalRecordSetIds
+    },
+    trackingType
+  );
   const renderItems = toRenderItems(displayGroups);
 
   return (
@@ -126,6 +145,7 @@ export function WorkoutSetSummary({
                 key={item.group.setIds.join('-')}
                 group={item.group}
                 weightUnit={weightUnit}
+                trackingType={trackingType}
                 hasPersonalRecord={groupHasPersonalRecord(
                   item.group,
                   personalRecordSetIds
@@ -139,6 +159,7 @@ export function WorkoutSetSummary({
               <SingleSetPill
                 group={item.left}
                 weightUnit={weightUnit}
+                trackingType={trackingType}
                 hasPersonalRecord={groupHasPersonalRecord(
                   item.left,
                   personalRecordSetIds
@@ -149,6 +170,7 @@ export function WorkoutSetSummary({
                 <SingleSetPill
                   group={item.right}
                   weightUnit={weightUnit}
+                  trackingType={trackingType}
                   hasPersonalRecord={groupHasPersonalRecord(
                     item.right,
                     personalRecordSetIds
@@ -196,11 +218,13 @@ function SetBadge({ index }: { index: number }) {
 function SingleSetPill({
   group,
   weightUnit,
+  trackingType,
   hasPersonalRecord,
   style
 }: {
   group: DisplaySetGroup;
   weightUnit: WeightUnit;
+  trackingType: TrackingType;
   hasPersonalRecord?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
@@ -211,16 +235,7 @@ function SingleSetPill({
     >
       <SetBadge index={group.startIndex} />
       <Text variant="small" className="text-foreground font-medium">
-        {formatWeightForUnit(group.weightKg, weightUnit)}
-      </Text>
-      <Text variant="small" className="mr-1.5 ml-0.5">
-        {weightUnit}
-      </Text>
-      <Text variant="small" tone="muted" className="mr-1">
-        ×
-      </Text>
-      <Text variant="small" className="text-foreground font-medium">
-        {group.reps}
+        {formatTrackingValue(trackingType, getSetValues(group.set), weightUnit)}
       </Text>
       {hasPersonalRecord ? (
         <View className="ml-auto">
@@ -234,10 +249,12 @@ function SingleSetPill({
 function RangeSetRow({
   group,
   weightUnit,
+  trackingType,
   hasPersonalRecord
 }: {
   group: DisplaySetGroup;
   weightUnit: WeightUnit;
+  trackingType: TrackingType;
   hasPersonalRecord?: boolean;
 }) {
   return (
@@ -248,10 +265,11 @@ function RangeSetRow({
       <View className="flex-row items-center gap-1">
         {hasPersonalRecord ? <PersonalRecordBadge /> : null}
         <Text variant="small" className="text-foreground font-medium">
-          {formatWeightForUnit(group.weightKg, weightUnit)} {weightUnit}
-        </Text>
-        <Text variant="small">
-          × {group.reps} rep{group.reps > 1 && 's'}
+          {formatTrackingValue(
+            trackingType,
+            getSetValues(group.set),
+            weightUnit
+          )}
         </Text>
       </View>
     </View>

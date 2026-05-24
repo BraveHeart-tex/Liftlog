@@ -5,6 +5,7 @@ import {
   getPersonalRecordsByExerciseQuery,
   getRecentExerciseHistoryWorkoutsQuery
 } from '@/src/features/progress/repository';
+import { resolveTrackingType } from '@/src/features/progress/tracking';
 import { useDrizzle } from '@/src/components/database-provider';
 import { useSettings } from '@/src/features/settings/hooks';
 import { convertWeightToKg } from '@/src/lib/utils/weight';
@@ -25,6 +26,7 @@ export function useExerciseTrackTab(item: WorkoutExerciseWithSets) {
   const [editingSetId, setEditingSetId] = useState<Set['id'] | null>(null);
   const editingSet = item.sets.find(set => set.id === editingSetId);
   const exerciseId = item.workoutExercise.exerciseId;
+  const trackingType = resolveTrackingType(item.exercise?.trackingType);
   const prResult = useLiveWithFallback(
     getPersonalRecordsByExerciseQuery(db, exerciseId),
     [db, exerciseId]
@@ -52,6 +54,10 @@ export function useExerciseTrackTab(item: WorkoutExerciseWithSets) {
     [db, exerciseId, workoutIdKey]
   );
   const progressionSuggestion = useMemo(() => {
+    if (trackingType !== 'weight_reps') {
+      return null;
+    }
+
     const history = buildExerciseHistory(workoutRows, setResult.data).slice(
       0,
       PROGRESSION_HISTORY_LIMIT
@@ -62,13 +68,14 @@ export function useExerciseTrackTab(item: WorkoutExerciseWithSets) {
     );
 
     return getProgressionSuggestion(history, weightStepKg);
-  }, [setResult.data, weightUnit, workoutRows]);
+  }, [setResult.data, trackingType, weightUnit, workoutRows]);
 
   return {
     editingSetId,
     editingSet,
     setEditingSetId,
     prSetIds,
+    trackingType,
     progressionSuggestion
   };
 }

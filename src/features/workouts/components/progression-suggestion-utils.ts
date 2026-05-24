@@ -26,6 +26,10 @@ function getCompletedSets(sets: Set[]) {
 
 function getBestEstimated1RM(sets: Set[]) {
   return sets.reduce((best, set) => {
+    if (set.weightKg === null || set.reps === null) {
+      return best;
+    }
+
     const estimated1rm = computeEstimated1RM(set.weightKg, set.reps);
 
     return Math.max(best, estimated1rm);
@@ -59,6 +63,16 @@ export function getProgressionSuggestion(
 
   const firstSet = latestEntry.sets[0];
   const latestWorkingSet = getLastWorkingSet(latestEntry.sets);
+
+  if (
+    firstSet.weightKg === null ||
+    firstSet.reps === null ||
+    latestWorkingSet.weightKg === null ||
+    latestWorkingSet.reps === null
+  ) {
+    return null;
+  }
+
   const remainingSets = latestEntry.sets.slice(1);
   const isRepeatablePattern = remainingSets.every(set =>
     areSameSetValues(firstSet, set)

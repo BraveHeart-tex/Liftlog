@@ -35,12 +35,14 @@ export function CreateCustomExerciseSheet({
   const {
     name,
     category,
+    trackingType,
     selectedPrimaryMuscles,
     selectedSecondaryMuscles,
     nameError,
     primaryMusclesError,
     setName,
     setCategory,
+    setTrackingType,
     togglePrimaryMuscle,
     toggleSecondaryMuscle,
     submit,
@@ -95,6 +97,7 @@ export function CreateCustomExerciseSheet({
           inputVariant="bottom-sheet"
           name={name}
           category={category}
+          trackingType={trackingType}
           selectedPrimaryMuscles={selectedPrimaryMuscles}
           selectedSecondaryMuscles={selectedSecondaryMuscles}
           nameError={nameError}
@@ -105,6 +108,7 @@ export function CreateCustomExerciseSheet({
           }
           setName={setName}
           setCategory={setCategory}
+          setTrackingType={setTrackingType}
           togglePrimaryMuscle={togglePrimaryMuscle}
           toggleSecondaryMuscle={toggleSecondaryMuscle}
         />

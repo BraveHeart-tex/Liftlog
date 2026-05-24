@@ -19,12 +19,14 @@ export default function NewExerciseScreen() {
   const {
     name,
     category,
+    trackingType,
     selectedPrimaryMuscles,
     selectedSecondaryMuscles,
     nameError,
     primaryMusclesError,
     setName,
     setCategory,
+    setTrackingType,
     togglePrimaryMuscle,
     toggleSecondaryMuscle,
     submit: buildExercise
@@ -87,6 +89,7 @@ export default function NewExerciseScreen() {
           <ExerciseMetadataForm
             name={name}
             category={category}
+            trackingType={trackingType}
             selectedPrimaryMuscles={selectedPrimaryMuscles}
             selectedSecondaryMuscles={selectedSecondaryMuscles}
             nameError={nameError}
@@ -97,6 +100,7 @@ export default function NewExerciseScreen() {
             }
             setName={setName}
             setCategory={setCategory}
+            setTrackingType={setTrackingType}
             togglePrimaryMuscle={togglePrimaryMuscle}
             toggleSecondaryMuscle={toggleSecondaryMuscle}
           />

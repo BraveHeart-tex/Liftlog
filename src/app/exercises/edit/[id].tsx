@@ -9,6 +9,10 @@ import {
   useCustomExerciseEdit,
   useExerciseActions
 } from '@/src/features/exercises/hooks';
+import {
+  resolveTrackingType,
+  type TrackingType
+} from '@/src/features/progress/tracking';
 import { getRouteParamId } from '@/src/lib/utils/route';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -22,6 +26,7 @@ export default function EditExerciseScreen() {
   const { updateCustomExerciseDetails } = useExerciseActions();
   const scrollRef = useRef<ScrollView>(null);
   const [category, setCategory] = useState<ExerciseCategory>('barbell');
+  const [trackingType, setTrackingType] = useState<TrackingType>('weight_reps');
   const [selectedPrimaryMuscles, setSelectedPrimaryMuscles] = useState<
     string[]
   >([]);
@@ -39,6 +44,7 @@ export default function EditExerciseScreen() {
     }
 
     setCategory(exercise.category as ExerciseCategory);
+    setTrackingType(resolveTrackingType(exercise.trackingType));
     setSelectedPrimaryMuscles(primaryMuscles);
     setSelectedSecondaryMuscles(secondaryMuscles);
     setAttemptedSubmit(false);
@@ -52,6 +58,11 @@ export default function EditExerciseScreen() {
 
   const handleCategoryChange = (nextCategory: ExerciseCategory) => {
     setCategory(nextCategory);
+    setSaveError(undefined);
+  };
+
+  const handleTrackingTypeChange = (nextTrackingType: TrackingType) => {
+    setTrackingType(nextTrackingType);
     setSaveError(undefined);
   };
 
@@ -105,6 +116,7 @@ export default function EditExerciseScreen() {
     try {
       const updatedExercise = updateCustomExerciseDetails(exercise.id, {
         category,
+        trackingType,
         primaryMuscles: selectedPrimaryMuscles,
         secondaryMuscles: selectedSecondaryMuscles
       });
@@ -200,6 +212,7 @@ export default function EditExerciseScreen() {
         <View className="mt-6">
           <ExerciseMetadataForm
             category={category}
+            trackingType={trackingType}
             selectedPrimaryMuscles={selectedPrimaryMuscles}
             selectedSecondaryMuscles={selectedSecondaryMuscles}
             primaryMusclesError={primaryMusclesError}
@@ -208,6 +221,7 @@ export default function EditExerciseScreen() {
               scrollRef.current?.scrollTo({ y, animated: true })
             }
             setCategory={handleCategoryChange}
+            setTrackingType={handleTrackingTypeChange}
             togglePrimaryMuscle={togglePrimaryMuscle}
             toggleSecondaryMuscle={toggleSecondaryMuscle}
           />

@@ -1,6 +1,7 @@
 import type { DrizzleDb } from '@/src/db/client';
 import {
   personalRecords,
+  exercises,
   sets,
   workoutExercises,
   workouts,
@@ -11,6 +12,12 @@ import {
   type Workout
 } from '@/src/db/schema';
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+import {
+  computeEstimated1RM,
+  getPersonalRecordSnapshot,
+  getSetScore,
+  resolveTrackingType
+} from './tracking';
 
 const MAX_EXERCISE_HISTORY_WORKOUTS = 20;
 
@@ -180,6 +187,16 @@ function getCompletedSetsForPersonalRecords(db: DrizzleDb, exerciseId: string) {
     .all();
 }
 
+function getExerciseTrackingType(db: DrizzleDb, exerciseId: Exercise['id']) {
+  const exercise = db
+    .select({ trackingType: exercises.trackingType })
+    .from(exercises)
+    .where(eq(exercises.id, exerciseId))
+    .get();
+
+  return resolveTrackingType(exercise?.trackingType);
+}
+
 function getSetAchievedAt(row: {
   set: Set;
   workoutStartedAt: Workout['startedAt'];
@@ -192,6 +209,7 @@ export function rebuildPersonalRecordsForExercise(
   exerciseId: Exercise['id']
 ): void {
   const completedSetRows = getCompletedSetsForPersonalRecords(db, exerciseId);
+  const trackingType = getExerciseTrackingType(db, exerciseId);
   const sortedRows = [...completedSetRows].sort((left, right) => {
     const achievedAtDiff = getSetAchievedAt(left) - getSetAchievedAt(right);
 
@@ -201,24 +219,22 @@ export function rebuildPersonalRecordsForExercise(
 
     return left.set.order - right.set.order;
   });
-  let bestEstimated1RM = 0;
+  let bestScore = 0;
   const newRecords: NewPersonalRecord[] = [];
 
   for (const row of sortedRows) {
-    const estimated1rm = computeEstimated1RM(row.set.weightKg, row.set.reps);
+    const score = getSetScore(trackingType, row.set);
 
-    if (estimated1rm <= bestEstimated1RM) {
+    if (score === null || score <= bestScore) {
       continue;
     }
 
-    bestEstimated1RM = estimated1rm;
+    bestScore = score;
     newRecords.push({
       exerciseId,
       setId: row.set.id,
-      weightKg: row.set.weightKg,
-      reps: row.set.reps,
-      estimated1rm,
-      achievedAt: getSetAchievedAt(row)
+      achievedAt: getSetAchievedAt(row),
+      ...getPersonalRecordSnapshot(trackingType, row.set, score)
     });
   }
 
@@ -236,25 +252,21 @@ export function rebuildPersonalRecordsForExercise(
 export function maybeRebuildPersonalRecords(
   db: DrizzleDb,
   exerciseId: Exercise['id'],
-  newSetEstimated1rm: number
+  newSetScore: number
 ): void {
   const currentBest = db
-    .select({ estimated1rm: personalRecords.estimated1rm })
+    .select({ score: personalRecords.score })
     .from(personalRecords)
     .where(eq(personalRecords.exerciseId, exerciseId))
-    .orderBy(desc(personalRecords.estimated1rm))
+    .orderBy(desc(personalRecords.score))
     .limit(1)
     .get();
 
-  if (currentBest && newSetEstimated1rm <= currentBest.estimated1rm) {
+  if (currentBest && newSetScore <= currentBest.score) {
     return;
   }
 
   rebuildPersonalRecordsForExercise(db, exerciseId);
 }
 
-export function computeEstimated1RM(weightKg: number, reps: number): number {
-  const estimatedOneRepMax = weightKg * (1 + reps / 30);
-
-  return Math.round(estimatedOneRepMax * 100) / 100;
-}
+export { computeEstimated1RM };
