@@ -1,5 +1,6 @@
+import { toLocalDateKey } from '@/src/lib/utils/date';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { type LayoutChangeEvent, View } from 'react-native';
 import { CalendarList, type DateData } from 'react-native-calendars';
 
@@ -20,7 +21,8 @@ type CalendarMarkedDates = Record<
   }
 >;
 
-const TODAY = new Date().toISOString().split('T')[0];
+const CALENDAR_HEIGHT = 360;
+const TODAY = toLocalDateKey(Date.now());
 
 function getMarkedDates({
   selectedDateKey,
@@ -62,7 +64,6 @@ export function WorkoutHistoryCalendar({
 }: WorkoutHistoryCalendarProps) {
   const { colors, colorScheme } = useAppTheme();
   const [calendarWidth, setCalendarWidth] = useState<number | null>(null);
-  const colorSchemeRef = useRef(colorScheme);
 
   const { primary, primaryForeground, card, foreground, mutedForeground } =
     colors;
@@ -117,26 +118,30 @@ export function WorkoutHistoryCalendar({
   );
 
   const handleLayout = useCallback((event: LayoutChangeEvent) => {
-    const width = event.nativeEvent.layout.width;
+    const width = Math.round(event.nativeEvent.layout.width);
+
+    if (width <= 0) {
+      return;
+    }
 
     setCalendarWidth(prev => (prev === width ? prev : width));
   }, []);
 
-  if (colorSchemeRef.current !== colorScheme) {
-    colorSchemeRef.current = colorScheme;
-  }
-
   return (
     <View
+      className="bg-card overflow-hidden rounded-xl"
       onLayout={handleLayout}
-      style={{ borderRadius: 16, overflow: 'hidden' }}
+      style={{ height: CALENDAR_HEIGHT }}
     >
       {calendarWidth !== null ? (
         <CalendarList
-          key={colorSchemeRef.current}
+          key={`${colorScheme}-${calendarWidth}`}
           animateScroll
+          calendarHeight={CALENDAR_HEIGHT}
           calendarWidth={calendarWidth}
           current={selectedDateKey}
+          decelerationRate="fast"
+          disableIntervalMomentum
           maxDate={TODAY}
           firstDay={1}
           futureScrollRange={0}
@@ -147,10 +152,9 @@ export function WorkoutHistoryCalendar({
           onDayPress={handleDayPress}
           pagingEnabled
           pastScrollRange={24}
-          removeClippedSubviews
           showScrollIndicator={false}
           theme={calendarTheme}
-          windowSize={5}
+          windowSize={7}
         />
       ) : null}
     </View>
