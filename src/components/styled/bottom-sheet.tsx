@@ -13,12 +13,13 @@ import {
   type ReactNode,
   type RefAttributes
 } from 'react';
-import type {
-  FlatListProps,
-  ScrollViewProps,
-  StyleProp,
-  TextInputProps,
-  TextStyle
+import {
+  StyleSheet,
+  type FlatListProps,
+  type ScrollViewProps,
+  type StyleProp,
+  type TextInputProps,
+  type TextStyle
 } from 'react-native';
 
 interface BottomSheetFlatListClassNameProps {
@@ -56,6 +57,7 @@ const BottomSheetTextInputColorBridge = forwardRef<
     selectionStyle,
     placeholderTextColor,
     selectionColor,
+    style,
     ...props
   },
   ref
@@ -68,10 +70,18 @@ const BottomSheetTextInputColorBridge = forwardRef<
       }
       selectionColor={selectionColor ?? getStyleColor(selectionStyle)}
       {...props}
+      style={[styles.textInputAndroidReset, style]}
       allowFontScaling={false}
-      underlineColorAndroid="rgba(0,0,0,0)"
+      underlineColorAndroid="transparent"
     />
   );
+});
+
+const styles = StyleSheet.create({
+  textInputAndroidReset: {
+    backgroundColor: 'transparent',
+    borderBottomWidth: 0
+  }
 });
 
 export const StyledBottomSheetBackdrop = styled(BottomSheetBackdrop, {

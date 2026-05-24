@@ -25,12 +25,6 @@ interface RestTimerSheetProps {
 }
 
 export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
-  /*
-   * Approach:
-   * 1. Keep timer state and math in the Zustand store.
-   * 2. Keep this sheet responsible for rendering timer controls only.
-   * 3. Let the app-level RestTimerHost drive ticking and completion feedback.
-   */
   const { restTimerDuration: defaultDuration } = useSettings();
   const status = useRestTimerStore(state => state.status);
   const secondsRemaining = useRestTimerStore(state => state.secondsRemaining);
