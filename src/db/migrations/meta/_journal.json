@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1775765894251,
-      "tag": "0000_adorable_slipstream",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1775911921789,
-      "tag": "0001_pretty_diamondback",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1776631002339,
-      "tag": "0002_swift_brood",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1777045485638,
-      "tag": "0003_wonderful_vermin",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1778700471769,
-      "tag": "0004_peaceful_ser_duncan",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1778700471770,
-      "tag": "0005_flexible_tracking_units",
+      "when": 1779628861789,
+      "tag": "0000_fancy_robin_chapel",
       "breakpoints": true
     }
   ]
