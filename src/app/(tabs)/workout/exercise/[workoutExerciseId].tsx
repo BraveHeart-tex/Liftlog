@@ -108,7 +108,7 @@ export default function ActiveWorkoutExerciseScreen() {
             size="icon"
             onPress={() => setIsRestTimerOpen(true)}
           >
-            <Icon icon={TimerIcon} size={20} className="text-foreground" />
+            <Icon icon={TimerIcon} size="lg" className="text-foreground" />
             {isRestTimerRunning ? (
               <View className="bg-primary absolute top-0 right-0 h-2 w-2 rounded-full" />
             ) : null}
@@ -132,7 +132,7 @@ export default function ActiveWorkoutExerciseScreen() {
               <View className="flex-row items-center gap-2">
                 <Icon
                   icon={tab === 'track' ? NotebookPenIcon : ClockIcon}
-                  size={20}
+                  size="sm"
                   className={cn(
                     'will-change-variable',
                     isSelected ? 'text-foreground' : 'text-muted-foreground'

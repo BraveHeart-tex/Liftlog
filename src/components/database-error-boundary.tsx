@@ -1,5 +1,6 @@
+import { Text } from '@/src/components/ui/text';
 import { Component, type ReactNode } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 export class DatabaseErrorBoundary extends Component<
   { children: ReactNode },
@@ -19,8 +20,8 @@ export class DatabaseErrorBoundary extends Component<
     if (this.state.hasError) {
       return (
         <View className="bg-background flex-1 items-center justify-center px-6">
-          <Text className="text-h3 text-foreground">Something went wrong</Text>
-          <Text className="text-small text-muted-foreground mt-2 text-center">
+          <Text variant="h3">Something went wrong</Text>
+          <Text variant="small" tone="muted" className="mt-2 text-center">
             Failed to initialize the database
           </Text>
         </View>

@@ -42,7 +42,7 @@ export function WorkoutDetailHeader({
       >
         <Icon
           icon={EllipsisVerticalIcon}
-          size={20}
+          size="lg"
           className="text-foreground"
         />
       </Button>

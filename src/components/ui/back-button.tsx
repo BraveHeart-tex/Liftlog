@@ -58,7 +58,7 @@ export function BackButton({
           className
         )}
       >
-        <Icon icon={icon} size={20} className="text-foreground" />
+        <Icon icon={icon} size="lg" className="text-foreground" />
       </Pressable>
     </Animated.View>
   );

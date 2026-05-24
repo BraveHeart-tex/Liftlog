@@ -94,7 +94,7 @@ function ExerciseHistoryWidgets({
       <View className="flex-row gap-3">
         <View className="border-border bg-card min-w-0 flex-1 rounded-lg border px-3 py-3">
           <View className="flex-row items-center gap-2">
-            <Icon icon={StarIcon} className="text-warning" size={18} />
+            <Icon icon={StarIcon} className="text-warning" size="md" />
             <View className="min-w-0 flex-1">
               <Text variant="bodyMedium" numberOfLines={1}>
                 {latestPersonalRecord
@@ -113,7 +113,7 @@ function ExerciseHistoryWidgets({
             <Icon
               icon={ProgressionIcon}
               className={progressionToneClassName}
-              size={18}
+              size="md"
             />
             <View className="min-w-0 flex-1">
               <Text

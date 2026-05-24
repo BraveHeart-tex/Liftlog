@@ -87,6 +87,7 @@ export const Text = forwardRef<ComponentRef<typeof NativeText>, TextProps>(
           style
         ]}
         {...props}
+        allowFontScaling={false}
       />
     );
   }

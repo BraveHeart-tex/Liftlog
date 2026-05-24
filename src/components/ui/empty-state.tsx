@@ -1,10 +1,10 @@
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
+import { Text } from '@/src/components/ui/text';
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
 
 import { cn } from '@/src/lib/utils/cn';
 import type { LucideIcon } from 'lucide-react-native';
-import { Text } from 'react-native';
 
 interface EmptyStateAction {
   label: string;
@@ -35,15 +35,13 @@ export function EmptyState({
       )}
     >
       {icon ? (
-        <Icon icon={icon} className="text-muted-foreground" size={48} />
+        <Icon icon={icon} className="text-muted-foreground" size="empty" />
       ) : null}
-      <Text
-        className={cn('text-h3 text-foreground text-center', icon && 'mt-4')}
-      >
+      <Text variant="h3" className={cn('text-center', icon && 'mt-4')}>
         {title}
       </Text>
       {description ? (
-        <Text className="text-small text-muted-foreground mt-2 text-center">
+        <Text variant="small" tone="muted" className="mt-2 text-center">
           {description}
         </Text>
       ) : null}

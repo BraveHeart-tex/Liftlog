@@ -64,7 +64,7 @@ export function ProgressionSuggestion({
   return (
     <Card className="my-3 px-3 py-2">
       <View className="flex-row items-center gap-3">
-        <Icon icon={TrendingUpIcon} className="text-primary" size={18} />
+        <Icon icon={TrendingUpIcon} className="text-primary" size="md" />
 
         <View className="min-w-0 flex-1">
           <View className="flex-row flex-wrap items-center gap-x-2 gap-y-1">

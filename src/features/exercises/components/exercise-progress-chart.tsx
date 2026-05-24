@@ -9,6 +9,7 @@ import {
 import { formatWorkoutDate } from '@/src/lib/utils/date';
 import type { WeightUnit } from '@/src/lib/utils/weight';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
+import { nativeFontSizes } from '@/src/theme/sizes';
 import {
   Circle,
   Line as SkiaLine,
@@ -69,7 +70,10 @@ export function ExerciseProgressChart({
     x: points[0]?.date ?? 0,
     y: { value: points[0]?.value ?? 0 }
   });
-  const axisFont = matchFont({ fontFamily: 'Inter', fontSize: 10 });
+  const axisFont = matchFont({
+    fontFamily: 'Inter',
+    fontSize: nativeFontSizes.chartAxis
+  });
   const chartData: ChartPoint[] = points.map(point => ({
     date: point.date,
     value: point.value

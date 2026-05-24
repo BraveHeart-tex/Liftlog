@@ -68,6 +68,7 @@ const BottomSheetTextInputColorBridge = forwardRef<
       }
       selectionColor={selectionColor ?? getStyleColor(selectionStyle)}
       {...props}
+      allowFontScaling={false}
       underlineColorAndroid="rgba(0,0,0,0)"
     />
   );

@@ -93,7 +93,9 @@ export function WorkoutExerciseSummary({
   return (
     <View className={cn('gap-3', className)}>
       <View>
-        <Text variant="h3">{exerciseName}</Text>
+        <Text variant="bodyMedium" numberOfLines={2}>
+          {exerciseName}
+        </Text>
         {completedSets.length > 0 ? (
           <Text variant="small" tone="muted" className="mt-0.5">
             {completedSets.length} sets

@@ -220,7 +220,7 @@ export default function ExerciseDetailScreen() {
               >
                 <Icon
                   icon={EllipsisVerticalIcon}
-                  size={20}
+                  size="lg"
                   className="text-foreground"
                 />
               </Button>

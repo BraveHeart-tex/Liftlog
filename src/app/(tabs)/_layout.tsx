@@ -1,3 +1,4 @@
+import { iconSizes, nativeFontSizes } from '@/src/theme/sizes';
 import { useTabBarTheme } from '@/src/theme/app-theme-provider';
 import { Tabs } from 'expo-router';
 import {
@@ -13,7 +14,7 @@ const TAB_BAR_HEIGHT = 66;
 const TAB_BAR_TOP_PADDING = 8;
 const TAB_BAR_BOTTOM_PADDING = 10;
 const ANDROID_TAB_BAR_EXTRA_BOTTOM_PADDING = 16;
-const TAB_ICON_SIZE = 22;
+const TAB_ICON_SIZE = iconSizes.lg;
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
@@ -28,6 +29,7 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarAllowFontScaling: false,
         tabBarActiveTintColor: tabBarTheme.activeTintColor,
         tabBarInactiveTintColor: tabBarTheme.inactiveTintColor,
         tabBarIconStyle: styles.tabBarIcon,
@@ -137,7 +139,7 @@ const styles = StyleSheet.create({
   },
   tabBarLabel: {
     fontFamily: 'Inter_600SemiBold',
-    fontSize: 11,
+    fontSize: nativeFontSizes.tabLabel,
     fontWeight: '600',
     marginTop: 2
   }

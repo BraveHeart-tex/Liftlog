@@ -155,7 +155,7 @@ export function ActiveWorkoutContent({
           size="icon"
           onPress={() => setIsRestTimerOpen(true)}
         >
-          <Icon icon={TimerIcon} size={20} className="text-foreground" />
+          <Icon icon={TimerIcon} size="lg" className="text-foreground" />
           {isRestTimerRunning ? (
             <View className="bg-primary absolute top-0 right-0 h-2 w-2 rounded-full" />
           ) : null}
@@ -169,7 +169,7 @@ export function ActiveWorkoutContent({
         >
           <Icon
             icon={EllipsisVerticalIcon}
-            size={20}
+            size="lg"
             className="text-foreground"
           />
         </Button>
@@ -221,7 +221,7 @@ export function ActiveWorkoutContent({
           className="w-full"
           disabled={isLoadingWorkoutExercises}
           leftIcon={
-            <Icon icon={PlusIcon} size={16} className="text-foreground" />
+            <Icon icon={PlusIcon} size="sm" className="text-foreground" />
           }
           onPress={() => setIsExercisePickerOpen(true)}
         >

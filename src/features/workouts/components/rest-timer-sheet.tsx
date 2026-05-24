@@ -13,6 +13,7 @@ import {
   useRestTimerStore
 } from '@/src/features/workouts/stores/rest-timer-store';
 import { formatTime } from '@/src/lib/utils/format-time';
+import { nativeFontSizes } from '@/src/theme/sizes';
 import * as Haptics from 'expo-haptics';
 import { XIcon } from 'lucide-react-native';
 import { useEffect, useRef } from 'react';
@@ -149,7 +150,7 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
       <BottomSheetHeader className="flex-row items-center justify-between">
         <BottomSheetTitle>Rest</BottomSheetTitle>
         <Button variant="ghost" size="icon" onPress={handleClose}>
-          <Icon icon={XIcon} size={20} className="text-foreground" />
+          <Icon icon={XIcon} size="lg" className="text-foreground" />
         </Button>
       </BottomSheetHeader>
 
@@ -175,7 +176,7 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
                 onChangeText={handleInputChange}
                 keyboardType="number-pad"
                 style={{
-                  fontSize: 20,
+                  fontSize: nativeFontSizes.restTimerInput,
                   fontWeight: '500',
                   minWidth: 64,
                   textAlign: 'center'
@@ -205,8 +206,9 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
         {showCountdown ? (
           <View className="items-center">
             <Text
-              className="text-foreground text-[72px] font-medium"
+              className="text-foreground font-medium"
               style={{
+                fontSize: nativeFontSizes.restTimerDisplay,
                 fontVariant: ['tabular-nums']
               }}
             >

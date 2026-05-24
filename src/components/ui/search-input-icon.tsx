@@ -9,7 +9,7 @@ export const SearchInputIcon = (
     <Icon
       icon={SearchIcon}
       className="text-muted-foreground"
-      size={16}
+      size="sm"
       {...props}
     />
   );
