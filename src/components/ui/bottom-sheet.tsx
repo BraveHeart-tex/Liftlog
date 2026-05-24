@@ -22,6 +22,7 @@ import {
   type ReactNode
 } from 'react';
 import { Keyboard, Platform, View } from 'react-native';
+import type { PanGestureHandlerProps } from 'react-native-gesture-handler';
 
 interface BottomSheetComponentProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ interface BottomSheetComponentProps {
   enableDynamicSizing?: boolean;
   keyboardBehavior?: 'interactive' | 'extend' | 'fillParent';
   androidKeyboardInputMode?: 'adjustPan' | 'adjustResize';
+  activeOffsetY?: PanGestureHandlerProps['activeOffsetY'];
   children: ReactNode;
   footer?: ReactNode;
   className?: string;
@@ -72,6 +74,7 @@ export function BottomSheet({
   enableDynamicSizing = false,
   keyboardBehavior = 'extend',
   androidKeyboardInputMode,
+  activeOffsetY,
   children,
   footer,
   className
@@ -137,6 +140,7 @@ export function BottomSheet({
     <BottomSheetModal
       ref={sheetRef}
       android_keyboardInputMode={resolvedAndroidKeyboardInputMode}
+      activeOffsetY={activeOffsetY}
       backdropComponent={renderBackdrop}
       backgroundComponent={SheetBackground}
       enableDynamicSizing={enableDynamicSizing}

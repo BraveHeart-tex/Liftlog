@@ -1,11 +1,17 @@
-import { StyledScrollView } from '@/src/components/styled/scroll-view';
+import { StyledGestureScrollView } from '@/src/components/styled/scroll-view';
 import { ChoiceChip } from '@/src/components/ui/chip';
 import {
   CATEGORY_FILTERS,
   type ExerciseCategory
 } from '@/src/features/exercises/constants';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { View, type ScrollView } from 'react-native';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentRef
+} from 'react';
+import { View } from 'react-native';
 
 export type ExercisePickerFilter =
   | 'all'
@@ -36,11 +42,13 @@ export function ExercisePickerFilters({
   selectedFilter,
   setSelectedFilter
 }: ExercisePickerFiltersProps) {
-  const filterScrollRef = useRef<ScrollView>(null);
+  const filterScrollRef =
+    useRef<ComponentRef<typeof StyledGestureScrollView>>(null);
   const filterLayoutsRef = useRef<
     Partial<Record<ExercisePickerFilter, { x: number; width: number }>>
   >({});
   const [filterViewportWidth, setFilterViewportWidth] = useState(0);
+  const [filterLayoutVersion, setFilterLayoutVersion] = useState(0);
   const visibleFilters: ExercisePickerFilterOption[] = [
     { label: 'All', value: 'all' },
     { label: 'Recent', value: 'recent' },
@@ -70,16 +78,25 @@ export function ExercisePickerFilters({
   );
 
   useEffect(() => {
-    scrollFilterIntoView(selectedFilter);
-  }, [selectedFilter, scrollFilterIntoView]);
+    const animationFrame = requestAnimationFrame(() => {
+      scrollFilterIntoView(selectedFilter);
+    });
+
+    return () => {
+      cancelAnimationFrame(animationFrame);
+    };
+  }, [filterLayoutVersion, selectedFilter, scrollFilterIntoView]);
 
   return (
-    <StyledScrollView
+    <StyledGestureScrollView
       ref={filterScrollRef}
       horizontal
       showsHorizontalScrollIndicator={false}
+      showsVerticalScrollIndicator={false}
       className="mt-4"
       contentContainerClassName="gap-2 pr-4"
+      keyboardShouldPersistTaps="handled"
+      nestedScrollEnabled
       onLayout={event => {
         setFilterViewportWidth(event.nativeEvent.layout.width);
       }}
@@ -91,7 +108,17 @@ export function ExercisePickerFilters({
           <View
             key={filter.value}
             onLayout={event => {
-              filterLayoutsRef.current[filter.value] = event.nativeEvent.layout;
+              const nextLayout = event.nativeEvent.layout;
+              const previousLayout = filterLayoutsRef.current[filter.value];
+
+              filterLayoutsRef.current[filter.value] = nextLayout;
+
+              if (
+                previousLayout?.x !== nextLayout.x ||
+                previousLayout?.width !== nextLayout.width
+              ) {
+                setFilterLayoutVersion(version => version + 1);
+              }
             }}
           >
             <ChoiceChip
@@ -104,6 +131,6 @@ export function ExercisePickerFilters({
           </View>
         );
       })}
-    </StyledScrollView>
+    </StyledGestureScrollView>
   );
 }

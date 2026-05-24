@@ -197,6 +197,7 @@ export function ExercisePickerSheet({
       isOpen={isOpen}
       onClose={onClose}
       snapPoints={SNAP_POINTS}
+      activeOffsetY={[-12, 12]}
       footer={
         <View
           style={{ paddingBottom: insets.bottom }}
