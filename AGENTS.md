@@ -41,8 +41,6 @@ Use the shared `cn` helper:
 import { cn } from '@/src/lib/utils/cn';
 ```
 
-````
-
 Do not create local `joinClassNames` or `cn` helpers.
 
 ### Core React Native components
@@ -76,9 +74,13 @@ src/components/styled
 Existing wrappers include:
 
 - `StyledScrollView`
+- `StyledGestureScrollView`
 - `StyledFlatList`
+- `StyledFlashList`
 - `StyledBottomSheetFlatList`
 - `StyledBottomSheetBackdrop`
+- `StyledBottomSheetScrollView`
+- `StyledBottomSheetTextInput`
 - `StyledTextInput`
 - `StyledActivityIndicator`
 
@@ -115,9 +117,11 @@ Prefer these semantic tokens.
 ```txt
 bg-background
 bg-card
+bg-popover
 bg-primary
 bg-secondary
 bg-muted
+bg-accent
 bg-input
 bg-success
 bg-warning
@@ -125,13 +129,17 @@ bg-danger
 bg-info
 
 text-foreground
+text-card-foreground
+text-popover-foreground
 text-primary-foreground
 text-secondary-foreground
 text-muted-foreground
 text-accent-foreground
+text-danger-foreground
 text-success
 text-warning
 text-danger
+text-info
 text-progress-up
 text-progress-same
 text-progress-down
@@ -199,6 +207,7 @@ Use:
 
 - `StyledScrollView` for regular vertical content
 - `StyledFlatList` / `StyledBottomSheetFlatList` for long or dynamic lists
+- `StyledFlashList` for high-volume lists where FlashList is already the right fit
 
 Do not rely on a plain `View` for scrollable layouts.
 
@@ -309,14 +318,10 @@ import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 
 const db = useDrizzle();
 
-const { data } = useLiveWithFallback(
-  () => getExercisesQuery(db),
-  () => getExercises(db),
-  [db]
-);
+const { data } = useLiveWithFallback(getExercisesQuery(db), [db]);
 ```
 
-Every live query needs a synchronous repository fallback so the first render has data before Drizzle’s live listener emits.
+Every live query uses the same repository query for the live subscription and the initial synchronous `query.all()` fallback.
 
 ### Database lifecycle
 
@@ -342,6 +347,8 @@ App code should not call these outside provider setup:
 - `migrate`
 - `runSeedIfNeeded`
 
+Dev-only tooling may call `useSQLiteContext` when needed, such as `src/components/drizzle-studio.tsx`.
+
 ### Schema and migrations
 
 - Schema lives in `src/db/schema.ts`.
@@ -349,11 +356,11 @@ App code should not call these outside provider setup:
 - When changing schema, update `src/db/schema.ts` first, then generate migrations with:
 
 ```sh
-npx drizzle-kit generate
+pnpm exec drizzle-kit generate
 ```
 
 - Never write or edit migration SQL, migration snapshots, `_journal.json`, or `migrations.js` by hand.
-- Never manually generate migration files. Always use `npx drizzle-kit generate`.
+- Never manually generate migration files. Always use `pnpm exec drizzle-kit generate`.
 - Do not manually patch the local SQLite database.
 
 ## Component Structure
@@ -520,6 +527,12 @@ If no test harness exists for the touched area, say so explicitly and rely on:
 - prettier check
 - focused manual verification
 
+When deleting files, exports, or doing broad cleanup, also run:
+
+```sh
+pnpm run knip
+```
+
 Never claim completion if checks are failing.
 
 ## Common Pitfalls
@@ -543,6 +556,11 @@ Avoid:
 src/
   app/
     (tabs)/
+      exercises/
+      history/
+      settings/
+      workout/
+    exercises/
     workouts/
   assets/
     sounds/
@@ -591,4 +609,3 @@ When generating UI code:
 ## Goal
 
 Build a fast, minimal, high-quality workout tracker with excellent UX, a clean design system, and maintainable code.
-````
