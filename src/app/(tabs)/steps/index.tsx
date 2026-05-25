@@ -78,7 +78,10 @@ export default function StepsScreen() {
     );
   }
 
-  if (isStepTrackingUnavailable || shouldConnectSteps) {
+  if (
+    stepDays.length === 0 &&
+    (isStepTrackingUnavailable || shouldConnectSteps)
+  ) {
     return (
       <SafeAreaView
         style={{ flex: 1 }}
