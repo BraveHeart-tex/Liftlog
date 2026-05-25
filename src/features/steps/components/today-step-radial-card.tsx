@@ -2,6 +2,7 @@ import { Badge } from '@/src/components/ui/badge';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Text } from '@/src/components/ui/text';
 import { formatSteps } from '@/src/features/steps/display';
+import { cn } from '@/src/lib/utils/cn';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { nativeFontSizes } from '@/src/theme/sizes';
 import { Canvas, Circle, Path, Skia } from '@shopify/react-native-skia';
@@ -35,6 +36,7 @@ export function TodayStepRadialCard({
   const { colors } = useAppTheme();
 
   const safeProgress = Math.min(Math.max(progress, 0), 100);
+  const isLiveStepCounterActive = liveStepCounterStatus === 'active';
   const progressPath = useMemo(() => {
     const path = Skia.Path.Make();
     const sweep = Math.max(0.1, (safeProgress / 100) * MAX_SWEEP_DEGREES);
@@ -101,23 +103,45 @@ export function TodayStepRadialCard({
               <Text
                 variant="bodyMedium"
                 tone="muted"
-                className="mt-2 text-center"
+                className="text-center"
                 numberOfLines={1}
                 style={{ fontSize: nativeFontSizes.stepRadialMeta }}
               >
                 / {formatSteps(goal)} goal · {safeProgress}%
               </Text>
 
-              {liveStepCounterBadgeLabel ? (
-                <Badge
-                  variant={
-                    liveStepCounterStatus === 'active' ? 'success' : 'outline'
-                  }
-                  className="mt-4"
-                >
-                  {liveStepCounterBadgeLabel}
-                </Badge>
-              ) : null}
+              <View className="flex w-full flex-row items-center justify-center">
+                {liveStepCounterBadgeLabel ? (
+                  <Badge
+                    className={cn(
+                      'will-change-variable mt-4 flex flex-row items-center',
+                      isLiveStepCounterActive
+                        ? 'bg-success/10 dark:bg-success/20'
+                        : 'bg-secondary dark:bg-secondary/20'
+                    )}
+                  >
+                    <View
+                      className={cn(
+                        'will-change-variable h-2 w-2 rounded-full',
+                        isLiveStepCounterActive
+                          ? 'dark:bg-success bg-success/50'
+                          : 'bg-secondary-foreground/50 dark:bg-secondary'
+                      )}
+                    />
+                    <Text
+                      variant="caption"
+                      className={cn(
+                        'will-change-variable',
+                        isLiveStepCounterActive
+                          ? 'text-success'
+                          : 'text-secondary-foreground'
+                      )}
+                    >
+                      {liveStepCounterBadgeLabel}
+                    </Text>
+                  </Badge>
+                ) : null}
+              </View>
             </View>
           </View>
 
