@@ -14,6 +14,9 @@ export default defineConfig([
       'android/*',
       'bin/*',
       'build/*',
+      'modules/expo-step-counter/build/**',
+      'modules/expo-step-counter/internal/**',
+      'modules/expo-step-counter/package/**',
       'expo-env.d.ts',
       'nativewind-env.d.ts',
       'pnpm-lock.yaml',
@@ -105,6 +108,7 @@ export default defineConfig([
     ignores: [
       '*.config.{js,mjs,ts}',
       'eslint.config.mjs',
+      'modules/**',
       'src/app/**',
       'src/db/migrations/**'
     ],

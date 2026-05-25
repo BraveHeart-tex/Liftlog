@@ -1,0 +1,273 @@
+package expo.modules.stepcounter
+
+import android.Manifest
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.os.Build
+import android.os.IBinder
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+
+class StepCounterService : Service(), SensorEventListener {
+    private lateinit var sensorManager: SensorManager
+    private var stepCounterSensor: Sensor? = null
+
+    private var healthConnectBaseline: Int = 0
+    private var sensorBaseline: Float? = null
+    private var latestSensorValue: Float? = null
+    private var latestDisplayedSteps: Int = 0
+    private var isCounting: Boolean = false
+
+    override fun onCreate() {
+        super.onCreate()
+
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        stepCounterSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+
+        createNotificationChannel()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        when (intent?.action) {
+            ACTION_START -> {
+                val baseline = intent.getIntExtra(EXTRA_HEALTH_CONNECT_BASELINE, 0)
+                startStepCounting(baseline)
+            }
+            ACTION_UPDATE_BASELINE -> {
+                val baseline = intent.getIntExtra(EXTRA_HEALTH_CONNECT_BASELINE, 0)
+                updateBaseline(baseline)
+            }
+            ACTION_STOP -> {
+                stopStepCounting()
+                stopSelf()
+            }
+            else -> {
+                if (!isCounting) {
+                    startStepCounting(healthConnectBaseline)
+                }
+            }
+        }
+
+        return START_STICKY
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onSensorChanged(event: SensorEvent) {
+        if (event.sensor.type != Sensor.TYPE_STEP_COUNTER) return
+
+        val currentSensorValue = event.values.firstOrNull() ?: return
+
+        if (sensorBaseline == null) {
+            sensorBaseline = currentSensorValue
+        }
+
+        latestSensorValue = currentSensorValue
+
+        val liveDelta =
+                (currentSensorValue - (sensorBaseline ?: currentSensorValue))
+                        .toInt()
+                        .coerceAtLeast(0)
+
+        latestDisplayedSteps = healthConnectBaseline + liveDelta
+
+        updateNotification(latestDisplayedSteps)
+
+        StepCounterEventBus.emitStepCountChanged(
+                StepCounterEvent(
+                        steps = latestDisplayedSteps,
+                        healthConnectBaseline = healthConnectBaseline,
+                        liveDelta = liveDelta,
+                        sensorValue = latestSensorValue
+                )
+        )
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
+
+    private fun startStepCounting(nextHealthConnectBaseline: Int) {
+        healthConnectBaseline = nextHealthConnectBaseline.coerceAtLeast(0)
+        latestDisplayedSteps = healthConnectBaseline
+
+        try {
+            startForeground(NOTIFICATION_ID, buildNotification(latestDisplayedSteps))
+        } catch (error: Throwable) {
+            StepCounterEventBus.emitError(
+                    "Failed to start foreground service: ${error.message ?: "Unknown error"}"
+            )
+            stopSelf()
+            return
+        }
+
+        if (!hasActivityRecognitionPermission()) {
+            StepCounterEventBus.emitError("ACTIVITY_RECOGNITION permission is missing")
+            stopSelf()
+            return
+        }
+
+        val sensor = stepCounterSensor
+
+        if (sensor == null) {
+            StepCounterEventBus.emitError(
+                    "TYPE_STEP_COUNTER sensor is not available on this device"
+            )
+            stopSelf()
+            return
+        }
+
+        if (isCounting) {
+            updateNotification(latestDisplayedSteps)
+            emitCurrentState()
+            return
+        }
+
+        sensorBaseline = null
+        latestSensorValue = null
+
+        val registered =
+                sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL)
+
+        if (!registered) {
+            StepCounterEventBus.emitError("Failed to register step counter sensor listener")
+            stopSelf()
+            return
+        }
+
+        isCounting = true
+        emitCurrentState()
+    }
+
+    private fun updateBaseline(nextHealthConnectBaseline: Int) {
+        healthConnectBaseline = nextHealthConnectBaseline.coerceAtLeast(0)
+
+        // Health Connect may have caught up with steps we were temporarily adding
+        // as live delta. Reset this to avoid double-counting old live steps.
+        sensorBaseline = null
+        latestSensorValue = null
+        latestDisplayedSteps = healthConnectBaseline
+
+        updateNotification(latestDisplayedSteps)
+        emitCurrentState()
+    }
+
+    private fun stopStepCounting() {
+        if (isCounting) {
+            sensorManager.unregisterListener(this)
+            isCounting = false
+        }
+
+        sensorBaseline = null
+        latestSensorValue = null
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION") stopForeground(true)
+        }
+    }
+
+    override fun onDestroy() {
+        stopStepCounting()
+        super.onDestroy()
+    }
+
+    private fun emitCurrentState() {
+        val liveDelta = (latestDisplayedSteps - healthConnectBaseline).coerceAtLeast(0)
+
+        StepCounterEventBus.emitStepCountChanged(
+                StepCounterEvent(
+                        steps = latestDisplayedSteps,
+                        healthConnectBaseline = healthConnectBaseline,
+                        liveDelta = liveDelta,
+                        sensorValue = latestSensorValue
+                )
+        )
+    }
+
+    private fun hasActivityRecognitionPermission(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return true
+        }
+
+        return ActivityCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION) ==
+                PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+
+        val channel =
+                NotificationChannel(
+                                NOTIFICATION_CHANNEL_ID,
+                                NOTIFICATION_CHANNEL_NAME,
+                                NotificationManager.IMPORTANCE_LOW
+                        )
+                        .apply {
+                            description = "Shows live step count while step tracking is active"
+                            setShowBadge(false)
+                        }
+
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.createNotificationChannel(channel)
+    }
+
+    private fun updateNotification(displayedSteps: Int) {
+        val notificationManager = getSystemService(NotificationManager::class.java)
+
+        notificationManager.notify(NOTIFICATION_ID, buildNotification(displayedSteps))
+    }
+
+    private fun buildNotification(displayedSteps: Int): Notification {
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+
+        val pendingIntent =
+                launchIntent?.let {
+                    PendingIntent.getActivity(
+                            this,
+                            0,
+                            it,
+                            PendingIntent.FLAG_UPDATE_CURRENT or pendingIntentImmutableFlag()
+                    )
+                }
+
+        return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle("Step counter active")
+                .setContentText("$displayedSteps steps today")
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setShowWhen(false)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setContentIntent(pendingIntent)
+                .build()
+    }
+
+    private fun pendingIntentImmutableFlag(): Int {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PendingIntent.FLAG_IMMUTABLE
+        } else {
+            0
+        }
+    }
+
+    companion object {
+        const val ACTION_START = "expo.modules.stepcounter.START"
+        const val ACTION_STOP = "expo.modules.stepcounter.STOP"
+        const val ACTION_UPDATE_BASELINE = "expo.modules.stepcounter.UPDATE_BASELINE"
+
+        const val EXTRA_HEALTH_CONNECT_BASELINE = "healthConnectBaseline"
+
+        private const val NOTIFICATION_CHANNEL_ID = "step_counter"
+        private const val NOTIFICATION_CHANNEL_NAME = "Step counter"
+        private const val NOTIFICATION_ID = 1001
+    }
+}
