@@ -90,6 +90,7 @@ export function useStepsScreen() {
   const [permissions, setPermissions] = useState<StepPermissionState>(
     EMPTY_PERMISSION_STATE
   );
+  const [hasCheckedAvailability, setHasCheckedAvailability] = useState(false);
   const [syncState, setSyncState] = useState<SyncState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const liveStepCounter = useLiveStepCounter({
@@ -106,21 +107,25 @@ export function useStepsScreen() {
   const liveStepDelta = Math.max(0, displayedTodaySteps - stats.todaySteps);
 
   const refreshStatus = useCallback(async () => {
-    const nextAvailability = await getHealthConnectAvailability();
+    try {
+      const nextAvailability = await getHealthConnectAvailability();
 
-    setAvailability(nextAvailability);
+      setAvailability(nextAvailability);
 
-    if (nextAvailability !== 'available') {
-      setPermissions(EMPTY_PERMISSION_STATE);
+      if (nextAvailability !== 'available') {
+        setPermissions(EMPTY_PERMISSION_STATE);
 
-      return EMPTY_PERMISSION_STATE;
+        return EMPTY_PERMISSION_STATE;
+      }
+
+      const nextPermissions = await getStepPermissionState();
+
+      setPermissions(nextPermissions);
+
+      return nextPermissions;
+    } finally {
+      setHasCheckedAvailability(true);
     }
-
-    const nextPermissions = await getStepPermissionState();
-
-    setPermissions(nextPermissions);
-
-    return nextPermissions;
   }, []);
 
   const syncSteps = useCallback(
@@ -209,7 +214,7 @@ export function useStepsScreen() {
     availability,
     errorMessage,
     healthConnectStepsEnabled,
-    isLoading: !stepDaysResult.isLive,
+    isLoading: !stepDaysResult.isLive || !hasCheckedAvailability,
     isSyncing: syncState === 'syncing',
     displayedTodaySteps,
     liveStepCounterError: liveStepCounter.error,
