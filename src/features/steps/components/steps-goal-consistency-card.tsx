@@ -2,13 +2,16 @@ import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Text } from '@/src/components/ui/text';
 import type { HealthStepDay } from '@/src/db/schema';
+import { getTodayDateKey } from '@/src/features/steps/date';
 import {
-  getRecentLocalDayRanges,
-  getTodayDateKey
-} from '@/src/features/steps/date';
-import { formatSteps } from '@/src/features/steps/display';
+  formatSteps,
+  getStepGoalConsistencyAverageSteps,
+  getStepGoalConsistencyDays,
+  getStepGoalConsistencyFillHeight,
+  getStepGoalConsistencyHitCount,
+  STEP_GOAL_CONSISTENCY_DAY_COUNT
+} from '@/src/features/steps/display';
 import { cn } from '@/src/lib/utils/cn';
-import { formatWorkoutDate } from '@/src/lib/utils/date';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 
@@ -17,64 +20,8 @@ interface StepsGoalConsistencyCardProps {
   goal: number;
 }
 
-interface GoalConsistencyDay {
-  dateLabel: string;
-  dateKey: string;
-  hit: boolean;
-  isToday: boolean;
-  label: string;
-  progress: number;
-  steps: number;
-}
-
-const DAY_COUNT = 7;
 const BAR_HEIGHT = 112;
 const GOAL_HEIGHT_PERCENT = 72;
-
-function normalizeProgress(progress: number): number {
-  if (!Number.isFinite(progress)) {
-    return 0;
-  }
-
-  return Math.max(0, progress);
-}
-
-function getWeekdayLabel(timestamp: number): string {
-  return new Intl.DateTimeFormat(undefined, { weekday: 'short' })
-    .format(new Date(timestamp))
-    .slice(0, 1);
-}
-
-function getGoalConsistencyDays(
-  days: HealthStepDay[],
-  goal: number
-): GoalConsistencyDay[] {
-  const daysByDateKey = new Map(days.map(day => [day.dateKey, day]));
-  const todayDateKey = getTodayDateKey();
-
-  return getRecentLocalDayRanges(DAY_COUNT).map(range => {
-    const day = daysByDateKey.get(range.dateKey);
-    const steps = day?.steps ?? 0;
-    const progress = goal > 0 ? normalizeProgress(steps / goal) : 0;
-
-    return {
-      dateKey: range.dateKey,
-      dateLabel: formatWorkoutDate(range.startAt),
-      hit: goal > 0 && steps >= goal,
-      isToday: range.dateKey === todayDateKey,
-      label: getWeekdayLabel(range.startAt),
-      progress,
-      steps
-    };
-  });
-}
-
-function getFillHeight(progress: number): number {
-  return Math.min(
-    BAR_HEIGHT,
-    progress * BAR_HEIGHT * (GOAL_HEIGHT_PERCENT / 100)
-  );
-}
 
 export function StepsGoalConsistencyCard({
   days,
@@ -82,16 +29,14 @@ export function StepsGoalConsistencyCard({
 }: StepsGoalConsistencyCardProps) {
   const [selectedDateKey, setSelectedDateKey] = useState(getTodayDateKey);
   const consistencyDays = useMemo(
-    () => getGoalConsistencyDays(days, goal),
+    () => getStepGoalConsistencyDays(days, goal),
     [days, goal]
   );
   const selectedDay =
     consistencyDays.find(day => day.dateKey === selectedDateKey) ??
     consistencyDays.at(-1);
-  const averageSteps = Math.round(
-    consistencyDays.reduce((total, day) => total + day.steps, 0) / DAY_COUNT
-  );
-  const hitCount = goal > 0 ? consistencyDays.filter(day => day.hit).length : 0;
+  const averageSteps = getStepGoalConsistencyAverageSteps(consistencyDays);
+  const hitCount = getStepGoalConsistencyHitCount(consistencyDays, goal);
 
   return (
     <Card className="mt-6">
@@ -142,7 +87,13 @@ export function StepsGoalConsistencyCard({
                       'w-full rounded-sm',
                       day.hit ? 'bg-primary' : 'bg-muted-foreground/25'
                     )}
-                    style={{ height: getFillHeight(day.progress) }}
+                    style={{
+                      height: getStepGoalConsistencyFillHeight({
+                        barHeight: BAR_HEIGHT,
+                        goalHeightPercent: GOAL_HEIGHT_PERCENT,
+                        progress: day.progress
+                      })
+                    }}
                   />
                 </View>
               </PressableSurface>
@@ -185,7 +136,7 @@ export function StepsGoalConsistencyCard({
           ) : null}
 
           <Text variant="small" tone="muted" className="mt-2">
-            {hitCount}/{DAY_COUNT} days hit
+            {hitCount}/{STEP_GOAL_CONSISTENCY_DAY_COUNT} days hit
           </Text>
         </View>
       </CardContent>
