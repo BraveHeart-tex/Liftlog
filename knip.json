@@ -4,6 +4,7 @@
   "ignoreDependencies": [
     "@react-navigation/bottom-tabs",
     "@react-navigation/elements",
+    "@babel/core",
     "babel-plugin-inline-import",
     "babel-preset-expo",
     "expo-blur",
@@ -30,6 +31,8 @@
     ],
     "src/features/workouts/repository.ts": ["exports"],
     "src/lib/utils/set.ts": ["exports"],
+    "modules/expo-step-counter/build/**": ["duplicates"],
+    "modules/expo-step-counter/src/index.ts": ["duplicates"],
     "src/lib/utils/workout.ts": ["exports"]
   }
 }

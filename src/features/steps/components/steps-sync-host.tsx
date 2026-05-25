@@ -2,27 +2,27 @@ import { useDrizzle } from '@/src/components/database-provider';
 import {
   getTodayStepDay,
   upsertStepDays
-} from '@/src/features/activity/repository';
-import { syncStepDaysFromHealthConnect } from '@/src/features/activity/health-connect';
+} from '@/src/features/steps/repository';
+import { syncStepDaysFromHealthConnect } from '@/src/features/steps/health-connect';
 import {
   showStepNotification,
   startStepNotificationRefresh,
   stopStepNotification
-} from '@/src/features/activity/notifications';
+} from '@/src/features/steps/notifications';
 import { useSettings } from '@/src/features/settings/hooks';
-import { getTodayDateKey } from '@/src/features/activity/date';
+import { getTodayDateKey } from '@/src/features/steps/date';
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 
-export function ActivitySyncHost() {
+export function StepsSyncHost() {
   if (Platform.OS !== 'android') {
     return null;
   }
 
-  return <AndroidActivitySyncHost />;
+  return <AndroidStepsSyncHost />;
 }
 
-function AndroidActivitySyncHost() {
+function AndroidStepsSyncHost() {
   const db = useDrizzle();
   const { healthConnectStepsEnabled, stepsNotificationEnabled, stepGoal } =
     useSettings();

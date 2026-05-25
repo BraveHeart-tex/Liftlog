@@ -2,9 +2,9 @@ import { iconSizes, nativeFontSizes } from '@/src/theme/sizes';
 import { useTabBarTheme } from '@/src/theme/app-theme-provider';
 import { Tabs } from 'expo-router';
 import {
-  ActivityIcon,
   ClockIcon,
   DumbbellIcon,
+  FootprintsIcon,
   ListIcon,
   SettingsIcon
 } from 'lucide-react-native';
@@ -77,9 +77,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="history"
+        name="log"
         options={{
-          title: 'History',
+          title: 'Log',
           tabBarIcon: ({ color, focused }) => (
             <View
               style={[styles.iconCapsule, focused && styles.activeIconCapsule]}
@@ -90,15 +90,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="activity"
+        name="steps"
         options={{
           href: Platform.OS === 'android' ? undefined : null,
-          title: 'Activity',
+          title: 'Steps',
           tabBarIcon: ({ color, focused }) => (
             <View
               style={[styles.iconCapsule, focused && styles.activeIconCapsule]}
             >
-              <ActivityIcon color={color} size={TAB_ICON_SIZE} />
+              <FootprintsIcon color={color} size={TAB_ICON_SIZE} />
             </View>
           )
         }}

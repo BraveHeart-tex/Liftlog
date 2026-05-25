@@ -19,7 +19,7 @@ function getDateRange(dateKey: string): { endAt: number; startAt: number } {
   };
 }
 
-export function useHistoryList(selectedDateKey: string) {
+export function useWorkoutLog(selectedDateKey: string) {
   const db = useDrizzle();
 
   const workoutDateResult = useLiveWithFallback(

@@ -2,11 +2,11 @@ import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import { openStepHealthConnectSettings } from '@/src/features/activity/health-connect';
+import { openStepHealthConnectSettings } from '@/src/features/steps/health-connect';
 import {
   requestStepNotificationPermission,
   stopStepNotification
-} from '@/src/features/activity/notifications';
+} from '@/src/features/steps/notifications';
 import { ThemeOptionCard } from '@/src/features/settings/components/theme-option-card';
 import {
   SETTINGS_DEFAULTS,
@@ -55,7 +55,7 @@ export default function SettingsScreen() {
     setStepGoal
   } = useSettings();
   const { colors } = useAppTheme();
-  const shouldShowActivitySettings = Platform.OS === 'android';
+  const shouldShowStepsSettings = Platform.OS === 'android';
 
   const switchColors = {
     track: {
@@ -216,10 +216,10 @@ export default function SettingsScreen() {
         </Card>
       </View>
 
-      {shouldShowActivitySettings ? (
+      {shouldShowStepsSettings ? (
         <View className="mt-6">
           <Text variant="caption" tone="muted" className="mb-3">
-            Activity
+            Steps
           </Text>
           <Card>
             <CardContent>

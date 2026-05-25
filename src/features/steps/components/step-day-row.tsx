@@ -1,17 +1,12 @@
 import { Text } from '@/src/components/ui/text';
 import type { HealthStepDay } from '@/src/db/schema';
+import { formatSteps } from '@/src/features/steps/display';
 import { formatWorkoutDate } from '@/src/lib/utils/date';
 import { View } from 'react-native';
 
 interface StepDayRowProps {
   day: HealthStepDay;
   goal: number;
-}
-
-function formatSteps(steps: number): string {
-  return new Intl.NumberFormat(undefined, {
-    maximumFractionDigits: 0
-  }).format(steps);
 }
 
 export function StepDayRow({ day, goal }: StepDayRowProps) {

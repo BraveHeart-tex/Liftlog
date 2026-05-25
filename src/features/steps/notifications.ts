@@ -1,10 +1,10 @@
 import { Platform } from 'react-native';
-import { requestActivityRecognitionPermission } from '@/src/features/activity/step-counter-permissions';
+import { requestActivityRecognitionPermission } from '@/src/features/steps/step-counter-permissions';
 import { StepCounter } from 'expo-step-counter';
 import notifee, { AuthorizationStatus } from 'react-native-notify-kit';
 import { readTodayStepCount } from './health-connect';
 
-const STEP_NOTIFICATION_ID = 'activity-steps';
+const STEP_NOTIFICATION_ID = 'steps';
 const STEP_NOTIFICATION_REFRESH_MS = 15 * 60 * 1000;
 
 let notificationInterval: ReturnType<typeof setInterval> | null = null;

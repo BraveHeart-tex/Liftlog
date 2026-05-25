@@ -6,7 +6,7 @@ import { memo, useCallback, useMemo, useState } from 'react';
 import { type LayoutChangeEvent, View } from 'react-native';
 import { Calendar, type DateData } from 'react-native-calendars';
 
-interface WorkoutHistoryCalendarProps {
+interface WorkoutLogCalendarProps {
   selectedDateKey: string;
   workoutCountByDateKey: Map<string, number>;
   onSelectDate: (dateKey: string) => void;
@@ -243,7 +243,7 @@ const MonthCalendar = memo(
           onDayPress={handleDayPress}
           style={{ minHeight: CALENDAR_HEIGHT, width }}
           theme={calendarTheme}
-          testID={`history-calendar-${monthKey}`}
+          testID={`workout-log-calendar-${monthKey}`}
         />
       </View>
     );
@@ -274,11 +274,11 @@ const MonthCalendar = memo(
   }
 );
 
-export function WorkoutHistoryCalendar({
+export function WorkoutLogCalendar({
   selectedDateKey,
   workoutCountByDateKey,
   onSelectDate
-}: WorkoutHistoryCalendarProps) {
+}: WorkoutLogCalendarProps) {
   const { colors, colorScheme } = useAppTheme();
   const [calendarWidth, setCalendarWidth] = useState<number | null>(null);
 
