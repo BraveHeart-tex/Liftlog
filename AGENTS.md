@@ -12,6 +12,9 @@ Tech stack:
 - Gorhom Bottom Sheet
 - Lucide React Native
 - expo-audio
+- expo-step-counter
+- react-native-health-connect
+- react-native-notify-kit
 - react-native-calendars
 
 ## Core Principles
@@ -391,6 +394,16 @@ Prefer one component per file when practical.
 
 Small private render helpers may stay in the same file. Move larger or reusable components near the feature or UI primitive they belong to.
 
+Do not keep repeated formatting, labeling, status-message, or display-mapping helpers inside route screens or component files.
+
+For feature-specific display helpers, prefer a small feature-level file such as:
+
+```txt
+src/features/steps/display.ts
+```
+
+Use `src/lib/utils` only when the helper is genuinely cross-feature and domain-neutral.
+
 Do not keep generic utilities inside component files. Move reusable utilities to:
 
 ```txt
@@ -557,8 +570,9 @@ src/
   app/
     (tabs)/
       exercises/
-      history/
+      log/
       settings/
+      steps/
       workout/
     exercises/
     workouts/
@@ -573,6 +587,7 @@ src/
     exercises/
     progress/
     settings/
+    steps/
     workouts/
   lib/
     db/
@@ -593,16 +608,17 @@ The agent must:
 7. Keep data access in feature hooks and repositories.
 8. Use `useLiveWithFallback` for reactive Drizzle reads.
 9. Keep components simple.
-10. Avoid web-only assumptions.
-11. Avoid unnecessary libraries.
-12. Follow existing file and naming patterns.
+10. Move repeated feature display helpers into feature-level files such as `src/features/steps/display.ts`.
+11. Avoid web-only assumptions.
+12. Avoid unnecessary libraries.
+13. Follow existing file and naming patterns.
 
 ## Output Expectations
 
 When generating UI code:
 
 - Provide complete, working components.
-- Use realistic workout data where examples are needed.
+- Use realistic workout or steps data where examples are needed.
 - Follow spacing, typography, and theme rules.
 - Ensure layouts work on mobile screens.
 
