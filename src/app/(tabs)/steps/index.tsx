@@ -1,4 +1,5 @@
 import { StyledFlatList } from '@/src/components/styled/flat-list';
+import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { Badge } from '@/src/components/ui/badge';
 import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
@@ -17,8 +18,96 @@ import {
 } from '@/src/features/steps/display';
 import { useStepsScreen } from '@/src/features/steps/hooks';
 import { cn } from '@/src/lib/utils/cn';
-import { RefreshCwIcon, SettingsIcon } from 'lucide-react-native';
+import {
+  HeartIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  SettingsIcon
+} from 'lucide-react-native';
 import { View } from 'react-native';
+
+interface StepsConnectionBadgeProps {
+  isConnected: boolean;
+}
+
+function StepsConnectionBadge({ isConnected }: StepsConnectionBadgeProps) {
+  return (
+    <Badge
+      className={cn(
+        'will-change-variable flex flex-row items-center',
+        isConnected
+          ? 'bg-success/10 dark:bg-success/20'
+          : 'bg-secondary dark:bg-secondary/20'
+      )}
+    >
+      <View
+        className={cn(
+          'will-change-variable h-2 w-2 rounded-full',
+          isConnected
+            ? 'dark:bg-success bg-success/50'
+            : 'bg-secondary-foreground/50 dark:bg-secondary'
+        )}
+      />
+      <Text
+        variant="caption"
+        className={cn(
+          'will-change-variable',
+          isConnected ? 'text-success' : 'text-secondary-foreground'
+        )}
+      >
+        {isConnected ? 'Health Connect synced' : 'Not Connected'}
+      </Text>
+    </Badge>
+  );
+}
+
+interface StepsEmptyStateProps {
+  isSyncing: boolean;
+  onConnect: () => void;
+}
+
+function StepsEmptyState({ isSyncing, onConnect }: StepsEmptyStateProps) {
+  return (
+    <View className="flex-1 justify-center pt-16 pb-16">
+      <View className="items-center">
+        <View className="bg-card h-40 w-40 items-center justify-center rounded-full">
+          <Icon icon={HeartIcon} size={56} className="text-primary" />
+          <View className="bg-primary border-background absolute right-3 bottom-4 h-12 w-12 items-center justify-center rounded-full border-4">
+            <Icon
+              icon={PlusIcon}
+              size="lg"
+              className="text-primary-foreground"
+            />
+          </View>
+        </View>
+
+        <Text variant="h1" className="mt-7 text-center">
+          Connect Health Data
+        </Text>
+        <Text variant="body" tone="muted" className="mt-4 max-w-80 text-center">
+          See today&apos;s progress, weekly trends, and goal consistency from
+          your Health Connect step data.
+        </Text>
+      </View>
+
+      <Button
+        size="lg"
+        className="mt-10 w-full"
+        loading={isSyncing}
+        onPress={onConnect}
+      >
+        Connect Health Connect
+      </Button>
+
+      <View className="bg-card mt-7 rounded-lg px-5 py-4">
+        <Text variant="bodyMedium">Your data stays on device</Text>
+        <Text variant="small" tone="muted" className="mt-2">
+          LiftLog reads steps only. No data is sent to external servers.
+        </Text>
+      </View>
+    </View>
+  );
+}
 
 export default function StepsScreen() {
   const {
@@ -46,6 +135,7 @@ export default function StepsScreen() {
       : 0;
   const shouldConnectSteps =
     !permissions.canReadSteps || !healthConnectStepsEnabled;
+  const isConnected = !shouldConnectSteps;
   const liveStepCounterBadgeLabel = getLiveStepCounterBadgeLabel(
     liveStepCounterStatus,
     liveStepDelta
@@ -67,6 +157,40 @@ export default function StepsScreen() {
     );
   }
 
+  if (shouldConnectSteps) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1 }}
+        className="bg-background"
+        edges={['top']}
+      >
+        <StyledScrollView
+          className="flex-1"
+          contentContainerClassName="flex-grow px-4 py-6"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="flex-row items-start justify-between gap-4">
+            <View className="flex-1 gap-1">
+              <Text variant="h1">Steps</Text>
+              <StepsConnectionBadge isConnected={isConnected} />
+            </View>
+          </View>
+
+          {errorMessage ? (
+            <View className="border-danger bg-card mt-4 rounded-lg border px-4 py-3">
+              <Text variant="small" className="text-danger">
+                {errorMessage}
+              </Text>
+            </View>
+          ) : null}
+
+          <StepsEmptyState isSyncing={isSyncing} onConnect={connectSteps} />
+        </StyledScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
       <StyledFlatList
@@ -81,36 +205,7 @@ export default function StepsScreen() {
             <View className="flex-row items-start justify-between gap-4">
               <View className="flex-1 gap-1">
                 <Text variant="h1">Steps</Text>
-                <Badge
-                  className={cn(
-                    'will-change-variable flex flex-row items-center',
-                    shouldConnectSteps
-                      ? 'bg-secondary dark:bg-secondary/20'
-                      : 'bg-success/10 dark:bg-success/20'
-                  )}
-                >
-                  <View
-                    className={cn(
-                      'will-change-variable h-2 w-2 rounded-full',
-                      shouldConnectSteps
-                        ? 'bg-secondary-foreground/50 dark:bg-secondary'
-                        : 'dark:bg-success bg-success/50'
-                    )}
-                  />
-                  <Text
-                    variant="caption"
-                    className={cn(
-                      'will-change-variable',
-                      shouldConnectSteps
-                        ? 'text-secondary-foreground'
-                        : 'text-success'
-                    )}
-                  >
-                    {shouldConnectSteps
-                      ? 'Not Connected'
-                      : 'Health Connect synced'}
-                  </Text>
-                </Badge>
+                <StepsConnectionBadge isConnected={isConnected} />
               </View>
 
               <Button
