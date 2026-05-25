@@ -10,10 +10,10 @@ import { StepDayRow } from '@/src/features/steps/components/step-day-row';
 import { StepsConnectionBadge } from '@/src/features/steps/components/steps-connection-badge';
 import { StepsEmptyState } from '@/src/features/steps/components/steps-empty-state';
 import { StepsGoalConsistencyCard } from '@/src/features/steps/components/steps-goal-consistency-card';
+import { StepsSummaryCards } from '@/src/features/steps/components/steps-summary-cards';
 import { StepsUnavailableState } from '@/src/features/steps/components/steps-unavailable-state';
 import { TodayStepRadialCard } from '@/src/features/steps/components/today-step-radial-card';
 import {
-  formatSteps,
   getAvailabilityLabel,
   getLiveStepCounterBadgeLabel,
   getLiveStepCounterMessage
@@ -208,29 +208,11 @@ export default function StepsScreen() {
             </Card>
 
             <StepsGoalConsistencyCard days={stepDays} goal={stepGoal} />
-            <View className="mt-4 flex-row gap-3">
-              <Card className="flex-1">
-                <CardContent>
-                  <Text variant="caption" tone="muted">
-                    7-day avg
-                  </Text>
-                  <Text variant="h3" className="mt-2">
-                    {formatSteps(stats.average7DaySteps)}
-                  </Text>
-                </CardContent>
-              </Card>
-
-              <Card className="flex-1">
-                <CardContent>
-                  <Text variant="caption" tone="muted">
-                    Best day
-                  </Text>
-                  <Text variant="h3" className="mt-2">
-                    {formatSteps(stats.bestDay?.steps ?? 0)}
-                  </Text>
-                </CardContent>
-              </Card>
-            </View>
+            <StepsSummaryCards
+              average7DaySteps={stats.average7DaySteps}
+              bestDay={stats.bestDay}
+              todaySteps={displayedTodaySteps}
+            />
 
             <View className="mt-6 flex-row items-end justify-between gap-4">
               <View>
