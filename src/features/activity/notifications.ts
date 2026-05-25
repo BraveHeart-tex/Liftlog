@@ -1,55 +1,13 @@
 import { Platform } from 'react-native';
-import notifee, {
-  AndroidCategory,
-  AndroidImportance,
-  AndroidVisibility,
-  AuthorizationStatus,
-  EventType
-} from 'react-native-notify-kit';
-import { router } from 'expo-router';
+import { requestActivityRecognitionPermission } from '@/src/features/activity/step-counter-permissions';
+import { StepCounter } from 'expo-step-counter';
+import notifee, { AuthorizationStatus } from 'react-native-notify-kit';
 import { readTodayStepCount } from './health-connect';
 
-const STEP_CHANNEL_ID = 'activity_steps';
 const STEP_NOTIFICATION_ID = 'activity-steps';
 const STEP_NOTIFICATION_REFRESH_MS = 15 * 60 * 1000;
 
-let didRegisterForegroundService = false;
 let notificationInterval: ReturnType<typeof setInterval> | null = null;
-
-function formatSteps(value: number): string {
-  return new Intl.NumberFormat(undefined, {
-    maximumFractionDigits: 0
-  }).format(value);
-}
-
-function getProgressPercent(steps: number, goal: number): number {
-  if (goal <= 0) {
-    return 0;
-  }
-
-  return Math.min(100, Math.round((steps / goal) * 100));
-}
-
-function registerForegroundService(): void {
-  if (Platform.OS !== 'android' || didRegisterForegroundService) {
-    return;
-  }
-
-  didRegisterForegroundService = true;
-
-  notifee.registerForegroundService(() => {
-    return new Promise(() => undefined);
-  });
-}
-
-async function ensureStepChannel(): Promise<string> {
-  return notifee.createChannel({
-    id: STEP_CHANNEL_ID,
-    name: 'Steps',
-    importance: AndroidImportance.LOW,
-    vibration: false
-  });
-}
 
 export async function requestStepNotificationPermission(): Promise<boolean> {
   if (Platform.OS !== 'android') {
@@ -59,8 +17,9 @@ export async function requestStepNotificationPermission(): Promise<boolean> {
   const settings = await notifee.requestPermission();
 
   return (
-    settings.authorizationStatus === AuthorizationStatus.AUTHORIZED ||
-    settings.authorizationStatus === AuthorizationStatus.PROVISIONAL
+    (settings.authorizationStatus === AuthorizationStatus.AUTHORIZED ||
+      settings.authorizationStatus === AuthorizationStatus.PROVISIONAL) &&
+    (await requestActivityRecognitionPermission())
   );
 }
 
@@ -75,35 +34,7 @@ export async function showStepNotification({
     return;
   }
 
-  registerForegroundService();
-
-  const channelId = await ensureStepChannel();
-  const progressPercent = getProgressPercent(steps, goal);
-
-  await notifee.displayNotification({
-    id: STEP_NOTIFICATION_ID,
-    title: 'LiftLog steps',
-    body: `${formatSteps(steps)} / ${formatSteps(goal)} steps today`,
-    data: {
-      route: 'activity'
-    },
-    android: {
-      asForegroundService: true,
-      category: AndroidCategory.STATUS,
-      channelId,
-      ongoing: true,
-      onlyAlertOnce: true,
-      pressAction: {
-        id: 'default',
-        launchActivity: 'default'
-      },
-      progress: {
-        max: 100,
-        current: progressPercent
-      },
-      visibility: AndroidVisibility.PUBLIC
-    }
-  });
+  StepCounter.start(steps, goal);
 }
 
 export async function stopStepNotification(): Promise<void> {
@@ -116,7 +47,7 @@ export async function stopStepNotification(): Promise<void> {
     notificationInterval = null;
   }
 
-  await notifee.stopForegroundService();
+  StepCounter.stop();
   await notifee.cancelNotification(STEP_NOTIFICATION_ID);
 }
 
@@ -135,8 +66,6 @@ export function startStepNotificationRefresh(goal: number): void {
     return;
   }
 
-  registerForegroundService();
-
   if (notificationInterval) {
     clearInterval(notificationInterval);
   }
@@ -146,29 +75,4 @@ export function startStepNotificationRefresh(goal: number): void {
   notificationInterval = setInterval(() => {
     void refreshStepNotification(goal);
   }, STEP_NOTIFICATION_REFRESH_MS);
-}
-
-export function registerStepNotificationNavigation(): () => void {
-  if (Platform.OS !== 'android') {
-    return () => undefined;
-  }
-
-  const unsubscribe = notifee.onForegroundEvent(({ detail, type }) => {
-    if (
-      type !== EventType.PRESS ||
-      detail.notification?.data?.route !== 'activity'
-    ) {
-      return;
-    }
-
-    router.push('/(tabs)/activity');
-  });
-
-  void notifee.getInitialNotification().then(initialNotification => {
-    if (initialNotification?.notification.data?.route === 'activity') {
-      router.push('/(tabs)/activity');
-    }
-  });
-
-  return unsubscribe;
 }

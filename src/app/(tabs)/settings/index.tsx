@@ -77,8 +77,8 @@ export default function SettingsScreen() {
 
     if (!isGranted) {
       Alert.alert(
-        'Notification permission needed',
-        "Allow notifications to keep today's steps visible."
+        'Step tracking permissions needed',
+        "Allow notifications and activity recognition to keep today's steps visible."
       );
 
       return;

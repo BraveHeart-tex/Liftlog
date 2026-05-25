@@ -16,9 +16,9 @@ export type StepCounterSubscription = {
 };
 
 export type StepCounterApi = {
-  start(healthConnectBaseline: number): void;
+  start(healthConnectBaseline: number, stepGoal?: number): void;
   stop(): void;
-  updateBaseline(healthConnectBaseline: number): void;
+  updateBaseline(healthConnectBaseline: number, stepGoal?: number): void;
   isAvailable(): boolean;
   hasActivityRecognitionPermission(): boolean;
   addStepCountListener(listener: (event: StepCounterChangeEvent) => void): StepCounterSubscription;
@@ -31,9 +31,9 @@ type ExpoStepCounterEvents = {
 };
 
 declare class ExpoStepCounterModule extends NativeModule<ExpoStepCounterEvents> {
-  start(healthConnectBaseline: number): void;
+  start(healthConnectBaseline: number, stepGoal: number): void;
   stop(): void;
-  updateBaseline(healthConnectBaseline: number): void;
+  updateBaseline(healthConnectBaseline: number, stepGoal: number): void;
   isStepCounterAvailable(): boolean;
   hasActivityRecognitionPermission(): boolean;
 }
@@ -54,17 +54,24 @@ function normalizeStepCount(value: number): number {
   return Math.max(0, Math.floor(value));
 }
 
+function normalizeStepGoal(value: number | undefined): number {
+  return Math.max(1, normalizeStepCount(value ?? 10000));
+}
+
 export const StepCounter: StepCounterApi = {
-  start(healthConnectBaseline: number) {
-    ExpoStepCounter?.start(normalizeStepCount(healthConnectBaseline));
+  start(healthConnectBaseline: number, stepGoal?: number) {
+    ExpoStepCounter?.start(normalizeStepCount(healthConnectBaseline), normalizeStepGoal(stepGoal));
   },
 
   stop() {
     ExpoStepCounter?.stop();
   },
 
-  updateBaseline(healthConnectBaseline: number) {
-    ExpoStepCounter?.updateBaseline(normalizeStepCount(healthConnectBaseline));
+  updateBaseline(healthConnectBaseline: number, stepGoal?: number) {
+    ExpoStepCounter?.updateBaseline(
+      normalizeStepCount(healthConnectBaseline),
+      normalizeStepGoal(stepGoal)
+    );
   },
 
   isAvailable() {

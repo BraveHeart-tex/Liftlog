@@ -8,7 +8,7 @@ const PERMISSIONS = [
   'android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND',
   'android.permission.POST_NOTIFICATIONS',
   'android.permission.FOREGROUND_SERVICE',
-  'android.permission.FOREGROUND_SERVICE_DATA_SYNC'
+  'android.permission.FOREGROUND_SERVICE_HEALTH'
 ];
 
 module.exports = function withStepActivityPermissions(config) {

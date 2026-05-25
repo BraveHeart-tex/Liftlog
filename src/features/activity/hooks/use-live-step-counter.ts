@@ -1,13 +1,9 @@
 import type { HealthConnectAvailability } from '@/src/features/activity/health-connect';
+import { requestActivityRecognitionPermission } from '@/src/features/activity/step-counter-permissions';
 import { StepCounter, type StepCounterChangeEvent } from 'expo-step-counter';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  AppState,
-  PermissionsAndroid,
-  Platform,
-  type AppStateStatus
-} from 'react-native';
+import { Platform } from 'react-native';
 
 export type LiveStepCounterStatus =
   | 'idle'
@@ -24,6 +20,7 @@ interface UseLiveStepCounterParams {
   baselineSteps: number;
   canReadHealthConnectSteps: boolean;
   isEnabled: boolean;
+  stepGoal: number;
 }
 
 interface UseLiveStepCounterResult {
@@ -41,39 +38,12 @@ function normalizeStepCount(value: number): number {
   return Math.max(0, Math.floor(value));
 }
 
-function getIsAndroidActivityRecognitionRuntimePermissionRequired(): boolean {
-  if (Platform.OS !== 'android') {
-    return false;
-  }
-
-  return Number(Platform.Version) >= 29;
-}
-
-async function requestActivityRecognitionPermission(): Promise<boolean> {
-  if (Platform.OS !== 'android') {
-    return false;
-  }
-
-  if (!getIsAndroidActivityRecognitionRuntimePermissionRequired()) {
-    return true;
-  }
-
-  if (StepCounter.hasActivityRecognitionPermission()) {
-    return true;
-  }
-
-  const result = await PermissionsAndroid.request(
-    PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION
-  );
-
-  return result === PermissionsAndroid.RESULTS.GRANTED;
-}
-
 export function useLiveStepCounter({
   availability,
   baselineSteps,
   canReadHealthConnectSteps,
-  isEnabled
+  isEnabled,
+  stepGoal
 }: UseLiveStepCounterParams): UseLiveStepCounterResult {
   const baselineRef = useRef(normalizeStepCount(baselineSteps));
   const isFocusedRef = useRef(false);
@@ -87,15 +57,6 @@ export function useLiveStepCounter({
     availability === 'available' &&
     canReadHealthConnectSteps &&
     isEnabled;
-
-  const stopCounter = useCallback(() => {
-    if (!isStartedRef.current) {
-      return;
-    }
-
-    StepCounter.stop();
-    isStartedRef.current = false;
-  }, []);
 
   const startCounter = useCallback(async () => {
     if (Platform.OS !== 'android') {
@@ -136,7 +97,7 @@ export function useLiveStepCounter({
         return;
       }
 
-      StepCounter.start(baselineRef.current);
+      StepCounter.start(baselineRef.current, stepGoal);
       isStartedRef.current = true;
       setStatus('active');
     } catch (nextError) {
@@ -150,7 +111,7 @@ export function useLiveStepCounter({
       setEvent(null);
       setStatus('error');
     }
-  }, [shouldRun]);
+  }, [shouldRun, stepGoal]);
 
   useEffect(() => {
     const nextBaseline = normalizeStepCount(baselineSteps);
@@ -162,9 +123,9 @@ export function useLiveStepCounter({
     baselineRef.current = nextBaseline;
 
     if (isStartedRef.current) {
-      StepCounter.updateBaseline(nextBaseline);
+      StepCounter.updateBaseline(nextBaseline, stepGoal);
     }
-  }, [baselineSteps]);
+  }, [baselineSteps, stepGoal]);
 
   useFocusEffect(
     useCallback(() => {
@@ -191,32 +152,15 @@ export function useLiveStepCounter({
         setEvent(null);
         setStatus('error');
       });
-      const handleAppStateChange = (nextState: AppStateStatus) => {
-        if (nextState === 'active') {
-          void startCounter();
 
-          return;
-        }
-
-        stopCounter();
-      };
-      const appStateSubscription = AppState.addEventListener(
-        'change',
-        handleAppStateChange
-      );
-
-      if (AppState.currentState === 'active') {
-        void startCounter();
-      }
+      void startCounter();
 
       return () => {
         isFocusedRef.current = false;
-        stopCounter();
         stepSubscription.remove();
         errorSubscription.remove();
-        appStateSubscription.remove();
       };
-    }, [startCounter, stopCounter])
+    }, [startCounter])
   );
 
   return {
