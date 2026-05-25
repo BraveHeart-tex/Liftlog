@@ -39,5 +39,8 @@
     "**/.next/**": true,
     "**/ios/**": true,
     "**/android/**": true
+  },
+  "[kotlin]": {
+    "editor.defaultFormatter": "fwcd.kotlin"
   }
 }

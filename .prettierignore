@@ -2,6 +2,9 @@
 node_modules
 build
 bin
+modules/expo-step-counter/build
+modules/expo-step-counter/internal
+modules/expo-step-counter/package
 expo-env.d.ts
 nativewind-env.d.ts
 pnpm-lock.yaml

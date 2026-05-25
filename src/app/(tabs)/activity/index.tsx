@@ -1,4 +1,5 @@
 import { StyledFlatList } from '@/src/components/styled/flat-list';
+import { Badge } from '@/src/components/ui/badge';
 import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Icon } from '@/src/components/ui/icon';
@@ -33,13 +34,48 @@ function getAvailabilityLabel(availability: string): string {
   return 'Health Connect unavailable';
 }
 
+function getLiveStepCounterBadgeLabel(status: string, liveStepDelta: number) {
+  if (status === 'active') {
+    return liveStepDelta > 0 ? `Live +${formatSteps(liveStepDelta)}` : 'Live';
+  }
+
+  if (status === 'checking') {
+    return 'Starting live';
+  }
+
+  return null;
+}
+
+function getLiveStepCounterMessage(
+  status: string,
+  errorMessage: string | null
+): string | null {
+  if (status === 'permission_denied') {
+    return 'Allow Activity Recognition to show live steps.';
+  }
+
+  if (status === 'unavailable' || status === 'no_sensor') {
+    return 'Live step counting is not available on this device.';
+  }
+
+  if (status === 'error') {
+    return errorMessage ?? 'Live step counting stopped.';
+  }
+
+  return null;
+}
+
 export default function ActivityScreen() {
   const {
     availability,
+    displayedTodaySteps,
     errorMessage,
     healthConnectStepsEnabled,
     isLoading,
     isSyncing,
+    liveStepCounterError,
+    liveStepCounterStatus,
+    liveStepDelta,
     permissions,
     stats,
     stepDays,
@@ -51,10 +87,18 @@ export default function ActivityScreen() {
   const newestFirstDays = [...stepDays].sort((a, b) => b.startAt - a.startAt);
   const progress = Math.min(
     100,
-    Math.round((stats.todaySteps / stepGoal) * 100)
+    Math.round((displayedTodaySteps / stepGoal) * 100)
   );
   const shouldConnectSteps =
     !permissions.canReadSteps || !healthConnectStepsEnabled;
+  const liveStepCounterBadgeLabel = getLiveStepCounterBadgeLabel(
+    liveStepCounterStatus,
+    liveStepDelta
+  );
+  const liveStepCounterMessage = getLiveStepCounterMessage(
+    liveStepCounterStatus,
+    liveStepCounterError
+  );
 
   if (isLoading) {
     return (
@@ -114,11 +158,27 @@ export default function ActivityScreen() {
                       Today
                     </Text>
                     <Text variant="h1" className="mt-1">
-                      {formatSteps(stats.todaySteps)}
+                      {formatSteps(displayedTodaySteps)}
                     </Text>
                     <Text variant="small" tone="muted" className="mt-1">
                       {progress}% of {formatSteps(stepGoal)}
                     </Text>
+                    {liveStepCounterBadgeLabel ? (
+                      <Badge
+                        variant={
+                          liveStepCounterStatus === 'active'
+                            ? 'success'
+                            : 'outline'
+                        }
+                        label={liveStepCounterBadgeLabel}
+                        className="mt-3"
+                      />
+                    ) : null}
+                    {liveStepCounterMessage ? (
+                      <Text variant="caption" tone="muted" className="mt-3">
+                        {liveStepCounterMessage}
+                      </Text>
+                    ) : null}
                   </View>
 
                   <View className="bg-muted h-16 w-16 items-center justify-center rounded-xl">
