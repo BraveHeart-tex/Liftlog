@@ -12,6 +12,8 @@ export type IconSize = keyof typeof iconSizes;
 export const nativeFontSizes = {
   tabLabel: 10,
   chartAxis: 10,
+  stepRadialValue: 50,
+  stepRadialMeta: 14,
   restTimerInput: 20,
   restTimerDisplay: 72
 } as const;
