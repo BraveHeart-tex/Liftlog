@@ -1,7 +1,7 @@
 import { useTabBarTheme } from '@/src/theme/app-theme-provider';
 import { Stack } from 'expo-router';
 
-export default function HistoryLayout() {
+export default function LogLayout() {
   const tabBarTheme = useTabBarTheme();
 
   return (

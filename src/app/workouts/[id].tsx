@@ -156,7 +156,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
               if (router.canGoBack()) {
                 router.back();
               } else {
-                router.replace('/(tabs)/history');
+                router.replace('/(tabs)/log');
               }
             } catch (error) {
               console.error('Failed to delete workout', error);

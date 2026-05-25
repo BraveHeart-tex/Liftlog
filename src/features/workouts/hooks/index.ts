@@ -6,7 +6,7 @@ export { useActiveWorkoutScreen } from './use-active-workout-screen';
 export { useExerciseHistoryTab } from './use-exercise-history-tab';
 export { useExerciseTrackActions } from './use-exercise-track-actions';
 export { useExerciseTrackTab } from './use-exercise-track-tab';
-export { useHistoryList } from './use-history-list';
+export { useWorkoutLog } from './use-workout-log';
 export { useRemoveWorkoutExercise } from './use-remove-workout-exercise';
 export { useRepeatWorkout } from './use-repeat-workout';
 export { useSaveWorkoutTemplate } from './use-save-workout-template';

@@ -1,6 +1,7 @@
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Text } from '@/src/components/ui/text';
 import type { HealthStepDay } from '@/src/db/schema';
+import { formatCompactSteps, formatSteps } from '@/src/features/steps/display';
 import { formatWorkoutDate } from '@/src/lib/utils/date';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { nativeFontSizes } from '@/src/theme/sizes';
@@ -17,14 +18,6 @@ type ChartPoint = Record<string, number> & {
   date: number;
   steps: number;
 };
-
-function formatSteps(value: number): string {
-  if (value >= 1000) {
-    return `${Math.round(value / 1000)}k`;
-  }
-
-  return String(Math.round(value));
-}
 
 function formatAxisDate(timestamp: number): string {
   return new Intl.DateTimeFormat(undefined, {
@@ -94,7 +87,7 @@ export function StepProgressChart({ days, goal }: StepProgressChartProps) {
                 yAxis={[
                   {
                     font: axisFont,
-                    formatYLabel: value => formatSteps(Number(value)),
+                    formatYLabel: value => formatCompactSteps(Number(value)),
                     labelColor: colors.mutedForeground,
                     lineColor: colors.border,
                     lineWidth: 1,
@@ -125,7 +118,7 @@ export function StepProgressChart({ days, goal }: StepProgressChartProps) {
                 </Text>
                 <Text variant="bodyMedium">
                   {latestDay
-                    ? `${new Intl.NumberFormat().format(latestDay.steps)} steps`
+                    ? `${formatSteps(latestDay.steps)} steps`
                     : 'No data'}
                 </Text>
               </View>

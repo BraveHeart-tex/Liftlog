@@ -5,17 +5,17 @@ import { cn } from '@/src/lib/utils/cn';
 import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date';
 import { Animated, Pressable, View } from 'react-native';
 
-interface HistoryWorkoutRowProps {
+interface WorkoutLogRowProps {
   workout: Workout;
   setCount: number;
   onPress: (workout: Workout) => void;
 }
 
-export function HistoryWorkoutRow({
+export function WorkoutLogRow({
   workout,
   setCount,
   onPress
-}: HistoryWorkoutRowProps) {
+}: WorkoutLogRowProps) {
   const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();
 
   return (

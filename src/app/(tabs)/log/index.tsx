@@ -2,9 +2,9 @@ import { StyledFlatList } from '@/src/components/styled/flat-list';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 import { Text } from '@/src/components/ui/text';
-import { HistoryWorkoutRow } from '@/src/features/workouts/components/history-workout-row';
-import { WorkoutHistoryCalendar } from '@/src/features/workouts/components/workout-history-calendar';
-import { useHistoryList } from '@/src/features/workouts/hooks';
+import { WorkoutLogCalendar } from '@/src/features/workouts/components/workout-log-calendar';
+import { WorkoutLogRow } from '@/src/features/workouts/components/workout-log-row';
+import { useWorkoutLog } from '@/src/features/workouts/hooks';
 import { toLocalDateKey } from '@/src/lib/utils/date';
 import { router, type Href } from 'expo-router';
 import { useState } from 'react';
@@ -21,12 +21,12 @@ function formatSelectedDate(dateKey: string): string {
   }).format(date);
 }
 
-export default function HistoryScreen() {
+export default function LogScreen() {
   const [selectedDateKey, setSelectedDateKey] = useState(
     toLocalDateKey(Date.now())
   );
   const { workoutRows, workoutCountByDateKey, setCountByWorkoutId, isLoading } =
-    useHistoryList(selectedDateKey);
+    useWorkoutLog(selectedDateKey);
 
   if (isLoading) {
     return (
@@ -35,7 +35,7 @@ export default function HistoryScreen() {
         className="bg-background"
         edges={['top']}
       >
-        <LoadingState label="Loading history..." />
+        <LoadingState label="Loading log..." />
       </SafeAreaView>
     );
   }
@@ -51,13 +51,13 @@ export default function HistoryScreen() {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View className="mb-6">
-            <Text variant="h1">History</Text>
+            <Text variant="h1">Log</Text>
             <Text variant="small" tone="muted" className="mt-2">
               Browse completed sessions by day.
             </Text>
 
             <View className="mt-6">
-              <WorkoutHistoryCalendar
+              <WorkoutLogCalendar
                 selectedDateKey={selectedDateKey}
                 workoutCountByDateKey={workoutCountByDateKey}
                 onSelectDate={setSelectedDateKey}
@@ -94,7 +94,7 @@ export default function HistoryScreen() {
           const setCount = setCountByWorkoutId.get(item.id) ?? 0;
 
           return (
-            <HistoryWorkoutRow
+            <WorkoutLogRow
               workout={item}
               setCount={setCount}
               onPress={workout =>

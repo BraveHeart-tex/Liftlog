@@ -2,7 +2,7 @@ import { useTabBarTheme } from '@/src/theme/app-theme-provider';
 import { Redirect, Stack } from 'expo-router';
 import { Platform } from 'react-native';
 
-export default function ActivityLayout() {
+export default function StepsLayout() {
   const tabBarTheme = useTabBarTheme();
 
   if (Platform.OS !== 'android') {

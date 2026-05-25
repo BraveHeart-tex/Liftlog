@@ -3,7 +3,7 @@ import type { HealthStepDay } from '@/src/db/schema';
 import {
   getRecentStepDaysQuery,
   upsertStepDays
-} from '@/src/features/activity/repository';
+} from '@/src/features/steps/repository';
 import {
   getHealthConnectAvailability,
   getStepPermissionState,
@@ -12,11 +12,11 @@ import {
   syncStepDaysFromHealthConnect,
   type HealthConnectAvailability,
   type StepPermissionState
-} from '@/src/features/activity/health-connect';
+} from '@/src/features/steps/health-connect';
 import {
   refreshStepNotification,
   showStepNotification
-} from '@/src/features/activity/notifications';
+} from '@/src/features/steps/notifications';
 import { SETTINGS_KEYS, setSetting } from '@/src/features/settings/repository';
 import { useSettings } from '@/src/features/settings/hooks';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
@@ -26,7 +26,7 @@ import { useLiveStepCounter } from './use-live-step-counter';
 
 type SyncState = 'idle' | 'syncing';
 
-interface ActivityStats {
+interface StepStats {
   average7DaySteps: number;
   bestDay: HealthStepDay | null;
   todaySteps: number;
@@ -40,7 +40,7 @@ const EMPTY_PERMISSION_STATE: StepPermissionState = {
   canReadHistory: false
 };
 
-function getStats(days: HealthStepDay[]): ActivityStats {
+function getStats(days: HealthStepDay[]): StepStats {
   const newestFirstDays = [...days].sort((a, b) => b.startAt - a.startAt);
   const oldestFirstDays = [...days].sort((a, b) => a.startAt - b.startAt);
   const todaySteps = newestFirstDays[0]?.steps ?? 0;
@@ -68,7 +68,7 @@ function getStats(days: HealthStepDay[]): ActivityStats {
   };
 }
 
-export function useActivityScreen() {
+export function useStepsScreen() {
   const db = useDrizzle();
   const {
     healthConnectStepsEnabled,

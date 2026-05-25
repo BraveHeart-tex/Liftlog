@@ -6,66 +6,23 @@ import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 import { Text } from '@/src/components/ui/text';
-import { StepDayRow } from '@/src/features/activity/components/step-day-row';
-import { StepProgressChart } from '@/src/features/activity/components/step-progress-chart';
-import { useActivityScreen } from '@/src/features/activity/hooks';
-import { ActivityIcon, RefreshCwIcon, SettingsIcon } from 'lucide-react-native';
+import { StepDayRow } from '@/src/features/steps/components/step-day-row';
+import { StepProgressChart } from '@/src/features/steps/components/step-progress-chart';
+import {
+  formatSteps,
+  getAvailabilityLabel,
+  getLiveStepCounterBadgeLabel,
+  getLiveStepCounterMessage
+} from '@/src/features/steps/display';
+import { useStepsScreen } from '@/src/features/steps/hooks';
+import {
+  FootprintsIcon,
+  RefreshCwIcon,
+  SettingsIcon
+} from 'lucide-react-native';
 import { View } from 'react-native';
 
-function formatSteps(steps: number): string {
-  return new Intl.NumberFormat(undefined, {
-    maximumFractionDigits: 0
-  }).format(steps);
-}
-
-function getAvailabilityLabel(availability: string): string {
-  if (availability === 'available') {
-    return 'Health Connect ready';
-  }
-
-  if (availability === 'provider_update_required') {
-    return 'Health Connect update required';
-  }
-
-  if (availability === 'unsupported') {
-    return 'Android only';
-  }
-
-  return 'Health Connect unavailable';
-}
-
-function getLiveStepCounterBadgeLabel(status: string, liveStepDelta: number) {
-  if (status === 'active') {
-    return liveStepDelta > 0 ? `Live +${formatSteps(liveStepDelta)}` : 'Live';
-  }
-
-  if (status === 'checking') {
-    return 'Starting live';
-  }
-
-  return null;
-}
-
-function getLiveStepCounterMessage(
-  status: string,
-  errorMessage: string | null
-): string | null {
-  if (status === 'permission_denied') {
-    return 'Allow Activity Recognition to show live steps.';
-  }
-
-  if (status === 'unavailable' || status === 'no_sensor') {
-    return 'Live step counting is not available on this device.';
-  }
-
-  if (status === 'error') {
-    return errorMessage ?? 'Live step counting stopped.';
-  }
-
-  return null;
-}
-
-export default function ActivityScreen() {
+export default function StepsScreen() {
   const {
     availability,
     displayedTodaySteps,
@@ -83,7 +40,7 @@ export default function ActivityScreen() {
     connectSteps,
     openHealthConnectSettings,
     refreshSteps
-  } = useActivityScreen();
+  } = useStepsScreen();
   const newestFirstDays = [...stepDays].sort((a, b) => b.startAt - a.startAt);
   const progress = Math.min(
     100,
@@ -107,7 +64,7 @@ export default function ActivityScreen() {
         className="bg-background"
         edges={['top']}
       >
-        <LoadingState label="Loading activity..." />
+        <LoadingState label="Loading steps..." />
       </SafeAreaView>
     );
   }
@@ -125,7 +82,7 @@ export default function ActivityScreen() {
           <View className="mb-6">
             <View className="flex-row items-start justify-between gap-4">
               <View className="flex-1">
-                <Text variant="h1">Activity</Text>
+                <Text variant="h1">Steps</Text>
                 <Text variant="small" tone="muted" className="mt-2">
                   Steps from Health Connect.
                 </Text>
@@ -187,7 +144,7 @@ export default function ActivityScreen() {
 
                   <View className="bg-muted h-16 w-16 items-center justify-center rounded-xl">
                     <Icon
-                      icon={ActivityIcon}
+                      icon={FootprintsIcon}
                       size="xl"
                       className="text-primary"
                     />
@@ -277,7 +234,7 @@ export default function ActivityScreen() {
             <View className="mt-6 flex-row items-end justify-between gap-4">
               <View>
                 <Text variant="caption" tone="muted">
-                  History
+                  Step history
                 </Text>
                 <Text variant="h3" className="mt-1">
                   Daily steps

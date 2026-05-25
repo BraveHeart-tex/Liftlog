@@ -8,8 +8,9 @@ The app includes:
 - a workout tab for starting, resuming, and completing sessions
 - exercise picking, set logging, and per-exercise workout detail
 - an exercises tab with search, category filters, custom exercises, and archive/delete behavior
-- a history tab with a calendar view for completed workouts
-- settings for theme, weight unit, and default rest timer duration
+- a log tab with a calendar view for completed workouts
+- an Android-only steps tab with Health Connect sync, live step counting, and step history
+- settings for theme, weight unit, default rest timer duration, and steps preferences
 - local rest-timer audio and persisted local data
 
 ## Tech Stack
@@ -25,6 +26,9 @@ The app includes:
 - Gorhom Bottom Sheet
 - Lucide React Native
 - `expo-audio`
+- `expo-step-counter`
+- `react-native-health-connect`
+- `react-native-notify-kit`
 - `react-native-calendars`
 
 ## Requirements
@@ -76,7 +80,8 @@ src/
     (tabs)/
       workout/
       exercises/
-      history/
+      log/
+      steps/
       settings/
   components/
     styled/
@@ -87,6 +92,7 @@ src/
     exercises/
     progress/
     settings/
+    steps/
     workouts/
   lib/
     db/
@@ -111,11 +117,13 @@ Top-level routes currently include:
 - `src/app/onboarding.tsx`
 - `src/app/(tabs)/workout`
 - `src/app/(tabs)/exercises`
-- `src/app/(tabs)/history`
+- `src/app/(tabs)/log`
+- `src/app/(tabs)/steps` for Android Health Connect step tracking
 - `src/app/(tabs)/settings`
-- `src/app/workouts/[id].tsx` for workout history detail
+- `src/app/workouts/[id].tsx` for completed workout detail
 
-The main tab bar contains `Workout`, `Exercises`, `History`, and `Settings`.
+The main tab bar contains `Workout`, `Exercises`, `Log`, `Steps`, and `Settings`.
+The `Steps` tab is only shown on Android.
 
 ## Database
 
