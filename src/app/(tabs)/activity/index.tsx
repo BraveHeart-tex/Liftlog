@@ -138,7 +138,11 @@ export default function ActivityScreen() {
                 disabled={!permissions.canReadSteps || isSyncing}
                 onPress={refreshSteps}
               >
-                <Icon icon={RefreshCwIcon} size="md" />
+                <Icon
+                  icon={RefreshCwIcon}
+                  size="md"
+                  className="text-secondary-foreground"
+                />
               </Button>
             </View>
 
@@ -250,7 +254,11 @@ export default function ActivityScreen() {
                     }
                     leftIcon={
                       shouldConnectSteps ? undefined : (
-                        <Icon icon={SettingsIcon} size="sm" />
+                        <Icon
+                          icon={SettingsIcon}
+                          size="sm"
+                          className="text-secondary-foreground"
+                        />
                       )
                     }
                   >
