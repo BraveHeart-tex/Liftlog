@@ -92,6 +92,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="activity"
         options={{
+          href: Platform.OS === 'android' ? undefined : null,
           title: 'Activity',
           tabBarIcon: ({ color, focused }) => (
             <View

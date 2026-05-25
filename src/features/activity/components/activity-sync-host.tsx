@@ -13,8 +13,17 @@ import {
 import { useSettings } from '@/src/features/settings/hooks';
 import { getTodayDateKey } from '@/src/features/activity/date';
 import { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 
 export function ActivitySyncHost() {
+  if (Platform.OS !== 'android') {
+    return null;
+  }
+
+  return <AndroidActivitySyncHost />;
+}
+
+function AndroidActivitySyncHost() {
   const db = useDrizzle();
   const { healthConnectStepsEnabled, stepsNotificationEnabled, stepGoal } =
     useSettings();
