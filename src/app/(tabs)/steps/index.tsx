@@ -84,16 +84,28 @@ export default function StepsScreen() {
                 <Badge
                   className={cn(
                     'will-change-variable flex flex-row items-center',
-                    shouldConnectSteps ? 'bg-secondary/20' : 'bg-success/20'
+                    shouldConnectSteps
+                      ? 'bg-secondary dark:bg-secondary/20'
+                      : 'bg-success/10 dark:bg-success/20'
                   )}
                 >
                   <View
                     className={cn(
                       'will-change-variable h-2 w-2 rounded-full',
-                      shouldConnectSteps ? 'bg-secondary' : 'bg-success'
+                      shouldConnectSteps
+                        ? 'bg-secondary-foreground/50 dark:bg-secondary'
+                        : 'dark:bg-success bg-success/50'
                     )}
                   />
-                  <Text variant="caption">
+                  <Text
+                    variant="caption"
+                    className={cn(
+                      'will-change-variable',
+                      shouldConnectSteps
+                        ? 'text-secondary-foreground'
+                        : 'text-success'
+                    )}
+                  >
                     {shouldConnectSteps
                       ? 'Not Connected'
                       : 'Health Connect synced'}
