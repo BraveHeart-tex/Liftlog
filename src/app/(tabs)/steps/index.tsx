@@ -1,12 +1,12 @@
 import { StyledFlatList } from '@/src/components/styled/flat-list';
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { Button } from '@/src/components/ui/button';
-import { Card, CardContent } from '@/src/components/ui/card';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 import { Text } from '@/src/components/ui/text';
 import { StepDayRow } from '@/src/features/steps/components/step-day-row';
+import { StepsActionsSheet } from '@/src/features/steps/components/steps-actions-sheet';
 import { StepsConnectionBadge } from '@/src/features/steps/components/steps-connection-badge';
 import { StepsEmptyState } from '@/src/features/steps/components/steps-empty-state';
 import { StepsGoalConsistencyCard } from '@/src/features/steps/components/steps-goal-consistency-card';
@@ -19,12 +19,14 @@ import {
   getLiveStepCounterMessage
 } from '@/src/features/steps/display';
 import { useStepsScreen } from '@/src/features/steps/hooks';
-import { RefreshCwIcon, SettingsIcon } from 'lucide-react-native';
+import { EllipsisVerticalIcon } from 'lucide-react-native';
+import { useState } from 'react';
 import { View } from 'react-native';
 
 const RECENT_STEP_HISTORY_LIMIT = 7;
 
 export default function StepsScreen() {
+  const [isActionsSheetOpen, setIsActionsSheetOpen] = useState(false);
   const {
     availability,
     displayedTodaySteps,
@@ -139,12 +141,11 @@ export default function StepsScreen() {
               <Button
                 variant="secondary"
                 size="icon"
-                accessibilityLabel="Refresh steps"
-                disabled={!permissions.canReadSteps || isSyncing}
-                onPress={refreshSteps}
+                accessibilityLabel="Open step actions"
+                onPress={() => setIsActionsSheetOpen(true)}
               >
                 <Icon
-                  icon={RefreshCwIcon}
+                  icon={EllipsisVerticalIcon}
                   size="md"
                   className="text-secondary-foreground"
                 />
@@ -167,49 +168,6 @@ export default function StepsScreen() {
               liveStepCounterMessage={liveStepCounterMessage}
               liveStepCounterStatus={liveStepCounterStatus}
             />
-
-            <Card className="mt-4">
-              <CardContent>
-                <View className="flex-row items-center justify-between gap-4">
-                  <View className="flex-1">
-                    <Text variant="bodyMedium">{availabilityLabel}</Text>
-                    <Text variant="caption" tone="muted" className="mt-1">
-                      {permissions.canReadSteps
-                        ? healthConnectStepsEnabled
-                          ? 'Step access is enabled.'
-                          : 'Step access is available but disabled in LiftLog.'
-                        : 'Connect steps to start caching history.'}
-                    </Text>
-                  </View>
-
-                  <Button
-                    variant={shouldConnectSteps ? 'primary' : 'secondary'}
-                    size="sm"
-                    loading={isSyncing}
-                    onPress={
-                      shouldConnectSteps
-                        ? connectSteps
-                        : openHealthConnectSettings
-                    }
-                    leftIcon={
-                      shouldConnectSteps ? undefined : (
-                        <Icon
-                          icon={SettingsIcon}
-                          size="sm"
-                          className="text-secondary-foreground"
-                        />
-                      )
-                    }
-                  >
-                    {shouldConnectSteps
-                      ? permissions.canReadSteps
-                        ? 'Enable'
-                        : 'Connect'
-                      : 'Manage'}
-                  </Button>
-                </View>
-              </CardContent>
-            </Card>
 
             <StepsGoalConsistencyCard days={stepDays} goal={stepGoal} />
             <StepsSummaryCards
@@ -252,6 +210,14 @@ export default function StepsScreen() {
           ) : null
         }
         renderItem={({ item }) => <StepDayRow day={item} goal={stepGoal} />}
+      />
+      <StepsActionsSheet
+        availabilityLabel={availabilityLabel}
+        isOpen={isActionsSheetOpen}
+        isSyncing={isSyncing}
+        onClose={() => setIsActionsSheetOpen(false)}
+        onManage={openHealthConnectSettings}
+        onRefresh={refreshSteps}
       />
     </SafeAreaView>
   );
