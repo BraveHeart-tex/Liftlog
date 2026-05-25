@@ -1,10 +1,6 @@
 package expo.modules.stepcounter
 
 import android.Manifest
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -15,7 +11,6 @@ import android.hardware.SensorManager
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
 
 class StepCounterService : Service(), SensorEventListener {
     private lateinit var sensorManager: SensorManager
@@ -32,8 +27,6 @@ class StepCounterService : Service(), SensorEventListener {
 
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         stepCounterSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
-
-        createNotificationChannel()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -57,7 +50,7 @@ class StepCounterService : Service(), SensorEventListener {
             }
         }
 
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -80,8 +73,6 @@ class StepCounterService : Service(), SensorEventListener {
 
         latestDisplayedSteps = healthConnectBaseline + liveDelta
 
-        updateNotification(latestDisplayedSteps)
-
         StepCounterEventBus.emitStepCountChanged(
                 StepCounterEvent(
                         steps = latestDisplayedSteps,
@@ -97,16 +88,6 @@ class StepCounterService : Service(), SensorEventListener {
     private fun startStepCounting(nextHealthConnectBaseline: Int) {
         healthConnectBaseline = nextHealthConnectBaseline.coerceAtLeast(0)
         latestDisplayedSteps = healthConnectBaseline
-
-        try {
-            startForeground(NOTIFICATION_ID, buildNotification(latestDisplayedSteps))
-        } catch (error: Throwable) {
-            StepCounterEventBus.emitError(
-                    "Failed to start foreground service: ${error.message ?: "Unknown error"}"
-            )
-            stopSelf()
-            return
-        }
 
         if (!hasActivityRecognitionPermission()) {
             StepCounterEventBus.emitError("ACTIVITY_RECOGNITION permission is missing")
@@ -125,7 +106,6 @@ class StepCounterService : Service(), SensorEventListener {
         }
 
         if (isCounting) {
-            updateNotification(latestDisplayedSteps)
             emitCurrentState()
             return
         }
@@ -155,7 +135,6 @@ class StepCounterService : Service(), SensorEventListener {
         latestSensorValue = null
         latestDisplayedSteps = healthConnectBaseline
 
-        updateNotification(latestDisplayedSteps)
         emitCurrentState()
     }
 
@@ -167,12 +146,6 @@ class StepCounterService : Service(), SensorEventListener {
 
         sensorBaseline = null
         latestSensorValue = null
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-        } else {
-            @Suppress("DEPRECATION") stopForeground(true)
-        }
     }
 
     override fun onDestroy() {
@@ -202,72 +175,11 @@ class StepCounterService : Service(), SensorEventListener {
                 PackageManager.PERMISSION_GRANTED
     }
 
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-
-        val channel =
-                NotificationChannel(
-                                NOTIFICATION_CHANNEL_ID,
-                                NOTIFICATION_CHANNEL_NAME,
-                                NotificationManager.IMPORTANCE_LOW
-                        )
-                        .apply {
-                            description = "Shows live step count while step tracking is active"
-                            setShowBadge(false)
-                        }
-
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.createNotificationChannel(channel)
-    }
-
-    private fun updateNotification(displayedSteps: Int) {
-        val notificationManager = getSystemService(NotificationManager::class.java)
-
-        notificationManager.notify(NOTIFICATION_ID, buildNotification(displayedSteps))
-    }
-
-    private fun buildNotification(displayedSteps: Int): Notification {
-        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-
-        val pendingIntent =
-                launchIntent?.let {
-                    PendingIntent.getActivity(
-                            this,
-                            0,
-                            it,
-                            PendingIntent.FLAG_UPDATE_CURRENT or pendingIntentImmutableFlag()
-                    )
-                }
-
-        return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_dialog_info)
-                .setContentTitle("Step counter active")
-                .setContentText("$displayedSteps steps today")
-                .setOngoing(true)
-                .setOnlyAlertOnce(true)
-                .setShowWhen(false)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setContentIntent(pendingIntent)
-                .build()
-    }
-
-    private fun pendingIntentImmutableFlag(): Int {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PendingIntent.FLAG_IMMUTABLE
-        } else {
-            0
-        }
-    }
-
     companion object {
         const val ACTION_START = "expo.modules.stepcounter.START"
         const val ACTION_STOP = "expo.modules.stepcounter.STOP"
         const val ACTION_UPDATE_BASELINE = "expo.modules.stepcounter.UPDATE_BASELINE"
 
         const val EXTRA_HEALTH_CONNECT_BASELINE = "healthConnectBaseline"
-
-        private const val NOTIFICATION_CHANNEL_ID = "step_counter"
-        private const val NOTIFICATION_CHANNEL_NAME = "Step counter"
-        private const val NOTIFICATION_ID = 1001
     }
 }
