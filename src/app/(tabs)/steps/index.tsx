@@ -15,6 +15,7 @@ import {
   getLiveStepCounterMessage
 } from '@/src/features/steps/display';
 import { useStepsScreen } from '@/src/features/steps/hooks';
+import { cn } from '@/src/lib/utils/cn';
 import {
   FootprintsIcon,
   RefreshCwIcon,
@@ -81,11 +82,26 @@ export default function StepsScreen() {
         ListHeaderComponent={
           <View className="mb-6">
             <View className="flex-row items-start justify-between gap-4">
-              <View className="flex-1">
+              <View className="flex-1 gap-1">
                 <Text variant="h1">Steps</Text>
-                <Text variant="small" tone="muted" className="mt-2">
-                  Steps from Health Connect.
-                </Text>
+                <Badge
+                  className={cn(
+                    'will-change-variable flex flex-row items-center',
+                    shouldConnectSteps ? 'bg-secondary/20' : 'bg-success/20'
+                  )}
+                >
+                  <View
+                    className={cn(
+                      'will-change-variable h-2 w-2 rounded-full',
+                      shouldConnectSteps ? 'bg-secondary' : 'bg-success'
+                    )}
+                  />
+                  <Text variant="caption">
+                    {shouldConnectSteps
+                      ? 'Not Connected'
+                      : 'Health Connect synced'}
+                  </Text>
+                </Badge>
               </View>
 
               <Button
@@ -131,9 +147,10 @@ export default function StepsScreen() {
                             ? 'success'
                             : 'outline'
                         }
-                        label={liveStepCounterBadgeLabel}
                         className="mt-3"
-                      />
+                      >
+                        {liveStepCounterBadgeLabel}
+                      </Badge>
                     ) : null}
                     {liveStepCounterMessage ? (
                       <Text variant="caption" tone="muted" className="mt-3">
