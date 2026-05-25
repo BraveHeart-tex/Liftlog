@@ -13,6 +13,7 @@ export const nativeFontSizes = {
   tabLabel: 10,
   chartAxis: 10,
   stepRadialValue: 50,
+  stepRadialValueCompact: 42,
   stepRadialMeta: 14,
   restTimerInput: 20,
   restTimerDisplay: 72

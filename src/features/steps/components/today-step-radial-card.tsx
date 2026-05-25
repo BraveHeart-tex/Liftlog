@@ -19,7 +19,7 @@ interface TodayStepRadialCardProps {
 }
 
 const CHART_SIZE = 236;
-const STROKE_WIDTH = 18;
+const STROKE_WIDTH = 15;
 const RADIUS = (CHART_SIZE - STROKE_WIDTH) / 2;
 const CENTER = CHART_SIZE / 2;
 const MAX_SWEEP_DEGREES = 359.9;
@@ -56,8 +56,8 @@ export function TodayStepRadialCard({
   }, [safeProgress]);
 
   return (
-    <Card className="mt-6 overflow-hidden">
-      <CardContent className="px-5 py-7">
+    <Card className="mt-5 overflow-hidden">
+      <CardContent className="px-5 py-5">
         <View className="items-center">
           <View
             className="items-center justify-center"
@@ -95,7 +95,7 @@ export function TodayStepRadialCard({
                 numberOfLines={1}
                 adjustsFontSizeToFit
                 minimumFontScale={0.72}
-                style={{ fontSize: nativeFontSizes.stepRadialValue }}
+                style={{ fontSize: nativeFontSizes.stepRadialValueCompact }}
               >
                 {formatSteps(steps)}
               </Text>
@@ -114,7 +114,7 @@ export function TodayStepRadialCard({
                 {liveStepCounterBadgeLabel ? (
                   <Badge
                     className={cn(
-                      'will-change-variable mt-4 flex flex-row items-center',
+                      'will-change-variable mt-3 flex flex-row items-center',
                       isLiveStepCounterActive
                         ? 'bg-success/10 dark:bg-success/20'
                         : 'bg-secondary dark:bg-secondary/20'
@@ -146,7 +146,7 @@ export function TodayStepRadialCard({
           </View>
 
           {liveStepCounterMessage ? (
-            <Text variant="caption" tone="muted" className="mt-5 text-center">
+            <Text variant="caption" tone="muted" className="mt-4 text-center">
               {liveStepCounterMessage}
             </Text>
           ) : null}
