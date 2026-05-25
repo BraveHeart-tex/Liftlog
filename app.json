@@ -39,16 +39,7 @@
       "expo-font",
       "expo-health-connect",
       "./plugins/with-step-activity-permissions",
-      [
-        "react-native-notify-kit",
-        {
-          "android": {
-            "foregroundService": {
-              "types": ["dataSync"]
-            }
-          }
-        }
-      ],
+      "react-native-notify-kit",
       [
         "expo-build-properties",
         {

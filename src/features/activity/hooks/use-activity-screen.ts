@@ -21,7 +21,7 @@ import { SETTINGS_KEYS, setSetting } from '@/src/features/settings/repository';
 import { useSettings } from '@/src/features/settings/hooks';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useLiveStepCounter } from './use-live-step-counter';
 
 type SyncState = 'idle' | 'syncing';
@@ -96,24 +96,14 @@ export function useActivityScreen() {
     availability,
     baselineSteps: stats.todaySteps,
     canReadHealthConnectSteps: permissions.canReadSteps,
-    isEnabled: healthConnectStepsEnabled
+    isEnabled: healthConnectStepsEnabled && stepsNotificationEnabled,
+    stepGoal
   });
   const displayedTodaySteps = Math.max(
     stats.todaySteps,
     liveStepCounter.steps ?? stats.todaySteps
   );
   const liveStepDelta = Math.max(0, displayedTodaySteps - stats.todaySteps);
-
-  useEffect(() => {
-    if (!stepsNotificationEnabled || liveStepCounter.steps === null) {
-      return;
-    }
-
-    void showStepNotification({
-      steps: liveStepCounter.steps,
-      goal: stepGoal
-    });
-  }, [liveStepCounter.steps, stepGoal, stepsNotificationEnabled]);
 
   const refreshStatus = useCallback(async () => {
     const nextAvailability = await getHealthConnectAvailability();

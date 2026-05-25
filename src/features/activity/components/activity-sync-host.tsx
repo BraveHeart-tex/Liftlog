@@ -5,7 +5,6 @@ import {
 } from '@/src/features/activity/repository';
 import { syncStepDaysFromHealthConnect } from '@/src/features/activity/health-connect';
 import {
-  registerStepNotificationNavigation,
   showStepNotification,
   startStepNotificationRefresh,
   stopStepNotification
@@ -30,10 +29,6 @@ function AndroidActivitySyncHost() {
   const didLaunchSyncRef = useRef(false);
 
   useEffect(() => {
-    return registerStepNotificationNavigation();
-  }, []);
-
-  useEffect(() => {
     if (!healthConnectStepsEnabled || didLaunchSyncRef.current) {
       return;
     }
@@ -54,7 +49,7 @@ function AndroidActivitySyncHost() {
   }, [db, healthConnectStepsEnabled]);
 
   useEffect(() => {
-    if (!stepsNotificationEnabled) {
+    if (!healthConnectStepsEnabled || !stepsNotificationEnabled) {
       void stopStepNotification();
 
       return;
@@ -67,7 +62,7 @@ function AndroidActivitySyncHost() {
     }
 
     startStepNotificationRefresh(stepGoal);
-  }, [db, stepGoal, stepsNotificationEnabled]);
+  }, [db, healthConnectStepsEnabled, stepGoal, stepsNotificationEnabled]);
 
   return null;
 }
