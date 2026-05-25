@@ -22,6 +22,8 @@ import { useStepsScreen } from '@/src/features/steps/hooks';
 import { RefreshCwIcon, SettingsIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
+const RECENT_STEP_HISTORY_LIMIT = 7;
+
 export default function StepsScreen() {
   const {
     availability,
@@ -42,6 +44,8 @@ export default function StepsScreen() {
     refreshSteps
   } = useStepsScreen();
   const newestFirstDays = [...stepDays].sort((a, b) => b.startAt - a.startAt);
+  const recentStepDays = newestFirstDays.slice(0, RECENT_STEP_HISTORY_LIMIT);
+  const hasMoreStepHistory = newestFirstDays.length > recentStepDays.length;
   const progress =
     stepGoal > 0
       ? Math.min(100, Math.round((displayedTodaySteps / stepGoal) * 100))
@@ -118,7 +122,7 @@ export default function StepsScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
       <StyledFlatList
-        data={newestFirstDays}
+        data={recentStepDays}
         keyExtractor={item => item.dateKey}
         style={{ flex: 1 }}
         contentContainerClassName="px-4 py-6"
@@ -220,11 +224,11 @@ export default function StepsScreen() {
                   Step history
                 </Text>
                 <Text variant="h3" className="mt-1">
-                  Daily steps
+                  Recent days
                 </Text>
               </View>
               <Text variant="caption" tone="muted">
-                {newestFirstDays.length} days
+                {recentStepDays.length} shown
               </Text>
             </View>
           </View>
@@ -238,6 +242,14 @@ export default function StepsScreen() {
               Connect Health Connect and sync steps to fill this in.
             </Text>
           </View>
+        }
+        ListFooterComponent={
+          hasMoreStepHistory ? (
+            <Text variant="caption" tone="muted" className="pt-3 text-center">
+              Showing latest {recentStepDays.length} of {newestFirstDays.length}{' '}
+              synced days
+            </Text>
+          ) : null
         }
         renderItem={({ item }) => <StepDayRow day={item} goal={stepGoal} />}
       />

@@ -1,7 +1,10 @@
 import { Text } from '@/src/components/ui/text';
 import type { HealthStepDay } from '@/src/db/schema';
-import { formatSteps } from '@/src/features/steps/display';
-import { formatWorkoutDate } from '@/src/lib/utils/date';
+import {
+  formatStepMonthDay,
+  formatStepWeekday,
+  formatSteps
+} from '@/src/features/steps/display';
 import { View } from 'react-native';
 
 interface StepDayRowProps {
@@ -13,25 +16,27 @@ export function StepDayRow({ day, goal }: StepDayRowProps) {
   const progress = goal > 0 ? Math.min(100, (day.steps / goal) * 100) : 0;
 
   return (
-    <View className="border-border bg-card mb-3 rounded-lg border p-4">
+    <View className="border-border border-b py-3">
       <View className="flex-row items-center justify-between gap-4">
         <View className="flex-1">
-          <Text variant="bodyMedium">{formatWorkoutDate(day.startAt)}</Text>
+          <Text variant="bodyMedium">{formatStepWeekday(day.startAt)}</Text>
           <Text variant="caption" tone="muted" className="mt-1">
-            {Math.round(progress)}% of goal
+            {formatStepMonthDay(day.startAt)}
           </Text>
         </View>
 
-        <View className="items-end">
-          <Text variant="h3">{formatSteps(day.steps)}</Text>
+        <View className="w-28 items-end">
+          <Text variant="bodyMedium">{formatSteps(day.steps)}</Text>
+          <View className="bg-muted mt-2 h-1.5 w-full overflow-hidden rounded-sm">
+            <View
+              className="bg-primary h-full"
+              style={{ width: `${progress}%` }}
+            />
+          </View>
           <Text variant="caption" tone="muted" className="mt-1">
-            steps
+            {Math.round(progress)}%
           </Text>
         </View>
-      </View>
-
-      <View className="bg-muted mt-4 h-2 overflow-hidden rounded-sm">
-        <View className="bg-primary h-full" style={{ width: `${progress}%` }} />
       </View>
     </View>
   );
