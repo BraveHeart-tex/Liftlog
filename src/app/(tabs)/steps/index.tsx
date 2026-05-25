@@ -6,11 +6,11 @@ import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 import { Text } from '@/src/components/ui/text';
+import { StepDayRow } from '@/src/features/steps/components/step-day-row';
 import { StepsConnectionBadge } from '@/src/features/steps/components/steps-connection-badge';
 import { StepsEmptyState } from '@/src/features/steps/components/steps-empty-state';
+import { StepsGoalConsistencyCard } from '@/src/features/steps/components/steps-goal-consistency-card';
 import { StepsUnavailableState } from '@/src/features/steps/components/steps-unavailable-state';
-import { StepDayRow } from '@/src/features/steps/components/step-day-row';
-import { StepProgressChart } from '@/src/features/steps/components/step-progress-chart';
 import { TodayStepRadialCard } from '@/src/features/steps/components/today-step-radial-card';
 import {
   formatSteps,
@@ -164,30 +164,6 @@ export default function StepsScreen() {
               liveStepCounterStatus={liveStepCounterStatus}
             />
 
-            <View className="mt-4 flex-row gap-3">
-              <Card className="flex-1">
-                <CardContent>
-                  <Text variant="caption" tone="muted">
-                    7-day avg
-                  </Text>
-                  <Text variant="h3" className="mt-2">
-                    {formatSteps(stats.average7DaySteps)}
-                  </Text>
-                </CardContent>
-              </Card>
-
-              <Card className="flex-1">
-                <CardContent>
-                  <Text variant="caption" tone="muted">
-                    Best day
-                  </Text>
-                  <Text variant="h3" className="mt-2">
-                    {formatSteps(stats.bestDay?.steps ?? 0)}
-                  </Text>
-                </CardContent>
-              </Card>
-            </View>
-
             <Card className="mt-4">
               <CardContent>
                 <View className="flex-row items-center justify-between gap-4">
@@ -231,7 +207,30 @@ export default function StepsScreen() {
               </CardContent>
             </Card>
 
-            <StepProgressChart days={stepDays} goal={stepGoal} />
+            <StepsGoalConsistencyCard days={stepDays} goal={stepGoal} />
+            <View className="mt-4 flex-row gap-3">
+              <Card className="flex-1">
+                <CardContent>
+                  <Text variant="caption" tone="muted">
+                    7-day avg
+                  </Text>
+                  <Text variant="h3" className="mt-2">
+                    {formatSteps(stats.average7DaySteps)}
+                  </Text>
+                </CardContent>
+              </Card>
+
+              <Card className="flex-1">
+                <CardContent>
+                  <Text variant="caption" tone="muted">
+                    Best day
+                  </Text>
+                  <Text variant="h3" className="mt-2">
+                    {formatSteps(stats.bestDay?.steps ?? 0)}
+                  </Text>
+                </CardContent>
+              </Card>
+            </View>
 
             <View className="mt-6 flex-row items-end justify-between gap-4">
               <View>
