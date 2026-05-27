@@ -1,4 +1,4 @@
-import { StyledFlashList } from '@/src/components/styled/flash-list';
+import { StyledFlatList } from '@/src/components/styled/flat-list';
 import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 import { Text } from '@/src/components/ui/text';
 import { WorkoutLogCalendar } from '@/src/features/workout-log/components/workout-log-calendar';
@@ -9,9 +9,8 @@ import {
 } from '@/src/features/workouts/hooks';
 import type { CompletedWorkoutLogRow } from '@/src/features/workouts/repository';
 import { toLocalDateKey } from '@/src/lib/utils/date';
-import type { FlashListRef } from '@shopify/flash-list';
 import { router } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
 function formatSelectedDate(dateKey: string): string {
@@ -31,7 +30,6 @@ export default function LogScreen() {
   const [selectedDateKey, setSelectedDateKey] = useState(
     toLocalDateKey(Date.now())
   );
-  const logListRef = useRef<FlashListRef<CompletedWorkoutLogRow>>(null);
   const { workoutCountByDateKey } = useWorkoutCalendarMarks(
     WORKOUT_LOG_PAST_MONTH_RANGE
   );
@@ -39,12 +37,6 @@ export default function LogScreen() {
 
   const handleSelectDate = useCallback((dateKey: string) => {
     setSelectedDateKey(dateKey);
-  }, []);
-
-  const handleCalendarScrollLockChange = useCallback((isLocked: boolean) => {
-    logListRef.current
-      ?.getNativeScrollRef()
-      ?.setNativeProps({ scrollEnabled: !isLocked });
   }, []);
 
   const renderWorkoutRow = useCallback(
@@ -79,7 +71,6 @@ export default function LogScreen() {
             selectedDateKey={selectedDateKey}
             workoutCountByDateKey={workoutCountByDateKey}
             onSelectDate={handleSelectDate}
-            onScrollLockChange={handleCalendarScrollLockChange}
           />
         </View>
 
@@ -101,7 +92,6 @@ export default function LogScreen() {
       </View>
     ),
     [
-      handleCalendarScrollLockChange,
       handleSelectDate,
       selectedDateKey,
       workoutCountByDateKey,
@@ -129,19 +119,17 @@ export default function LogScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
-      <StyledFlashList
-        ref={logListRef}
+      <StyledFlatList
         data={workoutRows}
-        keyExtractor={keyExtractor}
-        style={{ flex: 1 }}
-        contentContainerClassName="px-4 py-6"
+        className="flex-1"
         directionalLockEnabled
+        keyExtractor={keyExtractor}
         keyboardShouldPersistTaps="handled"
-        nestedScrollEnabled
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmptyComponent}
         renderItem={renderWorkoutRow}
+        contentContainerClassName="px-4 py-6"
       />
     </SafeAreaView>
   );

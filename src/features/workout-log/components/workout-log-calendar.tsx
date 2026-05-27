@@ -18,7 +18,7 @@ import { MonthCalendar } from '@/src/features/calendar/month-calendar';
 
 import { toLocalDateKey } from '@/src/lib/utils/date';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { type LayoutChangeEvent, View } from 'react-native';
 
 interface WorkoutLogCalendarProps {
@@ -26,7 +26,6 @@ interface WorkoutLogCalendarProps {
   selectedDateKey: string;
   workoutCountByDateKey: Map<string, number>;
   onSelectDate: (dateKey: string) => void;
-  onScrollLockChange?: (isLocked: boolean) => void;
 }
 
 function getWorkoutMarksByMonth(workoutCountByDateKey: Map<string, number>) {
@@ -53,8 +52,7 @@ export function WorkoutLogCalendar({
   pastMonthRange = DEFAULT_PAST_MONTH_RANGE,
   selectedDateKey,
   workoutCountByDateKey,
-  onSelectDate,
-  onScrollLockChange
+  onSelectDate
 }: WorkoutLogCalendarProps) {
   const { colors } = useAppTheme();
   const [calendarWidth, setCalendarWidth] = useState<number | null>(null);
@@ -79,18 +77,6 @@ export function WorkoutLogCalendar({
     (dateKey: string) => onSelectDate(dateKey),
     [onSelectDate]
   );
-
-  const lockParentScroll = useCallback(
-    () => onScrollLockChange?.(true),
-    [onScrollLockChange]
-  );
-
-  const unlockParentScroll = useCallback(
-    () => onScrollLockChange?.(false),
-    [onScrollLockChange]
-  );
-
-  useEffect(() => unlockParentScroll, [unlockParentScroll]);
 
   const dayCellWidth = calendarWidth
     ? Math.floor((calendarWidth - 24) / CALENDAR_COLUMNS)
@@ -153,9 +139,6 @@ export function WorkoutLogCalendar({
     <View
       className="bg-card overflow-hidden rounded-xl"
       onLayout={handleLayout}
-      onTouchCancel={unlockParentScroll}
-      onTouchEnd={unlockParentScroll}
-      onTouchStart={lockParentScroll}
       style={{ height: DEFAULT_CALENDAR_HEIGHT }}
     >
       {calendarWidth !== null ? (
@@ -171,11 +154,7 @@ export function WorkoutLogCalendar({
           keyExtractor={keyExtractor}
           maxToRenderPerBatch={3}
           nestedScrollEnabled
-          onMomentumScrollEnd={unlockParentScroll}
-          onScrollBeginDrag={lockParentScroll}
-          onScrollEndDrag={unlockParentScroll}
           pagingEnabled
-          removeClippedSubviews
           renderItem={renderCalendarMonth}
           showsHorizontalScrollIndicator={false}
           snapToAlignment="start"
