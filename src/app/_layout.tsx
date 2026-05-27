@@ -2,6 +2,8 @@ import '@/global.css';
 import { CommonProviders } from '@/src/components/common-providers';
 import { DrizzleStudio } from '@/src/components/drizzle-studio';
 import { ScreenErrorBoundary } from '@/src/components/screen-error-boundary';
+import { bootstrapThemeColorScheme } from '@/src/theme/bootstrap-theme';
+import { useAppTheme } from '@/src/theme/app-theme-provider';
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -13,7 +15,29 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
+bootstrapThemeColorScheme();
 void SplashScreen.preventAutoHideAsync();
+
+function RootNavigator() {
+  const { colors } = useAppTheme();
+
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: {
+          backgroundColor: colors.background
+        }
+      }}
+    >
+      <Stack.Screen name="index" />
+      <Stack.Screen name="onboarding" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="exercises/new" />
+      <Stack.Screen name="workouts/[id]" />
+    </Stack>
+  );
+}
 
 export default function RootLayout() {
   const [fontsLoaded, fontLoadError] = useFonts({
@@ -37,13 +61,7 @@ export default function RootLayout() {
     <CommonProviders>
       <ScreenErrorBoundary>
         <DrizzleStudio />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="onboarding" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="exercises/new" />
-          <Stack.Screen name="workouts/[id]" />
-        </Stack>
+        <RootNavigator />
       </ScreenErrorBoundary>
     </CommonProviders>
   );

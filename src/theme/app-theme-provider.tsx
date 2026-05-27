@@ -1,4 +1,5 @@
 import { useSettings } from '@/src/features/settings/hooks';
+import { toAppearanceColorScheme } from '@/src/features/settings/theme-preference-storage';
 import { cn } from '@/src/lib/utils/cn';
 import {
   getTabBarTheme,
@@ -13,10 +14,11 @@ import {
   type Theme
 } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
+import * as SystemUI from 'expo-system-ui';
 import {
   createContext,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useMemo,
   type PropsWithChildren
 } from 'react';
@@ -34,14 +36,19 @@ interface AppThemeContextValue {
 
 const AppThemeContext = createContext<AppThemeContextValue | null>(null);
 
-function resolveRequestedColorScheme(
-  preference: 'system' | AppColorScheme
-): ColorSchemeName {
-  return preference === 'system' ? null : preference;
-}
-
 function resolveAppColorScheme(colorScheme: ColorSchemeName): AppColorScheme {
   return colorScheme === 'dark' ? 'dark' : 'light';
+}
+
+function resolveColorScheme(
+  preference: 'system' | AppColorScheme,
+  nativeColorScheme: ColorSchemeName
+): AppColorScheme {
+  if (preference !== 'system') {
+    return preference;
+  }
+
+  return resolveAppColorScheme(nativeColorScheme);
 }
 
 function createNavigationTheme(colorScheme: AppColorScheme): Theme {
@@ -66,11 +73,20 @@ function createNavigationTheme(colorScheme: AppColorScheme): Theme {
 export function AppThemeProvider({ children }: PropsWithChildren) {
   const { themePreference } = useSettings();
   const nativeColorScheme = useColorScheme();
-  const colorScheme = resolveAppColorScheme(nativeColorScheme);
+  const colorScheme = useMemo(
+    () => resolveColorScheme(themePreference, nativeColorScheme),
+    [nativeColorScheme, themePreference]
+  );
 
-  useEffect(() => {
-    Appearance.setColorScheme(resolveRequestedColorScheme(themePreference));
+  useLayoutEffect(() => {
+    Appearance.setColorScheme(toAppearanceColorScheme(themePreference));
   }, [themePreference]);
+
+  useLayoutEffect(() => {
+    void SystemUI.setBackgroundColorAsync(
+      getThemeColors(colorScheme).background
+    );
+  }, [colorScheme]);
 
   const value = useMemo(
     () => ({
@@ -91,7 +107,7 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
         <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
         <View
           className={cn(
-            'will-change-variable flex-1',
+            'flex-1',
             colorScheme === 'dark' ? 'theme-dark' : 'theme-light'
           )}
         >

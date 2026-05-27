@@ -1,16 +1,22 @@
 import type { DrizzleDb } from '@/src/db/client';
 import { appMeta } from '@/src/db/schema';
+import {
+  DEFAULT_THEME_PREFERENCE,
+  parseThemePreference,
+  setStoredThemePreference,
+  THEME_PREFERENCE_KEY,
+  type ThemePreference
+} from '@/src/features/settings/theme-preference-storage';
 import type { WeightUnit } from '@/src/lib/utils/weight';
 import { eq } from 'drizzle-orm';
 
 export type { WeightUnit };
-
-export type ThemePreference = 'system' | 'light' | 'dark';
+export type { ThemePreference };
 
 export const SETTINGS_KEYS = {
   weightUnit: 'settings.weight_unit',
   restTimerDuration: 'settings.rest_timer',
-  themePreference: 'settings.theme_preference',
+  themePreference: THEME_PREFERENCE_KEY,
   healthConnectStepsEnabled: 'settings.health_connect_steps_enabled',
   stepsNotificationEnabled: 'settings.steps_notification_enabled',
   stepGoal: 'settings.step_goal',
@@ -20,21 +26,13 @@ export const SETTINGS_KEYS = {
 export const SETTINGS_DEFAULTS = {
   weightUnit: 'kg' as WeightUnit,
   restTimerDuration: 90,
-  themePreference: 'system' as ThemePreference,
+  themePreference: DEFAULT_THEME_PREFERENCE,
   healthConnectStepsEnabled: false,
   stepsNotificationEnabled: false,
   stepGoal: 10000
 };
 
-export function parseThemePreference(
-  value: string | undefined
-): ThemePreference {
-  if (value === 'light' || value === 'dark' || value === 'system') {
-    return value;
-  }
-
-  return SETTINGS_DEFAULTS.themePreference;
-}
+export { parseThemePreference };
 
 export function getSetting(db: DrizzleDb, key: string): string | undefined {
   return db.select().from(appMeta).where(eq(appMeta.key, key)).get()?.value;
@@ -80,7 +78,13 @@ export function setRestTimerDuration(db: DrizzleDb, seconds: number): void {
 }
 
 export function getThemePreference(db: DrizzleDb): ThemePreference {
-  return parseThemePreference(getSetting(db, SETTINGS_KEYS.themePreference));
+  const preference = parseThemePreference(
+    getSetting(db, SETTINGS_KEYS.themePreference)
+  );
+
+  setStoredThemePreference(preference);
+
+  return preference;
 }
 
 export function setThemePreference(
@@ -88,6 +92,7 @@ export function setThemePreference(
   preference: ThemePreference
 ): void {
   setSetting(db, SETTINGS_KEYS.themePreference, preference);
+  setStoredThemePreference(preference);
 }
 
 export function parseBooleanSetting(value: string | undefined): boolean {
