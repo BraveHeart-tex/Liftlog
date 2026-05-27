@@ -26,6 +26,22 @@ Tech stack:
 - Avoid code comments unless they are absolutely necessary to explain a non-obvious edge case or decision.
 - Do not add production dependencies without confirmation.
 
+## Generated Files
+
+Do not read, inspect, summarize, or include generated files unless explicitly requested.
+
+Treat these paths as generated/noisy and off-limits by default:
+
+```txt
+src/db/migrations/**
+src/db/migrations/meta/**
+src/db/migrations/*.sql
+src/db/migrations/_journal.json
+src/db/migrations/migrations.js
+drizzle/**
+**/*.generated.*
+```
+
 ## TypeScript
 
 - Use TypeScript.
