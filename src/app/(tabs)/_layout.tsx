@@ -1,5 +1,5 @@
-import { iconSizes, nativeFontSizes } from '@/src/theme/sizes';
 import { useTabBarTheme } from '@/src/theme/app-theme-provider';
+import { iconSizes, nativeFontSizes } from '@/src/theme/sizes';
 import { Tabs } from 'expo-router';
 import {
   ClockIcon,
@@ -134,16 +134,10 @@ const styles = StyleSheet.create({
   tabBar: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    borderTopWidth: 1,
-    elevation: 18,
+    borderTopWidth: 0,
+    elevation: 0,
     paddingTop: TAB_BAR_TOP_PADDING,
-    shadowColor: '#000000',
-    shadowOffset: {
-      width: 0,
-      height: -8
-    },
-    shadowOpacity: Platform.OS === 'ios' ? 0.1 : 0,
-    shadowRadius: 18
+    shadowColor: 'trasparent'
   },
   tabBarIcon: {
     height: 34,
