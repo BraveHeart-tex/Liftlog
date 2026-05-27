@@ -13,7 +13,8 @@ type TextVariant =
   | 'body'
   | 'bodyMedium'
   | 'small'
-  | 'caption';
+  | 'caption'
+  | 'overline';
 
 type TextTone =
   | 'default'
@@ -23,6 +24,19 @@ type TextTone =
   | 'danger'
   | 'inherit';
 
+type FontWeightMap = {
+  '400': 'Regular';
+  '500': 'Medium';
+  '600': 'SemiBold';
+  '700': 'Bold';
+};
+
+type FontFamily = 'Inter';
+
+type Font = {
+  [Weight in keyof FontWeightMap]: `${FontFamily}_${Weight}${FontWeightMap[Weight]}`;
+}[keyof FontWeightMap];
+
 const variantClassNames: Record<TextVariant, string> = {
   h1: 'text-h1',
   h2: 'text-h2',
@@ -30,7 +44,8 @@ const variantClassNames: Record<TextVariant, string> = {
   body: 'text-body',
   bodyMedium: 'text-body-medium',
   small: 'text-small',
-  caption: 'text-caption'
+  caption: 'text-caption',
+  overline: 'text-caption uppercase tracking-wider'
 };
 
 const toneClassNames: Record<TextTone, string> = {
@@ -42,14 +57,15 @@ const toneClassNames: Record<TextTone, string> = {
   inherit: ''
 };
 
-const variantFontFamilies: Record<TextVariant, string> = {
+const variantFontFamilies: Record<TextVariant, Font> = {
   h1: 'Inter_700Bold',
   h2: 'Inter_700Bold',
   h3: 'Inter_600SemiBold',
   body: 'Inter_400Regular',
   bodyMedium: 'Inter_500Medium',
   small: 'Inter_400Regular',
-  caption: 'Inter_500Medium'
+  caption: 'Inter_500Medium',
+  overline: 'Inter_600SemiBold'
 };
 
 const nativeTextDefaults: TextStyle = {
