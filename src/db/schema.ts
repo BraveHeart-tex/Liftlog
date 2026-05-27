@@ -1,3 +1,4 @@
+import { toLocalDateKey } from '@/src/lib/utils/date';
 import { generateUuid } from '@/src/lib/utils/uuid';
 import {
   index,
@@ -45,10 +46,18 @@ export const workouts = sqliteTable(
     startedAt: integer('started_at')
       .notNull()
       .$defaultFn(() => Date.now()),
+    dateKey: text('date_key')
+      .notNull()
+      .$defaultFn(() => toLocalDateKey(Date.now())),
     completedAt: integer('completed_at'),
     notes: text('notes')
   },
   table => [
+    index('workouts_status_date_key_started_at_idx').on(
+      table.status,
+      table.dateKey,
+      table.startedAt
+    ),
     index('workouts_status_started_at_idx').on(table.status, table.startedAt)
   ]
 );

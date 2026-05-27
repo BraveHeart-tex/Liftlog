@@ -14,6 +14,7 @@ import {
   type NewSet
 } from '@/src/db/schema';
 import { computeEstimated1RM } from '@/src/features/progress/repository';
+import { toLocalDateKey } from '@/src/lib/utils/date';
 import { eq, inArray } from 'drizzle-orm';
 
 const DEV_SEED_KEY = 'dev_mock_seed_version';
@@ -357,6 +358,7 @@ export function runDevSeedIfNeeded(db: DrizzleDb): void {
           name: workoutName,
           status: 'completed',
           startedAt,
+          dateKey: toLocalDateKey(startedAt),
           completedAt,
           notes: faker.helpers.arrayElement([
             null,

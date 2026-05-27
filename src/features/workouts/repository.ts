@@ -14,6 +14,7 @@ import {
   type WorkoutExercise,
   type WorkoutTemplate
 } from '@/src/db/schema';
+import { toLocalDateKey } from '@/src/lib/utils/date';
 import { resolveTemplateName } from '@/src/lib/utils/workout';
 import {
   and,
@@ -24,8 +25,43 @@ import {
   gte,
   inArray,
   lt,
-  notInArray
+  lte,
+  notInArray,
+  or
 } from 'drizzle-orm';
+
+function withWorkoutDateKey(data: NewWorkout): NewWorkout {
+  const startedAt = data.startedAt ?? Date.now();
+
+  return {
+    ...data,
+    startedAt,
+    dateKey: data.dateKey ?? toLocalDateKey(startedAt)
+  };
+}
+
+function getDateRange(dateKey: string): { endAt: number; startAt: number } {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const startDate = new Date(year, month - 1, day);
+  const endDate = new Date(year, month - 1, day + 1);
+
+  return {
+    startAt: startDate.getTime(),
+    endAt: endDate.getTime()
+  };
+}
+
+export interface WorkoutCalendarDateRange {
+  endAt: number;
+  endDateKey: string;
+  startAt: number;
+  startDateKey: string;
+}
+
+export interface CompletedWorkoutLogRow {
+  workout: Workout;
+  setCount: number;
+}
 
 function getWorkoutRecordById(
   db: DrizzleDb,
@@ -68,22 +104,73 @@ export function getCompletedWorkoutDateRowsQuery(db: DrizzleDb) {
     .orderBy(desc(workouts.startedAt));
 }
 
-export function getCompletedWorkoutsForDateRangeQuery(
+export function getCompletedWorkoutCountRowsQuery(
   db: DrizzleDb,
-  startAt: number,
-  endAt: number
+  dateRange: WorkoutCalendarDateRange
 ) {
+  return db
+    .select({
+      dateKey: workouts.dateKey,
+      workoutCount: count(workouts.id)
+    })
+    .from(workouts)
+    .where(
+      and(
+        eq(workouts.status, 'completed'),
+        gte(workouts.dateKey, dateRange.startDateKey),
+        lte(workouts.dateKey, dateRange.endDateKey)
+      )
+    )
+    .groupBy(workouts.dateKey)
+    .orderBy(desc(workouts.dateKey));
+}
+
+export function getCompletedWorkoutsForDateKeyQuery(
+  db: DrizzleDb,
+  dateKey: Workout['dateKey']
+) {
+  const { endAt, startAt } = getDateRange(dateKey);
+
   return db
     .select()
     .from(workouts)
     .where(
       and(
         eq(workouts.status, 'completed'),
-        gte(workouts.startedAt, startAt),
-        lt(workouts.startedAt, endAt)
+        or(
+          eq(workouts.dateKey, dateKey),
+          and(
+            eq(workouts.dateKey, ''),
+            gte(workouts.startedAt, startAt),
+            lt(workouts.startedAt, endAt)
+          )
+        )
       )
     )
-    .orderBy(desc(workouts.startedAt));
+    .orderBy(desc(workouts.completedAt), desc(workouts.startedAt));
+}
+
+export function getCompletedWorkoutLogRowsForDateKeyQuery(
+  db: DrizzleDb,
+  dateKey: Workout['dateKey']
+) {
+  return db
+    .select({
+      workout: workouts,
+      setCount: count(sets.id)
+    })
+    .from(workouts)
+    .leftJoin(workoutExercises, eq(workoutExercises.workoutId, workouts.id))
+    .leftJoin(
+      sets,
+      and(
+        eq(sets.workoutExerciseId, workoutExercises.id),
+        eq(sets.status, 'completed')
+      )
+    )
+    .where(and(eq(workouts.status, 'completed'), eq(workouts.dateKey, dateKey)))
+    .groupBy(workouts.id)
+    .orderBy(desc(workouts.completedAt), desc(workouts.startedAt));
 }
 
 export function getCompletedSetCountsForWorkoutsQuery(
@@ -313,7 +400,7 @@ export function getSetsForWorkoutExercisesQuery(
 }
 
 export function createWorkout(db: DrizzleDb, data: NewWorkout): Workout {
-  return db.insert(workouts).values(data).returning().get();
+  return db.insert(workouts).values(withWorkoutDateKey(data)).returning().get();
 }
 
 export function updateWorkoutName(
@@ -364,9 +451,16 @@ export function updateWorkoutTemplateName(
 }
 
 export function completeWorkout(db: DrizzleDb, id: Workout['id']): void {
+  const existingWorkout = getWorkoutRecordById(db, id);
+
+  if (!existingWorkout) {
+    return;
+  }
+
   db.update(workouts)
     .set({
       status: 'completed',
+      dateKey: toLocalDateKey(existingWorkout.startedAt),
       completedAt: Date.now()
     })
     .where(eq(workouts.id, id))
@@ -494,12 +588,15 @@ export function createWorkoutFromTemplate(
       .orderBy(asc(workoutTemplateExercises.order))
       .all();
 
+    const startedAt = Date.now();
+
     createdWorkout = tx
       .insert(workouts)
       .values({
         name: template.name,
         status: 'in_progress',
-        startedAt: Date.now()
+        startedAt,
+        dateKey: toLocalDateKey(startedAt)
       })
       .returning()
       .get();

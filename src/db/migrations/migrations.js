@@ -3,11 +3,17 @@
 import journal from './meta/_journal.json';
 import m0000 from './0000_fancy_robin_chapel.sql';
 import m0001 from './0001_optimal_gressill.sql';
+import m0002 from './0002_married_ricochet.sql';
+import m0003 from './0003_backfill-workout-date-key.sql';
+import m0004 from './0004_chief_darkhawk.sql';
 
 export default {
   journal,
   migrations: {
     m0000,
-    m0001
+    m0001,
+    m0002,
+    m0003,
+    m0004
   }
 };
