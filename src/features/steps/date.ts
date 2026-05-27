@@ -38,3 +38,14 @@ export function getRecentLocalDayRanges(dayCount: number): LocalDayRange[] {
 export function getTodayDateKey(): string {
   return toLocalDateKey(Date.now());
 }
+
+export function getMillisecondsUntilNextLocalDay(): number {
+  const now = new Date();
+  const nextDay = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + 1
+  );
+
+  return Math.max(1000, nextDay.getTime() - now.getTime());
+}

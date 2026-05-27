@@ -17,11 +17,15 @@ import {
   refreshStepNotification,
   showStepNotification
 } from '@/src/features/steps/notifications';
+import {
+  getMillisecondsUntilNextLocalDay,
+  getTodayDateKey
+} from '@/src/features/steps/date';
 import { SETTINGS_KEYS, setSetting } from '@/src/features/settings/repository';
 import { useSettings } from '@/src/features/settings/hooks';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLiveStepCounter } from './use-live-step-counter';
 
 type SyncState = 'idle' | 'syncing';
@@ -40,10 +44,10 @@ const EMPTY_PERMISSION_STATE: StepPermissionState = {
   canReadHistory: false
 };
 
-function getStats(days: HealthStepDay[]): StepStats {
+function getStats(days: HealthStepDay[], todayDateKey: string): StepStats {
   const newestFirstDays = [...days].sort((a, b) => b.startAt - a.startAt);
   const oldestFirstDays = [...days].sort((a, b) => a.startAt - b.startAt);
-  const todaySteps = newestFirstDays[0]?.steps ?? 0;
+  const todaySteps = days.find(day => day.dateKey === todayDateKey)?.steps ?? 0;
   const last7Days = newestFirstDays.slice(0, 7);
   const average7DaySteps =
     last7Days.length === 0
@@ -84,7 +88,11 @@ export function useStepsScreen() {
     () => [...stepDaysResult.data].sort((a, b) => a.startAt - b.startAt),
     [stepDaysResult.data]
   );
-  const stats = useMemo(() => getStats(stepDays), [stepDays]);
+  const [todayDateKey, setTodayDateKey] = useState(getTodayDateKey);
+  const stats = useMemo(
+    () => getStats(stepDays, todayDateKey),
+    [stepDays, todayDateKey]
+  );
   const [availability, setAvailability] =
     useState<HealthConnectAvailability>('unavailable');
   const [permissions, setPermissions] = useState<StepPermissionState>(
@@ -95,6 +103,7 @@ export function useStepsScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const liveStepCounter = useLiveStepCounter({
     availability,
+    baselineDateKey: todayDateKey,
     baselineSteps: stats.todaySteps,
     canReadHealthConnectSteps: permissions.canReadSteps,
     isEnabled: healthConnectStepsEnabled && stepsNotificationEnabled,
@@ -105,6 +114,14 @@ export function useStepsScreen() {
     liveStepCounter.steps ?? stats.todaySteps
   );
   const liveStepDelta = Math.max(0, displayedTodaySteps - stats.todaySteps);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setTodayDateKey(getTodayDateKey());
+    }, getMillisecondsUntilNextLocalDay());
+
+    return () => clearTimeout(timeoutId);
+  }, [todayDateKey]);
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -202,6 +219,7 @@ export function useStepsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      setTodayDateKey(getTodayDateKey());
       void refreshStatus();
 
       if (healthConnectStepsEnabled) {

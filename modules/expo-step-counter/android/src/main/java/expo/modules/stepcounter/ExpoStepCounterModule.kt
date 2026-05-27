@@ -16,7 +16,7 @@ class ExpoStepCounterModule : Module() {
 
     Events("onStepCountChanged", "onStepCounterError")
 
-    Function("start") { healthConnectBaseline: Int, stepGoal: Int ->
+    Function("start") { healthConnectBaseline: Int, stepGoal: Int, baselineDateKey: String ->
       val context =
               appContext.reactContext
                       ?: throw IllegalStateException("React context is not available")
@@ -26,6 +26,7 @@ class ExpoStepCounterModule : Module() {
                 action = StepCounterService.ACTION_START
                 putExtra(StepCounterService.EXTRA_HEALTH_CONNECT_BASELINE, healthConnectBaseline)
                 putExtra(StepCounterService.EXTRA_STEP_GOAL, stepGoal)
+                putExtra(StepCounterService.EXTRA_BASELINE_DATE_KEY, baselineDateKey)
               }
 
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -48,7 +49,7 @@ class ExpoStepCounterModule : Module() {
       context.startService(intent)
     }
 
-    Function("updateBaseline") { healthConnectBaseline: Int, stepGoal: Int ->
+    Function("updateBaseline") { healthConnectBaseline: Int, stepGoal: Int, baselineDateKey: String ->
       val context =
               appContext.reactContext
                       ?: throw IllegalStateException("React context is not available")
@@ -58,6 +59,7 @@ class ExpoStepCounterModule : Module() {
                 action = StepCounterService.ACTION_UPDATE_BASELINE
                 putExtra(StepCounterService.EXTRA_HEALTH_CONNECT_BASELINE, healthConnectBaseline)
                 putExtra(StepCounterService.EXTRA_STEP_GOAL, stepGoal)
+                putExtra(StepCounterService.EXTRA_BASELINE_DATE_KEY, baselineDateKey)
               }
 
       context.startService(intent)

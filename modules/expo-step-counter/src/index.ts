@@ -16,9 +16,13 @@ export type StepCounterSubscription = {
 };
 
 export type StepCounterApi = {
-  start(healthConnectBaseline: number, stepGoal?: number): void;
+  start(healthConnectBaseline: number, stepGoal: number | undefined, baselineDateKey: string): void;
   stop(): void;
-  updateBaseline(healthConnectBaseline: number, stepGoal?: number): void;
+  updateBaseline(
+    healthConnectBaseline: number,
+    stepGoal: number | undefined,
+    baselineDateKey: string
+  ): void;
   isAvailable(): boolean;
   hasActivityRecognitionPermission(): boolean;
   addStepCountListener(listener: (event: StepCounterChangeEvent) => void): StepCounterSubscription;
@@ -31,9 +35,9 @@ type ExpoStepCounterEvents = {
 };
 
 declare class ExpoStepCounterModule extends NativeModule<ExpoStepCounterEvents> {
-  start(healthConnectBaseline: number, stepGoal: number): void;
+  start(healthConnectBaseline: number, stepGoal: number, baselineDateKey: string): void;
   stop(): void;
-  updateBaseline(healthConnectBaseline: number, stepGoal: number): void;
+  updateBaseline(healthConnectBaseline: number, stepGoal: number, baselineDateKey: string): void;
   isStepCounterAvailable(): boolean;
   hasActivityRecognitionPermission(): boolean;
 }
@@ -59,18 +63,27 @@ function normalizeStepGoal(value: number | undefined): number {
 }
 
 export const StepCounter: StepCounterApi = {
-  start(healthConnectBaseline: number, stepGoal?: number) {
-    ExpoStepCounter?.start(normalizeStepCount(healthConnectBaseline), normalizeStepGoal(stepGoal));
+  start(healthConnectBaseline: number, stepGoal: number | undefined, baselineDateKey: string) {
+    ExpoStepCounter?.start(
+      normalizeStepCount(healthConnectBaseline),
+      normalizeStepGoal(stepGoal),
+      baselineDateKey
+    );
   },
 
   stop() {
     ExpoStepCounter?.stop();
   },
 
-  updateBaseline(healthConnectBaseline: number, stepGoal?: number) {
+  updateBaseline(
+    healthConnectBaseline: number,
+    stepGoal: number | undefined,
+    baselineDateKey: string
+  ) {
     ExpoStepCounter?.updateBaseline(
       normalizeStepCount(healthConnectBaseline),
-      normalizeStepGoal(stepGoal)
+      normalizeStepGoal(stepGoal),
+      baselineDateKey
     );
   },
 

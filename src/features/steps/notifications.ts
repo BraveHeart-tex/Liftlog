@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import { requestActivityRecognitionPermission } from '@/src/features/steps/step-counter-permissions';
 import { StepCounter } from 'expo-step-counter';
 import notifee, { AuthorizationStatus } from 'react-native-notify-kit';
+import { getTodayDateKey } from './date';
 import { readTodayStepCount } from './health-connect';
 
 const STEP_NOTIFICATION_ID = 'steps';
@@ -34,7 +35,7 @@ export async function showStepNotification({
     return;
   }
 
-  StepCounter.start(steps, goal);
+  StepCounter.start(steps, goal, getTodayDateKey());
 }
 
 export async function stopStepNotification(): Promise<void> {

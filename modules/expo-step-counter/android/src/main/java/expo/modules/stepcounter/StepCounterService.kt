@@ -13,20 +13,35 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
+import java.util.Calendar
+import java.util.Locale
 
 class StepCounterService : Service(), SensorEventListener {
     private lateinit var sensorManager: SensorManager
     private var stepCounterSensor: Sensor? = null
 
+    private val midnightHandler = Handler(Looper.getMainLooper())
     private var healthConnectBaseline: Int = 0
     private var sensorBaseline: Float? = null
     private var latestSensorValue: Float? = null
     private var latestDisplayedSteps: Int = 0
     private var stepGoal: Int = DEFAULT_STEP_GOAL
     private var isCounting: Boolean = false
+    private var activeDateKey: String = getCurrentDateKey()
+    private val midnightResetRunnable =
+            object : Runnable {
+                override fun run() {
+                    if (!isCounting) return
+
+                    resetForCurrentDay()
+                    scheduleMidnightReset()
+                }
+            }
 
     override fun onCreate() {
         super.onCreate()
@@ -42,15 +57,17 @@ class StepCounterService : Service(), SensorEventListener {
             ACTION_START -> {
                 val baseline = intent.getIntExtra(EXTRA_HEALTH_CONNECT_BASELINE, 0)
                 val goal = intent.getIntExtra(EXTRA_STEP_GOAL, DEFAULT_STEP_GOAL)
-                startStepCounting(baseline, goal)
+                val baselineDateKey = intent.getStringExtra(EXTRA_BASELINE_DATE_KEY)
+                startStepCounting(baseline, goal, baselineDateKey)
             }
             ACTION_UPDATE_BASELINE -> {
                 val baseline = intent.getIntExtra(EXTRA_HEALTH_CONNECT_BASELINE, 0)
                 val goal = intent.getIntExtra(EXTRA_STEP_GOAL, DEFAULT_STEP_GOAL)
+                val baselineDateKey = intent.getStringExtra(EXTRA_BASELINE_DATE_KEY)
                 if (isCounting) {
-                    updateBaseline(baseline, goal)
+                    updateBaseline(baseline, goal, baselineDateKey)
                 } else {
-                    startStepCounting(baseline, goal)
+                    startStepCounting(baseline, goal, baselineDateKey)
                 }
             }
             ACTION_STOP -> {
@@ -59,7 +76,7 @@ class StepCounterService : Service(), SensorEventListener {
             }
             else -> {
                 if (!isCounting) {
-                    startStepCounting(healthConnectBaseline, stepGoal)
+                    startStepCounting(healthConnectBaseline, stepGoal, activeDateKey)
                 }
             }
         }
@@ -73,6 +90,10 @@ class StepCounterService : Service(), SensorEventListener {
         if (event.sensor.type != Sensor.TYPE_STEP_COUNTER) return
 
         val currentSensorValue = event.values.firstOrNull() ?: return
+
+        if (activeDateKey != getCurrentDateKey()) {
+            resetForCurrentDay(latestSensorValue)
+        }
 
         if (sensorBaseline == null) {
             sensorBaseline = currentSensorValue
@@ -101,8 +122,21 @@ class StepCounterService : Service(), SensorEventListener {
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
 
-    private fun startStepCounting(nextHealthConnectBaseline: Int, nextStepGoal: Int) {
-        healthConnectBaseline = nextHealthConnectBaseline.coerceAtLeast(0)
+    private fun startStepCounting(
+            nextHealthConnectBaseline: Int,
+            nextStepGoal: Int,
+            nextBaselineDateKey: String?
+    ) {
+        if (isCounting) {
+            updateBaseline(nextHealthConnectBaseline, nextStepGoal, nextBaselineDateKey)
+            return
+        }
+
+        val currentDateKey = getCurrentDateKey()
+
+        activeDateKey = currentDateKey
+        healthConnectBaseline =
+                getCurrentDayBaseline(nextHealthConnectBaseline, nextBaselineDateKey, currentDateKey)
         stepGoal = nextStepGoal.coerceAtLeast(1)
         latestDisplayedSteps = healthConnectBaseline
 
@@ -119,11 +153,6 @@ class StepCounterService : Service(), SensorEventListener {
                     "TYPE_STEP_COUNTER sensor is not available on this device"
             )
             stopSelf()
-            return
-        }
-
-        if (isCounting) {
-            updateBaseline(nextHealthConnectBaseline, nextStepGoal)
             return
         }
 
@@ -150,11 +179,20 @@ class StepCounterService : Service(), SensorEventListener {
         }
 
         isCounting = true
+        scheduleMidnightReset()
         emitCurrentState()
     }
 
-    private fun updateBaseline(nextHealthConnectBaseline: Int, nextStepGoal: Int) {
-        healthConnectBaseline = nextHealthConnectBaseline.coerceAtLeast(0)
+    private fun updateBaseline(
+            nextHealthConnectBaseline: Int,
+            nextStepGoal: Int,
+            nextBaselineDateKey: String?
+    ) {
+        val currentDateKey = getCurrentDateKey()
+
+        activeDateKey = currentDateKey
+        healthConnectBaseline =
+                getCurrentDayBaseline(nextHealthConnectBaseline, nextBaselineDateKey, currentDateKey)
         stepGoal = nextStepGoal.coerceAtLeast(1)
 
         // Health Connect may have caught up with steps we were temporarily adding
@@ -164,6 +202,7 @@ class StepCounterService : Service(), SensorEventListener {
         latestDisplayedSteps = healthConnectBaseline
 
         updateNotification(latestDisplayedSteps)
+        scheduleMidnightReset()
         emitCurrentState()
     }
 
@@ -175,12 +214,23 @@ class StepCounterService : Service(), SensorEventListener {
 
         sensorBaseline = null
         latestSensorValue = null
+        midnightHandler.removeCallbacks(midnightResetRunnable)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
         } else {
             @Suppress("DEPRECATION") stopForeground(true)
         }
+    }
+
+    private fun resetForCurrentDay(nextSensorBaseline: Float? = latestSensorValue) {
+        activeDateKey = getCurrentDateKey()
+        healthConnectBaseline = 0
+        sensorBaseline = nextSensorBaseline
+        latestDisplayedSteps = 0
+
+        updateNotification(latestDisplayedSteps)
+        emitCurrentState()
     }
 
     override fun onDestroy() {
@@ -226,6 +276,47 @@ class StepCounterService : Service(), SensorEventListener {
 
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.createNotificationChannel(channel)
+    }
+
+    private fun getCurrentDayBaseline(
+            nextHealthConnectBaseline: Int,
+            nextBaselineDateKey: String?,
+            currentDateKey: String
+    ): Int {
+        return if (nextBaselineDateKey == currentDateKey) {
+            nextHealthConnectBaseline.coerceAtLeast(0)
+        } else {
+            0
+        }
+    }
+
+    private fun scheduleMidnightReset() {
+        midnightHandler.removeCallbacks(midnightResetRunnable)
+        midnightHandler.postDelayed(midnightResetRunnable, getMillisecondsUntilNextDay())
+    }
+
+    private fun getMillisecondsUntilNextDay(): Long {
+        val tomorrow = Calendar.getInstance()
+
+        tomorrow.add(Calendar.DAY_OF_YEAR, 1)
+        tomorrow.set(Calendar.HOUR_OF_DAY, 0)
+        tomorrow.set(Calendar.MINUTE, 0)
+        tomorrow.set(Calendar.SECOND, 0)
+        tomorrow.set(Calendar.MILLISECOND, 0)
+
+        return (tomorrow.timeInMillis - System.currentTimeMillis()).coerceAtLeast(1_000L)
+    }
+
+    private fun getCurrentDateKey(): String {
+        val today = Calendar.getInstance()
+
+        return String.format(
+                Locale.US,
+                "%04d-%02d-%02d",
+                today.get(Calendar.YEAR),
+                today.get(Calendar.MONTH) + 1,
+                today.get(Calendar.DAY_OF_MONTH)
+        )
     }
 
     private fun updateNotification(displayedSteps: Int) {
@@ -277,6 +368,7 @@ class StepCounterService : Service(), SensorEventListener {
 
         const val EXTRA_HEALTH_CONNECT_BASELINE = "healthConnectBaseline"
         const val EXTRA_STEP_GOAL = "stepGoal"
+        const val EXTRA_BASELINE_DATE_KEY = "baselineDateKey"
 
         private const val DEFAULT_STEP_GOAL = 10000
         private const val NOTIFICATION_CHANNEL_ID = "activity_steps"

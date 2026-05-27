@@ -16,6 +16,7 @@ export type LiveStepCounterStatus =
   | 'error';
 
 interface UseLiveStepCounterParams {
+  baselineDateKey: string;
   availability: HealthConnectAvailability;
   baselineSteps: number;
   canReadHealthConnectSteps: boolean;
@@ -39,6 +40,7 @@ function normalizeStepCount(value: number): number {
 }
 
 export function useLiveStepCounter({
+  baselineDateKey,
   availability,
   baselineSteps,
   canReadHealthConnectSteps,
@@ -46,6 +48,7 @@ export function useLiveStepCounter({
   stepGoal
 }: UseLiveStepCounterParams): UseLiveStepCounterResult {
   const baselineRef = useRef(normalizeStepCount(baselineSteps));
+  const baselineDateKeyRef = useRef(baselineDateKey);
   const isFocusedRef = useRef(false);
   const isStartedRef = useRef(false);
   const [event, setEvent] = useState<StepCounterChangeEvent | null>(null);
@@ -97,7 +100,11 @@ export function useLiveStepCounter({
         return;
       }
 
-      StepCounter.start(baselineRef.current, stepGoal);
+      StepCounter.start(
+        baselineRef.current,
+        stepGoal,
+        baselineDateKeyRef.current
+      );
       isStartedRef.current = true;
       setStatus('active');
     } catch (nextError) {
@@ -116,6 +123,18 @@ export function useLiveStepCounter({
   useEffect(() => {
     const nextBaseline = normalizeStepCount(baselineSteps);
 
+    if (baselineDateKey !== baselineDateKeyRef.current) {
+      baselineDateKeyRef.current = baselineDateKey;
+      baselineRef.current = nextBaseline;
+      setEvent(null);
+
+      if (isStartedRef.current) {
+        StepCounter.updateBaseline(nextBaseline, stepGoal, baselineDateKey);
+      }
+
+      return;
+    }
+
     if (nextBaseline <= baselineRef.current) {
       return;
     }
@@ -123,9 +142,9 @@ export function useLiveStepCounter({
     baselineRef.current = nextBaseline;
 
     if (isStartedRef.current) {
-      StepCounter.updateBaseline(nextBaseline, stepGoal);
+      StepCounter.updateBaseline(nextBaseline, stepGoal, baselineDateKey);
     }
-  }, [baselineSteps, stepGoal]);
+  }, [baselineDateKey, baselineSteps, stepGoal]);
 
   useFocusEffect(
     useCallback(() => {
