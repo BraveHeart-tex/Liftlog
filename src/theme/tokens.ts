@@ -8,6 +8,7 @@ const colorSchemes = {
     primary: '#FF4D00',
     primaryForeground: '#FFFFFF',
     border: '#E8DDD3',
+    muted: '#E8DDD3',
     mutedForeground: '#6B5B4E'
   },
   dark: {
@@ -17,6 +18,7 @@ const colorSchemes = {
     primary: '#FF4D00',
     primaryForeground: '#FFFFFF',
     border: '#3A3A3C',
+    muted: '#3A3A3C',
     mutedForeground: '#7A7A7F'
   }
 } as const;

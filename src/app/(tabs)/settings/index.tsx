@@ -1,21 +1,22 @@
 import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Screen } from '@/src/components/ui/screen';
+import { Switch } from '@/src/components/ui/switch';
 import { Text } from '@/src/components/ui/text';
-import { openStepHealthConnectSettings } from '@/src/features/steps/health-connect';
-import {
-  requestStepNotificationPermission,
-  stopStepNotification
-} from '@/src/features/steps/notifications';
 import { ThemeOptionCard } from '@/src/features/settings/components/theme-option-card';
 import {
   SETTINGS_DEFAULTS,
   useSettings,
   type ThemePreference
 } from '@/src/features/settings/hooks';
+import { openStepHealthConnectSettings } from '@/src/features/steps/health-connect';
+import {
+  requestStepNotificationPermission,
+  stopStepNotification
+} from '@/src/features/steps/notifications';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import Constants from 'expo-constants';
-import { Alert, Platform, Switch, View } from 'react-native';
+import { Alert, Platform, View } from 'react-native';
 
 const THEME_OPTIONS: {
   value: ThemePreference;
@@ -152,11 +153,10 @@ export default function SettingsScreen() {
                   kg
                 </Text>
                 <Switch
-                  value={weightUnit === 'lb'}
-                  onValueChange={value => setWeightUnit(value ? 'lb' : 'kg')}
-                  trackColor={switchColors.track}
-                  thumbColor={switchColors.thumb}
+                  checked={weightUnit === 'lb'}
+                  onCheckedChange={value => setWeightUnit(value ? 'lb' : 'kg')}
                 />
+
                 <Text
                   variant="small"
                   className={
@@ -231,10 +231,8 @@ export default function SettingsScreen() {
                   </Text>
                 </View>
                 <Switch
-                  value={healthConnectStepsEnabled}
-                  onValueChange={setHealthConnectStepsEnabled}
-                  trackColor={switchColors.track}
-                  thumbColor={switchColors.thumb}
+                  checked={healthConnectStepsEnabled}
+                  onCheckedChange={setHealthConnectStepsEnabled}
                 />
               </View>
 
@@ -285,12 +283,10 @@ export default function SettingsScreen() {
                     </Text>
                   </View>
                   <Switch
-                    value={stepsNotificationEnabled}
-                    onValueChange={value => {
+                    checked={stepsNotificationEnabled}
+                    onCheckedChange={value => {
                       void handleStepsNotificationChange(value);
                     }}
-                    trackColor={switchColors.track}
-                    thumbColor={switchColors.thumb}
                   />
                 </View>
               </View>
