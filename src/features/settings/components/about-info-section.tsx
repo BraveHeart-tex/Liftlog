@@ -6,7 +6,7 @@ import { View } from 'react-native';
 export const AboutInfoSection = () => {
   return (
     <View className="mt-6">
-      <Text variant="overline" tone="muted" className="mb-3">
+      <Text variant="overline" tone="muted" className="mb-2">
         About
       </Text>
       <Card>

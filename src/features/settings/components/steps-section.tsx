@@ -48,7 +48,7 @@ export const StepsSection = () => {
 
   return shouldShowStepsSettings ? (
     <View className="mt-6">
-      <Text variant="overline" tone="muted" className="mb-3">
+      <Text variant="overline" tone="muted" className="mb-2">
         Steps
       </Text>
       <Card className="overflow-hidden">
