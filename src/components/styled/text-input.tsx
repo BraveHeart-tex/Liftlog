@@ -50,7 +50,7 @@ export const StyledTextInput = styled(TextInputColorBridge, {
   className: {
     target: 'style',
     nativeStyleMapping: {
-      textAlign: true
+      textAlign: 'textAlign'
     }
   },
   placeholderClassName: 'placeholderStyle',

@@ -7,8 +7,8 @@ import {
 } from '@gorhom/bottom-sheet';
 import { styled } from 'nativewind';
 import {
-  type ComponentRef,
   forwardRef,
+  type ComponentRef,
   type ForwardRefExoticComponent,
   type ReactNode,
   type RefAttributes
@@ -119,12 +119,7 @@ export const StyledBottomSheetScrollView =
   >;
 
 const StyledBottomSheetTextInputBase = styled(BottomSheetTextInputColorBridge, {
-  className: {
-    target: 'style',
-    nativeStyleMapping: {
-      textAlign: true
-    }
-  },
+  className: 'style',
   placeholderClassName: 'placeholderStyle',
   selectionClassName: 'selectionStyle'
 });
