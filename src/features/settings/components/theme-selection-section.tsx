@@ -36,7 +36,7 @@ export const ThemeSelectionSection = () => {
 
   return (
     <View className="mt-6">
-      <Text variant="overline" tone="muted" className="mb-4">
+      <Text variant="overline" tone="muted" className="mb-2">
         Appearance
       </Text>
       <View className="flex-row gap-2">
