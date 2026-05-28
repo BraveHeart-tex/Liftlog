@@ -3,8 +3,17 @@ import { Card, CardContent } from '@/src/components/ui/card';
 import { SegmentedControl } from '@/src/components/ui/segmented-control';
 import { Text } from '@/src/components/ui/text';
 import { useSettings } from '@/src/features/settings/hooks';
+import type { WeightUnit } from '@/src/lib/utils/weight';
 
 import { View } from 'react-native';
+
+const WEIGHT_UNIT_OPTIONS: {
+  label: string;
+  value: WeightUnit;
+}[] = [
+  { label: 'kg', value: 'kg' },
+  { label: 'lb', value: 'lb' }
+];
 
 export const WorkoutPreferencesSection = () => {
   const { weightUnit, restTimerDuration, setWeightUnit, setRestTimerDuration } =
@@ -23,10 +32,7 @@ export const WorkoutPreferencesSection = () => {
             </Text>
             <SegmentedControl
               value={weightUnit}
-              options={[
-                { label: 'kg', value: 'kg' },
-                { label: 'lb', value: 'lb' }
-              ]}
+              options={WEIGHT_UNIT_OPTIONS}
               onChange={setWeightUnit}
               className="bg-muted ml-4 w-32"
               indicatorClassName="bg-card!"
