@@ -12,7 +12,7 @@ import { XIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-const PICKER_ITEM_HEIGHT = 50;
+const PICKER_ITEM_HEIGHT = 65;
 const PICKER_VISIBLE_ITEM_COUNT = 3;
 
 const minuteItems = Array.from({ length: 11 }, (_, value) => ({
@@ -45,7 +45,7 @@ export const RestTimerSettingSheet = ({
     <BottomSheet
       isOpen={isOpen}
       onClose={handleClose}
-      snapPoints={['32%']}
+      snapPoints={['36%']}
       keyboardBehavior="extend"
       enableContentPanningGesture={false}
     >
@@ -62,10 +62,9 @@ export const RestTimerSettingSheet = ({
         </Button>
       </BottomSheetHeader>
 
-      <View className="flex-col items-center px-4 pt-6">
-        <View className="flex-row items-center justify-center">
-          {/* Minutes Column */}
-          <View className="relative w-28">
+      <View className="flex-col items-center px-4">
+        <View className="-mt-4 flex-row items-center justify-center">
+          <View className="relative w-32">
             <WheelPicker
               data={minuteItems}
               value={minutes}
@@ -73,13 +72,13 @@ export const RestTimerSettingSheet = ({
               visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
               itemHeight={PICKER_ITEM_HEIGHT}
               width="100%"
-              overlayItemClassName="rounded-lg border border-border bg-secondary/40"
+              overlayItemClassName="rounded-xl border border-border bg-secondary/40"
+              itemTextClassName="text-4xl font-semibold tabular-nums"
               enableScrollByTapOnItem
             />
-            {/* Inline Label vertically centered on the right */}
             <View
               pointerEvents="none"
-              className="absolute top-0 right-4 bottom-0 z-10 justify-center"
+              className="absolute top-0 right-3 bottom-0 z-10 justify-center"
             >
               <Text
                 variant="overline"
@@ -91,15 +90,17 @@ export const RestTimerSettingSheet = ({
             </View>
           </View>
 
-          {/* Centered colon */}
           <View className="w-8 items-center justify-center">
-            <Text variant="h1" tone="muted" className="pb-1 text-center">
+            <Text
+              variant="h2"
+              tone="muted"
+              className="pb-1 text-center font-semibold"
+            >
               :
             </Text>
           </View>
 
-          {/* Seconds Column */}
-          <View className="relative w-28">
+          <View className="relative w-32">
             <WheelPicker
               data={secondItems}
               value={seconds}
@@ -107,13 +108,13 @@ export const RestTimerSettingSheet = ({
               visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
               itemHeight={PICKER_ITEM_HEIGHT}
               width="100%"
-              overlayItemClassName="rounded-lg border border-border bg-secondary/40"
+              overlayItemClassName="rounded-xl border border-border bg-secondary/40"
+              itemTextClassName="text-4xl font-semibold tabular-nums"
               enableScrollByTapOnItem
             />
-            {/* Inline Label vertically centered on the right */}
             <View
               pointerEvents="none"
-              className="absolute top-0 right-4 bottom-0 z-10 justify-center"
+              className="absolute top-0 right-3 bottom-0 z-10 justify-center"
             >
               <Text
                 variant="overline"

@@ -1,9 +1,9 @@
 import { Text } from '@/src/components/ui/text';
 import WheelPickerBase, {
+  type WheelPickerProps as BaseWheelPickerProps,
   type PickerItem,
   type RenderItem,
-  type RenderItemProps,
-  type WheelPickerProps as BaseWheelPickerProps
+  type RenderItemProps
 } from '@quidone/react-native-wheel-picker';
 import { styled } from 'nativewind';
 import type { ReactNode } from 'react';
@@ -25,11 +25,7 @@ const defaultRenderItem = <ItemT extends PickerItem<any>>({
 }: RenderItemProps<ItemT>) => {
   return (
     <View className="flex-1 items-center justify-center">
-      <Text
-        variant="h3"
-        className="text-foreground text-center"
-        style={itemTextStyle}
-      >
+      <Text className="text-foreground text-center" style={itemTextStyle}>
         {item.label ?? String(item.value)}
       </Text>
     </View>
