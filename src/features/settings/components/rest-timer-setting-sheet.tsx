@@ -9,9 +9,10 @@ import { Text } from '@/src/components/ui/text';
 import { WheelPicker } from '@/src/components/ui/wheel-picker';
 import { useSettings } from '@/src/features/settings/hooks';
 import { getTimerParts } from '@/src/lib/utils/date';
+import type { OnValueChanged } from '@quidone/react-native-wheel-picker';
 
 import { XIcon } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 const PICKER_ITEM_HEIGHT = 65;
@@ -70,6 +71,16 @@ export const RestTimerSettingSheet = ({
     onClose();
   };
 
+  const onMinuteChange: OnValueChanged<(typeof minuteItems)[number]> =
+    useCallback(({ item }) => {
+      setMinutes(item.value);
+    }, []);
+
+  const onSecondChange: OnValueChanged<(typeof secondItems)[number]> =
+    useCallback(({ item }) => {
+      setSeconds(item.value);
+    }, []);
+
   return (
     <BottomSheet
       isOpen={isOpen}
@@ -97,7 +108,7 @@ export const RestTimerSettingSheet = ({
             <WheelPicker
               data={minuteItems}
               value={minutes}
-              onValueChanged={({ item }) => setMinutes(item.value)}
+              onValueChanged={onMinuteChange}
               visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
               itemHeight={PICKER_ITEM_HEIGHT}
               width="100%"
@@ -132,7 +143,7 @@ export const RestTimerSettingSheet = ({
             <WheelPicker
               data={secondItems}
               value={seconds}
-              onValueChanged={({ item }) => setSeconds(item.value)}
+              onValueChanged={onSecondChange}
               visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
               itemHeight={PICKER_ITEM_HEIGHT}
               width="100%"
