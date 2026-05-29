@@ -1,4 +1,4 @@
-import { useSettings } from '@/src/features/settings/hooks';
+import { useThemePreference } from '@/src/features/settings/hooks';
 import { toAppearanceColorScheme } from '@/src/features/settings/theme-preference-storage';
 import { cn } from '@/src/lib/utils/cn';
 import {
@@ -71,7 +71,7 @@ function createNavigationTheme(colorScheme: AppColorScheme): Theme {
 }
 
 export function AppThemeProvider({ children }: PropsWithChildren) {
-  const { themePreference } = useSettings();
+  const themePreference = useThemePreference();
   const nativeColorScheme = useColorScheme();
   const colorScheme = useMemo(
     () => resolveColorScheme(themePreference, nativeColorScheme),

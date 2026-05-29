@@ -3,6 +3,7 @@ import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { getTimerParts } from '@/src/lib/utils/date';
 import { pluralize } from '@/src/lib/utils/string';
 import { useCallback, useMemo } from 'react';
+import { useThemePreference } from './use-theme-preference';
 import {
   SETTINGS_DEFAULTS,
   SETTINGS_KEYS,
@@ -11,11 +12,9 @@ import {
   getSettingsQuery,
   getStepGoal,
   getStepsNotificationEnabled,
-  getThemePreference,
   getWeightUnit,
   parseBooleanSetting,
   parseStepGoal,
-  parseThemePreference,
   setHealthConnectStepsEnabled as setHealthConnectStepsEnabledRepo,
   setRestTimerDuration as setRestTimerDurationRepo,
   setStepGoal as setStepGoalRepo,
@@ -28,11 +27,11 @@ import {
 
 export function useSettings() {
   const db = useDrizzle();
+  const themePreference = useThemePreference();
   const initialSettings = useMemo(
     () => ({
       weightUnit: getWeightUnit(db),
       restTimerDuration: getRestTimerDuration(db),
-      themePreference: getThemePreference(db),
       healthConnectStepsEnabled: getHealthConnectStepsEnabled(db),
       stepsNotificationEnabled: getStepsNotificationEnabled(db),
       stepGoal: getStepGoal(db)
@@ -70,16 +69,6 @@ export function useSettings() {
       ? parsed
       : SETTINGS_DEFAULTS.restTimerDuration;
   }, [initialSettings.restTimerDuration, isLive, rows]);
-
-  const themePreference: ThemePreference = useMemo(() => {
-    if (!isLive) {
-      return initialSettings.themePreference;
-    }
-
-    const row = rows.find(row => row.key === SETTINGS_KEYS.themePreference);
-
-    return parseThemePreference(row?.value);
-  }, [initialSettings.themePreference, isLive, rows]);
 
   const healthConnectStepsEnabled = useMemo(() => {
     if (!isLive) {
