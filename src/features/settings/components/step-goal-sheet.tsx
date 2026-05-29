@@ -128,7 +128,7 @@ export const StepGoalSheet = ({
             maxLength={7}
             onSubmitEditing={handleSave}
           />
-          <Text tone="muted" className="text-body! mt-1" variant="h3">
+          <Text tone="muted" className="text-body mt-1" variant="h3">
             steps
           </Text>
           {errorMessage ? (

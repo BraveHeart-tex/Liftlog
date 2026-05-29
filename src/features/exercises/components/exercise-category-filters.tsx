@@ -81,7 +81,6 @@ export const ExerciseCategoryFilters = ({
             <ChoiceChip
               selected={isSelected}
               onPress={() => setSelectedCategory(category.value)}
-              textClassName={isSelected ? 'text-foreground' : undefined}
             >
               {category.label}
             </ChoiceChip>

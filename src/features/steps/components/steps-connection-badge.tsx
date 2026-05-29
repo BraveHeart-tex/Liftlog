@@ -15,7 +15,7 @@ export function StepsConnectionBadge({
   return (
     <Badge
       className={cn(
-        'will-change-variable flex flex-row items-center',
+        'flex flex-row items-center',
         isConnected
           ? 'bg-success/10 dark:bg-success/20'
           : 'bg-secondary dark:bg-secondary/20'
@@ -23,7 +23,7 @@ export function StepsConnectionBadge({
     >
       <View
         className={cn(
-          'will-change-variable h-2 w-2 rounded-full',
+          'h-2 w-2 rounded-full',
           isConnected
             ? 'dark:bg-success bg-success/50'
             : 'bg-secondary-foreground/50 dark:bg-secondary'
@@ -31,10 +31,7 @@ export function StepsConnectionBadge({
       />
       <Text
         variant="caption"
-        className={cn(
-          'will-change-variable',
-          isConnected ? 'text-success' : 'text-secondary-foreground'
-        )}
+        className={isConnected ? 'text-success' : 'text-secondary-foreground'}
       >
         {isConnected
           ? 'Health Connect synced'

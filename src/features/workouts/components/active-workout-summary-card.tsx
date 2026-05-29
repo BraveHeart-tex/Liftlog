@@ -33,7 +33,7 @@ export const ActiveWorkoutSummaryCard = ({
             <Text variant="caption" tone="muted">
               Workout in progress
             </Text>
-            <Text variant="h3" className="mt-2">
+            <Text variant="bodyMedium" className="mt-2">
               {workout.name}
             </Text>
             <Text variant="small" tone="muted" className="mt-2">

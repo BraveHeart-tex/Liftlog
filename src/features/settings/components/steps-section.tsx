@@ -116,7 +116,7 @@ export const StepsSection = () => {
             variant="secondary"
             onPress={openStepHealthConnectSettings}
             textClassName="text-small text-primary py-2"
-            className="border-t-border rounded-none border-t border-b-0 border-transparent"
+            className="border-t-border rounded-none border-0 border-t"
             rightIcon={
               <Icon
                 icon={ExternalLink}

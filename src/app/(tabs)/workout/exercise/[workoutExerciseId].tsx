@@ -134,7 +134,6 @@ export default function ActiveWorkoutExerciseScreen() {
                   icon={tab === 'track' ? NotebookPenIcon : ClockIcon}
                   size="sm"
                   className={cn(
-                    'will-change-variable',
                     isSelected ? 'text-foreground' : 'text-muted-foreground'
                   )}
                 />

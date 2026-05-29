@@ -114,7 +114,7 @@ export function TodayStepRadialCard({
                 {liveStepCounterBadgeLabel ? (
                   <Badge
                     className={cn(
-                      'will-change-variable mt-3 flex flex-row items-center',
+                      'mt-3 flex flex-row items-center',
                       isLiveStepCounterActive
                         ? 'bg-success/10 dark:bg-success/20'
                         : 'bg-secondary dark:bg-secondary/20'
@@ -122,7 +122,7 @@ export function TodayStepRadialCard({
                   >
                     <View
                       className={cn(
-                        'will-change-variable h-2 w-2 rounded-full',
+                        'h-2 w-2 rounded-full',
                         isLiveStepCounterActive
                           ? 'dark:bg-success bg-success/50'
                           : 'bg-secondary-foreground/50 dark:bg-secondary'
@@ -130,12 +130,11 @@ export function TodayStepRadialCard({
                     />
                     <Text
                       variant="caption"
-                      className={cn(
-                        'will-change-variable',
+                      className={
                         isLiveStepCounterActive
                           ? 'text-success'
                           : 'text-secondary-foreground'
-                      )}
+                      }
                     >
                       {liveStepCounterBadgeLabel}
                     </Text>
