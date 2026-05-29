@@ -36,6 +36,7 @@ interface BottomSheetComponentProps {
   children: ReactNode;
   footer?: ReactNode;
   className?: string;
+  enableContentPanningGesture?: boolean;
 }
 
 interface BottomSheetSectionProps {
@@ -77,7 +78,8 @@ export function BottomSheet({
   activeOffsetY,
   children,
   footer,
-  className
+  className,
+  enableContentPanningGesture
 }: BottomSheetComponentProps) {
   const sheetRef = useRef<BottomSheetModal>(null);
   const { colors } = useAppTheme();
@@ -154,6 +156,7 @@ export function BottomSheet({
       keyboardBlurBehavior={'restore'}
       onDismiss={handleDismiss}
       snapPoints={resolvedSnapPoints}
+      enableContentPanningGesture={enableContentPanningGesture}
     >
       {enableDynamicSizing ? (
         <BottomSheetView style={undefined} className={className}>

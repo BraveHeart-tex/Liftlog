@@ -2,8 +2,10 @@ import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { SegmentedControl } from '@/src/components/ui/segmented-control';
 import { Text } from '@/src/components/ui/text';
+import { RestTimerSettingSheet } from '@/src/features/settings/components/rest-timer-setting-sheet';
 import { useSettings } from '@/src/features/settings/hooks';
 import type { WeightUnit } from '@/src/lib/utils/weight';
+import { useState } from 'react';
 
 import { View } from 'react-native';
 
@@ -16,60 +18,51 @@ const WEIGHT_UNIT_OPTIONS: {
 ];
 
 export const WorkoutPreferencesSection = () => {
-  const { weightUnit, restTimerDuration, setWeightUnit, setRestTimerDuration } =
-    useSettings();
+  const [isTimerSheetOpen, setIsTimerSheetOpen] = useState(false);
+  const { weightUnit, restTimerDuration, setWeightUnit } = useSettings();
 
   return (
-    <View className="mt-6">
-      <Text variant="overline" tone="muted" className="mb-2">
-        Workout Preferences
-      </Text>
-      <Card>
-        <CardContent className="gap-4">
-          <View className="flex-row items-center justify-between">
-            <Text variant="bodyMedium" className="flex-1">
-              Weight unit
-            </Text>
-            <SegmentedControl
-              value={weightUnit}
-              options={WEIGHT_UNIT_OPTIONS}
-              onChange={setWeightUnit}
-              className="bg-muted ml-4 w-32"
-              indicatorClassName="bg-card!"
-            />
-          </View>
-          <View className="border-border flex-row items-center justify-between border-t pt-4">
-            <Text variant="bodyMedium" className="flex-1">
-              Default Rest Timer
-            </Text>
-            <View className="ml-4 flex-row items-center gap-2">
-              <Button
-                variant="secondary"
-                size="icon"
-                disabled={restTimerDuration <= 10}
-                onPress={() =>
-                  setRestTimerDuration(Math.max(10, restTimerDuration - 10))
-                }
-              >
-                <Text variant="h3">−</Text>
-              </Button>
-              <Text variant="bodyMedium" className="w-12 text-center">
-                {restTimerDuration}s
+    <>
+      <View className="mt-6">
+        <Text variant="overline" tone="muted" className="mb-2">
+          Workout Preferences
+        </Text>
+        <Card>
+          <CardContent className="gap-4">
+            <View className="flex-row items-center justify-between">
+              <Text variant="bodyMedium" className="flex-1">
+                Weight unit
               </Text>
-              <Button
-                variant="secondary"
-                size="icon"
-                disabled={restTimerDuration >= 3600}
-                onPress={() =>
-                  setRestTimerDuration(Math.min(3600, restTimerDuration + 10))
-                }
-              >
-                <Text variant="h3">+</Text>
-              </Button>
+              <SegmentedControl
+                value={weightUnit}
+                options={WEIGHT_UNIT_OPTIONS}
+                onChange={setWeightUnit}
+                className="bg-muted ml-4 w-32"
+                indicatorClassName="bg-card!"
+              />
             </View>
-          </View>
-        </CardContent>
-      </Card>
-    </View>
+            <View className="border-border flex-row items-center justify-between border-t pt-4">
+              <Text variant="bodyMedium" className="flex-1">
+                Default Rest Timer
+              </Text>
+              <View className="ml-4 flex-row items-center gap-2">
+                <Button
+                  variant="secondary"
+                  onPress={() => setIsTimerSheetOpen(true)}
+                >
+                  <Text>{restTimerDuration}s</Text>
+                </Button>
+              </View>
+            </View>
+          </CardContent>
+        </Card>
+      </View>
+      <RestTimerSettingSheet
+        isOpen={isTimerSheetOpen}
+        onClose={() => {
+          setIsTimerSheetOpen(false);
+        }}
+      />
+    </>
   );
 };
