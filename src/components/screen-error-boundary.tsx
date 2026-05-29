@@ -21,10 +21,11 @@ export class ScreenErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: unknown) {
-    console.error(
-      `Screen error [${this.props.screenName ?? 'unknown'}]:`,
-      error
-    );
+    const errorLabel = this.props.screenName
+      ? `Screen error [${this.props.screenName}]`
+      : 'App error';
+
+    console.error(`${errorLabel}:`, error);
   }
 
   handleReset = () => {
@@ -39,7 +40,7 @@ export class ScreenErrorBoundary extends Component<Props, State> {
             Something went wrong
           </Text>
           <Text variant="small" tone="muted" className="mt-2 text-center">
-            An unexpected error occurred on this screen.
+            An unexpected error occurred.
           </Text>
           <Button
             variant="secondary"

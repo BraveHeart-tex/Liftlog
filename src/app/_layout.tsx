@@ -1,7 +1,6 @@
 import '@/global.css';
 import { CommonProviders } from '@/src/components/common-providers';
 import { DrizzleStudio } from '@/src/components/drizzle-studio';
-import { ScreenErrorBoundary } from '@/src/components/screen-error-boundary';
 import { bootstrapThemeColorScheme } from '@/src/theme/bootstrap-theme';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import {
@@ -59,10 +58,8 @@ export default function RootLayout() {
 
   return (
     <CommonProviders>
-      <ScreenErrorBoundary>
-        <DrizzleStudio />
-        <RootNavigator />
-      </ScreenErrorBoundary>
+      <DrizzleStudio />
+      <RootNavigator />
     </CommonProviders>
   );
 }

@@ -1,30 +1,36 @@
-import { Text } from '@/src/components/ui/text';
+import { EmptyState } from '@/src/components/ui/empty-state';
+import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 import { Component, type ReactNode } from 'react';
-import { View } from 'react-native';
 
-export class DatabaseErrorBoundary extends Component<
-  { children: ReactNode },
-  { hasError: boolean }
-> {
-  state = { hasError: false };
+interface Props {
+  children: ReactNode;
+}
 
-  static getDerivedStateFromError() {
+interface State {
+  hasError: boolean;
+}
+
+export class DatabaseErrorBoundary extends Component<Props, State> {
+  state: State = { hasError: false };
+
+  static getDerivedStateFromError(): State {
     return { hasError: true };
   }
 
   componentDidCatch(error: unknown) {
-    console.error('Database error:', error);
+    console.error('Database initialization failed', error);
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <View className="bg-background flex-1 items-center justify-center px-6">
-          <Text variant="h3">Something went wrong</Text>
-          <Text variant="small" tone="muted" className="mt-2 text-center">
-            Failed to initialize the database
-          </Text>
-        </View>
+        <SafeAreaView style={{ flex: 1 }} className="bg-background">
+          <EmptyState
+            className="bg-background"
+            title="Database unavailable"
+            description="Failed to initialize the database. Please restart the app and try again."
+          />
+        </SafeAreaView>
       );
     }
 

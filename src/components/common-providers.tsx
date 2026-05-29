@@ -1,4 +1,5 @@
 import { DatabaseProvider } from '@/src/components/database-provider';
+import { ScreenErrorBoundary } from '@/src/components/screen-error-boundary';
 import { SnackbarHost } from '@/src/components/ui/snackbar';
 import { StepsSyncHost } from '@/src/features/steps/components/steps-sync-host';
 import { RestTimerHost } from '@/src/features/workouts/components/rest-timer-host';
@@ -19,14 +20,16 @@ export function CommonProviders({ children }: PropsWithChildren) {
         style={{ flex: 1 }}
       >
         <DatabaseProvider>
-          <AppThemeProvider>
-            <BottomSheetModalProvider>
-              {children}
-              <StepsSyncHost />
-              <RestTimerHost />
-              <SnackbarHost />
-            </BottomSheetModalProvider>
-          </AppThemeProvider>
+          <ScreenErrorBoundary>
+            <AppThemeProvider>
+              <BottomSheetModalProvider>
+                {children}
+                <StepsSyncHost />
+                <RestTimerHost />
+                <SnackbarHost />
+              </BottomSheetModalProvider>
+            </AppThemeProvider>
+          </ScreenErrorBoundary>
         </DatabaseProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

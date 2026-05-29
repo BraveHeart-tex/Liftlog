@@ -18,10 +18,12 @@ import {
 import {
   createContext,
   type PropsWithChildren,
-  Suspense,
   useContext,
-  useMemo
+  useEffect,
+  useMemo,
+  useState
 } from 'react';
+import { View } from 'react-native';
 
 const DrizzleContext = createContext<DrizzleDb | null>(null);
 
@@ -35,10 +37,18 @@ export function useDrizzle() {
   return context;
 }
 
-function DrizzleProvider({ children }: PropsWithChildren) {
+interface DrizzleProviderProps extends PropsWithChildren {
+  onReady: () => void;
+}
+
+function DrizzleProvider({ children, onReady }: DrizzleProviderProps) {
   const sqliteDb = useSQLiteContext();
 
   const db = useMemo(() => createDrizzleDb(sqliteDb), [sqliteDb]);
+
+  useEffect(() => {
+    onReady();
+  }, [onReady]);
 
   return (
     <DrizzleContext.Provider value={db}>{children}</DrizzleContext.Provider>
@@ -73,26 +83,36 @@ async function migrateAsync(db: SQLiteDatabase) {
   }
 }
 
+type DatabaseProviderStatus = 'loading' | 'ready';
+
 export function DatabaseProvider({ children }: PropsWithChildren) {
+  const [status, setStatus] = useState<DatabaseProviderStatus>('loading');
+
   return (
     <DatabaseErrorBoundary>
-      <Suspense
-        fallback={
-          <LoadingState
-            label="Initializing database..."
-            className="bg-background"
-          />
-        }
-      >
+      <View className="flex-1">
         <SQLiteProvider
           databaseName={databaseName}
           onInit={migrateAsync}
           options={databaseOptions}
-          useSuspense
         >
-          <DrizzleProvider>{children}</DrizzleProvider>
+          <DrizzleProvider
+            onReady={() => {
+              setStatus(currentStatus =>
+                currentStatus === 'loading' ? 'ready' : currentStatus
+              );
+            }}
+          >
+            {children}
+          </DrizzleProvider>
         </SQLiteProvider>
-      </Suspense>
+        {status === 'loading' ? (
+          <LoadingState
+            label="Initializing database..."
+            className="bg-background absolute inset-0"
+          />
+        ) : null}
+      </View>
     </DatabaseErrorBoundary>
   );
 }
