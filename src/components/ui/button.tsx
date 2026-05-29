@@ -32,10 +32,10 @@ const sizeClassNames: Record<ButtonSize, string> = {
 };
 
 const variantClassNames: Record<ButtonVariant, string> = {
-  primary: 'bg-primary border-primary',
-  secondary: 'border-border bg-card',
+  primary: 'bg-primary border-primary disabled:border-primary/50',
+  secondary: 'border-border bg-card disabled:border-border/50',
   ghost: 'bg-transparent border-transparent',
-  destructive: 'bg-card border-border'
+  destructive: 'bg-card border-border disabled:border-border/50'
 };
 
 const textClassNames: Record<ButtonVariant, string> = {
