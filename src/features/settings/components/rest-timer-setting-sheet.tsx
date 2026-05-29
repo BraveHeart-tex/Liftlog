@@ -7,13 +7,15 @@ import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { WheelPicker } from '@/src/components/ui/wheel-picker';
+import { useSettings } from '@/src/features/settings/hooks';
 
 import { XIcon } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 const PICKER_ITEM_HEIGHT = 65;
 const PICKER_VISIBLE_ITEM_COUNT = 3;
+const MIN_REST_TIMER_SECONDS = 10;
 
 const minuteItems = Array.from({ length: 11 }, (_, value) => ({
   label: String(value),
@@ -25,6 +27,13 @@ const secondItems = Array.from({ length: 60 }, (_, value) => ({
   value
 }));
 
+function getTimerParts(totalSeconds: number) {
+  return {
+    minutes: Math.floor(totalSeconds / 60),
+    seconds: totalSeconds % 60
+  };
+}
+
 export const RestTimerSettingSheet = ({
   isOpen,
   onClose
@@ -32,13 +41,39 @@ export const RestTimerSettingSheet = ({
   isOpen: boolean;
   onClose: () => void;
 }) => {
-  const [minutes, setMinutes] = useState(1);
-  const [seconds, setSeconds] = useState(0);
+  const { restTimerDuration, setRestTimerDuration } = useSettings();
+  const [minutes, setMinutes] = useState(
+    () => getTimerParts(restTimerDuration).minutes
+  );
+  const [seconds, setSeconds] = useState(
+    () => getTimerParts(restTimerDuration).seconds
+  );
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const nextTimer = getTimerParts(restTimerDuration);
+
+    setMinutes(nextTimer.minutes);
+    setSeconds(nextTimer.seconds);
+  }, [isOpen, restTimerDuration]);
+
+  const totalSeconds = minutes * 60 + seconds;
+  const canSave = totalSeconds >= MIN_REST_TIMER_SECONDS;
+
+  const handleSave = () => {
+    if (!canSave) {
+      return;
+    }
+
+    setRestTimerDuration(totalSeconds);
+    onClose();
+  };
 
   const handleClose = () => {
     onClose();
-    setMinutes(1);
-    setSeconds(0);
   };
 
   return (
@@ -54,7 +89,7 @@ export const RestTimerSettingSheet = ({
         <Button
           variant="ghost"
           size="icon"
-          onPress={onClose}
+          onPress={handleClose}
           accessibilityLabel="Close rest timer sheet"
           className="px-0"
         >
@@ -68,7 +103,7 @@ export const RestTimerSettingSheet = ({
             <WheelPicker
               data={minuteItems}
               value={minutes}
-              onValueChanged={({ item }) => setMinutes(item.value)}
+              onValueChanging={({ item }) => setMinutes(item.value)}
               visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
               itemHeight={PICKER_ITEM_HEIGHT}
               width="100%"
@@ -104,7 +139,7 @@ export const RestTimerSettingSheet = ({
             <WheelPicker
               data={secondItems}
               value={seconds}
-              onValueChanged={({ item }) => setSeconds(item.value)}
+              onValueChanging={({ item }) => setSeconds(item.value)}
               visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
               itemHeight={PICKER_ITEM_HEIGHT}
               width="100%"
@@ -126,6 +161,9 @@ export const RestTimerSettingSheet = ({
             </View>
           </View>
         </View>
+        <Button className="w-full" disabled={!canSave} onPress={handleSave}>
+          Save
+        </Button>
       </View>
     </BottomSheet>
   );
