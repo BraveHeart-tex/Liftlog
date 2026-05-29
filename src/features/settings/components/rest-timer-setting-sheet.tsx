@@ -97,13 +97,12 @@ export const RestTimerSettingSheet = ({
             <WheelPicker
               data={minuteItems}
               value={minutes}
-              onValueChanging={({ item }) => setMinutes(item.value)}
+              onValueChanged={({ item }) => setMinutes(item.value)}
               visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
               itemHeight={PICKER_ITEM_HEIGHT}
               width="100%"
               overlayItemClassName="rounded-xl border border-border bg-secondary/40"
               itemTextClassName="text-4xl font-semibold tabular-nums"
-              enableScrollByTapOnItem
             />
             <View
               pointerEvents="none"
@@ -133,13 +132,12 @@ export const RestTimerSettingSheet = ({
             <WheelPicker
               data={secondItems}
               value={seconds}
-              onValueChanging={({ item }) => setSeconds(item.value)}
+              onValueChanged={({ item }) => setSeconds(item.value)}
               visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
               itemHeight={PICKER_ITEM_HEIGHT}
               width="100%"
               overlayItemClassName="rounded-xl border border-border bg-secondary/40"
               itemTextClassName="text-4xl font-semibold tabular-nums"
-              enableScrollByTapOnItem
             />
             <View
               pointerEvents="none"
