@@ -68,3 +68,10 @@ export function formatDuration({
 
   return `${hours} hr ${minutes} min`;
 }
+
+export function getTimerParts(totalSeconds: number) {
+  return {
+    minutes: Math.floor(totalSeconds / 60),
+    seconds: totalSeconds % 60
+  };
+}

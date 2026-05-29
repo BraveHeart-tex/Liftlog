@@ -22,7 +22,8 @@ const WEIGHT_UNIT_OPTIONS: {
 
 export const WorkoutPreferencesSection = () => {
   const [isTimerSheetOpen, setIsTimerSheetOpen] = useState(false);
-  const { weightUnit, restTimerDuration, setWeightUnit } = useSettings();
+  const { weightUnit, formattedRestTimerDuration, setWeightUnit } =
+    useSettings();
 
   return (
     <>
@@ -61,7 +62,7 @@ export const WorkoutPreferencesSection = () => {
                   }
                   textClassName="text-small"
                 >
-                  {`${restTimerDuration}s`}
+                  {formattedRestTimerDuration}
                 </Button>
               </View>
             </View>

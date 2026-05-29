@@ -1,5 +1,7 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
+import { getTimerParts } from '@/src/lib/utils/date';
+import { pluralize } from '@/src/lib/utils/string';
 import { useCallback, useMemo } from 'react';
 import {
   SETTINGS_DEFAULTS,
@@ -155,9 +157,25 @@ export function useSettings() {
     [db]
   );
 
+  const formattedRestTimerDuration = useMemo(() => {
+    if (!restTimerDuration) {
+      return '';
+    }
+
+    const { minutes, seconds } = getTimerParts(restTimerDuration);
+
+    return [
+      minutes > 0 ? pluralize(minutes, 'minute') : null,
+      seconds > 0 ? pluralize(seconds, 'second') : null
+    ]
+      .filter(Boolean)
+      .join(' ');
+  }, [restTimerDuration]);
+
   return {
     weightUnit,
     restTimerDuration,
+    formattedRestTimerDuration,
     themePreference,
     healthConnectStepsEnabled,
     stepsNotificationEnabled,

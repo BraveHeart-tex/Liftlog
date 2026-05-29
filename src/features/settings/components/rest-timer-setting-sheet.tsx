@@ -8,6 +8,7 @@ import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { WheelPicker } from '@/src/components/ui/wheel-picker';
 import { useSettings } from '@/src/features/settings/hooks';
+import { getTimerParts } from '@/src/lib/utils/date';
 
 import { XIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
@@ -26,13 +27,6 @@ const secondItems = Array.from({ length: 60 }, (_, value) => ({
   label: String(value).padStart(2, '0'),
   value
 }));
-
-function getTimerParts(totalSeconds: number) {
-  return {
-    minutes: Math.floor(totalSeconds / 60),
-    seconds: totalSeconds % 60
-  };
-}
 
 export const RestTimerSettingSheet = ({
   isOpen,
