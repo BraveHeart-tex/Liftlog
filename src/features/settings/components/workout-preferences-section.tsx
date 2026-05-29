@@ -1,10 +1,13 @@
 import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
+import { Icon } from '@/src/components/ui/icon';
 import { SegmentedControl } from '@/src/components/ui/segmented-control';
 import { Text } from '@/src/components/ui/text';
 import { RestTimerSettingSheet } from '@/src/features/settings/components/rest-timer-setting-sheet';
 import { useSettings } from '@/src/features/settings/hooks';
 import type { WeightUnit } from '@/src/lib/utils/weight';
+import { iconSizes } from '@/src/theme/sizes';
+import { ChevronDown } from 'lucide-react-native';
 import { useState } from 'react';
 
 import { View } from 'react-native';
@@ -49,8 +52,16 @@ export const WorkoutPreferencesSection = () => {
                 <Button
                   variant="secondary"
                   onPress={() => setIsTimerSheetOpen(true)}
+                  rightIcon={
+                    <Icon
+                      icon={ChevronDown}
+                      size={iconSizes.sm}
+                      className="text-secondary-foreground"
+                    />
+                  }
+                  textClassName="text-small"
                 >
-                  <Text>{restTimerDuration}s</Text>
+                  {`${restTimerDuration}s`}
                 </Button>
               </View>
             </View>
