@@ -88,12 +88,13 @@ export function ExercisePickerFilters({
                 icon={filter.icon}
                 size="sm"
                 className={
-                  isSelected ? 'text-foreground' : 'text-muted-foreground'
+                  isSelected
+                    ? 'text-primary-foreground'
+                    : 'text-muted-foreground'
                 }
               />
             ) : undefined
           }
-          textClassName={isSelected ? 'text-foreground' : undefined}
         >
           {filter.label}
         </ChoiceChip>
