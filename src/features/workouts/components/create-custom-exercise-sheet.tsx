@@ -89,7 +89,7 @@ export function CreateCustomExerciseSheet({
 
       <StyledBottomSheetScrollView
         ref={scrollRef}
-        contentContainerClassName="px-4 pb-4"
+        contentContainerClassName="px-4 pb-4 mt-2"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator
       >
