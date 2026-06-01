@@ -6,6 +6,7 @@ import {
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
 import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
 import { Input } from '@/src/components/ui/input';
 import { SearchInputIcon } from '@/src/components/ui/search-input-icon';
 import { Text } from '@/src/components/ui/text';
@@ -16,6 +17,7 @@ import {
 } from '@/src/features/workouts/components/exercise-picker-filters';
 import { ExercisePickerRow } from '@/src/features/workouts/components/exercise-picker-row';
 import { getCategoryLabel } from '@/src/features/workouts/components/utils';
+import { XIcon } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { Keyboard, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -213,7 +215,17 @@ export function ExercisePickerSheet({
       }
     >
       <BottomSheetHeader>
-        <BottomSheetTitle>Add exercise</BottomSheetTitle>
+        <View className="flex w-full flex-row items-center justify-between">
+          <BottomSheetTitle>Add exercise</BottomSheetTitle>
+          <Button
+            variant="secondary"
+            size="icon"
+            onPress={onClose}
+            accessibilityLabel="Close exercise picker sheet"
+          >
+            <Icon icon={XIcon} size="lg" className="text-foreground" />
+          </Button>
+        </View>
         <BottomSheetDescription>
           Choose an exercise for this workout.
         </BottomSheetDescription>

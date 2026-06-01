@@ -2,7 +2,7 @@ import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
-import type { Pressable, TextStyle } from 'react-native';
+import { View, type Pressable, type TextStyle } from 'react-native';
 
 type NativePressableProps = ComponentPropsWithoutRef<typeof Pressable>;
 
@@ -18,6 +18,7 @@ interface ChoiceChipProps extends Omit<
   fullWidth?: boolean;
   className?: string;
   textClassName?: string;
+  leftIcon?: ReactNode;
 }
 
 const shapeClassNames: Record<ChipShape, string> = {
@@ -38,6 +39,7 @@ export function ChoiceChip({
   className,
   textClassName,
   accessibilityState,
+  leftIcon,
   ...props
 }: ChoiceChipProps) {
   const label =
@@ -50,7 +52,7 @@ export function ChoiceChip({
       accessibilityState={{ ...accessibilityState, selected }}
       containerClassName={fullWidth ? 'flex-1' : undefined}
       className={cn(
-        'border-border min-h-11 items-center justify-center border px-4 py-3',
+        'border-border min-h-11 flex-row items-center justify-center gap-2 border px-4 py-3',
         shapeClassNames[shape],
         selected
           ? 'border-primary bg-primary'
@@ -61,20 +63,26 @@ export function ChoiceChip({
       {...props}
     >
       {label !== null ? (
-        <Text
-          variant="small"
-          tone="inherit"
-          className={cn(
-            selected ? 'text-primary-foreground' : 'text-muted-foreground',
-            textClassName
-          )}
-          numberOfLines={1}
-          style={ChipTextStyle}
-        >
-          {label}
-        </Text>
+        <View className="flex-row items-center justify-center gap-2">
+          {leftIcon}
+          <Text
+            variant="small"
+            tone="inherit"
+            className={cn(
+              selected ? 'text-primary-foreground' : 'text-muted-foreground',
+              textClassName
+            )}
+            numberOfLines={1}
+            style={ChipTextStyle}
+          >
+            {label}
+          </Text>
+        </View>
       ) : (
-        children
+        <>
+          {leftIcon}
+          {children}
+        </>
       )}
     </PressableSurface>
   );

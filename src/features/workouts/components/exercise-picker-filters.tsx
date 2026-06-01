@@ -1,9 +1,12 @@
 import { StyledGestureScrollView } from '@/src/components/styled/scroll-view';
 import { ChoiceChip } from '@/src/components/ui/chip';
+import type { IconComponent } from '@/src/components/ui/icon';
+import { Icon } from '@/src/components/ui/icon';
 import {
   CATEGORY_FILTERS,
   type ExerciseCategory
 } from '@/src/features/exercises/constants';
+import { UserIcon } from 'lucide-react-native';
 import {
   useCallback,
   useEffect,
@@ -22,6 +25,7 @@ export type ExercisePickerFilter =
 interface ExercisePickerFilterOption {
   label: string;
   value: ExercisePickerFilter;
+  icon?: IconComponent;
 }
 
 interface ExercisePickerFiltersProps {
@@ -52,7 +56,7 @@ export function ExercisePickerFilters({
   const visibleFilters: ExercisePickerFilterOption[] = [
     { label: 'All', value: 'all' },
     { label: 'Recent', value: 'recent' },
-    { label: 'Custom', value: 'custom' },
+    { label: 'Custom', value: 'custom', icon: UserIcon },
     ...CATEGORY_OPTIONS
   ];
 
@@ -124,6 +128,17 @@ export function ExercisePickerFilters({
             <ChoiceChip
               selected={isSelected}
               onPress={() => setSelectedFilter(filter.value)}
+              leftIcon={
+                filter.icon ? (
+                  <Icon
+                    icon={filter.icon}
+                    size="sm"
+                    className={
+                      isSelected ? 'text-foreground' : 'text-muted-foreground'
+                    }
+                  />
+                ) : undefined
+              }
               textClassName={isSelected ? 'text-foreground' : undefined}
             >
               {filter.label}
