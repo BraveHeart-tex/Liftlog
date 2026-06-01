@@ -8,12 +8,6 @@ import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import type { Workout } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
-import {
-  useActiveWorkoutActions,
-  useActiveWorkoutContent as useActiveWorkoutContentData,
-  useWorkoutDelete,
-  useWorkoutRename
-} from '@/src/features/workouts/hooks';
 import { ActiveWorkoutActionsSheet } from '@/src/features/workouts/components/active-workout-actions-sheet';
 import { ActiveWorkoutExerciseList } from '@/src/features/workouts/components/active-workout-exercise-list';
 import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/create-custom-exercise-sheet';
@@ -21,11 +15,17 @@ import { EmptyExerciseState } from '@/src/features/workouts/components/empty-exe
 import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise-picker-sheet';
 import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sheet';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
+import {
+  useActiveWorkoutActions,
+  useActiveWorkoutContent as useActiveWorkoutContentData,
+  useWorkoutDelete,
+  useWorkoutRename
+} from '@/src/features/workouts/hooks';
 import { formatDuration } from '@/src/lib/utils/date';
+import { router } from 'expo-router';
 import { EllipsisVerticalIcon, PlusIcon, TimerIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, Keyboard, View } from 'react-native';
-import { router } from 'expo-router';
 
 interface ActiveWorkoutContentProps {
   activeWorkout: Workout;
@@ -215,19 +215,21 @@ export function ActiveWorkoutContent({
         )}
       </StyledScrollView>
 
-      <View className="border-border bg-background border-t px-4 py-4">
-        <Button
-          variant="secondary"
-          className="w-full"
-          disabled={isLoadingWorkoutExercises}
-          leftIcon={
-            <Icon icon={PlusIcon} size="sm" className="text-foreground" />
-          }
-          onPress={() => setIsExercisePickerOpen(true)}
-        >
-          Add exercise
-        </Button>
-      </View>
+      {!isLoadingWorkoutExercises && workoutExerciseRows.length > 0 && (
+        <View className="border-border bg-background border-t px-4 py-4">
+          <Button
+            variant="secondary"
+            className="w-full"
+            disabled={isLoadingWorkoutExercises}
+            leftIcon={
+              <Icon icon={PlusIcon} size="sm" className="text-foreground" />
+            }
+            onPress={() => setIsExercisePickerOpen(true)}
+          >
+            Add exercise
+          </Button>
+        </View>
+      )}
 
       <ExercisePickerSheet
         isOpen={isExercisePickerOpen}

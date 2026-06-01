@@ -211,7 +211,8 @@ export function getRecentWorkoutsQuery(db: DrizzleDb, limit: number) {
 
 export function getRecentExerciseIdsQuery(
   db: DrizzleDb,
-  excludedExerciseIds: string[] = []
+  excludedExerciseIds: string[] = [],
+  limit: number
 ) {
   return db
     .select({ exerciseId: workoutExercises.exerciseId })
@@ -227,33 +228,8 @@ export function getRecentExerciseIdsQuery(
           : undefined
       )
     )
-    .orderBy(desc(workouts.startedAt), asc(workoutExercises.order));
-}
-
-export function getRecentExerciseIdRows(
-  db: DrizzleDb,
-  excludedExerciseIds: string[] = []
-): { exerciseId: string }[] {
-  return getRecentExerciseIdsQuery(db, excludedExerciseIds).all();
-}
-
-export function getRecentExerciseIds(
-  db: DrizzleDb,
-  excludedExerciseIds: string[] = []
-): string[] {
-  const seenExerciseIds = new Set<string>();
-  const recentExerciseIds: string[] = [];
-
-  for (const row of getRecentExerciseIdRows(db, excludedExerciseIds)) {
-    if (seenExerciseIds.has(row.exerciseId)) {
-      continue;
-    }
-
-    seenExerciseIds.add(row.exerciseId);
-    recentExerciseIds.push(row.exerciseId);
-  }
-
-  return recentExerciseIds;
+    .orderBy(desc(workouts.startedAt), asc(workoutExercises.order))
+    .limit(limit);
 }
 
 export function getActiveWorkoutQuery(db: DrizzleDb) {

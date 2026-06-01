@@ -1,0 +1,1 @@
+export const RECENT_EXERCISES_LIMIT = 5;

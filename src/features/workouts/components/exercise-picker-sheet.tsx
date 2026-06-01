@@ -32,11 +32,21 @@ interface ExercisePickerSheetProps {
   onCreateCustomExercise: (initialName?: string) => void;
 }
 
-const SNAP_POINTS = ['70%', '90%'];
+type SectionHeaderItem = {
+  type: 'section-header';
+  id: string;
+  title: string;
+};
 
-function normalizeSearchValue(value: string) {
-  return value.trim().toLocaleLowerCase();
-}
+type ExerciseRowItem = {
+  type: 'exercise';
+  exercise: ExerciseListItem;
+};
+
+type ListItem = SectionHeaderItem | ExerciseRowItem;
+
+const SNAP_POINTS = ['90%'];
+const RECENTLY_USED_SECTION_ID = 'section-recently-used';
 
 function exerciseMatchesSearch(
   exercise: ExerciseListItem,
@@ -102,7 +112,7 @@ export function ExercisePickerSheet({
   const trimmedQuery = query.trim();
 
   const filteredExercises = useMemo(() => {
-    const normalizedQuery = normalizeSearchValue(query);
+    const normalizedQuery = query.trim().toLowerCase();
     const selectedExerciseIdSet = new Set(selectedExerciseIds);
     const recentExerciseIdSet = new Set(recentExerciseIds);
     const recentExerciseOrderById = new Map(
@@ -122,9 +132,9 @@ export function ExercisePickerSheet({
     }
 
     return matches.sort(
-      (firstExercise, secondExercise) =>
-        (recentExerciseOrderById.get(firstExercise.id) ?? 0) -
-        (recentExerciseOrderById.get(secondExercise.id) ?? 0)
+      (a, b) =>
+        (recentExerciseOrderById.get(a.id) ?? 0) -
+        (recentExerciseOrderById.get(b.id) ?? 0)
     );
   }, [
     exercises,
@@ -135,7 +145,7 @@ export function ExercisePickerSheet({
   ]);
 
   const hasHiddenSelectedMatches = useMemo(() => {
-    const normalizedQuery = normalizeSearchValue(query);
+    const normalizedQuery = query.trim().toLowerCase();
     const selectedExerciseIdSet = new Set(selectedExerciseIds);
     const recentExerciseIdSet = new Set(recentExerciseIds);
 
@@ -152,6 +162,56 @@ export function ExercisePickerSheet({
     selectedExerciseIds,
     selectedFilter
   ]);
+
+  const listData = useMemo<ListItem[]>(() => {
+    const recentExerciseIdSet = new Set(recentExerciseIds);
+    const showSections = selectedFilter === 'all' && trimmedQuery.length === 0;
+
+    if (!showSections) {
+      return filteredExercises.map(
+        exercise => ({ type: 'exercise', exercise }) satisfies ExerciseRowItem
+      );
+    }
+
+    const recentExercises = filteredExercises.filter(ex =>
+      recentExerciseIdSet.has(ex.id)
+    );
+    const otherExercises = filteredExercises.filter(
+      ex => !recentExerciseIdSet.has(ex.id)
+    );
+
+    const items: ListItem[] = [];
+
+    if (recentExercises.length > 0) {
+      items.push({
+        type: 'section-header',
+        id: RECENTLY_USED_SECTION_ID,
+        title: 'Recently Used'
+      });
+      recentExercises.forEach(exercise => {
+        items.push({ type: 'exercise', exercise });
+      });
+    }
+
+    let currentLetter = '';
+
+    otherExercises.forEach(exercise => {
+      const letter = exercise.name.trim().charAt(0).toUpperCase();
+
+      if (letter !== currentLetter) {
+        currentLetter = letter;
+        items.push({
+          type: 'section-header',
+          id: `section-${letter}`,
+          title: letter
+        });
+      }
+
+      items.push({ type: 'exercise', exercise });
+    });
+
+    return items;
+  }, [filteredExercises, recentExerciseIds, selectedFilter, trimmedQuery]);
 
   const emptyTitle = (() => {
     if (trimmedQuery.length > 0) {
@@ -242,7 +302,6 @@ export function ExercisePickerSheet({
           leftIcon={<SearchInputIcon />}
           containerClassName="py-0"
         />
-
         <ExercisePickerFilters
           selectedFilter={selectedFilter}
           setSelectedFilter={filter => {
@@ -253,16 +312,38 @@ export function ExercisePickerSheet({
       </View>
 
       <StyledBottomSheetFlatList
-        data={filteredExercises}
-        keyExtractor={(item: ExerciseListItem) => item.id}
+        data={listData}
+        keyExtractor={(item: ListItem) =>
+          item.type === 'section-header' ? item.id : item.exercise.id
+        }
         contentContainerClassName="px-4 pb-32"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         onScrollBeginDrag={Keyboard.dismiss}
         onTouchStart={Keyboard.dismiss}
-        renderItem={({ item }: { item: ExerciseListItem }) => (
-          <ExercisePickerRow exercise={item} onPress={onSelectExercise} />
-        )}
+        renderItem={({ item }: { item: ListItem }) => {
+          if (item.type === 'section-header') {
+            return (
+              <View className="pt-5 pb-1">
+                <Text
+                  variant="small"
+                  tone="muted"
+                  className="font-semibold tracking-widest uppercase"
+                >
+                  {item.title}
+                </Text>
+              </View>
+            );
+          }
+
+          return (
+            <ExercisePickerRow
+              exercise={item.exercise}
+              isSelected={selectedExerciseIds.includes(item.exercise.id)}
+              onPress={onSelectExercise}
+            />
+          );
+        }}
         ListEmptyComponent={
           <View className="border-border bg-card mt-3 items-center justify-center rounded-lg border border-dashed px-6 py-10">
             <Text variant="h3" className="text-center">

@@ -5,6 +5,7 @@ import {
   getRecentExerciseIdsQuery,
   getWorkoutExercisesQuery
 } from '@/src/features/workouts/repository';
+import { RECENT_EXERCISES_LIMIT } from '@/src/features/workouts/workout.constants';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { useEffect, useMemo, useState } from 'react';
 import { useIsRestTimerRunning } from './use-is-rest-timer-running';
@@ -36,7 +37,7 @@ export function useActiveWorkoutContent({
   );
   const selectedExerciseIdsKey = selectedExerciseIds.join('|');
   const recentExerciseRowResult = useLiveWithFallback(
-    getRecentExerciseIdsQuery(db, selectedExerciseIds),
+    getRecentExerciseIdsQuery(db, selectedExerciseIds, RECENT_EXERCISES_LIMIT),
     [db, selectedExerciseIdsKey]
   );
   const recentExerciseIds = useMemo(() => {

@@ -20,7 +20,7 @@ interface CreateCustomExerciseSheetProps {
   onSave: (exercise: NewExercise) => void;
 }
 
-const SNAP_POINTS = ['72%'];
+const SNAP_POINTS = ['90%'];
 
 export function CreateCustomExerciseSheet({
   isOpen,
