@@ -9,8 +9,9 @@ import { ExerciseCategoryFilters } from '@/src/features/exercises/components/exe
 import { ExerciseListRow } from '@/src/features/exercises/components/exercise-list-row';
 import type { ExerciseListDataItem } from '@/src/features/exercises/display';
 import { useExercisesScreen } from '@/src/features/exercises/hooks';
+import { iconSizes } from '@/src/theme/sizes';
 import { router } from 'expo-router';
-import { PlusIcon } from 'lucide-react-native';
+import { PlusIcon, SearchXIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
 export default function ExercisesScreen() {
@@ -23,6 +24,15 @@ export default function ExercisesScreen() {
     exerciseListItems,
     hasCustomExercise
   } = useExercisesScreen();
+  const trimmedQuery = query.trim();
+  const hasActiveSearchOrFilter =
+    trimmedQuery.length > 0 || selectedCategory !== 'all';
+  const emptyDescription =
+    trimmedQuery.length > 0
+      ? `We couldn't find anything matching "${trimmedQuery}". Try adjusting your search or add it yourself.`
+      : selectedCategory !== 'all'
+        ? "We couldn't find anything in this category. Try a different filter or add it yourself."
+        : 'Your exercise library is empty. Create a custom exercise to get started.';
 
   return (
     <Screen withPadding={false}>
@@ -110,13 +120,61 @@ export default function ExercisesScreen() {
           );
         }}
         ListEmptyComponent={
-          <View className="border-border bg-card items-center justify-center rounded-lg border border-dashed px-6 py-10">
-            <Text variant="h3" className="text-center">
+          <View className="items-center px-2 pt-16 pb-10">
+            <View className="border-border/60 bg-card h-28 w-28 items-center justify-center rounded-full border">
+              <View className="bg-muted h-20 w-20 items-center justify-center rounded-full">
+                <Icon
+                  icon={SearchXIcon}
+                  size={28}
+                  className="text-muted-foreground"
+                />
+              </View>
+            </View>
+
+            <Text variant="h2" className="mt-8 text-center">
               No exercises found
             </Text>
-            <Text variant="small" tone="muted" className="mt-2 text-center">
-              Try a different search or category
+            <Text
+              variant="body"
+              tone="muted"
+              className="mt-4 max-w-80 text-center"
+            >
+              {emptyDescription}
             </Text>
+
+            <View className="mt-10 w-full gap-4">
+              <Button
+                size="md"
+                className="w-full"
+                onPress={() => {
+                  router.push('/exercises/new');
+                  setQuery('');
+                  setSelectedCategory('all');
+                }}
+                leftIcon={
+                  <Icon
+                    icon={PlusIcon}
+                    size={iconSizes.md}
+                    className="text-primary-foreground"
+                  />
+                }
+              >
+                Create Custom Exercise
+              </Button>
+
+              {hasActiveSearchOrFilter ? (
+                <Button
+                  variant="ghost"
+                  className="w-full"
+                  onPress={() => {
+                    setQuery('');
+                    setSelectedCategory('all');
+                  }}
+                >
+                  Clear Search
+                </Button>
+              ) : null}
+            </View>
           </View>
         }
       />
