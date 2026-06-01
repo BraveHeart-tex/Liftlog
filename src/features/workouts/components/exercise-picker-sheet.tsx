@@ -240,6 +240,7 @@ export function ExercisePickerSheet({
           autoCorrect={false}
           returnKeyType="search"
           leftIcon={<SearchInputIcon />}
+          containerClassName="py-0"
         />
 
         <ExercisePickerFilters

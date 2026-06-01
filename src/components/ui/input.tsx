@@ -20,8 +20,8 @@ type InputProps = NativeTextInputProps & {
   leftIconContainerClassName?: string;
   rightIconContainerClassName?: string;
   withContainerDefaults?: boolean;
+  wrapperClassName?: string;
   containerClassName?: string;
-  className?: string;
   inputClassName?: string;
   labelClassName?: string;
   hintClassName?: string;
@@ -39,8 +39,8 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
     leftIconContainerClassName,
     rightIconContainerClassName,
     withContainerDefaults = true,
+    wrapperClassName,
     containerClassName,
-    className,
     inputClassName,
     labelClassName,
     hintClassName,
@@ -58,20 +58,18 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
   const isEditable = editable ?? !disabled;
 
   return (
-    <View className={cn('w-full', className)}>
+    <View className={cn('w-full', disabled && 'opacity-50', wrapperClassName)}>
       {label ? (
         <Text variant="small" className={labelClassName}>
           {label}
         </Text>
       ) : null}
-
       <View
         className={cn(
           withContainerDefaults &&
             'border-border bg-input mt-2 flex-row items-center rounded-lg border px-4 py-3',
           focused && !hasError && 'border-ring',
           hasError && 'border-danger',
-          disabled && 'opacity-50',
           containerClassName
         )}
       >
@@ -85,11 +83,17 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
             {leftIcon}
           </View>
         ) : null}
-
         <StyledTextInput
           ref={ref}
-          className={cn('text-body text-foreground flex-1', inputClassName)}
+          className={cn(
+            'text-body text-foreground flex-1',
+            props.multiline && 'min-h-20',
+            inputClassName
+          )}
+          textAlignVertical={props.multiline ? 'top' : 'center'}
           editable={isEditable}
+          accessibilityLabel={props.accessibilityLabel ?? label}
+          accessibilityHint={props.accessibilityHint ?? hint}
           onBlur={event => {
             setFocused(false);
             onBlur?.(event);
@@ -102,7 +106,6 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
           selectionClassName="text-primary"
           {...props}
         />
-
         {rightIcon ? (
           <View
             className={cn(
@@ -114,7 +117,6 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
           </View>
         ) : null}
       </View>
-
       {error ? (
         <Text
           variant="caption"
