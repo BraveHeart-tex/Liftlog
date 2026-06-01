@@ -3,7 +3,8 @@ import { appMeta } from '@/src/db/schema';
 import {
   DEFAULT_THEME_PREFERENCE,
   parseThemePreference,
-  setStoredThemePreference,
+  persistStoredThemePreference,
+  setThemePreferenceSnapshot,
   THEME_PREFERENCE_KEY,
   type ThemePreference
 } from '@/src/features/settings/theme-preference-storage';
@@ -31,8 +32,6 @@ export const SETTINGS_DEFAULTS = {
   stepsNotificationEnabled: false,
   stepGoal: 10000
 };
-
-export { parseThemePreference };
 
 export function getSetting(db: DrizzleDb, key: string): string | undefined {
   return db.select().from(appMeta).where(eq(appMeta.key, key)).get()?.value;
@@ -82,17 +81,18 @@ export function getThemePreference(db: DrizzleDb): ThemePreference {
     getSetting(db, SETTINGS_KEYS.themePreference)
   );
 
-  setStoredThemePreference(preference);
+  setThemePreferenceSnapshot(preference);
+  persistStoredThemePreference(preference);
 
   return preference;
 }
 
-export function setThemePreference(
+export function persistThemePreference(
   db: DrizzleDb,
   preference: ThemePreference
 ): void {
   setSetting(db, SETTINGS_KEYS.themePreference, preference);
-  setStoredThemePreference(preference);
+  persistStoredThemePreference(preference);
 }
 
 export function parseBooleanSetting(value: string | undefined): boolean {

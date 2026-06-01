@@ -2,7 +2,7 @@ import type { IconComponent } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { ThemeOptionCard } from '@/src/features/settings/components/theme-option-card';
 import {
-  useSettings,
+  useThemeSetting,
   type ThemePreference
 } from '@/src/features/settings/hooks';
 
@@ -32,7 +32,7 @@ const THEME_OPTIONS: {
 ];
 
 export const ThemeSelectionSection = () => {
-  const { themePreference, setThemePreference } = useSettings();
+  const { themePreference, setThemePreference } = useThemeSetting();
 
   return (
     <View className="mt-6">

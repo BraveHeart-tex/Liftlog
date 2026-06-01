@@ -3,7 +3,6 @@ import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { getTimerParts } from '@/src/lib/utils/date';
 import { pluralize } from '@/src/lib/utils/string';
 import { useCallback, useMemo } from 'react';
-import { useThemePreference } from './use-theme-preference';
 import {
   SETTINGS_DEFAULTS,
   SETTINGS_KEYS,
@@ -19,15 +18,12 @@ import {
   setRestTimerDuration as setRestTimerDurationRepo,
   setStepGoal as setStepGoalRepo,
   setStepsNotificationEnabled as setStepsNotificationEnabledRepo,
-  setThemePreference as setThemePreferenceRepo,
   setWeightUnit as setWeightUnitRepo,
-  type ThemePreference,
   type WeightUnit
 } from '../repository';
 
 export function useSettings() {
   const db = useDrizzle();
-  const themePreference = useThemePreference();
   const initialSettings = useMemo(
     () => ({
       weightUnit: getWeightUnit(db),
@@ -118,13 +114,6 @@ export function useSettings() {
     [db]
   );
 
-  const setThemePreference = useCallback(
-    (preference: ThemePreference) => {
-      setThemePreferenceRepo(db, preference);
-    },
-    [db]
-  );
-
   const setHealthConnectStepsEnabled = useCallback(
     (isEnabled: boolean) => {
       setHealthConnectStepsEnabledRepo(db, isEnabled);
@@ -165,13 +154,11 @@ export function useSettings() {
     weightUnit,
     restTimerDuration,
     formattedRestTimerDuration,
-    themePreference,
     healthConnectStepsEnabled,
     stepsNotificationEnabled,
     stepGoal,
     setWeightUnit,
     setRestTimerDuration,
-    setThemePreference,
     setHealthConnectStepsEnabled,
     setStepsNotificationEnabled,
     setStepGoal

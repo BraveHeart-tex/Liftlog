@@ -103,7 +103,7 @@ export function subscribeToStoredThemePreference(
   };
 }
 
-export function setStoredThemePreference(preference: ThemePreference): void {
+export function setThemePreferenceSnapshot(preference: ThemePreference): void {
   const previousPreference = getThemePreferenceSnapshot();
 
   themePreferenceSnapshot = preference;
@@ -111,7 +111,11 @@ export function setStoredThemePreference(preference: ThemePreference): void {
   if (preference !== previousPreference) {
     notifyThemePreferenceListeners();
   }
+}
 
+export function persistStoredThemePreference(
+  preference: ThemePreference
+): void {
   getSettingsStorage()?.set(THEME_PREFERENCE_KEY, preference);
 }
 

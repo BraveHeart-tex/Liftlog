@@ -18,7 +18,7 @@ import * as SystemUI from 'expo-system-ui';
 import {
   createContext,
   useContext,
-  useLayoutEffect,
+  useEffect,
   useMemo,
   type PropsWithChildren
 } from 'react';
@@ -78,11 +78,11 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
     [nativeColorScheme, themePreference]
   );
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     Appearance.setColorScheme(toAppearanceColorScheme(themePreference));
   }, [themePreference]);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     void SystemUI.setBackgroundColorAsync(
       getThemeColors(colorScheme).background
     );
