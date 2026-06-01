@@ -53,12 +53,53 @@ export function ExercisePickerFilters({
   >({});
   const [filterViewportWidth, setFilterViewportWidth] = useState(0);
   const [filterLayoutVersion, setFilterLayoutVersion] = useState(0);
-  const visibleFilters: ExercisePickerFilterOption[] = [
+  const leadingFilters: ExercisePickerFilterOption[] = [
     { label: 'All', value: 'all' },
     { label: 'Recent', value: 'recent' },
-    { label: 'Custom', value: 'custom', icon: UserIcon },
-    ...CATEGORY_OPTIONS
+    { label: 'Custom', value: 'custom', icon: UserIcon }
   ];
+
+  const renderFilter = (filter: ExercisePickerFilterOption) => {
+    const isSelected = filter.value === selectedFilter;
+
+    return (
+      <View
+        key={filter.value}
+        onLayout={event => {
+          const nextLayout = event.nativeEvent.layout;
+          const previousLayout = filterLayoutsRef.current[filter.value];
+
+          filterLayoutsRef.current[filter.value] = nextLayout;
+
+          if (
+            previousLayout?.x !== nextLayout.x ||
+            previousLayout?.width !== nextLayout.width
+          ) {
+            setFilterLayoutVersion(version => version + 1);
+          }
+        }}
+      >
+        <ChoiceChip
+          selected={isSelected}
+          onPress={() => setSelectedFilter(filter.value)}
+          leftIcon={
+            filter.icon ? (
+              <Icon
+                icon={filter.icon}
+                size="sm"
+                className={
+                  isSelected ? 'text-foreground' : 'text-muted-foreground'
+                }
+              />
+            ) : undefined
+          }
+          textClassName={isSelected ? 'text-foreground' : undefined}
+        >
+          {filter.label}
+        </ChoiceChip>
+      </View>
+    );
+  };
 
   const scrollFilterIntoView = useCallback(
     (filter: ExercisePickerFilter) => {
@@ -105,47 +146,11 @@ export function ExercisePickerFilters({
         setFilterViewportWidth(event.nativeEvent.layout.width);
       }}
     >
-      {visibleFilters.map(filter => {
-        const isSelected = filter.value === selectedFilter;
-
-        return (
-          <View
-            key={filter.value}
-            onLayout={event => {
-              const nextLayout = event.nativeEvent.layout;
-              const previousLayout = filterLayoutsRef.current[filter.value];
-
-              filterLayoutsRef.current[filter.value] = nextLayout;
-
-              if (
-                previousLayout?.x !== nextLayout.x ||
-                previousLayout?.width !== nextLayout.width
-              ) {
-                setFilterLayoutVersion(version => version + 1);
-              }
-            }}
-          >
-            <ChoiceChip
-              selected={isSelected}
-              onPress={() => setSelectedFilter(filter.value)}
-              leftIcon={
-                filter.icon ? (
-                  <Icon
-                    icon={filter.icon}
-                    size="sm"
-                    className={
-                      isSelected ? 'text-foreground' : 'text-muted-foreground'
-                    }
-                  />
-                ) : undefined
-              }
-              textClassName={isSelected ? 'text-foreground' : undefined}
-            >
-              {filter.label}
-            </ChoiceChip>
-          </View>
-        );
-      })}
+      {leadingFilters.map(renderFilter)}
+      <View className="justify-center px-1" pointerEvents="none">
+        <View className="bg-border h-6 w-px" />
+      </View>
+      {CATEGORY_OPTIONS.map(renderFilter)}
     </StyledGestureScrollView>
   );
 }
