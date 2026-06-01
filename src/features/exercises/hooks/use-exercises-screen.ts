@@ -1,4 +1,8 @@
 import type { CategoryFilter } from '@/src/features/exercises/constants';
+import {
+  buildAlphabetizedExerciseListItems,
+  matchesExerciseSearch
+} from '@/src/features/exercises/display';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { useEffect, useMemo, useState } from 'react';
 import { useExercises } from './use-exercises';
@@ -38,18 +42,21 @@ export function useExercisesScreen() {
     const normalizedQuery = query.trim().toLocaleLowerCase();
 
     return exercises.filter(exercise => {
-      const matchesQuery =
-        normalizedQuery.length === 0 ||
-        exercise.name.toLocaleLowerCase().includes(normalizedQuery);
-
       const matchesCategory = matchesExerciseCategory(
         exercise,
         selectedCategory
       );
 
-      return matchesQuery && matchesCategory;
+      return (
+        matchesExerciseSearch(exercise, normalizedQuery) && matchesCategory
+      );
     });
   }, [exercises, query, selectedCategory]);
+
+  const exerciseListItems = useMemo(
+    () => buildAlphabetizedExerciseListItems(filteredExercises),
+    [filteredExercises]
+  );
 
   return {
     query,
@@ -58,6 +65,7 @@ export function useExercisesScreen() {
     setSelectedCategory,
     exercises,
     filteredExercises,
+    exerciseListItems,
     hasCustomExercise
   };
 }

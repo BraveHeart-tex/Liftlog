@@ -10,13 +10,19 @@ import { Icon } from '@/src/components/ui/icon';
 import { Input } from '@/src/components/ui/input';
 import { SearchInputIcon } from '@/src/components/ui/search-input-icon';
 import { Text } from '@/src/components/ui/text';
+import {
+  buildAlphabetizedExerciseListItems,
+  matchesExerciseSearch,
+  type ExerciseListDataItem,
+  type ExerciseListRowItem,
+  type ExerciseListSectionHeaderItem
+} from '@/src/features/exercises/display';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import {
   ExercisePickerFilters,
   type ExercisePickerFilter
 } from '@/src/features/workouts/components/exercise-picker-filters';
 import { ExercisePickerRow } from '@/src/features/workouts/components/exercise-picker-row';
-import { getCategoryLabel } from '@/src/features/workouts/components/utils';
 import { XIcon } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { Keyboard, View } from 'react-native';
@@ -32,41 +38,8 @@ interface ExercisePickerSheetProps {
   onCreateCustomExercise: (initialName?: string) => void;
 }
 
-type SectionHeaderItem = {
-  type: 'section-header';
-  id: string;
-  title: string;
-};
-
-type ExerciseRowItem = {
-  type: 'exercise';
-  exercise: ExerciseListItem;
-};
-
-type ListItem = SectionHeaderItem | ExerciseRowItem;
-
 const SNAP_POINTS = ['90%'];
 const RECENTLY_USED_SECTION_ID = 'section-recently-used';
-
-function exerciseMatchesSearch(
-  exercise: ExerciseListItem,
-  normalizedQuery: string
-) {
-  if (normalizedQuery.length === 0) {
-    return true;
-  }
-
-  const searchableValues = [
-    exercise.name,
-    exercise.category,
-    getCategoryLabel(exercise.category),
-    ...(exercise.isCustom === 1 ? ['custom'] : [])
-  ];
-
-  return searchableValues.some(value =>
-    value.toLocaleLowerCase().includes(normalizedQuery)
-  );
-}
 
 function exerciseMatchesFilter(
   exercise: ExerciseListItem,
@@ -123,7 +96,7 @@ export function ExercisePickerSheet({
       return (
         !selectedExerciseIdSet.has(exercise.id) &&
         exerciseMatchesFilter(exercise, selectedFilter, recentExerciseIdSet) &&
-        exerciseMatchesSearch(exercise, normalizedQuery)
+        matchesExerciseSearch(exercise, normalizedQuery)
       );
     });
 
@@ -153,7 +126,7 @@ export function ExercisePickerSheet({
       exercise =>
         selectedExerciseIdSet.has(exercise.id) &&
         exerciseMatchesFilter(exercise, selectedFilter, recentExerciseIdSet) &&
-        exerciseMatchesSearch(exercise, normalizedQuery)
+        matchesExerciseSearch(exercise, normalizedQuery)
     );
   }, [
     exercises,
@@ -163,54 +136,39 @@ export function ExercisePickerSheet({
     selectedFilter
   ]);
 
-  const listData = useMemo<ListItem[]>(() => {
-    const recentExerciseIdSet = new Set(recentExerciseIds);
-    const showSections = selectedFilter === 'all' && trimmedQuery.length === 0;
-
-    if (!showSections) {
+  const listData = useMemo<ExerciseListDataItem[]>(() => {
+    if (selectedFilter === 'recent') {
       return filteredExercises.map(
-        exercise => ({ type: 'exercise', exercise }) satisfies ExerciseRowItem
+        exercise =>
+          ({ type: 'exercise', exercise }) satisfies ExerciseListRowItem
       );
     }
 
-    const recentExercises = filteredExercises.filter(ex =>
-      recentExerciseIdSet.has(ex.id)
+    if (selectedFilter !== 'all' || trimmedQuery.length > 0) {
+      return buildAlphabetizedExerciseListItems(filteredExercises);
+    }
+
+    const recentExerciseIdSet = new Set(recentExerciseIds);
+    const recentExercises = filteredExercises.filter(exercise =>
+      recentExerciseIdSet.has(exercise.id)
     );
     const otherExercises = filteredExercises.filter(
-      ex => !recentExerciseIdSet.has(ex.id)
+      exercise => !recentExerciseIdSet.has(exercise.id)
     );
-
-    const items: ListItem[] = [];
+    const items: ExerciseListDataItem[] = [];
 
     if (recentExercises.length > 0) {
       items.push({
         type: 'section-header',
         id: RECENTLY_USED_SECTION_ID,
         title: 'Recently Used'
-      });
+      } satisfies ExerciseListSectionHeaderItem);
       recentExercises.forEach(exercise => {
         items.push({ type: 'exercise', exercise });
       });
     }
 
-    let currentLetter = '';
-
-    otherExercises.forEach(exercise => {
-      const letter = exercise.name.trim().charAt(0).toUpperCase();
-
-      if (letter !== currentLetter) {
-        currentLetter = letter;
-        items.push({
-          type: 'section-header',
-          id: `section-${letter}`,
-          title: letter
-        });
-      }
-
-      items.push({ type: 'exercise', exercise });
-    });
-
-    return items;
+    return [...items, ...buildAlphabetizedExerciseListItems(otherExercises)];
   }, [filteredExercises, recentExerciseIds, selectedFilter, trimmedQuery]);
 
   const emptyTitle = (() => {
@@ -313,7 +271,7 @@ export function ExercisePickerSheet({
 
       <StyledBottomSheetFlatList
         data={listData}
-        keyExtractor={(item: ListItem) =>
+        keyExtractor={(item: ExerciseListDataItem) =>
           item.type === 'section-header' ? item.id : item.exercise.id
         }
         contentContainerClassName="px-4 pb-32"
@@ -321,7 +279,7 @@ export function ExercisePickerSheet({
         keyboardShouldPersistTaps="handled"
         onScrollBeginDrag={Keyboard.dismiss}
         onTouchStart={Keyboard.dismiss}
-        renderItem={({ item }: { item: ListItem }) => {
+        renderItem={({ item }: { item: ExerciseListDataItem }) => {
           if (item.type === 'section-header') {
             return (
               <View className="pt-5 pb-1">

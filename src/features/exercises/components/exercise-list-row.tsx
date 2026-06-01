@@ -1,10 +1,9 @@
-import { Text } from '@/src/components/ui/text';
+import { Icon } from '@/src/components/ui/icon';
+import { ExerciseRow } from '@/src/features/exercises/components/exercise-row';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
-import { usePressScale } from '@/src/lib/animations/use-press-scale';
-import { cn } from '@/src/lib/utils/cn';
 import { getPrimaryMuscleLabel } from '@/src/lib/utils/muscle';
 import { toTitleCase } from '@/src/lib/utils/string';
-import { Animated, Pressable } from 'react-native';
+import { ChevronRightIcon } from 'lucide-react-native';
 
 interface ExerciseListRowProps {
   exercise: ExerciseListItem;
@@ -12,24 +11,18 @@ interface ExerciseListRowProps {
 }
 
 export function ExerciseListRow({ exercise, onPress }: ExerciseListRowProps) {
-  const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();
+  const metadataLabel = toTitleCase(
+    getPrimaryMuscleLabel(exercise.primaryMuscles)
+  );
 
   return (
-    <Animated.View style={scaleStyle}>
-      <Pressable
-        onPress={() => onPress(exercise)}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
-        className={cn(
-          'border-border bg-card mt-3 rounded-lg border p-4',
-          pressed && 'opacity-80'
-        )}
-      >
-        <Text variant="bodyMedium">{exercise.name}</Text>
-        <Text variant="small" tone="muted" className="mt-1">
-          {toTitleCase(getPrimaryMuscleLabel(exercise.primaryMuscles))}
-        </Text>
-      </Pressable>
-    </Animated.View>
+    <ExerciseRow
+      exercise={exercise}
+      subtitle={metadataLabel}
+      onPress={onPress}
+      rightAccessory={
+        <Icon icon={ChevronRightIcon} className="text-muted-foreground" />
+      }
+    />
   );
 }
