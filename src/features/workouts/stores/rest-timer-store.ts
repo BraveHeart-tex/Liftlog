@@ -3,7 +3,6 @@ import { create } from 'zustand';
 export const MIN_REST_TIMER_SECONDS = 10;
 const MAX_REST_TIMER_SECONDS = 3600;
 const DEFAULT_REST_TIMER_SECONDS = 90;
-const REST_TIMER_STEP_SECONDS = 10;
 
 type RestTimerStatus = 'idle' | 'running' | 'paused';
 
@@ -21,10 +20,7 @@ interface RestTimerState {
   syncDefaultDuration: (defaultDuration: number) => void;
   syncOnOpen: (defaultDuration: number) => void;
   tick: (now?: number) => void;
-  setInputFromText: (value: string) => void;
-  commitInput: (fallbackDuration: number) => void;
-  decreaseInput: () => void;
-  increaseInput: () => void;
+  setInputDuration: (value: number) => void;
   start: () => void;
   pause: () => void;
   resume: () => void;
@@ -38,6 +34,14 @@ function clampRestTimerDuration(value: number) {
   );
 }
 
+function normalizeRestTimerInput(value: number) {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(MAX_REST_TIMER_SECONDS, Math.floor(value)));
+}
+
 function getSecondsRemaining(state: RestTimerState, now = Date.now()) {
   if (state.status !== 'running' || state.endTime === null) {
     return Math.ceil(
@@ -48,21 +52,21 @@ function getSecondsRemaining(state: RestTimerState, now = Date.now()) {
   return Math.max(0, Math.ceil((state.endTime - now) / 1000));
 }
 
-function setDurationInput(
+function setInputDurationState(
   state: RestTimerState,
   inputValue: number
 ): Partial<RestTimerState> {
+  const normalizedValue = normalizeRestTimerInput(inputValue);
+
   if (state.status !== 'paused') {
-    return { inputValue };
+    return { inputValue: normalizedValue };
   }
 
-  const remaining = clampRestTimerDuration(inputValue);
-
   return {
-    inputValue,
-    pausedRemainingMs: remaining * 1000,
-    secondsRemaining: remaining,
-    activeDurationSeconds: remaining
+    inputValue: normalizedValue,
+    pausedRemainingMs: normalizedValue * 1000,
+    secondsRemaining: normalizedValue,
+    activeDurationSeconds: normalizedValue
   };
 }
 
@@ -135,66 +139,15 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
       set({ secondsRemaining });
     }
   },
-  setInputFromText: value => {
-    if (value.trim().length === 0) {
-      set({ inputValue: 0 });
-
-      return;
-    }
-
-    const digits = value.replace(/\D/g, '');
-
-    if (digits.length === 0) {
-      set({ inputValue: 0 });
-
-      return;
-    }
-
-    const parsed = Number(digits);
-
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      set({ inputValue: 0 });
-
-      return;
-    }
-
-    set(state =>
-      setDurationInput(state, Math.min(MAX_REST_TIMER_SECONDS, parsed))
-    );
-  },
-  commitInput: fallbackDuration => {
-    const { inputValue } = get();
-    const nextValue =
-      Number.isFinite(inputValue) && inputValue > 0
-        ? clampRestTimerDuration(inputValue)
-        : clampRestTimerDuration(fallbackDuration);
-
-    set(state => setDurationInput(state, nextValue));
-  },
-  decreaseInput: () => {
-    set(state =>
-      setDurationInput(
-        state,
-        Math.max(
-          MIN_REST_TIMER_SECONDS,
-          state.inputValue - REST_TIMER_STEP_SECONDS
-        )
-      )
-    );
-  },
-  increaseInput: () => {
-    set(state =>
-      setDurationInput(
-        state,
-        Math.min(
-          MAX_REST_TIMER_SECONDS,
-          state.inputValue + REST_TIMER_STEP_SECONDS
-        )
-      )
-    );
+  setInputDuration: value => {
+    set(state => setInputDurationState(state, value));
   },
   start: () => {
-    const totalSeconds = clampRestTimerDuration(get().inputValue);
+    const totalSeconds = normalizeRestTimerInput(get().inputValue);
+
+    if (totalSeconds < MIN_REST_TIMER_SECONDS) {
+      return;
+    }
 
     set({
       status: 'running',
@@ -227,23 +180,27 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
   },
   resume: () => {
     const state = get();
-    let resumeSeconds = clampRestTimerDuration(state.inputValue);
 
-    if (state.status === 'paused' && state.pausedRemainingMs !== null) {
-      if (state.pausedRemainingMs <= 0) {
-        set({
-          endTime: null,
-          pausedRemainingMs: 0,
-          secondsRemaining: 0,
-          inputValue: 0
-        });
+    if (state.status !== 'paused') {
+      return;
+    }
 
-        return;
-      }
+    const resumeSeconds =
+      state.pausedRemainingMs === null
+        ? normalizeRestTimerInput(state.inputValue)
+        : Math.ceil(state.pausedRemainingMs / 1000);
 
-      resumeSeconds = clampRestTimerDuration(
-        Math.ceil(state.pausedRemainingMs / 1000)
-      );
+    if (resumeSeconds <= 0) {
+      set({
+        status: 'idle',
+        endTime: null,
+        pausedRemainingMs: null,
+        secondsRemaining: state.durationSeconds,
+        activeDurationSeconds: state.durationSeconds,
+        inputValue: state.durationSeconds
+      });
+
+      return;
     }
 
     set({
