@@ -13,15 +13,13 @@ interface RestTimerState {
   durationSeconds: number;
   secondsRemaining: number;
   activeDurationSeconds: number;
-  inputValue: number;
   completionCount: number;
   isSheetOpen: boolean;
   setSheetOpen: (isOpen: boolean) => void;
   syncDefaultDuration: (defaultDuration: number) => void;
   syncOnOpen: (defaultDuration: number) => void;
   tick: (now?: number) => void;
-  setInputDuration: (value: number) => void;
-  start: () => void;
+  start: (durationSeconds: number) => void;
   pause: () => void;
   resume: () => void;
   cancel: () => void;
@@ -52,24 +50,6 @@ function getSecondsRemaining(state: RestTimerState, now = Date.now()) {
   return Math.max(0, Math.ceil((state.endTime - now) / 1000));
 }
 
-function setInputDurationState(
-  state: RestTimerState,
-  inputValue: number
-): Partial<RestTimerState> {
-  const normalizedValue = normalizeRestTimerInput(inputValue);
-
-  if (state.status !== 'paused') {
-    return { inputValue: normalizedValue };
-  }
-
-  return {
-    inputValue: normalizedValue,
-    pausedRemainingMs: normalizedValue * 1000,
-    secondsRemaining: normalizedValue,
-    activeDurationSeconds: normalizedValue
-  };
-}
-
 export const useRestTimerStore = create<RestTimerState>((set, get) => ({
   status: 'idle',
   endTime: null,
@@ -77,7 +57,6 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
   durationSeconds: DEFAULT_REST_TIMER_SECONDS,
   secondsRemaining: DEFAULT_REST_TIMER_SECONDS,
   activeDurationSeconds: DEFAULT_REST_TIMER_SECONDS,
-  inputValue: DEFAULT_REST_TIMER_SECONDS,
   completionCount: 0,
   isSheetOpen: false,
   setSheetOpen: isSheetOpen => {
@@ -94,8 +73,7 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
       durationSeconds,
       pausedRemainingMs: null,
       secondsRemaining: durationSeconds,
-      activeDurationSeconds: durationSeconds,
-      inputValue: durationSeconds
+      activeDurationSeconds: durationSeconds
     });
   },
   syncOnOpen: defaultDuration => {
@@ -108,8 +86,7 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
         durationSeconds,
         pausedRemainingMs: null,
         secondsRemaining: durationSeconds,
-        activeDurationSeconds: durationSeconds,
-        inputValue: durationSeconds
+        activeDurationSeconds: durationSeconds
       });
 
       return;
@@ -128,7 +105,6 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
         pausedRemainingMs: null,
         secondsRemaining: state.durationSeconds,
         activeDurationSeconds: state.durationSeconds,
-        inputValue: state.durationSeconds,
         completionCount: state.completionCount + 1
       });
 
@@ -139,11 +115,8 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
       set({ secondsRemaining });
     }
   },
-  setInputDuration: value => {
-    set(state => setInputDurationState(state, value));
-  },
-  start: () => {
-    const totalSeconds = normalizeRestTimerInput(get().inputValue);
+  start: durationSeconds => {
+    const totalSeconds = normalizeRestTimerInput(durationSeconds);
 
     if (totalSeconds < MIN_REST_TIMER_SECONDS) {
       return;
@@ -155,8 +128,7 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
       pausedRemainingMs: null,
       durationSeconds: totalSeconds,
       secondsRemaining: totalSeconds,
-      activeDurationSeconds: totalSeconds,
-      inputValue: totalSeconds
+      activeDurationSeconds: totalSeconds
     });
   },
   pause: () => {
@@ -174,8 +146,7 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
       status: 'paused',
       endTime: null,
       pausedRemainingMs,
-      secondsRemaining,
-      inputValue: secondsRemaining
+      secondsRemaining
     });
   },
   resume: () => {
@@ -187,7 +158,7 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
 
     const resumeSeconds =
       state.pausedRemainingMs === null
-        ? normalizeRestTimerInput(state.inputValue)
+        ? normalizeRestTimerInput(state.secondsRemaining)
         : Math.ceil(state.pausedRemainingMs / 1000);
 
     if (resumeSeconds <= 0) {
@@ -196,8 +167,7 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
         endTime: null,
         pausedRemainingMs: null,
         secondsRemaining: state.durationSeconds,
-        activeDurationSeconds: state.durationSeconds,
-        inputValue: state.durationSeconds
+        activeDurationSeconds: state.durationSeconds
       });
 
       return;
@@ -208,8 +178,7 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
       endTime: Date.now() + resumeSeconds * 1000,
       pausedRemainingMs: null,
       secondsRemaining: resumeSeconds,
-      activeDurationSeconds: state.activeDurationSeconds,
-      inputValue: resumeSeconds
+      activeDurationSeconds: state.activeDurationSeconds
     });
   },
   cancel: () => {
@@ -220,8 +189,7 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
       endTime: null,
       pausedRemainingMs: null,
       secondsRemaining: durationSeconds,
-      activeDurationSeconds: durationSeconds,
-      inputValue: durationSeconds
+      activeDurationSeconds: durationSeconds
     });
   }
 }));

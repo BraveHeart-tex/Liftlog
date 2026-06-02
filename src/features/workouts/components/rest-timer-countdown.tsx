@@ -6,8 +6,14 @@ import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { nativeFontSizes } from '@/src/theme/sizes';
 import { Canvas, Circle, Path, Skia } from '@shopify/react-native-skia';
 import { PauseIcon } from 'lucide-react-native';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { View } from 'react-native';
+import {
+  cancelAnimation,
+  Easing,
+  useSharedValue,
+  withTiming
+} from 'react-native-reanimated';
 
 interface RestTimerCountdownProps {
   status: 'running' | 'paused';
@@ -37,18 +43,13 @@ export function RestTimerCountdown({
 }: RestTimerCountdownProps) {
   const { colors } = useAppTheme();
   const progress = getSafeProgress(secondsRemaining, activeDuration);
-  const [displayedProgress, setDisplayedProgress] = useState(progress);
-  const animationFrameRef = useRef<number | null>(null);
+  const progressEnd = useSharedValue(progress);
   const ringColor = status === 'paused' ? colors.accent : colors.info;
 
   useEffect(() => {
-    if (animationFrameRef.current !== null) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-
     if (status !== 'running') {
-      setDisplayedProgress(progress);
+      cancelAnimation(progressEnd);
+      progressEnd.value = progress;
 
       return;
     }
@@ -57,42 +58,20 @@ export function RestTimerCountdown({
       Math.max(secondsRemaining - 1, 0),
       activeDuration
     );
-    const startedAt = Date.now();
 
-    setDisplayedProgress(progress);
-
-    const animate = () => {
-      const elapsedMs = Date.now() - startedAt;
-      const animationProgress = Math.min(elapsedMs / 1000, 1);
-      const interpolatedProgress =
-        progress + (nextProgress - progress) * animationProgress;
-
-      setDisplayedProgress(interpolatedProgress);
-
-      if (animationProgress < 1) {
-        animationFrameRef.current = requestAnimationFrame(animate);
-      } else {
-        animationFrameRef.current = null;
-      }
-    };
-
-    animationFrameRef.current = requestAnimationFrame(animate);
+    progressEnd.value = progress;
+    progressEnd.value = withTiming(nextProgress, {
+      duration: 1000,
+      easing: Easing.linear
+    });
 
     return () => {
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
+      cancelAnimation(progressEnd);
     };
-  }, [activeDuration, progress, secondsRemaining, status]);
+  }, [activeDuration, progress, progressEnd, secondsRemaining, status]);
 
   const progressPath = useMemo(() => {
     const path = Skia.Path.Make();
-    const sweep = displayedProgress * MAX_SWEEP_DEGREES;
-
-    if (sweep <= 0) {
-      return path;
-    }
 
     path.addArc(
       {
@@ -102,11 +81,11 @@ export function RestTimerCountdown({
         height: CHART_SIZE - STROKE_WIDTH
       },
       START_ANGLE_DEGREES,
-      sweep
+      MAX_SWEEP_DEGREES
     );
 
     return path;
-  }, [displayedProgress]);
+  }, []);
 
   return (
     <View className="items-center">
@@ -134,7 +113,7 @@ export function RestTimerCountdown({
               strokeWidth={STROKE_WIDTH}
               strokeCap="round"
               start={0}
-              end={1}
+              end={progressEnd}
             />
           </Canvas>
         </View>
