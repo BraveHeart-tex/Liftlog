@@ -208,7 +208,7 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
       endTime: Date.now() + resumeSeconds * 1000,
       pausedRemainingMs: null,
       secondsRemaining: resumeSeconds,
-      activeDurationSeconds: resumeSeconds,
+      activeDurationSeconds: state.activeDurationSeconds,
       inputValue: resumeSeconds
     });
   },
