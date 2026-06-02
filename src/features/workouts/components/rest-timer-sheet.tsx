@@ -8,13 +8,13 @@ import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { WheelPicker } from '@/src/components/ui/wheel-picker';
 import { useSettings } from '@/src/features/settings/hooks';
+import { RestTimerCountdown } from '@/src/features/workouts/components/rest-timer-countdown';
 import {
   MIN_REST_TIMER_SECONDS,
   useRestTimerStore
 } from '@/src/features/workouts/stores/rest-timer-store';
 import { getTimerParts } from '@/src/lib/utils/date';
-import { formatTime } from '@/src/lib/utils/format-time';
-import { iconSizes, nativeFontSizes } from '@/src/theme/sizes';
+import { iconSizes } from '@/src/theme/sizes';
 import type { OnValueChanged } from '@quidone/react-native-wheel-picker';
 import * as Haptics from 'expo-haptics';
 import { PauseIcon, PlayIcon, XIcon } from 'lucide-react-native';
@@ -144,8 +144,8 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
     onClose();
   };
 
-  const showDurationInput = status === 'idle' || status === 'paused';
-  const showCountdown = status === 'running';
+  const showDurationInput = status === 'idle';
+  const showCountdown = status === 'running' || status === 'paused';
   const canStart = inputValue >= MIN_REST_TIMER_SECONDS;
   const canResume = inputValue > 0;
 
@@ -232,20 +232,11 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
         ) : null}
 
         {showCountdown ? (
-          <View className="items-center">
-            <Text
-              className="text-foreground font-medium"
-              style={{
-                fontSize: nativeFontSizes.restTimerDisplay,
-                fontVariant: ['tabular-nums']
-              }}
-            >
-              {formatTime(secondsRemaining)}
-            </Text>
-            <Text variant="caption" tone="muted" className="mt-1 text-center">
-              of {formatTime(activeDuration)}
-            </Text>
-          </View>
+          <RestTimerCountdown
+            status={status}
+            secondsRemaining={secondsRemaining}
+            activeDuration={activeDuration}
+          />
         ) : null}
 
         {status === 'idle' ? (

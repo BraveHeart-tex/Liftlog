@@ -7,9 +7,14 @@ const colorSchemes = {
     card: '#FFFFFF',
     primary: '#FF4D00',
     primaryForeground: '#FFFFFF',
+    secondary: '#EDE8E2',
+    secondaryForeground: '#3A3330',
+    accent: '#FF4D00',
+    accentForeground: '#FFFFFF',
     border: '#E8DDD3',
     muted: '#E8DDD3',
-    mutedForeground: '#6B5B4E'
+    mutedForeground: '#6B5B4E',
+    info: '#0070C0'
   },
   dark: {
     background: '#1C1C1E',
@@ -17,9 +22,14 @@ const colorSchemes = {
     card: '#2C2C2E',
     primary: '#FF4D00',
     primaryForeground: '#FFFFFF',
+    secondary: '#3A3A3C',
+    secondaryForeground: '#C5BFB8',
+    accent: '#FF4D00',
+    accentForeground: '#FFFFFF',
     border: '#3A3A3C',
     muted: '#3A3A3C',
-    mutedForeground: '#7A7A7F'
+    mutedForeground: '#7A7A7F',
+    info: '#4DB8FF'
   }
 } as const;
 
