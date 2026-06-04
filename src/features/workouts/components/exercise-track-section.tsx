@@ -1,8 +1,12 @@
+import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import {
   useExerciseTrackActions,
   useExerciseTrackTab
 } from '@/src/features/workouts/hooks';
+import { iconSizes } from '@/src/theme/sizes';
+import { Link } from 'expo-router';
+import { ChevronRightIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Keyboard, Platform, ScrollView, View } from 'react-native';
 import { ProgressionSuggestion } from './progression-suggestion';
@@ -17,7 +21,7 @@ interface ExerciseTrackTabProps {
   onVerticalScrollEnd?: () => void;
 }
 
-export function ExerciseTrackTab({
+export function ExerciseTrackSection({
   item,
   onVerticalScrollStart,
   onVerticalScrollEnd
@@ -28,12 +32,15 @@ export function ExerciseTrackTab({
     setEditingSetId,
     prSetIds,
     trackingType,
-    progressionSuggestion
+    progressionSuggestion,
+    historyPreview
   } = useExerciseTrackTab(item);
   const [prefillValues, setPrefillValues] = useState<
     (SetValues & { requestId: number }) | undefined
   >();
+
   const scrollViewRef = useRef<ScrollView>(null);
+
   const scrollToBottom = () => {
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -48,19 +55,23 @@ export function ExerciseTrackTab({
 
     return () => show.remove();
   }, []);
+
   const {
     addSet: _handleAddSet,
     updateSet: _handleUpdateSet,
     deleteSet: handleDeleteSet
   } = useExerciseTrackActions({ item, editingSetId, setEditingSetId });
+
   const handleAddSet: typeof _handleAddSet = data => {
     _handleAddSet(data);
     scrollToBottom();
   };
+
   const handleUpdateSet: typeof _handleUpdateSet = data => {
     _handleUpdateSet(data);
     scrollToBottom();
   };
+
   const handleUseSuggestion = (suggestion: ProgressionSuggestionData) => {
     setEditingSetId(null);
     setPrefillValues(currentValue => ({
@@ -71,7 +82,7 @@ export function ExerciseTrackTab({
   };
 
   return (
-    <View className="flex-1 px-4">
+    <View className="w-full flex-1">
       <ProgressionSuggestion
         suggestion={progressionSuggestion}
         onUseSuggestion={handleUseSuggestion}
@@ -87,13 +98,31 @@ export function ExerciseTrackTab({
       />
       <View className="border-border mt-4 border-t" />
       <View className="mt-4 flex-1">
-        <Text
-          variant="caption"
-          tone="muted"
-          className="tracking-widest uppercase"
-        >
-          Sets
-        </Text>
+        <View className="flex flex-row items-center justify-between">
+          <Text variant="overline" tone="muted">
+            Sets
+          </Text>
+          {!!historyPreview && item.exercise?.id && (
+            <Link
+              href={{
+                pathname:
+                  '/(tabs)/workout/exercise/[workoutExerciseId]/history',
+                params: { workoutExerciseId: item.workoutExercise.id }
+              }}
+            >
+              <View className="flex flex-row items-center gap-0.5">
+                <Text className="text-primary" variant="small">
+                  History
+                </Text>
+                <Icon
+                  icon={ChevronRightIcon}
+                  className="text-primary"
+                  size={iconSizes.sm}
+                />
+              </View>
+            </Link>
+          )}
+        </View>
         {item.sets.length > 0 ? (
           <ScrollView
             ref={scrollViewRef}

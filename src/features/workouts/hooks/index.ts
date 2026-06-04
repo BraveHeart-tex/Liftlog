@@ -3,7 +3,7 @@ export { useActiveWorkoutContent } from './use-active-workout-content';
 export { useActiveWorkoutExerciseDetail } from './use-active-workout-exercise-detail';
 export { useActiveWorkoutExerciseList } from './use-active-workout-exercise-list';
 export { useActiveWorkoutScreen } from './use-active-workout-screen';
-export { useExerciseHistoryTab } from './use-exercise-history-tab';
+export { useExerciseHistory } from './use-exercise-history';
 export { useExerciseTrackActions } from './use-exercise-track-actions';
 export { useExerciseTrackTab } from './use-exercise-track-tab';
 export {
@@ -14,6 +14,7 @@ export { useRemoveWorkoutExercise } from './use-remove-workout-exercise';
 export { useRepeatWorkout } from './use-repeat-workout';
 export { useSaveWorkoutTemplate } from './use-save-workout-template';
 export { useWorkoutDelete } from './use-workout-delete';
+export { useWorkoutExerciseHistoryScreen } from './use-workout-exercise-history-screen';
 export { useWorkoutRename } from './use-workout-rename';
 export { useWorkoutHistoryDetail } from './use-workout-history-detail';
 export { useWorkoutStart } from './use-workout-start';

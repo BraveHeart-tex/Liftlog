@@ -52,7 +52,7 @@ function getIconSize(size: IconSize | number) {
 export function Icon({
   icon,
   className,
-  size = 'md',
+  size = iconSizes.md,
   color,
   strokeWidth = 2,
   ...props

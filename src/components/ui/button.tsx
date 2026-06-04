@@ -20,6 +20,8 @@ interface ButtonProps {
   textClassName?: string;
   children: ReactNode;
   onPress?: (event: GestureResponderEvent) => void;
+  onPressIn?: (event: GestureResponderEvent) => void;
+  onPressOut?: (event: GestureResponderEvent) => void;
 }
 
 const baseClassName = 'flex-row items-center justify-center rounded-lg border';
@@ -68,7 +70,9 @@ export function Button({
   className,
   textClassName,
   children,
-  onPress
+  onPress,
+  onPressIn,
+  onPressOut
 }: ButtonProps) {
   const isBlocked = disabled || loading;
   const isIconButton = size === 'icon';
@@ -90,6 +94,8 @@ export function Button({
       )}
       disabled={isBlocked}
       onPress={onPress}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
     >
       {loading ? (
         <Text
@@ -100,7 +106,7 @@ export function Button({
           Loading...
         </Text>
       ) : (
-        <View className="flex-row items-center justify-center gap-2">
+        <View className="flex-row items-center justify-center gap-1">
           {leftIcon}
           {label !== null ? (
             <Text

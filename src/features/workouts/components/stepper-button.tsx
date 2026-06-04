@@ -1,7 +1,6 @@
+import { Button } from '@/src/components/ui/button';
 import { Text } from '@/src/components/ui/text';
-import { usePressScale } from '@/src/lib/animations/use-press-scale';
 import { cn } from '@/src/lib/utils/cn';
-import { Animated, Pressable } from 'react-native';
 
 interface StepperButtonProps {
   label: string;
@@ -14,7 +13,7 @@ interface StepperButtonProps {
 }
 
 const stepperButtonClassName =
-  'bg-secondary border-border h-14 w-14 items-center justify-center rounded-lg border';
+  'h-14 w-14 items-center justify-center rounded-lg';
 
 export const StepperButton = ({
   label,
@@ -25,31 +24,19 @@ export const StepperButton = ({
   buttonClassName,
   textClassName = 'text-body'
 }: StepperButtonProps) => {
-  const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();
-
   return (
-    <Animated.View style={scaleStyle}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel}
-        onPressIn={() => {
-          onPressIn();
-          onStartRepeating(onStep);
-        }}
-        onPressOut={() => {
-          onPressOut();
-          onStopRepeating();
-        }}
-        className={cn(
-          pressed && 'opacity-80',
-          stepperButtonClassName,
-          buttonClassName
-        )}
-      >
-        <Text variant="h3" className={textClassName}>
-          {label}
-        </Text>
-      </Pressable>
-    </Animated.View>
+    <Button
+      accessibilityLabel={accessibilityLabel}
+      onPressIn={() => {
+        onStartRepeating(onStep);
+      }}
+      onPressOut={onStopRepeating}
+      variant="secondary"
+      className={cn(stepperButtonClassName, buttonClassName)}
+    >
+      <Text variant="h3" className={textClassName}>
+        {label}
+      </Text>
+    </Button>
   );
 };

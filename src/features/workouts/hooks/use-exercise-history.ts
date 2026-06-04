@@ -31,7 +31,7 @@ function getBestScore(sets: Set[], trackingType: TrackingType) {
   }, 0);
 }
 
-export function useExerciseHistoryTab(exerciseId: Exercise['id']) {
+export function useExerciseHistory(exerciseId: Exercise['id']) {
   const db = useDrizzle();
   const exerciseResult = useLiveWithFallback(
     getExerciseByIdQuery(db, exerciseId),

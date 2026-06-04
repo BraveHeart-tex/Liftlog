@@ -13,15 +13,11 @@ import {
 import { useSettings } from '@/src/features/settings/hooks';
 import { StepperButton } from '@/src/features/workouts/components/stepper-button';
 import { convertWeightToKg, formatWeightForUnit } from '@/src/lib/utils/weight';
+import { iconSizes } from '@/src/theme/sizes';
 import { PencilIcon, PlusIcon, Trash2Icon, XIcon } from 'lucide-react-native';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Alert, View } from 'react-native';
 import { formatInputNumber } from './utils';
-
-const inputClassName = 'text-body-medium text-foreground flex-1 px-3 py-3';
-
-const inputContainerClassName =
-  'border-border min-h-14 flex-row items-center rounded-lg border';
 
 interface SetFormProps {
   trackingType: TrackingType;
@@ -170,7 +166,7 @@ export function SetForm({
       <View className="mt-2 gap-4">
         {trackingDefinition.fields.map(field => (
           <View key={field.key}>
-            <Text variant="caption" tone="muted" className="mb-1">
+            <Text variant="overline" tone="muted" className="mb-1">
               {field.label}
             </Text>
             <View className="flex-row items-center gap-2">
@@ -192,17 +188,14 @@ export function SetForm({
                 }
                 keyboardType={field.keyboardType}
                 placeholder="0"
-                className="flex-1"
                 withContainerDefaults={false}
-                containerClassName={inputContainerClassName}
-                inputClassName={inputClassName}
+                containerClassName={
+                  'border-border min-h-14 flex-row items-center rounded-lg border'
+                }
+                wrapperClassName="flex-1"
+                inputClassName={'text-body-medium flex-1 px-3 py-3'}
                 accessibilityLabel={`Next set ${field.label.toLowerCase()}`}
                 rightIconContainerClassName="ml-0"
-                rightIcon={
-                  <Text variant="bodyMedium" tone="muted" className="pr-3">
-                    {getFieldUnitLabel(field, weightUnit)}
-                  </Text>
-                }
               />
 
               <StepperButton
@@ -220,6 +213,23 @@ export function SetForm({
       </View>
 
       <View className="mt-3 flex-row gap-3">
+        <View className="w-1/3">
+          <Button
+            variant={'destructive'}
+            size="sm"
+            onPress={isEditing ? handleDelete : handleClear}
+            leftIcon={
+              <Icon
+                icon={isEditing ? Trash2Icon : XIcon}
+                className="text-danger"
+                size={iconSizes.sm}
+              />
+            }
+            disabled={!isEditing && !getValidatedValues()}
+          >
+            {isEditing ? 'Delete' : 'Clear'}
+          </Button>
+        </View>
         <View className="flex-1">
           <Button
             variant="primary"
@@ -229,6 +239,7 @@ export function SetForm({
               <Icon
                 icon={isEditing ? PencilIcon : PlusIcon}
                 className="text-primary-foreground"
+                size={iconSizes.sm}
               />
             }
             onPress={() => {
@@ -253,23 +264,6 @@ export function SetForm({
             {isEditing ? 'Update' : 'Save'}
           </Button>
         </View>
-
-        <View className="flex-1">
-          <Button
-            variant={'destructive'}
-            size="sm"
-            onPress={isEditing ? handleDelete : handleClear}
-            leftIcon={
-              <Icon
-                icon={isEditing ? Trash2Icon : XIcon}
-                className="text-danger"
-              />
-            }
-            disabled={!isEditing && !getValidatedValues()}
-          >
-            {isEditing ? 'Delete' : 'Clear'}
-          </Button>
-        </View>
       </View>
     </View>
   );
@@ -291,13 +285,6 @@ function getInitialFieldValues(
   }
 
   return nextValues;
-}
-
-function getFieldUnitLabel(
-  field: TrackingFieldDefinition,
-  weightUnit: ReturnType<typeof useSettings>['weightUnit']
-) {
-  return field.key === 'weightKg' ? weightUnit : field.unitLabel;
 }
 
 function parseFieldValue(

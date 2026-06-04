@@ -1,9 +1,9 @@
+import { Text } from '@/src/components/ui/text';
 import type { WorkoutExercise } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { useActiveWorkoutExerciseList } from '@/src/features/workouts/hooks';
-import { ExerciseCard } from './exercise-card';
 import { View } from 'react-native';
-import { Text } from '@/src/components/ui/text';
+import { ExerciseCard } from './exercise-card';
 
 interface ActiveWorkoutExerciseListProps {
   workoutExercises: WorkoutExercise[];
@@ -22,7 +22,7 @@ export function ActiveWorkoutExerciseList({
   return (
     <View>
       <View className="flex-row items-center justify-between">
-        <Text variant="caption" tone="muted" className="tracking-widest">
+        <Text variant="overline" tone="muted">
           EXERCISES
         </Text>
         {workoutExercisesWithSets.length > 0 && (

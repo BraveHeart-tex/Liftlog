@@ -8,6 +8,7 @@ import {
 import { resolveTrackingType } from '@/src/features/progress/tracking';
 import { useDrizzle } from '@/src/components/database-provider';
 import { useSettings } from '@/src/features/settings/hooks';
+import { formatCompletedSets, getCompletedSets } from '@/src/lib/utils/set';
 import { convertWeightToKg } from '@/src/lib/utils/weight';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { useMemo, useState } from 'react';
@@ -53,22 +54,45 @@ export function useExerciseTrackTab(item: WorkoutExerciseWithSets) {
     getExerciseHistorySetsQuery(db, exerciseId, workoutIds),
     [db, exerciseId, workoutIdKey]
   );
+  const history = useMemo(
+    () =>
+      buildExerciseHistory(workoutRows, setResult.data)
+        .map(entry => ({
+          ...entry,
+          sets: getCompletedSets(entry.sets)
+        }))
+        .filter(entry => entry.sets.length > 0)
+        .slice(0, PROGRESSION_HISTORY_LIMIT),
+    [setResult.data, workoutRows]
+  );
   const progressionSuggestion = useMemo(() => {
     if (trackingType !== 'weight_reps') {
       return null;
     }
 
-    const history = buildExerciseHistory(workoutRows, setResult.data).slice(
-      0,
-      PROGRESSION_HISTORY_LIMIT
-    );
     const weightStepKg = convertWeightToKg(
       weightStepByUnit[weightUnit],
       weightUnit
     );
 
     return getProgressionSuggestion(history, weightStepKg);
-  }, [setResult.data, trackingType, weightUnit, workoutRows]);
+  }, [history, trackingType, weightUnit]);
+  const historyPreview = useMemo(() => {
+    const latestHistory = history[0];
+
+    if (!latestHistory) {
+      return undefined;
+    }
+
+    return {
+      completedSetSummary: formatCompletedSets(
+        latestHistory.sets,
+        weightUnit,
+        trackingType
+      ),
+      completedSetCount: latestHistory.sets.length
+    };
+  }, [history, trackingType, weightUnit]);
 
   return {
     editingSetId,
@@ -76,6 +100,7 @@ export function useExerciseTrackTab(item: WorkoutExerciseWithSets) {
     setEditingSetId,
     prSetIds,
     trackingType,
-    progressionSuggestion
+    progressionSuggestion,
+    historyPreview
   };
 }

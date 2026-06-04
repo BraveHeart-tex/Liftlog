@@ -1,14 +1,12 @@
 import { StyledFlashList } from '@/src/components/styled/flash-list';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
-import type { Exercise } from '@/src/db/schema';
 import {
   formatPersonalRecordValue,
   formatScore,
   type TrackingType
 } from '@/src/features/progress/tracking';
-import { useSettings } from '@/src/features/settings/hooks';
-import { useExerciseHistoryTab } from '@/src/features/workouts/hooks';
+import type { useExerciseHistory } from '@/src/features/workouts/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import type { WeightUnit } from '@/src/lib/utils/weight';
 import {
@@ -20,12 +18,6 @@ import {
 import { View } from 'react-native';
 import { WorkoutSetSummary } from './workout-exercise-summary';
 
-interface ExerciseHistoryTabProps {
-  exerciseId: Exercise['id'];
-  onVerticalScrollStart?: () => void;
-  onVerticalScrollEnd?: () => void;
-}
-
 function formatWorkoutDate(timestamp: number) {
   return new Intl.DateTimeFormat(undefined, {
     weekday: 'short',
@@ -34,17 +26,18 @@ function formatWorkoutDate(timestamp: number) {
   }).format(new Date(timestamp));
 }
 
-type ExerciseHistoryEntry = ReturnType<
-  typeof useExerciseHistoryTab
->['history'][number];
+type ExerciseHistoryData = ReturnType<typeof useExerciseHistory>;
 
-type LatestPersonalRecord = ReturnType<
-  typeof useExerciseHistoryTab
->['latestPersonalRecord'];
+type ExerciseHistoryEntry = ExerciseHistoryData['history'][number];
 
-type MonthlyProgression = ReturnType<
-  typeof useExerciseHistoryTab
->['monthlyProgression'];
+interface ExerciseHistoryListProps {
+  history: ExerciseHistoryData['history'];
+  latestPersonalRecord: ExerciseHistoryData['latestPersonalRecord'];
+  monthlyProgression: ExerciseHistoryData['monthlyProgression'];
+  prSetIds: ExerciseHistoryData['prSetIds'];
+  trackingType: TrackingType;
+  weightUnit: WeightUnit;
+}
 
 function formatSignedScore(
   trackingType: TrackingType,
@@ -78,12 +71,7 @@ function ExerciseHistoryWidgets({
   monthlyProgression,
   trackingType,
   weightUnit
-}: {
-  latestPersonalRecord: LatestPersonalRecord;
-  monthlyProgression: MonthlyProgression;
-  trackingType: TrackingType;
-  weightUnit: WeightUnit;
-}) {
+}: Omit<ExerciseHistoryListProps, 'history' | 'prSetIds'>) {
   const progressionDelta = monthlyProgression?.delta ?? null;
   const ProgressionIcon = getProgressionIcon(progressionDelta);
   const progressionToneClassName =
@@ -140,24 +128,18 @@ function ExerciseHistoryWidgets({
   );
 }
 
-export function ExerciseHistoryTab({
-  exerciseId,
-  onVerticalScrollStart,
-  onVerticalScrollEnd
-}: ExerciseHistoryTabProps) {
-  const { weightUnit } = useSettings();
-  const {
-    history,
-    latestPersonalRecord,
-    monthlyProgression,
-    prSetIds,
-    trackingType
-  } = useExerciseHistoryTab(exerciseId);
-
+export function ExerciseHistoryList({
+  history,
+  latestPersonalRecord,
+  monthlyProgression,
+  prSetIds,
+  trackingType,
+  weightUnit
+}: ExerciseHistoryListProps) {
   const renderHistoryEntry = ({ item }: { item: ExerciseHistoryEntry }) => (
     <View className="border-border bg-card mt-4 rounded-lg border p-4">
       <View className="mb-3 flex-row items-start justify-between gap-3">
-        <Text variant="h3" className="flex-1">
+        <Text variant="body" className="flex-1">
           {formatWorkoutDate(item.workout.startedAt)}
         </Text>
         <Text variant="small" tone="muted">
@@ -191,9 +173,7 @@ export function ExerciseHistoryTab({
           />
         ) : null
       }
-      directionalLockEnabled={true}
       keyboardShouldPersistTaps="handled"
-      nestedScrollEnabled={true}
       showsVerticalScrollIndicator={false}
       ListEmptyComponent={
         <View className="mt-6 items-center">
@@ -205,9 +185,6 @@ export function ExerciseHistoryTab({
           </Text>
         </View>
       }
-      onScrollBeginDrag={onVerticalScrollStart}
-      onScrollEndDrag={onVerticalScrollEnd}
-      onMomentumScrollEnd={onVerticalScrollEnd}
     />
   );
 }

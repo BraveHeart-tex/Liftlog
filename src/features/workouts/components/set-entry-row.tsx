@@ -34,7 +34,7 @@ export function SetEntryRow({
     <Pressable onPress={onEdit}>
       <View
         className={cn(
-          'border-border bg-background relative flex-row items-center gap-3 border-b px-3 py-3',
+          'border-border bg-background relative flex-row items-center gap-3 border-b py-3',
           isEditing && 'bg-muted/50'
         )}
       >
