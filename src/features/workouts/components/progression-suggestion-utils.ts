@@ -2,6 +2,7 @@ import type { Set, Workout } from '@/src/db/schema';
 import { computeEstimated1RM } from '@/src/features/progress/repository';
 
 const MIN_REPEAT_SET_COUNT = 2;
+const MIN_REPS_TO_PROGRESS = 5;
 
 export interface ProgressionHistoryEntry {
   workout: Workout;
@@ -78,7 +79,9 @@ export function getProgressionSuggestion(
     areSameSetValues(firstSet, set)
   );
   const shouldIncreaseWeight =
-    latestEntry.sets.length >= MIN_REPEAT_SET_COUNT && isRepeatablePattern;
+    latestEntry.sets.length >= MIN_REPEAT_SET_COUNT &&
+    isRepeatablePattern &&
+    firstSet.reps >= MIN_REPS_TO_PROGRESS;
 
   const latestBest1rm = getBestEstimated1RM(latestEntry.sets);
   const previousBest1rm = entries
@@ -102,9 +105,9 @@ export function getProgressionSuggestion(
     previousWeightKg: latestWorkingSet.weightKg,
     previousReps: latestWorkingSet.reps,
     suggestedWeightKg: shouldIncreaseWeight
-      ? firstSet.weightKg + weightStepKg
+      ? latestWorkingSet.weightKg + weightStepKg
       : latestWorkingSet.weightKg,
-    suggestedReps: shouldIncreaseWeight ? firstSet.reps : latestWorkingSet.reps,
+    suggestedReps: latestWorkingSet.reps,
     repeatedSetCount: latestEntry.sets.length
   };
 }
