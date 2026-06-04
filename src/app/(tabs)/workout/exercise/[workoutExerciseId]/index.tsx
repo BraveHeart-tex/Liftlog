@@ -1,16 +1,13 @@
 import { BackButton } from '@/src/components/ui/back-button';
-import { Button } from '@/src/components/ui/button';
-import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { ExerciseTrackSection } from '@/src/features/workouts/components/exercise-track-section';
 import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sheet';
+import { RestTimerTrigger } from '@/src/features/workouts/components/rest-timer-trigger';
 import { useActiveWorkoutExerciseDetail } from '@/src/features/workouts/hooks';
-import { useIsRestTimerRunning } from '@/src/features/workouts/hooks/use-is-rest-timer-running';
 import { getRouteParamId } from '@/src/lib/utils/route';
 import { useLocalSearchParams } from 'expo-router';
-import { TimerIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, View } from 'react-native';
 
@@ -24,7 +21,6 @@ export default function ActiveWorkoutExerciseScreen() {
 
   const { item, isLoading } = useActiveWorkoutExerciseDetail(workoutExerciseId);
 
-  const isRestTimerRunning = useIsRestTimerRunning();
   const keyboardAvoidingBehavior =
     Platform.OS === 'ios' ? ('padding' as const) : undefined;
 
@@ -59,16 +55,7 @@ export default function ActiveWorkoutExerciseScreen() {
             <Text variant="h2" className="flex-1 text-center" numberOfLines={1}>
               {item.exercise?.name ?? 'Unknown exercise'}
             </Text>
-            <Button
-              variant="ghost"
-              size="icon"
-              onPress={() => setIsRestTimerOpen(true)}
-            >
-              <Icon icon={TimerIcon} size="lg" className="text-foreground" />
-              {isRestTimerRunning ? (
-                <View className="bg-primary absolute top-0 right-0 h-2 w-2 rounded-full" />
-              ) : null}
-            </Button>
+            <RestTimerTrigger onPress={() => setIsRestTimerOpen(true)} />
           </View>
         </View>
         <KeyboardAvoidingView
