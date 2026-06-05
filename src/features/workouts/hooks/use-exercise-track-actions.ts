@@ -18,6 +18,8 @@ import * as Haptics from 'expo-haptics';
 import { useCallback } from 'react';
 import type { SetValues, WorkoutExerciseWithSets } from '../components/types';
 
+type AddSetValues = SetValues & { order: Set['order'] };
+
 interface UseExerciseTrackActionsParams {
   item: WorkoutExerciseWithSets;
   editingSetId: Set['id'] | null;
@@ -83,11 +85,11 @@ export function useExerciseTrackActions({
   );
 
   const addSet = useCallback(
-    (values: SetValues) => {
+    ({ order, ...values }: AddSetValues) => {
       const newSet = createSet(db, {
         workoutExerciseId: item.workoutExercise.id,
         ...values,
-        order: item.sets.length,
+        order,
         status: 'completed',
         completedAt: Date.now()
       });
@@ -100,7 +102,7 @@ export function useExerciseTrackActions({
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     },
-    [checkAndCreatePRForNewSet, db, item.sets.length, item.workoutExercise.id]
+    [checkAndCreatePRForNewSet, db, item.workoutExercise.id]
   );
 
   const updateExistingSet = useCallback(

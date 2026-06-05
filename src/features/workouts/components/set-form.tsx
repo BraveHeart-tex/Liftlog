@@ -26,7 +26,7 @@ interface SetFormProps {
   trackingType: TrackingType;
   sets: Set[];
   previousSets: Set[];
-  onAddSet: (data: SetValues) => void;
+  onAddSet: (data: SetValues & { order: Set['order'] }) => void;
   onUpdateSet: (data: SetValues & { setId: Set['id'] }) => void;
   onDeleteSet: (setId: Set['id']) => void;
 }
@@ -51,7 +51,7 @@ export function SetForm({
   const [draftValuesByKey, setDraftValuesByKey] = useState<
     Record<string, Record<string, string>>
   >({});
-  const [extraDraftRows, setExtraDraftRows] = useState(0);
+  const [draftRowKeys, setDraftRowKeys] = useState<string[]>([]);
   const [pendingCreateRowKeys, setPendingCreateRowKeys] = useState<
     globalThis.Set<string>
   >(() => new Set());
@@ -62,45 +62,53 @@ export function SetForm({
     Record<Set['id'], string>
   >({});
   const previousSetCountRef = useRef(sets.length);
+  const nextDraftIndexRef = useRef(0);
 
   const pendingCreateRowKeyList = useMemo(
-    () =>
-      Array.from(pendingCreateRowKeys).sort(
-        (firstKey, secondKey) =>
-          getDraftIndex(firstKey) - getDraftIndex(secondKey)
-      ),
-    [pendingCreateRowKeys]
+    () => draftRowKeys.filter(rowKey => pendingCreateRowKeys.has(rowKey)),
+    [draftRowKeys, pendingCreateRowKeys]
   );
   const optimisticCreatedRowCount = Math.min(
     Math.max(0, sets.length - previousSetCountRef.current),
     pendingCreateRowKeyList.length
   );
-  const rows = useMemo(
+  const consumedPendingRowKeys = useMemo(
+    () => pendingCreateRowKeyList.slice(0, optimisticCreatedRowCount),
+    [optimisticCreatedRowCount, pendingCreateRowKeyList]
+  );
+  const draftRowKeysForRows = useMemo(
     () =>
-      Array.from(
-        { length: sets.length + extraDraftRows - optimisticCreatedRowCount },
-        (_, index) => {
-          const set = sets[index];
-          const optimisticCreatedIndex = index - previousSetCountRef.current;
-          const key =
-            set && optimisticCreatedIndex >= 0
-              ? (pendingCreateRowKeyList[optimisticCreatedIndex] ??
-                createdSetRowKeysById[set.id] ??
-                set.id)
-              : (set?.id ?? `draft-${index}`);
+      draftRowKeys.filter(rowKey => !consumedPendingRowKeys.includes(rowKey)),
+    [consumedPendingRowKeys, draftRowKeys]
+  );
+  const rows = useMemo(
+    () => [
+      ...sets.map((set, index) => {
+        const optimisticCreatedIndex = index - previousSetCountRef.current;
+        const key =
+          optimisticCreatedIndex >= 0
+            ? (pendingCreateRowKeyList[optimisticCreatedIndex] ??
+              createdSetRowKeysById[set.id] ??
+              set.id)
+            : (createdSetRowKeysById[set.id] ?? set.id);
 
-          return {
-            key,
-            set,
-            previousSet: previousSets[index],
-            setNumber: index + 1
-          };
-        }
-      ),
+        return {
+          key,
+          set,
+          previousSet: previousSets[index],
+          setNumber: index + 1
+        };
+      }),
+      ...draftRowKeysForRows.map((key, index) => ({
+        key,
+        set: undefined,
+        previousSet: previousSets[sets.length + index],
+        setNumber: sets.length + index + 1
+      }))
+    ],
     [
       createdSetRowKeysById,
-      extraDraftRows,
-      optimisticCreatedRowCount,
+      draftRowKeysForRows,
       pendingCreateRowKeyList,
       previousSets,
       sets
@@ -147,17 +155,14 @@ export function SetForm({
       return;
     }
 
-    const consumedRowKeys = Array.from(pendingCreateRowKeys)
-      .sort(
-        (firstKey, secondKey) =>
-          getDraftIndex(firstKey) - getDraftIndex(secondKey)
-      )
-      .slice(0, addedSetCount);
+    const consumedRowKeys = pendingCreateRowKeyList.slice(0, addedSetCount);
     const createdSetKeys = sets
       .slice(previousSetCount, previousSetCount + consumedRowKeys.length)
       .map(set => set.id);
 
-    setExtraDraftRows(count => Math.max(0, count - consumedRowKeys.length));
+    setDraftRowKeys(currentKeys =>
+      currentKeys.filter(rowKey => !consumedRowKeys.includes(rowKey))
+    );
     setPendingCreateRowKeys(currentKeys => {
       const nextKeys = new Set(currentKeys);
 
@@ -198,7 +203,7 @@ export function SetForm({
 
       return nextValues;
     });
-  }, [pendingCreateRowKeys, sets]);
+  }, [pendingCreateRowKeyList, pendingCreateRowKeys.size, sets]);
 
   const getRowFieldValues = (row: SetFormRow) => {
     if (draftValuesByKey[row.key]) {
@@ -313,7 +318,7 @@ export function SetForm({
 
       return nextKeys;
     });
-    onAddSet(values);
+    onAddSet({ ...values, order: row.setNumber - 1 });
   };
 
   const handleDeleteRow = (set: Set) => {
@@ -328,7 +333,9 @@ export function SetForm({
   };
 
   const handleDeleteDraftRow = (row: SetFormRow) => {
-    setExtraDraftRows(count => Math.max(0, count - 1));
+    setDraftRowKeys(currentKeys =>
+      currentKeys.filter(rowKey => rowKey !== row.key)
+    );
     setPendingCreateRowKeys(currentKeys => {
       if (!currentKeys.has(row.key)) {
         return currentKeys;
@@ -384,7 +391,10 @@ export function SetForm({
   );
 
   const handleAddDraftRow = () => {
-    setExtraDraftRows(count => count + 1);
+    const nextDraftKey = `draft-${nextDraftIndexRef.current}`;
+
+    nextDraftIndexRef.current += 1;
+    setDraftRowKeys(currentKeys => [...currentKeys, nextDraftKey]);
   };
   const hasRows = rows.length > 0;
 
@@ -586,10 +596,6 @@ function getFieldHeaderLabel(
   }
 
   return field.label;
-}
-
-function getDraftIndex(rowKey: string) {
-  return Number(rowKey.replace('draft-', ''));
 }
 
 function parseTrackingFieldValues(
