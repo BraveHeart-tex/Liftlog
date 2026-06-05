@@ -1,140 +1,167 @@
 import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
 import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
 import type { Set } from '@/src/db/schema';
 import {
   TRACKING_TYPE_DEFINITIONS,
   formatTrackingValue,
+  getSetValues,
   type SetValues,
   type TrackingFieldDefinition,
   type TrackingType
 } from '@/src/features/progress/tracking';
 import { useSettings } from '@/src/features/settings/hooks';
-import { StepperButton } from '@/src/features/workouts/components/stepper-button';
+import { cn } from '@/src/lib/utils/cn';
 import { convertWeightToKg, formatWeightForUnit } from '@/src/lib/utils/weight';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { CheckIcon, PlusCircleIcon, Trash2Icon } from 'lucide-react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Pressable, View } from 'react-native';
+import ReanimatedSwipeable, {
+  type SwipeableMethods
+} from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { formatInputNumber } from './utils';
 
 interface SetFormProps {
   trackingType: TrackingType;
-  editingSet: Set | undefined;
-  prefillValues?: SetValues & { requestId: number };
+  sets: Set[];
+  previousSets: Set[];
   onAddSet: (data: SetValues) => void;
   onUpdateSet: (data: SetValues & { setId: Set['id'] }) => void;
-  onClear: () => void;
   onDeleteSet: (setId: Set['id']) => void;
+}
+
+interface SetFormRow {
+  key: string;
+  set: Set | undefined;
+  previousSet: Set | undefined;
+  setNumber: number;
 }
 
 export function SetForm({
   trackingType,
-  editingSet,
-  prefillValues,
+  sets,
+  previousSets,
   onAddSet,
   onUpdateSet,
-  onClear,
   onDeleteSet
 }: SetFormProps) {
   const { weightUnit } = useSettings();
-  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
-  const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const repeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const isEditing = Boolean(editingSet);
   const trackingDefinition = TRACKING_TYPE_DEFINITIONS[trackingType];
+  const [draftValuesByKey, setDraftValuesByKey] = useState<
+    Record<string, Record<string, string>>
+  >({});
+  const [extraDraftRows, setExtraDraftRows] = useState(0);
+  const [pendingCreateRowKeys, setPendingCreateRowKeys] = useState<
+    globalThis.Set<string>
+  >(() => new Set());
+  const [committedRowKeys, setCommittedRowKeys] = useState<
+    globalThis.Set<string>
+  >(() => new Set());
+  const previousSetCountRef = useRef(sets.length);
 
-  useLayoutEffect(() => {
-    if (editingSet) {
-      setFieldValues(
-        getInitialFieldValues(
-          trackingType,
-          {
-            weightKg: editingSet.weightKg ?? undefined,
-            reps: editingSet.reps ?? undefined,
-            distanceMeters: editingSet.distanceMeters ?? undefined,
-            durationSeconds: editingSet.durationSeconds ?? undefined
-          },
-          weightUnit
-        )
-      );
+  const rows = useMemo(
+    () =>
+      Array.from({ length: sets.length + extraDraftRows }, (_, index) => {
+        const set = sets[index];
+        const key = set?.id ?? `draft-${index}`;
 
-      return;
-    }
-
-    setFieldValues({});
-  }, [editingSet, trackingType, weightUnit]);
-
-  useLayoutEffect(() => {
-    if (editingSet || !prefillValues) {
-      return;
-    }
-
-    setFieldValues(
-      getInitialFieldValues(trackingType, prefillValues, weightUnit)
-    );
-  }, [editingSet, prefillValues, trackingType, weightUnit]);
+        return {
+          key,
+          set,
+          previousSet: previousSets[index],
+          setNumber: index + 1
+        };
+      }),
+    [extraDraftRows, previousSets, sets]
+  );
 
   useEffect(() => {
-    return () => {
-      stopRepeatingStep();
-    };
-  }, []);
+    setDraftValuesByKey(currentValues => {
+      let didChange = false;
+      const nextValues = { ...currentValues };
+      const validKeys = new Set(rows.map(row => row.key));
 
-  const stopRepeatingStep = () => {
-    if (holdTimeoutRef.current) {
-      clearTimeout(holdTimeoutRef.current);
-      holdTimeoutRef.current = null;
-    }
+      for (const key of Object.keys(nextValues)) {
+        if (!validKeys.has(key)) {
+          delete nextValues[key];
+          didChange = true;
+        }
+      }
 
-    if (repeatIntervalRef.current) {
-      clearInterval(repeatIntervalRef.current);
-      repeatIntervalRef.current = null;
-    }
-  };
+      for (const row of rows) {
+        if (!row.set || nextValues[row.key]) {
+          continue;
+        }
 
-  const startRepeatingStep = (onStep: () => void) => {
-    stopRepeatingStep();
-    onStep();
+        nextValues[row.key] = getInitialFieldValues(
+          trackingType,
+          getSetValues(row.set),
+          weightUnit
+        );
+        didChange = true;
+      }
 
-    holdTimeoutRef.current = setTimeout(() => {
-      repeatIntervalRef.current = setInterval(onStep, 120);
-    }, 300);
-  };
-
-  const updateFieldValue = (field: TrackingFieldDefinition, delta: number) => {
-    setFieldValues(currentValues => {
-      const currentValue = currentValues[field.key] ?? '';
-      const parsedValue = parseFieldValue(field, currentValue, weightUnit);
-      const currentNumber = parsedValue ?? 0;
-      const nextValue = Math.max(field.minimum, currentNumber + delta);
-
-      return {
-        ...currentValues,
-        [field.key]: formatFieldValue(field, nextValue, weightUnit)
-      };
+      return didChange ? nextValues : currentValues;
     });
-  };
+  }, [rows, trackingType, weightUnit]);
 
-  const handleClear = () => {
-    setFieldValues({});
-    onClear();
-  };
+  useEffect(() => {
+    const previousSetCount = previousSetCountRef.current;
+    const addedSetCount = sets.length - previousSetCount;
 
-  const handleDelete = () => {
-    if (!editingSet) {
+    previousSetCountRef.current = sets.length;
+
+    if (addedSetCount <= 0 || pendingCreateRowKeys.size === 0) {
       return;
     }
 
-    Alert.alert('Delete set?', 'This set will be removed from the workout.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => onDeleteSet(editingSet.id)
-      }
-    ]);
-  };
+    const consumedRowKeys = Array.from(pendingCreateRowKeys)
+      .sort(
+        (firstKey, secondKey) =>
+          getDraftIndex(firstKey) - getDraftIndex(secondKey)
+      )
+      .slice(0, addedSetCount);
+    const createdSetKeys = sets
+      .slice(previousSetCount, previousSetCount + consumedRowKeys.length)
+      .map(set => set.id);
 
-  const getValidatedValues = () => {
+    setExtraDraftRows(count => Math.max(0, count - consumedRowKeys.length));
+    setPendingCreateRowKeys(currentKeys => {
+      const nextKeys = new Set(currentKeys);
+
+      for (const key of consumedRowKeys) {
+        nextKeys.delete(key);
+      }
+
+      return nextKeys;
+    });
+    setCommittedRowKeys(currentKeys => {
+      const nextKeys = new Set(currentKeys);
+
+      for (const key of consumedRowKeys) {
+        nextKeys.delete(key);
+      }
+
+      for (const key of createdSetKeys) {
+        nextKeys.add(key);
+      }
+
+      return nextKeys;
+    });
+    setDraftValuesByKey(currentValues => {
+      const nextValues = { ...currentValues };
+
+      for (const key of consumedRowKeys) {
+        delete nextValues[key];
+      }
+
+      return nextValues;
+    });
+  }, [pendingCreateRowKeys, sets]);
+
+  const getValidatedValues = (rowKey: string) => {
+    const fieldValues = draftValuesByKey[rowKey] ?? {};
     const values: SetValues = {};
 
     for (const field of trackingDefinition.fields) {
@@ -158,98 +185,300 @@ export function SetForm({
     return values;
   };
 
-  return (
-    <View>
-      <View className="mt-2 gap-4">
-        {trackingDefinition.fields.map(field => (
-          <View key={field.key}>
-            <Text variant="overline" tone="muted" className="mb-1">
-              {field.label}
-            </Text>
-            <View className="flex-row items-center gap-2">
-              <StepperButton
-                label="-"
-                accessibilityLabel={`Decrease ${field.label.toLowerCase()}`}
-                onStep={() => updateFieldValue(field, -field.step(weightUnit))}
-                onStartRepeating={startRepeatingStep}
-                onStopRepeating={stopRepeatingStep}
-              />
+  const updateFieldValue = (
+    rowKey: string,
+    field: TrackingFieldDefinition,
+    value: string
+  ) => {
+    setCommittedRowKeys(currentKeys => {
+      if (!currentKeys.has(rowKey)) {
+        return currentKeys;
+      }
 
-              <Input
-                value={fieldValues[field.key] ?? ''}
-                onChangeText={value =>
-                  setFieldValues(currentValues => ({
-                    ...currentValues,
-                    [field.key]: value
-                  }))
-                }
-                keyboardType={field.keyboardType}
-                placeholder="0"
-                withContainerDefaults={false}
-                containerClassName={
-                  'border-border min-h-14 flex-row items-center rounded-lg border'
-                }
-                wrapperClassName="flex-1"
-                inputClassName={'text-body-medium flex-1 px-3 py-3'}
-                accessibilityLabel={`Next set ${field.label.toLowerCase()}`}
-                rightIconContainerClassName="ml-0"
-              />
+      const nextKeys = new Set(currentKeys);
 
-              <StepperButton
-                label="+"
-                accessibilityLabel={`Increase ${field.label.toLowerCase()}`}
-                onStep={() => updateFieldValue(field, field.step(weightUnit))}
-                onStartRepeating={startRepeatingStep}
-                onStopRepeating={stopRepeatingStep}
-                buttonClassName="border-primary"
-                textClassName="text-primary"
-              />
-            </View>
-          </View>
-        ))}
-      </View>
+      nextKeys.delete(rowKey);
 
-      <View className="mt-3 flex-row gap-3">
-        <View className="w-1/3">
-          <Button
-            variant={'destructive'}
-            size="sm"
-            onPress={isEditing ? handleDelete : handleClear}
-            disabled={!isEditing && !getValidatedValues()}
-          >
-            {isEditing ? 'Delete' : 'Clear'}
-          </Button>
-        </View>
-        <View className="flex-1">
-          <Button
-            variant="primary"
-            size="sm"
-            className="w-full"
-            onPress={() => {
-              const data = getValidatedValues();
+      return nextKeys;
+    });
+    setDraftValuesByKey(currentValues => ({
+      ...currentValues,
+      [rowKey]: {
+        ...(currentValues[rowKey] ?? {}),
+        [field.key]: value
+      }
+    }));
+  };
 
-              if (!data) {
-                return;
-              }
+  const handleCommitRow = (row: SetFormRow) => {
+    if (pendingCreateRowKeys.has(row.key)) {
+      return;
+    }
 
-              if (editingSet) {
-                onUpdateSet({
-                  setId: editingSet.id,
-                  ...data
-                });
+    const values = getValidatedValues(row.key);
 
-                return;
-              }
+    if (!values) {
+      return;
+    }
 
-              onAddSet(data);
-            }}
-          >
-            {isEditing ? 'Update' : 'Save'}
-          </Button>
-        </View>
-      </View>
+    if (row.set) {
+      setCommittedRowKeys(currentKeys => {
+        const nextKeys = new Set(currentKeys);
+
+        nextKeys.add(row.key);
+
+        return nextKeys;
+      });
+      onUpdateSet({ setId: row.set.id, ...values });
+
+      return;
+    }
+
+    setPendingCreateRowKeys(currentKeys => {
+      const nextKeys = new Set(currentKeys);
+
+      nextKeys.add(row.key);
+
+      return nextKeys;
+    });
+    setCommittedRowKeys(currentKeys => {
+      const nextKeys = new Set(currentKeys);
+
+      nextKeys.add(row.key);
+
+      return nextKeys;
+    });
+    onAddSet(values);
+  };
+
+  const handleDeleteRow = (set: Set) => {
+    Alert.alert('Delete set?', 'This set will be removed from the workout.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => onDeleteSet(set.id)
+      }
+    ]);
+  };
+
+  const handleDeleteDraftRow = (row: SetFormRow) => {
+    setExtraDraftRows(count => Math.max(0, count - 1));
+    setPendingCreateRowKeys(currentKeys => {
+      if (!currentKeys.has(row.key)) {
+        return currentKeys;
+      }
+
+      const nextKeys = new Set(currentKeys);
+
+      nextKeys.delete(row.key);
+
+      return nextKeys;
+    });
+    setCommittedRowKeys(currentKeys => {
+      if (!currentKeys.has(row.key)) {
+        return currentKeys;
+      }
+
+      const nextKeys = new Set(currentKeys);
+
+      nextKeys.delete(row.key);
+
+      return nextKeys;
+    });
+    setDraftValuesByKey(currentValues => {
+      const nextValues = { ...currentValues };
+
+      delete nextValues[row.key];
+
+      return nextValues;
+    });
+  };
+
+  const renderDeleteAction = (
+    setNumber: number,
+    onDelete: () => void,
+    _progress: unknown,
+    _translation: unknown,
+    swipeable: SwipeableMethods
+  ) => (
+    <View className="h-full justify-center pl-2">
+      <Button
+        variant="destructive"
+        size="icon"
+        accessibilityLabel={`Delete set ${setNumber}`}
+        className="border-danger/30 bg-danger/10 h-16 w-16 rounded-lg"
+        onPress={() => {
+          swipeable.close();
+          onDelete();
+        }}
+      >
+        <Icon icon={Trash2Icon} className="text-danger" size="md" />
+      </Button>
     </View>
   );
+
+  return (
+    <View className="flex-1">
+      <View className="flex-row items-center gap-2 px-1 pb-2">
+        <HeaderCell className="w-10">Set</HeaderCell>
+        <HeaderCell className="flex-[1.45]">Previous</HeaderCell>
+        {trackingDefinition.fields.map(field => (
+          <HeaderCell key={field.key} className="flex-1 text-center">
+            {getFieldHeaderLabel(field, weightUnit)}
+          </HeaderCell>
+        ))}
+        <View className="w-12 items-center">
+          <Icon icon={CheckIcon} className="text-muted-foreground" size="sm" />
+        </View>
+      </View>
+
+      <View className="gap-2">
+        {rows.map(row => {
+          const validatedValues = getValidatedValues(row.key);
+          const isValid = Boolean(validatedValues);
+          const isPendingCreate = pendingCreateRowKeys.has(row.key);
+          const isCommitted = committedRowKeys.has(row.key);
+          const rowContent = (
+            <View className="bg-card min-h-16 flex-row items-center gap-2 rounded-lg px-3 py-2">
+              <View className="w-8 items-center">
+                <Text variant="bodyMedium">{row.setNumber}</Text>
+              </View>
+
+              <View className="min-w-0 flex-[1.45]">
+                <Text variant="small" tone="muted" numberOfLines={1}>
+                  {row.previousSet
+                    ? formatTrackingValue(
+                        trackingType,
+                        getSetValues(row.previousSet),
+                        weightUnit
+                      )
+                    : '-'}
+                </Text>
+              </View>
+
+              {trackingDefinition.fields.map(field => (
+                <Input
+                  key={field.key}
+                  value={draftValuesByKey[row.key]?.[field.key] ?? ''}
+                  onChangeText={value =>
+                    updateFieldValue(row.key, field, value)
+                  }
+                  keyboardType={field.keyboardType}
+                  placeholder="0"
+                  withContainerDefaults={false}
+                  editable={!isPendingCreate}
+                  wrapperClassName="flex-1"
+                  containerClassName={cn(
+                    'bg-muted min-h-12 flex-row items-center rounded-lg border px-1',
+                    isCommitted
+                      ? 'border-success/40 bg-success/10'
+                      : isValid
+                        ? 'border-muted'
+                        : 'border-transparent'
+                  )}
+                  inputClassName="text-body-medium flex-1 px-2 py-2"
+                  textAlign="center"
+                  accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
+                />
+              ))}
+
+              <Button
+                variant={isValid ? 'secondary' : 'ghost'}
+                size="icon"
+                disabled={!isValid}
+                accessibilityLabel={`Save set ${row.setNumber}`}
+                className={cn(
+                  'h-12 w-12',
+                  isCommitted
+                    ? 'border-success/40 bg-success/10'
+                    : isValid && 'border-primary/30 bg-primary/10'
+                )}
+                onPress={() => handleCommitRow(row)}
+              >
+                <Icon
+                  icon={CheckIcon}
+                  className={cn(
+                    isCommitted
+                      ? 'text-success'
+                      : isValid
+                        ? 'text-primary'
+                        : 'text-muted-foreground'
+                  )}
+                  size="md"
+                />
+              </Button>
+            </View>
+          );
+
+          const handleDelete = row.set
+            ? () => handleDeleteRow(row.set)
+            : () => handleDeleteDraftRow(row);
+
+          return (
+            <ReanimatedSwipeable
+              key={row.key}
+              overshootRight={false}
+              containerStyle={{ borderRadius: 8, overflow: 'hidden' }}
+              renderRightActions={(progress, translation, swipeable) =>
+                renderDeleteAction(
+                  row.setNumber,
+                  handleDelete,
+                  progress,
+                  translation,
+                  swipeable
+                )
+              }
+            >
+              {rowContent}
+            </ReanimatedSwipeable>
+          );
+        })}
+      </View>
+
+      <Pressable onPress={() => setExtraDraftRows(count => count + 1)}>
+        <View className="border-border mt-4 min-h-14 flex-row items-center justify-center gap-2 rounded-lg border border-dashed">
+          <Icon icon={PlusCircleIcon} className="text-foreground" size="sm" />
+          <Text variant="bodyMedium">Add Set</Text>
+        </View>
+      </Pressable>
+
+      {sets.length > 0 ? (
+        <Text variant="caption" tone="muted" className="mt-3 text-center">
+          Swipe left on a row to delete it.
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+function HeaderCell({
+  children,
+  className
+}: {
+  children: string;
+  className?: string;
+}) {
+  return (
+    <Text variant="overline" tone="muted" className={className}>
+      {children}
+    </Text>
+  );
+}
+
+function getFieldHeaderLabel(
+  field: TrackingFieldDefinition,
+  weightUnit: ReturnType<typeof useSettings>['weightUnit']
+) {
+  if (field.key === 'weightKg') {
+    return weightUnit.toUpperCase();
+  }
+
+  return field.label;
+}
+
+function getDraftIndex(rowKey: string) {
+  return Number(rowKey.replace('draft-', ''));
 }
 
 function getInitialFieldValues(

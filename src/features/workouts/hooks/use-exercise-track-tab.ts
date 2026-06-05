@@ -1,8 +1,6 @@
-import type { Set } from '@/src/db/schema';
 import {
   buildExerciseHistory,
   getExerciseHistorySetsQuery,
-  getPersonalRecordsByExerciseQuery,
   getRecentExerciseHistoryWorkoutsQuery
 } from '@/src/features/progress/repository';
 import { resolveTrackingType } from '@/src/features/progress/tracking';
@@ -11,7 +9,7 @@ import { useSettings } from '@/src/features/settings/hooks';
 import { formatCompletedSets, getCompletedSets } from '@/src/lib/utils/set';
 import { convertWeightToKg } from '@/src/lib/utils/weight';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { getProgressionSuggestion } from '../components/progression-suggestion-utils';
 import type { WorkoutExerciseWithSets } from '../components/types';
 
@@ -24,18 +22,8 @@ const weightStepByUnit = {
 export function useExerciseTrackTab(item: WorkoutExerciseWithSets) {
   const db = useDrizzle();
   const { weightUnit } = useSettings();
-  const [editingSetId, setEditingSetId] = useState<Set['id'] | null>(null);
-  const editingSet = item.sets.find(set => set.id === editingSetId);
   const exerciseId = item.workoutExercise.exerciseId;
   const trackingType = resolveTrackingType(item.exercise?.trackingType);
-  const prResult = useLiveWithFallback(
-    getPersonalRecordsByExerciseQuery(db, exerciseId),
-    [db, exerciseId]
-  );
-  const prSetIds = useMemo(
-    () => new Set(prResult.data.map(personalRecord => personalRecord.setId)),
-    [prResult.data]
-  );
   const workoutResult = useLiveWithFallback(
     getRecentExerciseHistoryWorkoutsQuery(
       db,
@@ -95,12 +83,9 @@ export function useExerciseTrackTab(item: WorkoutExerciseWithSets) {
   }, [history, trackingType, weightUnit]);
 
   return {
-    editingSetId,
-    editingSet,
-    setEditingSetId,
-    prSetIds,
     trackingType,
     progressionSuggestion,
-    historyPreview
+    historyPreview,
+    latestHistorySets: history[0]?.sets ?? []
   };
 }
