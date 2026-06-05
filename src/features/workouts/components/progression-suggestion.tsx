@@ -1,4 +1,3 @@
-import { Card } from '@/src/components/ui/card';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { useSettings } from '@/src/features/settings/hooks';
@@ -38,21 +37,18 @@ export function ProgressionSuggestion({
     : null;
 
   return (
-    <Card className="my-3 px-4 py-3">
-      <View className="flex-row items-center gap-3">
-        <View className="bg-primary/15 h-12 w-12 items-center justify-center rounded-full">
-          <Icon icon={TrendingUpIcon} className="text-primary" size="md" />
+    <View className="border-border bg-card mb-5 rounded-lg border px-3 py-2">
+      <View className="flex-row items-center gap-2">
+        <View className="bg-primary/10 h-8 w-8 items-center justify-center rounded-lg">
+          <Icon icon={TrendingUpIcon} className="text-primary" size="sm" />
         </View>
 
         <View className="min-w-0 flex-1">
-          <Text variant="small" tone="muted">
-            Last workout
-          </Text>
-          <Text variant="bodyMedium" numberOfLines={1}>
+          <Text variant="small" numberOfLines={1}>
             {historyPreview.completedSetSummary}
           </Text>
           {suggestedLabel ? (
-            <Text variant="caption" tone="muted" className="mt-1">
+            <Text variant="caption" tone="muted" numberOfLines={1}>
               Suggested: {suggestedLabel}
             </Text>
           ) : null}
@@ -66,7 +62,7 @@ export function ProgressionSuggestion({
         >
           <View className="flex-row items-center gap-1">
             <Text className="text-primary" variant="small">
-              View History
+              History
             </Text>
             <Icon
               icon={ChevronRightIcon}
@@ -76,6 +72,6 @@ export function ProgressionSuggestion({
           </View>
         </Link>
       </View>
-    </Card>
+    </View>
   );
 }
