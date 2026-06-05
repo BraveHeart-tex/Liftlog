@@ -98,7 +98,7 @@ export const StepGoalSheet = ({
       <BottomSheetHeader className="flex-row items-center justify-between">
         <BottomSheetTitle>Step goal</BottomSheetTitle>
         <Button
-          variant="ghost"
+          variant="secondary"
           size="icon"
           onPress={handleClose}
           accessibilityLabel="Close step goal sheet"

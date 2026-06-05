@@ -92,7 +92,7 @@ export function SaveWorkoutTemplateSheet({
             one tap.
           </BottomSheetDescription>
         </View>
-        <Button variant="ghost" size="icon" onPress={handleClose}>
+        <Button variant="secondary" size="icon" onPress={handleClose}>
           <Icon icon={XIcon} size="lg" className="text-foreground" />
         </Button>
       </BottomSheetHeader>

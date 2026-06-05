@@ -84,7 +84,7 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
     >
       <BottomSheetHeader className="flex-row items-center justify-between">
         <BottomSheetTitle>Rest Timer</BottomSheetTitle>
-        <Button variant="ghost" size="icon" onPress={handleClose}>
+        <Button variant="secondary" size="icon" onPress={handleClose}>
           <Icon icon={XIcon} size="lg" className="text-foreground" />
         </Button>
       </BottomSheetHeader>

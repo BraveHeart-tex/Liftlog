@@ -121,7 +121,7 @@ export function RenameSheet({
           <BottomSheetDescription>{description}</BottomSheetDescription>
         </View>
         <Button
-          variant="ghost"
+          variant="secondary"
           size="icon"
           onPress={handleClose}
           accessibilityLabel="Close rename sheet"

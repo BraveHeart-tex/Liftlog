@@ -92,7 +92,7 @@ export const RestTimerSettingSheet = ({
       <BottomSheetHeader className="flex-row items-center justify-between">
         <BottomSheetTitle>Rest Timer</BottomSheetTitle>
         <Button
-          variant="ghost"
+          variant="secondary"
           size="icon"
           onPress={handleClose}
           accessibilityLabel="Close rest timer sheet"

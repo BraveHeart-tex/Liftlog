@@ -38,7 +38,7 @@ export const DiscardWorkoutSheet = ({
             {`Starting ${templateName ?? 'this template'} will discard ${activeWorkoutName}.`}
           </BottomSheetDescription>
         </View>
-        <Button variant="ghost" size="icon" onPress={onClose}>
+        <Button variant="secondary" size="icon" onPress={onClose}>
           <Icon icon={XIcon} size="lg" className="text-foreground" />
         </Button>
       </BottomSheetHeader>
