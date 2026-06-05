@@ -58,22 +58,53 @@ export function SetForm({
   const [committedRowKeys, setCommittedRowKeys] = useState<
     globalThis.Set<string>
   >(() => new Set());
+  const [createdSetRowKeysById, setCreatedSetRowKeysById] = useState<
+    Record<Set['id'], string>
+  >({});
   const previousSetCountRef = useRef(sets.length);
 
+  const pendingCreateRowKeyList = useMemo(
+    () =>
+      Array.from(pendingCreateRowKeys).sort(
+        (firstKey, secondKey) =>
+          getDraftIndex(firstKey) - getDraftIndex(secondKey)
+      ),
+    [pendingCreateRowKeys]
+  );
+  const optimisticCreatedRowCount = Math.min(
+    Math.max(0, sets.length - previousSetCountRef.current),
+    pendingCreateRowKeyList.length
+  );
   const rows = useMemo(
     () =>
-      Array.from({ length: sets.length + extraDraftRows }, (_, index) => {
-        const set = sets[index];
-        const key = set?.id ?? `draft-${index}`;
+      Array.from(
+        { length: sets.length + extraDraftRows - optimisticCreatedRowCount },
+        (_, index) => {
+          const set = sets[index];
+          const optimisticCreatedIndex = index - previousSetCountRef.current;
+          const key =
+            set && optimisticCreatedIndex >= 0
+              ? (pendingCreateRowKeyList[optimisticCreatedIndex] ??
+                createdSetRowKeysById[set.id] ??
+                set.id)
+              : (set?.id ?? `draft-${index}`);
 
-        return {
-          key,
-          set,
-          previousSet: previousSets[index],
-          setNumber: index + 1
-        };
-      }),
-    [extraDraftRows, previousSets, sets]
+          return {
+            key,
+            set,
+            previousSet: previousSets[index],
+            setNumber: index + 1
+          };
+        }
+      ),
+    [
+      createdSetRowKeysById,
+      extraDraftRows,
+      optimisticCreatedRowCount,
+      pendingCreateRowKeyList,
+      previousSets,
+      sets
+    ]
   );
 
   useEffect(() => {
@@ -149,6 +180,15 @@ export function SetForm({
 
       return nextKeys;
     });
+    setCreatedSetRowKeysById(currentKeysById => {
+      const nextKeysById = { ...currentKeysById };
+
+      for (let index = 0; index < createdSetKeys.length; index += 1) {
+        nextKeysById[createdSetKeys[index]] = consumedRowKeys[index];
+      }
+
+      return nextKeysById;
+    });
     setDraftValuesByKey(currentValues => {
       const nextValues = { ...currentValues };
 
@@ -160,29 +200,54 @@ export function SetForm({
     });
   }, [pendingCreateRowKeys, sets]);
 
-  const getValidatedValues = (rowKey: string) => {
-    const fieldValues = draftValuesByKey[rowKey] ?? {};
-    const values: SetValues = {};
-
-    for (const field of trackingDefinition.fields) {
-      const value = parseFieldValue(
-        field,
-        fieldValues[field.key] ?? '',
-        weightUnit
-      );
-
-      if (value === undefined || value < field.minimum) {
-        return undefined;
-      }
-
-      if (field.integer && !Number.isInteger(value)) {
-        return undefined;
-      }
-
-      values[field.key] = value;
+  const getRowFieldValues = (row: SetFormRow) => {
+    if (draftValuesByKey[row.key]) {
+      return draftValuesByKey[row.key];
     }
 
-    return values;
+    if (!row.set) {
+      return {};
+    }
+
+    return getInitialFieldValues(
+      trackingType,
+      getSetValues(row.set),
+      weightUnit
+    );
+  };
+
+  const getRowValidatedValues = (row: SetFormRow) => {
+    return parseTrackingFieldValues(
+      getRowFieldValues(row),
+      trackingDefinition.fields,
+      weightUnit
+    );
+  };
+
+  const hasSavedRowChanges = (
+    row: SetFormRow,
+    values: SetValues | undefined
+  ) => {
+    if (!row.set) {
+      return false;
+    }
+
+    if (!values) {
+      return true;
+    }
+
+    const savedValues = getSetValues(row.set);
+
+    return trackingDefinition.fields.some(field => {
+      const currentValue = values[field.key];
+      const savedValue = savedValues[field.key];
+
+      if (currentValue === undefined && savedValue === undefined) {
+        return false;
+      }
+
+      return currentValue !== savedValue;
+    });
   };
 
   const updateFieldValue = (
@@ -215,7 +280,7 @@ export function SetForm({
       return;
     }
 
-    const values = getValidatedValues(row.key);
+    const values = getRowValidatedValues(row);
 
     if (!values) {
       return;
@@ -335,10 +400,17 @@ export function SetForm({
 
       <View className="gap-2">
         {rows.map(row => {
-          const validatedValues = getValidatedValues(row.key);
+          const rowFieldValues = getRowFieldValues(row);
+          const validatedValues = getRowValidatedValues(row);
           const isValid = Boolean(validatedValues);
           const isPendingCreate = pendingCreateRowKeys.has(row.key);
-          const isCommitted = committedRowKeys.has(row.key);
+          const hasSavedChanges = hasSavedRowChanges(row, validatedValues);
+          const isPersistedCommitted =
+            row.set?.status === 'completed' && !hasSavedChanges;
+          const isCommitted =
+            committedRowKeys.has(row.key) ||
+            isPendingCreate ||
+            isPersistedCommitted;
           const rowContent = (
             <View className="bg-card min-h-16 flex-row items-center gap-2 rounded-lg px-3 py-2">
               <View className="w-8 items-center">
@@ -360,7 +432,7 @@ export function SetForm({
               {trackingDefinition.fields.map(field => (
                 <Input
                   key={field.key}
-                  value={draftValuesByKey[row.key]?.[field.key] ?? ''}
+                  value={rowFieldValues[field.key] ?? ''}
                   onChangeText={value =>
                     updateFieldValue(row.key, field, value)
                   }
@@ -479,6 +551,34 @@ function getFieldHeaderLabel(
 
 function getDraftIndex(rowKey: string) {
   return Number(rowKey.replace('draft-', ''));
+}
+
+function parseTrackingFieldValues(
+  fieldValues: Record<string, string>,
+  fields: TrackingFieldDefinition[],
+  weightUnit: ReturnType<typeof useSettings>['weightUnit']
+) {
+  const values: SetValues = {};
+
+  for (const field of fields) {
+    const value = parseFieldValue(
+      field,
+      fieldValues[field.key] ?? '',
+      weightUnit
+    );
+
+    if (value === undefined || value < field.minimum) {
+      return undefined;
+    }
+
+    if (field.integer && !Number.isInteger(value)) {
+      return undefined;
+    }
+
+    values[field.key] = value;
+  }
+
+  return values;
 }
 
 function getInitialFieldValues(
