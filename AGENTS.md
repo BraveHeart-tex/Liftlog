@@ -1,5 +1,7 @@
 # AGENTS.md
 
+Before broad file discovery, honor ignore patterns in .codexignore.
+
 ## Stack
 
 - Expo / React Native
@@ -108,7 +110,6 @@ Read relevant docs before implementation:
 - docs/components.md
 - docs/bottom-sheet.md
 - docs/ux-display.md
-- docs/validation.md
 - docs/project-structure.md
 
 ## Token Discipline
