@@ -78,24 +78,6 @@ Rules:
 - Repositories own query construction and database invariants.
 - Use `useLiveWithFallback` for reactive reads.
 
-## Validation
-
-After changes run:
-
-```sh
-pnpm run ts-check
-pnpm run lint
-pnpm run prettier:check
-```
-
-Run additionally for broad cleanup or export deletion:
-
-```sh
-pnpm run knip
-```
-
-Never claim completion while checks fail.
-
 ## Task-Specific Docs
 
 Read relevant docs before implementation:

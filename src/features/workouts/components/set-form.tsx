@@ -13,30 +13,71 @@ import {
 } from '@/src/features/progress/tracking';
 import { useSettings } from '@/src/features/settings/hooks';
 import { cn } from '@/src/lib/utils/cn';
-import { convertWeightToKg, formatWeightForUnit } from '@/src/lib/utils/weight';
 import { CheckIcon, PlusIcon, Trash2Icon } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, View } from 'react-native';
 import ReanimatedSwipeable, {
   type SwipeableMethods
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
-import { formatInputNumber } from './utils';
+import {
+  areSetValuesEqual,
+  getFieldHeaderLabel,
+  getHasSavedChanges,
+  getInitialFieldValues,
+  parseTrackingFieldValues
+} from './set-form-utils';
+
+type RowPhase = 'editing' | 'saving' | 'awaiting_sync' | 'error';
 
 interface SetFormProps {
   trackingType: TrackingType;
   sets: Set[];
   previousSets: Set[];
-  onAddSet: (data: SetValues & { order: Set['order'] }) => void;
-  onUpdateSet: (data: SetValues & { setId: Set['id'] }) => void;
-  onDeleteSet: (setId: Set['id']) => void;
+  onAddSet: (data: SetValues & { order: Set['order'] }) => Set | Promise<Set>;
+  onUpdateSet: (
+    data: SetValues & { setId: Set['id'] }
+  ) => Set | undefined | Promise<Set | undefined>;
+  onDeleteSet: (setId: Set['id']) => void | Promise<void>;
 }
 
-interface SetFormRow {
+interface DraftRowState {
   key: string;
-  set: Set | undefined;
+  phase: RowPhase;
+  createdSetId?: Set['id'];
+}
+
+interface PersistedEditState {
+  baselineValues: Record<string, string>;
+  phase: RowPhase;
+  savedValues?: SetValues;
+  values: Record<string, string>;
+}
+
+interface BaseRowView {
+  fieldValues: Record<string, string>;
+  isCommitted: boolean;
+  isSaving: boolean;
+  order: Set['order'];
   previousSet: Set | undefined;
   setNumber: number;
+  validatedValues: SetValues | undefined;
 }
+
+interface PersistedSetFormRow extends BaseRowView {
+  hasSavedChanges: boolean;
+  key: Set['id'];
+  kind: 'persisted';
+  phase: RowPhase;
+  set: Set;
+}
+
+interface DraftSetFormRow extends BaseRowView {
+  key: string;
+  kind: 'draft';
+  phase: RowPhase;
+}
+
+type SetFormRow = DraftSetFormRow | PersistedSetFormRow;
 
 export function SetForm({
   trackingType,
@@ -48,316 +89,399 @@ export function SetForm({
 }: SetFormProps) {
   const { weightUnit } = useSettings();
   const trackingDefinition = TRACKING_TYPE_DEFINITIONS[trackingType];
+  const [draftRows, setDraftRows] = useState<DraftRowState[]>([]);
   const [draftValuesByKey, setDraftValuesByKey] = useState<
     Record<string, Record<string, string>>
   >({});
-  const [draftRowKeys, setDraftRowKeys] = useState<string[]>([]);
-  const [pendingCreateRowKeys, setPendingCreateRowKeys] = useState<
-    globalThis.Set<string>
-  >(() => new Set());
-  const [committedRowKeys, setCommittedRowKeys] = useState<
-    globalThis.Set<string>
-  >(() => new Set());
-  const [createdSetRowKeysById, setCreatedSetRowKeysById] = useState<
-    Record<Set['id'], string>
+  const [persistedEditsBySetId, setPersistedEditsBySetId] = useState<
+    Record<Set['id'], PersistedEditState>
   >({});
-  const previousSetCountRef = useRef(sets.length);
+  const [pendingDeleteSetIds, setPendingDeleteSetIds] = useState<
+    globalThis.Set<Set['id']>
+  >(() => new Set());
   const nextDraftIndexRef = useRef(0);
 
-  const pendingCreateRowKeyList = useMemo(
-    () => draftRowKeys.filter(rowKey => pendingCreateRowKeys.has(rowKey)),
-    [draftRowKeys, pendingCreateRowKeys]
-  );
-  const optimisticCreatedRowCount = Math.min(
-    Math.max(0, sets.length - previousSetCountRef.current),
-    pendingCreateRowKeyList.length
-  );
-  const consumedPendingRowKeys = useMemo(
-    () => pendingCreateRowKeyList.slice(0, optimisticCreatedRowCount),
-    [optimisticCreatedRowCount, pendingCreateRowKeyList]
-  );
-  const draftRowKeysForRows = useMemo(
-    () =>
-      draftRowKeys.filter(rowKey => !consumedPendingRowKeys.includes(rowKey)),
-    [consumedPendingRowKeys, draftRowKeys]
-  );
-  const rows = useMemo(
-    () => [
-      ...sets.map((set, index) => {
-        const optimisticCreatedIndex = index - previousSetCountRef.current;
-        const key =
-          optimisticCreatedIndex >= 0
-            ? (pendingCreateRowKeyList[optimisticCreatedIndex] ??
-              createdSetRowKeysById[set.id] ??
-              set.id)
-            : (createdSetRowKeysById[set.id] ?? set.id);
-
-        return {
-          key,
-          set,
-          previousSet: previousSets[index],
-          setNumber: index + 1
-        };
-      }),
-      ...draftRowKeysForRows.map((key, index) => ({
-        key,
-        set: undefined,
-        previousSet: previousSets[sets.length + index],
-        setNumber: sets.length + index + 1
-      }))
-    ],
-    [
-      createdSetRowKeysById,
-      draftRowKeysForRows,
-      pendingCreateRowKeyList,
-      previousSets,
-      sets
-    ]
+  const liveSetIds = useMemo(() => new Set(sets.map(set => set.id)), [sets]);
+  const setById = useMemo(
+    () => new Map(sets.map(set => [set.id, set])),
+    [sets]
   );
 
   useEffect(() => {
-    setDraftValuesByKey(currentValues => {
-      let didChange = false;
-      const nextValues = { ...currentValues };
-      const validKeys = new Set(rows.map(row => row.key));
+    let removedDraftKeys: string[] = [];
 
-      for (const key of Object.keys(nextValues)) {
-        if (!validKeys.has(key)) {
-          delete nextValues[key];
-          didChange = true;
+    setDraftRows(currentRows => {
+      const nextRows = currentRows.filter(row => {
+        const isSynced =
+          row.createdSetId !== undefined && liveSetIds.has(row.createdSetId);
+
+        if (isSynced) {
+          removedDraftKeys.push(row.key);
         }
-      }
 
-      for (const row of rows) {
-        if (!row.set || nextValues[row.key]) {
+        return !isSynced;
+      });
+
+      return nextRows.length === currentRows.length ? currentRows : nextRows;
+    });
+
+    if (removedDraftKeys.length > 0) {
+      setDraftValuesByKey(currentValues => {
+        const nextValues = { ...currentValues };
+
+        for (const key of removedDraftKeys) {
+          delete nextValues[key];
+        }
+
+        return nextValues;
+      });
+    }
+
+    setPersistedEditsBySetId(currentEdits => {
+      let didChange = false;
+      const nextEdits: Record<Set['id'], PersistedEditState> = {};
+
+      for (const [setId, edit] of Object.entries(currentEdits)) {
+        const liveSet = setById.get(setId);
+
+        if (!liveSet) {
+          didChange = true;
           continue;
         }
 
-        nextValues[row.key] = getInitialFieldValues(
-          trackingType,
-          getSetValues(row.set),
-          weightUnit
-        );
+        if (
+          edit.savedValues &&
+          (edit.phase === 'saving' || edit.phase === 'awaiting_sync') &&
+          areSetValuesEqual(
+            trackingDefinition.fields,
+            edit.savedValues,
+            getSetValues(liveSet)
+          )
+        ) {
+          didChange = true;
+          continue;
+        }
+
+        nextEdits[setId] = edit;
+      }
+
+      return didChange ? nextEdits : currentEdits;
+    });
+
+    setPendingDeleteSetIds(currentIds => {
+      let didChange = false;
+      const nextIds = new Set<Set['id']>();
+
+      for (const setId of currentIds) {
+        if (liveSetIds.has(setId)) {
+          nextIds.add(setId);
+          continue;
+        }
+
         didChange = true;
       }
 
-      return didChange ? nextValues : currentValues;
+      return didChange ? nextIds : currentIds;
     });
-  }, [rows, trackingType, weightUnit]);
+  }, [liveSetIds, setById, trackingDefinition.fields]);
 
-  useEffect(() => {
-    const previousSetCount = previousSetCountRef.current;
-    const addedSetCount = sets.length - previousSetCount;
+  const visiblePersistedSets = useMemo(
+    () => sets.filter(set => !pendingDeleteSetIds.has(set.id)),
+    [pendingDeleteSetIds, sets]
+  );
 
-    previousSetCountRef.current = sets.length;
+  const visibleDraftRows = useMemo(
+    () =>
+      draftRows.filter(
+        row =>
+          !(row.createdSetId !== undefined && liveSetIds.has(row.createdSetId))
+      ),
+    [draftRows, liveSetIds]
+  );
 
-    if (addedSetCount <= 0 || pendingCreateRowKeys.size === 0) {
-      return;
-    }
+  const rows = useMemo<SetFormRow[]>(() => {
+    const persistedRows: PersistedSetFormRow[] = visiblePersistedSets.map(
+      (set, index) => {
+        const edit = persistedEditsBySetId[set.id];
+        const fieldValues =
+          edit?.values ??
+          getInitialFieldValues(trackingType, getSetValues(set), weightUnit);
+        const validatedValues = parseTrackingFieldValues(
+          fieldValues,
+          trackingDefinition.fields,
+          weightUnit
+        );
+        const hasSavedChanges = getHasSavedChanges(
+          edit,
+          trackingDefinition.fields,
+          set,
+          validatedValues
+        );
+        const isSaving =
+          edit?.phase === 'saving' || edit?.phase === 'awaiting_sync';
 
-    const consumedRowKeys = pendingCreateRowKeyList.slice(0, addedSetCount);
-    const createdSetKeys = sets
-      .slice(previousSetCount, previousSetCount + consumedRowKeys.length)
-      .map(set => set.id);
-
-    setDraftRowKeys(currentKeys =>
-      currentKeys.filter(rowKey => !consumedRowKeys.includes(rowKey))
+        return {
+          fieldValues,
+          hasSavedChanges,
+          isCommitted:
+            isSaving || (set.status === 'completed' && !hasSavedChanges),
+          isSaving,
+          key: set.id,
+          kind: 'persisted',
+          order: set.order,
+          phase: edit?.phase ?? 'editing',
+          previousSet: previousSets[index],
+          set,
+          setNumber: index + 1,
+          validatedValues
+        };
+      }
     );
-    setPendingCreateRowKeys(currentKeys => {
-      const nextKeys = new Set(currentKeys);
 
-      for (const key of consumedRowKeys) {
-        nextKeys.delete(key);
+    const draftRowsForView: DraftSetFormRow[] = visibleDraftRows.map(
+      (draftRow, index) => {
+        const fieldValues = draftValuesByKey[draftRow.key] ?? {};
+        const validatedValues = parseTrackingFieldValues(
+          fieldValues,
+          trackingDefinition.fields,
+          weightUnit
+        );
+        const isSaving =
+          draftRow.phase === 'saving' || draftRow.phase === 'awaiting_sync';
+        const order = sets.length + index;
+
+        return {
+          fieldValues,
+          isCommitted: isSaving,
+          isSaving,
+          key: draftRow.key,
+          kind: 'draft',
+          order,
+          phase: draftRow.phase,
+          previousSet: previousSets[visiblePersistedSets.length + index],
+          setNumber: visiblePersistedSets.length + index + 1,
+          validatedValues
+        };
       }
-
-      return nextKeys;
-    });
-    setCommittedRowKeys(currentKeys => {
-      const nextKeys = new Set(currentKeys);
-
-      for (const key of consumedRowKeys) {
-        nextKeys.delete(key);
-      }
-
-      for (const key of createdSetKeys) {
-        nextKeys.add(key);
-      }
-
-      return nextKeys;
-    });
-    setCreatedSetRowKeysById(currentKeysById => {
-      const nextKeysById = { ...currentKeysById };
-
-      for (let index = 0; index < createdSetKeys.length; index += 1) {
-        nextKeysById[createdSetKeys[index]] = consumedRowKeys[index];
-      }
-
-      return nextKeysById;
-    });
-    setDraftValuesByKey(currentValues => {
-      const nextValues = { ...currentValues };
-
-      for (const key of consumedRowKeys) {
-        delete nextValues[key];
-      }
-
-      return nextValues;
-    });
-  }, [pendingCreateRowKeyList, pendingCreateRowKeys.size, sets]);
-
-  const getRowFieldValues = (row: SetFormRow) => {
-    if (draftValuesByKey[row.key]) {
-      return draftValuesByKey[row.key];
-    }
-
-    if (!row.set) {
-      return {};
-    }
-
-    return getInitialFieldValues(
-      trackingType,
-      getSetValues(row.set),
-      weightUnit
     );
-  };
 
-  const getRowValidatedValues = (row: SetFormRow) => {
-    return parseTrackingFieldValues(
-      getRowFieldValues(row),
-      trackingDefinition.fields,
-      weightUnit
-    );
-  };
-
-  const hasSavedRowChanges = (
-    row: SetFormRow,
-    values: SetValues | undefined
-  ) => {
-    if (!row.set) {
-      return false;
-    }
-
-    if (!values) {
-      return true;
-    }
-
-    const savedValues = getSetValues(row.set);
-
-    return trackingDefinition.fields.some(field => {
-      const currentValue = values[field.key];
-      const savedValue = savedValues[field.key];
-
-      if (currentValue === undefined && savedValue === undefined) {
-        return false;
-      }
-
-      return currentValue !== savedValue;
-    });
-  };
+    return [...persistedRows, ...draftRowsForView];
+  }, [
+    draftValuesByKey,
+    persistedEditsBySetId,
+    previousSets,
+    sets.length,
+    trackingDefinition.fields,
+    trackingType,
+    visibleDraftRows,
+    visiblePersistedSets,
+    weightUnit
+  ]);
 
   const updateFieldValue = (
-    rowKey: string,
+    row: SetFormRow,
     field: TrackingFieldDefinition,
     value: string
   ) => {
-    setCommittedRowKeys(currentKeys => {
-      if (!currentKeys.has(rowKey)) {
-        return currentKeys;
-      }
+    if (row.kind === 'draft') {
+      setDraftRows(currentRows =>
+        currentRows.map(currentRow =>
+          currentRow.key === row.key
+            ? { ...currentRow, phase: 'editing' }
+            : currentRow
+        )
+      );
+      setDraftValuesByKey(currentValues => ({
+        ...currentValues,
+        [row.key]: {
+          ...(currentValues[row.key] ?? {}),
+          [field.key]: value
+        }
+      }));
 
-      const nextKeys = new Set(currentKeys);
+      return;
+    }
 
-      nextKeys.delete(rowKey);
+    setPersistedEditsBySetId(currentEdits => {
+      const existingEdit = currentEdits[row.set.id];
+      const baselineValues =
+        existingEdit?.baselineValues ??
+        getInitialFieldValues(trackingType, getSetValues(row.set), weightUnit);
 
-      return nextKeys;
+      return {
+        ...currentEdits,
+        [row.set.id]: {
+          baselineValues,
+          phase: 'editing',
+          values: {
+            ...(existingEdit?.values ?? baselineValues),
+            [field.key]: value
+          }
+        }
+      };
     });
-    setDraftValuesByKey(currentValues => ({
-      ...currentValues,
-      [rowKey]: {
-        ...(currentValues[rowKey] ?? {}),
-        [field.key]: value
-      }
-    }));
   };
 
-  const handleCommitRow = (row: SetFormRow) => {
-    if (pendingCreateRowKeys.has(row.key)) {
+  const handleCommitRow = async (row: SetFormRow) => {
+    if (row.isSaving || !row.validatedValues) {
       return;
     }
 
-    const values = getRowValidatedValues(row);
+    if (row.kind === 'persisted') {
+      const baselineValues = getInitialFieldValues(
+        trackingType,
+        getSetValues(row.set),
+        weightUnit
+      );
 
-    if (!values) {
+      setPersistedEditsBySetId(currentEdits => ({
+        ...currentEdits,
+        [row.set.id]: {
+          baselineValues,
+          phase: 'saving',
+          savedValues: row.validatedValues,
+          values: row.fieldValues
+        }
+      }));
+
+      try {
+        const updatedSet = await Promise.resolve(
+          onUpdateSet({ setId: row.set.id, ...row.validatedValues })
+        );
+
+        setPersistedEditsBySetId(currentEdits => {
+          const existingEdit = currentEdits[row.set.id];
+
+          if (!existingEdit) {
+            return currentEdits;
+          }
+
+          if (!updatedSet) {
+            const nextEdits = { ...currentEdits };
+
+            delete nextEdits[row.set.id];
+
+            return nextEdits;
+          }
+
+          return {
+            ...currentEdits,
+            [row.set.id]: {
+              ...existingEdit,
+              phase: 'awaiting_sync',
+              savedValues: row.validatedValues
+            }
+          };
+        });
+      } catch (error) {
+        console.error('Failed to update set', error);
+        setPersistedEditsBySetId(currentEdits => {
+          const existingEdit = currentEdits[row.set.id];
+
+          if (!existingEdit) {
+            return currentEdits;
+          }
+
+          return {
+            ...currentEdits,
+            [row.set.id]: {
+              baselineValues: existingEdit.baselineValues,
+              phase: 'error',
+              values: existingEdit.values
+            }
+          };
+        });
+      }
+
       return;
     }
 
-    if (row.set) {
-      setCommittedRowKeys(currentKeys => {
-        const nextKeys = new Set(currentKeys);
+    setDraftRows(currentRows =>
+      currentRows.map(currentRow =>
+        currentRow.key === row.key
+          ? { ...currentRow, phase: 'saving' }
+          : currentRow
+      )
+    );
 
-        nextKeys.add(row.key);
+    try {
+      const createdSet = await Promise.resolve(
+        onAddSet({ ...row.validatedValues, order: row.order })
+      );
 
-        return nextKeys;
-      });
-      onUpdateSet({ setId: row.set.id, ...values });
-
-      return;
+      setDraftRows(currentRows =>
+        currentRows.map(currentRow =>
+          currentRow.key === row.key
+            ? {
+                ...currentRow,
+                createdSetId: createdSet.id,
+                phase: 'awaiting_sync'
+              }
+            : currentRow
+        )
+      );
+    } catch (error) {
+      console.error('Failed to add set', error);
+      setDraftRows(currentRows =>
+        currentRows.map(currentRow =>
+          currentRow.key === row.key
+            ? { ...currentRow, phase: 'error' }
+            : currentRow
+        )
+      );
     }
-
-    setPendingCreateRowKeys(currentKeys => {
-      const nextKeys = new Set(currentKeys);
-
-      nextKeys.add(row.key);
-
-      return nextKeys;
-    });
-    setCommittedRowKeys(currentKeys => {
-      const nextKeys = new Set(currentKeys);
-
-      nextKeys.add(row.key);
-
-      return nextKeys;
-    });
-    onAddSet({ ...values, order: row.setNumber - 1 });
   };
 
-  const handleDeleteRow = (set: Set) => {
+  const handleDeletePersistedRow = (row: PersistedSetFormRow) => {
+    if (row.isSaving) {
+      return;
+    }
+
     Alert.alert('Delete set?', 'This set will be removed from the workout.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => onDeleteSet(set.id)
+        onPress: () => {
+          setPendingDeleteSetIds(currentIds => {
+            const nextIds = new Set(currentIds);
+
+            nextIds.add(row.set.id);
+
+            return nextIds;
+          });
+
+          void (async () => {
+            try {
+              await Promise.resolve(onDeleteSet(row.set.id));
+            } catch (error) {
+              console.error('Failed to delete set', error);
+              setPendingDeleteSetIds(currentIds => {
+                if (!currentIds.has(row.set.id)) {
+                  return currentIds;
+                }
+
+                const nextIds = new Set(currentIds);
+
+                nextIds.delete(row.set.id);
+
+                return nextIds;
+              });
+            }
+          })();
+        }
       }
     ]);
   };
 
-  const handleDeleteDraftRow = (row: SetFormRow) => {
-    setDraftRowKeys(currentKeys =>
-      currentKeys.filter(rowKey => rowKey !== row.key)
+  const handleDeleteDraftRow = (row: DraftSetFormRow) => {
+    if (row.isSaving) {
+      return;
+    }
+
+    setDraftRows(currentRows =>
+      currentRows.filter(currentRow => currentRow.key !== row.key)
     );
-    setPendingCreateRowKeys(currentKeys => {
-      if (!currentKeys.has(row.key)) {
-        return currentKeys;
-      }
-
-      const nextKeys = new Set(currentKeys);
-
-      nextKeys.delete(row.key);
-
-      return nextKeys;
-    });
-    setCommittedRowKeys(currentKeys => {
-      if (!currentKeys.has(row.key)) {
-        return currentKeys;
-      }
-
-      const nextKeys = new Set(currentKeys);
-
-      nextKeys.delete(row.key);
-
-      return nextKeys;
-    });
     setDraftValuesByKey(currentValues => {
       const nextValues = { ...currentValues };
 
@@ -394,8 +518,12 @@ export function SetForm({
     const nextDraftKey = `draft-${nextDraftIndexRef.current}`;
 
     nextDraftIndexRef.current += 1;
-    setDraftRowKeys(currentKeys => [...currentKeys, nextDraftKey]);
+    setDraftRows(currentRows => [
+      ...currentRows,
+      { key: nextDraftKey, phase: 'editing' }
+    ]);
   };
+
   const hasRows = rows.length > 0;
 
   return (
@@ -421,17 +549,7 @@ export function SetForm({
 
           <View className="gap-2">
             {rows.map(row => {
-              const rowFieldValues = getRowFieldValues(row);
-              const validatedValues = getRowValidatedValues(row);
-              const isValid = Boolean(validatedValues);
-              const isPendingCreate = pendingCreateRowKeys.has(row.key);
-              const hasSavedChanges = hasSavedRowChanges(row, validatedValues);
-              const isPersistedCommitted =
-                row.set?.status === 'completed' && !hasSavedChanges;
-              const isCommitted =
-                committedRowKeys.has(row.key) ||
-                isPendingCreate ||
-                isPersistedCommitted;
+              const isValid = Boolean(row.validatedValues);
               const rowContent = (
                 <View className="bg-card min-h-16 flex-row items-center gap-2 rounded-lg px-3 py-2">
                   <View className="w-8 items-center">
@@ -453,18 +571,18 @@ export function SetForm({
                   {trackingDefinition.fields.map(field => (
                     <Input
                       key={field.key}
-                      value={rowFieldValues[field.key] ?? ''}
+                      value={row.fieldValues[field.key] ?? ''}
                       onChangeText={value =>
-                        updateFieldValue(row.key, field, value)
+                        updateFieldValue(row, field, value)
                       }
                       keyboardType={field.keyboardType}
                       placeholder="0"
                       withContainerDefaults={false}
-                      editable={!isPendingCreate}
+                      editable={!row.isSaving}
                       wrapperClassName="flex-1"
                       containerClassName={cn(
                         'bg-muted min-h-12 flex-row items-center rounded-lg border px-1',
-                        isCommitted
+                        row.isCommitted
                           ? 'border-success/40 bg-success/10'
                           : isValid
                             ? 'border-muted'
@@ -479,20 +597,20 @@ export function SetForm({
                   <Button
                     variant={isValid ? 'secondary' : 'ghost'}
                     size="icon"
-                    disabled={!isValid}
+                    disabled={!isValid || row.isSaving}
                     accessibilityLabel={`Save set ${row.setNumber}`}
                     className={cn(
                       'h-12 w-12',
-                      isCommitted
+                      row.isCommitted
                         ? 'border-success/40 bg-success/10'
                         : isValid && 'border-primary/30 bg-primary/10'
                     )}
-                    onPress={() => handleCommitRow(row)}
+                    onPress={() => void handleCommitRow(row)}
                   >
                     <Icon
                       icon={CheckIcon}
                       className={cn(
-                        isCommitted
+                        row.isCommitted
                           ? 'text-success'
                           : isValid
                             ? 'text-primary'
@@ -504,9 +622,15 @@ export function SetForm({
                 </View>
               );
 
-              const handleDelete = row.set
-                ? () => handleDeleteRow(row.set)
-                : () => handleDeleteDraftRow(row);
+              const handleDelete = () => {
+                if (row.kind === 'persisted') {
+                  handleDeletePersistedRow(row);
+
+                  return;
+                }
+
+                handleDeleteDraftRow(row);
+              };
 
               return (
                 <ReanimatedSwipeable
@@ -585,128 +709,4 @@ function HeaderCell({
       {children}
     </Text>
   );
-}
-
-function getFieldHeaderLabel(
-  field: TrackingFieldDefinition,
-  weightUnit: ReturnType<typeof useSettings>['weightUnit']
-) {
-  if (field.key === 'weightKg') {
-    return weightUnit.toUpperCase();
-  }
-
-  return field.label;
-}
-
-function parseTrackingFieldValues(
-  fieldValues: Record<string, string>,
-  fields: TrackingFieldDefinition[],
-  weightUnit: ReturnType<typeof useSettings>['weightUnit']
-) {
-  const values: SetValues = {};
-
-  for (const field of fields) {
-    const value = parseFieldValue(
-      field,
-      fieldValues[field.key] ?? '',
-      weightUnit
-    );
-
-    if (value === undefined || value < field.minimum) {
-      return undefined;
-    }
-
-    if (field.integer && !Number.isInteger(value)) {
-      return undefined;
-    }
-
-    values[field.key] = value;
-  }
-
-  return values;
-}
-
-function getInitialFieldValues(
-  trackingType: TrackingType,
-  values: SetValues,
-  weightUnit: ReturnType<typeof useSettings>['weightUnit']
-) {
-  const nextValues: Record<string, string> = {};
-
-  for (const field of TRACKING_TYPE_DEFINITIONS[trackingType].fields) {
-    const value = values[field.key];
-
-    if (value !== undefined) {
-      nextValues[field.key] = formatFieldValue(field, value, weightUnit);
-    }
-  }
-
-  return nextValues;
-}
-
-function parseFieldValue(
-  field: TrackingFieldDefinition,
-  value: string,
-  weightUnit: ReturnType<typeof useSettings>['weightUnit']
-) {
-  const trimmedValue = value.trim();
-
-  if (trimmedValue.length === 0) {
-    return undefined;
-  }
-
-  if (field.key === 'durationSeconds' && trimmedValue.includes(':')) {
-    const [minutesValue, secondsValue] = trimmedValue.split(':');
-    const minutes = Number(minutesValue);
-    const seconds = Number(secondsValue);
-
-    if (
-      !Number.isInteger(minutes) ||
-      !Number.isInteger(seconds) ||
-      minutes < 0 ||
-      seconds < 0 ||
-      seconds > 59
-    ) {
-      return undefined;
-    }
-
-    return minutes * 60 + seconds;
-  }
-
-  const parsedValue = Number(trimmedValue.replace(',', '.'));
-
-  if (!Number.isFinite(parsedValue)) {
-    return undefined;
-  }
-
-  if (field.key === 'weightKg') {
-    return convertWeightToKg(parsedValue, weightUnit);
-  }
-
-  return field.integer ? Math.round(parsedValue) : parsedValue;
-}
-
-function formatFieldValue(
-  field: TrackingFieldDefinition,
-  value: number,
-  weightUnit: ReturnType<typeof useSettings>['weightUnit']
-) {
-  if (field.key === 'durationSeconds') {
-    return formatTrackingValue(
-      'reps_time',
-      {
-        reps: 1,
-        durationSeconds: Math.round(value)
-      },
-      weightUnit
-    ).replace('1 reps in ', '');
-  }
-
-  if (field.key === 'weightKg') {
-    return formatWeightForUnit(value, weightUnit);
-  }
-
-  return field.integer
-    ? String(Math.round(value))
-    : formatInputNumber(Math.round(value * 10) / 10);
 }

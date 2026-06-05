@@ -2,6 +2,7 @@ import {
   useExerciseTrackActions,
   useExerciseTrackTab
 } from '@/src/features/workouts/hooks';
+import type { Set } from '@/src/db/schema';
 import { useEffect, useRef } from 'react';
 import { Keyboard, Platform, ScrollView, View } from 'react-native';
 import { ProgressionSuggestion } from './progression-suggestion';
@@ -23,7 +24,8 @@ export function ExerciseTrackSection({
     trackingType,
     progressionSuggestion,
     historyPreview,
-    latestHistorySets
+    latestHistorySets,
+    refreshHistory
   } = useExerciseTrackTab(item);
 
   const scrollViewRef = useRef<ScrollView>(null);
@@ -46,21 +48,40 @@ export function ExerciseTrackSection({
   const {
     addSet: _handleAddSet,
     updateSet: _handleUpdateSet,
-    deleteSet: handleDeleteSet
+    deleteSet: _handleDeleteSet
   } = useExerciseTrackActions({
     item,
     editingSetId: null,
     setEditingSetId: () => undefined
   });
 
-  const handleAddSet: typeof _handleAddSet = data => {
-    _handleAddSet(data);
+  const handleAddSet = async (
+    data: Parameters<typeof _handleAddSet>[0]
+  ): Promise<Set> => {
+    const createdSet = await Promise.resolve(_handleAddSet(data));
+
     scrollToBottom();
+    await refreshHistory();
+
+    return createdSet;
   };
 
-  const handleUpdateSet: typeof _handleUpdateSet = data => {
-    _handleUpdateSet(data);
+  const handleUpdateSet = async (
+    data: Parameters<typeof _handleUpdateSet>[0]
+  ): Promise<Set | undefined> => {
+    const updatedSet = await Promise.resolve(_handleUpdateSet(data));
+
     scrollToBottom();
+    await refreshHistory();
+
+    return updatedSet;
+  };
+
+  const handleDeleteSet = async (
+    setId: Parameters<typeof _handleDeleteSet>[0]
+  ) => {
+    await Promise.resolve(_handleDeleteSet(setId));
+    await refreshHistory();
   };
 
   return (

@@ -1,58 +1,86 @@
+import { useDrizzle } from '@/src/components/database-provider';
 import {
   buildExerciseHistory,
-  getExerciseHistorySetsQuery,
-  getRecentExerciseHistoryWorkoutsQuery
+  getExerciseHistorySets,
+  getRecentExerciseHistoryWorkouts
 } from '@/src/features/progress/repository';
 import { resolveTrackingType } from '@/src/features/progress/tracking';
-import { useDrizzle } from '@/src/components/database-provider';
 import { useSettings } from '@/src/features/settings/hooks';
 import { formatCompletedSets, getCompletedSets } from '@/src/lib/utils/set';
 import { convertWeightToKg } from '@/src/lib/utils/weight';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getProgressionSuggestion } from '../components/progression-suggestion-utils';
 import type { WorkoutExerciseWithSets } from '../components/types';
 
 const PROGRESSION_HISTORY_LIMIT = 4;
+
 const weightStepByUnit = {
   kg: 2.5,
   lb: 5
 };
+
+type ExerciseHistory = ReturnType<typeof buildExerciseHistory>;
 
 export function useExerciseTrackTab(item: WorkoutExerciseWithSets) {
   const db = useDrizzle();
   const { weightUnit } = useSettings();
   const exerciseId = item.workoutExercise.exerciseId;
   const trackingType = resolveTrackingType(item.exercise?.trackingType);
-  const workoutResult = useLiveWithFallback(
-    getRecentExerciseHistoryWorkoutsQuery(
-      db,
-      exerciseId,
-      PROGRESSION_HISTORY_LIMIT
-    ),
-    [db, exerciseId]
-  );
-  const workoutRows = workoutResult.data;
-  const workoutIds = useMemo(
-    () => workoutRows.map(row => row.workout.id),
-    [workoutRows]
-  );
-  const workoutIdKey = useMemo(() => workoutIds.join(','), [workoutIds]);
-  const setResult = useLiveWithFallback(
-    getExerciseHistorySetsQuery(db, exerciseId, workoutIds),
-    [db, exerciseId, workoutIdKey]
-  );
-  const history = useMemo(
-    () =>
-      buildExerciseHistory(workoutRows, setResult.data)
-        .map(entry => ({
-          ...entry,
-          sets: getCompletedSets(entry.sets)
-        }))
-        .filter(entry => entry.sets.length > 0)
-        .slice(0, PROGRESSION_HISTORY_LIMIT),
-    [setResult.data, workoutRows]
-  );
+  const [history, setHistory] = useState<ExerciseHistory>([]);
+  const isMountedRef = useRef(true);
+  const refreshRequestIdRef = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const refreshHistory = useCallback(async () => {
+    const requestId = refreshRequestIdRef.current + 1;
+
+    refreshRequestIdRef.current = requestId;
+
+    try {
+      const workoutRows = getRecentExerciseHistoryWorkouts(
+        db,
+        exerciseId,
+        PROGRESSION_HISTORY_LIMIT
+      );
+      const workoutIds = workoutRows.map(row => row.workout.id);
+      const setRows = getExerciseHistorySets(db, exerciseId, workoutIds);
+
+      if (!isMountedRef.current || refreshRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      setHistory(
+        buildExerciseHistory(workoutRows, setRows)
+          .map(entry => ({
+            ...entry,
+            sets: getCompletedSets(entry.sets)
+          }))
+          .filter(entry => entry.sets.length > 0)
+          .slice(0, PROGRESSION_HISTORY_LIMIT)
+      );
+    } catch (error) {
+      if (!isMountedRef.current || refreshRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      console.error('Failed to load exercise track history', error);
+    }
+  }, [db, exerciseId]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    void refreshHistory();
+
+    return () => {
+      refreshRequestIdRef.current += 1;
+    };
+  }, [refreshHistory]);
+
   const progressionSuggestion = useMemo(() => {
     if (trackingType !== 'weight_reps') {
       return null;
@@ -65,6 +93,7 @@ export function useExerciseTrackTab(item: WorkoutExerciseWithSets) {
 
     return getProgressionSuggestion(history, weightStepKg);
   }, [history, trackingType, weightUnit]);
+
   const historyPreview = useMemo(() => {
     const latestHistory = history[0];
 
@@ -86,6 +115,7 @@ export function useExerciseTrackTab(item: WorkoutExerciseWithSets) {
     trackingType,
     progressionSuggestion,
     historyPreview,
-    latestHistorySets: history[0]?.sets ?? []
+    latestHistorySets: history[0]?.sets ?? [],
+    refreshHistory
   };
 }

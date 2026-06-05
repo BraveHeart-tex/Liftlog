@@ -101,13 +101,15 @@ export function useExerciseTrackActions({
       } else {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
+
+      return newSet;
     },
     [checkAndCreatePRForNewSet, db, item.workoutExercise.id]
   );
 
   const updateExistingSet = useCallback(
     ({ setId, ...values }: SetValues & { setId: Set['id'] }) => {
-      updateSet(db, setId, {
+      const updatedSet = updateSet(db, setId, {
         weightKg: null,
         reps: null,
         distanceMeters: null,
@@ -125,6 +127,8 @@ export function useExerciseTrackActions({
       }
 
       setEditingSetId(null);
+
+      return updatedSet;
     },
     [checkAndCreatePR, db, setEditingSetId]
   );

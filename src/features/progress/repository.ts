@@ -1,7 +1,7 @@
 import type { DrizzleDb } from '@/src/db/client';
 import {
-  personalRecords,
   exercises,
+  personalRecords,
   sets,
   workoutExercises,
   workouts,
@@ -75,6 +75,14 @@ export function getRecentExerciseHistoryWorkoutsQuery(
     .limit(limit);
 }
 
+export function getRecentExerciseHistoryWorkouts(
+  db: DrizzleDb,
+  exerciseId: Exercise['id'],
+  limit: number
+) {
+  return getRecentExerciseHistoryWorkoutsQuery(db, exerciseId, limit).all();
+}
+
 export function getExerciseHistorySetsQuery(
   db: DrizzleDb,
   exerciseId: Exercise['id'],
@@ -111,6 +119,14 @@ export function getExerciseHistorySetsQuery(
       )
     )
     .orderBy(asc(workoutExercises.order), asc(sets.order));
+}
+
+export function getExerciseHistorySets(
+  db: DrizzleDb,
+  exerciseId: Exercise['id'],
+  workoutIds: Workout['id'][]
+) {
+  return getExerciseHistorySetsQuery(db, exerciseId, workoutIds).all();
 }
 
 export function buildExerciseHistory(
