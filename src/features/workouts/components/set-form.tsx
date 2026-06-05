@@ -1,5 +1,4 @@
 import { Button } from '@/src/components/ui/button';
-import { Icon } from '@/src/components/ui/icon';
 import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
 import type { Set } from '@/src/db/schema';
@@ -13,8 +12,6 @@ import {
 import { useSettings } from '@/src/features/settings/hooks';
 import { StepperButton } from '@/src/features/workouts/components/stepper-button';
 import { convertWeightToKg, formatWeightForUnit } from '@/src/lib/utils/weight';
-import { iconSizes } from '@/src/theme/sizes';
-import { PencilIcon, PlusIcon, Trash2Icon, XIcon } from 'lucide-react-native';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Alert, View } from 'react-native';
 import { formatInputNumber } from './utils';
@@ -218,13 +215,6 @@ export function SetForm({
             variant={'destructive'}
             size="sm"
             onPress={isEditing ? handleDelete : handleClear}
-            leftIcon={
-              <Icon
-                icon={isEditing ? Trash2Icon : XIcon}
-                className="text-danger"
-                size={iconSizes.sm}
-              />
-            }
             disabled={!isEditing && !getValidatedValues()}
           >
             {isEditing ? 'Delete' : 'Clear'}
@@ -235,13 +225,6 @@ export function SetForm({
             variant="primary"
             size="sm"
             className="w-full"
-            leftIcon={
-              <Icon
-                icon={isEditing ? PencilIcon : PlusIcon}
-                className="text-primary-foreground"
-                size={iconSizes.sm}
-              />
-            }
             onPress={() => {
               const data = getValidatedValues();
 
