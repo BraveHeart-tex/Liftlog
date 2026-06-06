@@ -1,3 +1,4 @@
+import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { Button } from '@/src/components/ui/button';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
@@ -67,25 +68,29 @@ export default function WorkoutStartScreen() {
 
       {templates.length > 0 ? (
         <View className="mt-8">
-          <Text variant="caption" tone="muted">
+          <Text variant="overline" tone="muted">
             Templates
           </Text>
 
-          <View className="mt-3">
-            {templates.map((item, index) => (
+          <StyledScrollView
+            className="mt-3"
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerClassName="gap-2 pr-4"
+          >
+            {templates.map(item => (
               <WorkoutTemplateCard
                 key={item.template.id}
                 item={item}
-                className={cn(index > 0 && 'mt-3')}
                 onPress={() => handleTemplatePress(item.template.id)}
               />
             ))}
-          </View>
+          </StyledScrollView>
         </View>
       ) : null}
 
       <View className="mt-8">
-        <Text variant="caption" tone="muted">
+        <Text variant="overline" tone="muted">
           Recent workouts
         </Text>
 

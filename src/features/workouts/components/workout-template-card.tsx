@@ -10,6 +10,9 @@ interface WorkoutTemplateCardProps {
   onPress: () => void;
 }
 
+const CARD_WIDTH = 220;
+const CARD_HEIGHT = 102;
+
 export const WorkoutTemplateCard = ({
   item,
   className,
@@ -18,31 +21,43 @@ export const WorkoutTemplateCard = ({
   const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();
 
   return (
-    <Animated.View style={scaleStyle}>
-      <View
+    <Animated.View
+      style={[
+        scaleStyle,
+        {
+          width: CARD_WIDTH,
+          height: CARD_HEIGHT,
+          flexShrink: 0
+        }
+      ]}
+    >
+      <Pressable
+        style={{ flex: 1 }}
         className={cn(
-          'border-border bg-card rounded-lg border p-4',
+          'border-border bg-card justify-between rounded-lg border p-4',
           pressed && 'opacity-80',
           className
         )}
+        onPress={onPress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
       >
-        <Pressable
-          className="min-h-12 flex-1 justify-center"
-          onPress={onPress}
-          onPressIn={onPressIn}
-          onPressOut={onPressOut}
-        >
-          <Text variant="bodyMedium">{item.template.name}</Text>
+        <View>
+          <Text variant="bodyMedium" numberOfLines={1}>
+            {item.template.name}
+          </Text>
+
           <Text variant="small" tone="muted" className="mt-1">
             {item.exerciseCount === 1
               ? '1 exercise'
               : `${item.exerciseCount} exercises`}
           </Text>
-          <Text variant="caption" tone="muted" className="mt-2">
-            {item.exerciseSummary}
-          </Text>
-        </Pressable>
-      </View>
+        </View>
+
+        <Text variant="caption" tone="muted" numberOfLines={2}>
+          {item.exerciseSummary}
+        </Text>
+      </Pressable>
     </Animated.View>
   );
 };
