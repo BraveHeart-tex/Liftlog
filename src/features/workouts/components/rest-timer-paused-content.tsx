@@ -1,20 +1,12 @@
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { RestTimerCountdown } from '@/src/features/workouts/components/rest-timer-countdown';
+import { triggerRestTimerImpact } from '@/src/features/workouts/rest-timer-haptics';
 import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer-store';
 import { iconSizes } from '@/src/theme/sizes';
 import * as Haptics from 'expo-haptics';
 import { PlayIcon } from 'lucide-react-native';
 import { View } from 'react-native';
-
-function triggerRestTimerImpact(
-  style: Haptics.ImpactFeedbackStyle,
-  errorMessage: string
-) {
-  Haptics.impactAsync(style).catch(error => {
-    console.error(errorMessage, error);
-  });
-}
 
 export function RestTimerPausedContent() {
   const secondsRemaining = useRestTimerStore(state => state.secondsRemaining);

@@ -39,12 +39,9 @@ export function RestTimerIdleContent({
   const durationSeconds = useRestTimerStore(state => state.durationSeconds);
   const startTimer = useRestTimerStore(state => state.start);
   const lastOpenTokenRef = useRef(openToken);
-  const [minutes, setMinutes] = useState(
-    () => getDurationDraft(durationSeconds).minutes
-  );
-  const [seconds, setSeconds] = useState(
-    () => getDurationDraft(durationSeconds).seconds
-  );
+  const [durationDraft] = useState(() => getDurationDraft(durationSeconds));
+  const [minutes, setMinutes] = useState(durationDraft.minutes);
+  const [seconds, setSeconds] = useState(durationDraft.seconds);
   const totalSeconds = minutes * 60 + seconds;
   const canStart = totalSeconds >= MIN_REST_TIMER_SECONDS;
 
