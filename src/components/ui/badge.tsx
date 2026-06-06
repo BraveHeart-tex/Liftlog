@@ -1,16 +1,35 @@
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
+import { cva, type VariantProps } from 'class-variance-authority';
 
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn';
 
-type BadgeVariant =
-  | 'default'
-  | 'success'
-  | 'warning'
-  | 'danger'
-  | 'info'
-  | 'outline';
+const badgeVariantConfig = cva(
+  'self-start flex-row items-center gap-1 rounded-md px-2 py-0.5',
+  {
+    variants: {
+      variant: {
+        default: 'bg-secondary',
+        success: 'bg-success',
+        warning: 'bg-warning',
+        danger: 'bg-danger',
+        info: 'bg-info',
+        outline: 'border border-border'
+      }
+    },
+    defaultVariants: {
+      variant: 'default'
+    }
+  }
+);
+
+export type BadgeVariants = VariantProps<typeof badgeVariantConfig>;
+
+export const badgeVariants = (variants: BadgeVariants = {}) =>
+  cn(badgeVariantConfig(variants));
+
+type BadgeVariant = NonNullable<BadgeVariants['variant']>;
 
 export interface BadgeProps {
   variant?: BadgeVariant;
@@ -18,26 +37,21 @@ export interface BadgeProps {
   className?: string;
 }
 
-const baseClassName =
-  'self-start flex-row items-center gap-1 rounded-md px-2 py-0.5';
-
-const variantClassNames: Record<BadgeVariant, string> = {
-  default: 'bg-secondary',
-  success: 'bg-success',
-  warning: 'bg-warning',
-  danger: 'bg-danger',
-  info: 'bg-info',
-  outline: 'border border-border'
-};
-
-const textVariantClassNames: Record<BadgeVariant, string> = {
-  default: 'text-secondary-foreground',
-  success: 'text-accent-foreground',
-  warning: 'text-accent-foreground',
-  danger: 'text-primary-foreground',
-  info: 'text-primary-foreground',
-  outline: 'text-foreground'
-};
+const badgeTextVariants = cva('font-medium', {
+  variants: {
+    variant: {
+      default: 'text-secondary-foreground',
+      success: 'text-accent-foreground',
+      warning: 'text-accent-foreground',
+      danger: 'text-primary-foreground',
+      info: 'text-primary-foreground',
+      outline: 'text-foreground'
+    }
+  },
+  defaultVariants: {
+    variant: 'default'
+  }
+});
 
 export function Badge({
   variant = 'default',
@@ -45,12 +59,9 @@ export function Badge({
   className
 }: BadgeProps) {
   return (
-    <View className={cn(baseClassName, variantClassNames[variant], className)}>
+    <View className={cn(badgeVariants({ variant }), className)}>
       {typeof children === 'string' ? (
-        <Text
-          variant="caption"
-          className={cn('font-medium', textVariantClassNames[variant])}
-        >
+        <Text variant="caption" className={cn(badgeTextVariants({ variant }))}>
           {children}
         </Text>
       ) : (

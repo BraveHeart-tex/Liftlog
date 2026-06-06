@@ -1,12 +1,42 @@
 import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn';
+import { cva, type VariantProps } from 'class-variance-authority';
 import type { ReactNode } from 'react';
 import { View, type GestureResponderEvent, type TextStyle } from 'react-native';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
+const buttonVariantConfig = cva(
+  'flex-row items-center justify-center rounded-lg border',
+  {
+    variants: {
+      variant: {
+        primary: 'bg-primary border-primary disabled:border-primary/50',
+        secondary: 'border-border bg-card disabled:border-border/50',
+        ghost: 'border-transparent bg-transparent',
+        destructive: 'border-border bg-card disabled:border-border/50'
+      },
+      size: {
+        sm: 'min-h-11 px-3 py-3',
+        md: 'min-h-12 px-4 py-3',
+        lg: 'min-h-14 px-5 py-4',
+        icon: 'h-12 w-12'
+      }
+    },
+    defaultVariants: {
+      variant: 'primary',
+      size: 'md'
+    }
+  }
+);
 
-type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
+export type ButtonVariants = VariantProps<typeof buttonVariantConfig>;
+
+export const buttonVariants = (variants: ButtonVariants = {}) =>
+  cn(buttonVariantConfig(variants));
+
+type ButtonVariant = NonNullable<ButtonVariants['variant']>;
+
+type ButtonSize = NonNullable<ButtonVariants['size']>;
 
 interface ButtonProps {
   variant?: ButtonVariant;
@@ -24,28 +54,23 @@ interface ButtonProps {
   onPressOut?: (event: GestureResponderEvent) => void;
 }
 
-const baseClassName = 'flex-row items-center justify-center rounded-lg border';
-
-const sizeClassNames: Record<ButtonSize, string> = {
-  sm: 'min-h-11 px-3 py-3',
-  md: 'min-h-12 px-4 py-3',
-  lg: 'min-h-14 px-5 py-4',
-  icon: 'h-12 w-12'
-};
-
-const variantClassNames: Record<ButtonVariant, string> = {
-  primary: 'bg-primary border-primary disabled:border-primary/50',
-  secondary: 'border-border bg-card disabled:border-border/50',
-  ghost: 'bg-transparent border-transparent',
-  destructive: 'bg-card border-border disabled:border-border/50'
-};
-
-const textClassNames: Record<ButtonVariant, string> = {
-  primary: 'text-body-medium text-primary-foreground',
-  secondary: 'text-body-medium text-foreground',
-  ghost: 'text-body-medium text-foreground',
-  destructive: 'text-body-medium text-danger'
-};
+const buttonTextVariants = cva('text-body-medium', {
+  variants: {
+    variant: {
+      primary: 'text-primary-foreground',
+      secondary: 'text-foreground',
+      ghost: 'text-foreground',
+      destructive: 'text-danger'
+    },
+    icon: {
+      true: 'text-h3'
+    }
+  },
+  defaultVariants: {
+    variant: 'primary',
+    icon: false
+  }
+});
 
 const buttonTextStyle: TextStyle = {
   fontFamily: 'Inter_600SemiBold'
@@ -86,12 +111,7 @@ export function Button({
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ busy: loading }}
       containerClassName={getButtonContainerClassName(className)}
-      className={cn(
-        baseClassName,
-        sizeClassNames[size],
-        variantClassNames[variant],
-        className
-      )}
+      className={cn(buttonVariants({ variant, size }), className)}
       disabled={isBlocked}
       onPress={onPress}
       onPressIn={onPressIn}
@@ -100,7 +120,7 @@ export function Button({
       {loading ? (
         <Text
           tone="inherit"
-          className={cn(textClassNames[variant], textClassName)}
+          className={cn(buttonTextVariants({ variant }), textClassName)}
           style={buttonTextStyle}
         >
           Loading...
@@ -112,8 +132,7 @@ export function Button({
             <Text
               tone="inherit"
               className={cn(
-                textClassNames[variant],
-                isIconButton && 'text-h3',
+                buttonTextVariants({ variant, icon: isIconButton }),
                 textClassName
               )}
               style={buttonTextStyle}

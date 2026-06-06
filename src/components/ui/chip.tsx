@@ -1,12 +1,38 @@
 import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn';
+import { cva, type VariantProps } from 'class-variance-authority';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import { View, type Pressable, type TextStyle } from 'react-native';
 
 type NativePressableProps = ComponentPropsWithoutRef<typeof Pressable>;
 
-type ChipShape = 'pill' | 'rounded';
+const choiceChipVariantConfig = cva(
+  'border-border min-h-11 flex-row items-center justify-center gap-2 border px-4 py-3',
+  {
+    variants: {
+      shape: {
+        pill: 'rounded-full',
+        rounded: 'rounded-lg'
+      },
+      selected: {
+        true: 'border-primary bg-primary',
+        false: 'bg-card/50 dark:bg-background/50'
+      }
+    },
+    defaultVariants: {
+      shape: 'pill',
+      selected: false
+    }
+  }
+);
+
+export type ChoiceChipVariants = VariantProps<typeof choiceChipVariantConfig>;
+
+export const choiceChipVariants = (variants: ChoiceChipVariants = {}) =>
+  cn(choiceChipVariantConfig(variants));
+
+type ChipShape = NonNullable<ChoiceChipVariants['shape']>;
 
 interface ChoiceChipProps extends Omit<
   NativePressableProps,
@@ -21,10 +47,28 @@ interface ChoiceChipProps extends Omit<
   leftIcon?: ReactNode;
 }
 
-const shapeClassNames: Record<ChipShape, string> = {
-  pill: 'rounded-full',
-  rounded: 'rounded-lg'
-};
+const choiceChipTextVariants = cva('', {
+  variants: {
+    selected: {
+      true: 'text-primary-foreground',
+      false: 'text-muted-foreground'
+    }
+  },
+  defaultVariants: {
+    selected: false
+  }
+});
+
+const choiceChipContainerVariants = cva('', {
+  variants: {
+    fullWidth: {
+      true: 'flex-1'
+    }
+  },
+  defaultVariants: {
+    fullWidth: false
+  }
+});
 
 const ChipTextStyle: TextStyle = {
   fontFamily: 'Inter_500Medium'
@@ -50,15 +94,10 @@ export function ChoiceChip({
   return (
     <PressableSurface
       accessibilityState={{ ...accessibilityState, selected }}
-      containerClassName={fullWidth ? 'flex-1' : undefined}
-      className={cn(
-        'border-border min-h-11 flex-row items-center justify-center gap-2 border px-4 py-3',
-        shapeClassNames[shape],
-        selected
-          ? 'border-primary bg-primary'
-          : 'bg-card/50 dark:bg-background/50',
-        className
-      )}
+      containerClassName={
+        cn(choiceChipContainerVariants({ fullWidth })) || undefined
+      }
+      className={cn(choiceChipVariants({ shape, selected }), className)}
       disabled={disabled}
       {...props}
     >
@@ -68,10 +107,7 @@ export function ChoiceChip({
           <Text
             variant="small"
             tone="inherit"
-            className={cn(
-              selected ? 'text-primary-foreground' : 'text-muted-foreground',
-              textClassName
-            )}
+            className={cn(choiceChipTextVariants({ selected }), textClassName)}
             numberOfLines={1}
             style={ChipTextStyle}
           >

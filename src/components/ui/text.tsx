@@ -1,4 +1,5 @@
 import { cn } from '@/src/lib/utils/cn';
+import { cva, type VariantProps } from 'class-variance-authority';
 import {
   forwardRef,
   type ComponentPropsWithoutRef,
@@ -6,23 +7,41 @@ import {
 } from 'react';
 import { Text as NativeText, type TextStyle } from 'react-native';
 
-type TextVariant =
-  | 'h1'
-  | 'h2'
-  | 'h3'
-  | 'body'
-  | 'bodyMedium'
-  | 'small'
-  | 'caption'
-  | 'overline';
+const textVariantConfig = cva('', {
+  variants: {
+    variant: {
+      h1: 'text-h1',
+      h2: 'text-h2',
+      h3: 'text-h3',
+      body: 'text-body',
+      bodyMedium: 'text-body-medium',
+      small: 'text-small',
+      caption: 'text-caption',
+      overline: 'text-caption uppercase tracking-wider'
+    },
+    tone: {
+      default: 'text-foreground',
+      muted: 'text-muted-foreground',
+      success: 'text-success',
+      warning: 'text-warning',
+      danger: 'text-danger',
+      inherit: ''
+    }
+  },
+  defaultVariants: {
+    variant: 'body',
+    tone: 'default'
+  }
+});
 
-type TextTone =
-  | 'default'
-  | 'muted'
-  | 'success'
-  | 'warning'
-  | 'danger'
-  | 'inherit';
+export type TextVariants = VariantProps<typeof textVariantConfig>;
+
+export const textVariants = (variants: TextVariants = {}) =>
+  cn(textVariantConfig(variants));
+
+type TextVariant = NonNullable<TextVariants['variant']>;
+
+type TextTone = NonNullable<TextVariants['tone']>;
 
 type FontWeightMap = {
   '400': 'Regular';
@@ -36,26 +55,6 @@ type FontFamily = 'Inter';
 type Font = {
   [Weight in keyof FontWeightMap]: `${FontFamily}_${Weight}${FontWeightMap[Weight]}`;
 }[keyof FontWeightMap];
-
-const variantClassNames: Record<TextVariant, string> = {
-  h1: 'text-h1',
-  h2: 'text-h2',
-  h3: 'text-h3',
-  body: 'text-body',
-  bodyMedium: 'text-body-medium',
-  small: 'text-small',
-  caption: 'text-caption',
-  overline: 'text-caption uppercase tracking-wider'
-};
-
-const toneClassNames: Record<TextTone, string> = {
-  default: 'text-foreground',
-  muted: 'text-muted-foreground',
-  success: 'text-success',
-  warning: 'text-warning',
-  danger: 'text-danger',
-  inherit: ''
-};
 
 const variantFontFamilies: Record<TextVariant, Font> = {
   h1: 'Inter_700Bold',
@@ -92,11 +91,7 @@ export const Text = forwardRef<ComponentRef<typeof NativeText>, TextProps>(
     return (
       <NativeText
         ref={ref}
-        className={cn(
-          variantClassNames[variant],
-          toneClassNames[tone],
-          className
-        )}
+        className={cn(textVariants({ variant, tone }), className)}
         style={[
           nativeTextDefaults,
           { fontFamily: variantFontFamilies[variant] },
