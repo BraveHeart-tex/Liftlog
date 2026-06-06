@@ -1,6 +1,6 @@
 import { Text } from '@/src/components/ui/text';
-import { useSettings } from '@/src/features/settings/hooks';
 import { resolveTrackingType } from '@/src/features/progress/tracking';
+import { useSettings } from '@/src/features/settings/hooks';
 import { useRemoveWorkoutExercise } from '@/src/features/workouts/hooks';
 import { usePressScale } from '@/src/lib/animations/use-press-scale';
 import { cn } from '@/src/lib/utils/cn';
@@ -13,12 +13,15 @@ import ReanimatedSwipeable, {
 import type { WorkoutExerciseWithSets } from './types';
 import { WorkoutExerciseSummary } from './workout-exercise-summary';
 
-interface ExerciseCardProps {
+interface ActiveWorkoutExerciseCardProps {
   item: WorkoutExerciseWithSets;
   className?: string;
 }
 
-export function ExerciseCard({ item, className }: ExerciseCardProps) {
+export function ActiveWorkoutExerciseCard({
+  item,
+  className
+}: ActiveWorkoutExerciseCardProps) {
   const { weightUnit } = useSettings();
   const removeWorkoutExercise = useRemoveWorkoutExercise();
   const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();

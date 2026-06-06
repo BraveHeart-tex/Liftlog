@@ -16,7 +16,7 @@ import {
   TrendingUpIcon
 } from 'lucide-react-native';
 import { View } from 'react-native';
-import { WorkoutSetSummary } from './workout-exercise-summary';
+import { WorkoutSetSummary } from './workout-set-summary';
 
 function formatWorkoutDate(timestamp: number) {
   return new Intl.DateTimeFormat(undefined, {

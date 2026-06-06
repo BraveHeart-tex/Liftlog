@@ -138,6 +138,7 @@ export function ActiveWorkoutContent({
 
   return (
     <Screen withPadding={false}>
+      {/* TODO: Extract this to its own component and pass the data as props */}
       <View className="flex-row items-center justify-between gap-2 px-4 pt-4 pb-2">
         <BackButton />
 

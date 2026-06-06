@@ -1,7 +1,7 @@
 import type { WorkoutExercise } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { useActiveWorkoutExerciseList } from '@/src/features/workouts/hooks';
-import { ExerciseCard } from './exercise-card';
+import { ActiveWorkoutExerciseCard } from './active-workout-exercise-card';
 
 interface ActiveWorkoutExerciseListProps {
   workoutExercises: WorkoutExercise[];
@@ -18,7 +18,7 @@ export function ActiveWorkoutExerciseList({
   });
 
   return workoutExercisesWithSets.map(workoutExercise => (
-    <ExerciseCard
+    <ActiveWorkoutExerciseCard
       key={workoutExercise.workoutExercise.id}
       item={workoutExercise}
       className="mt-4"
