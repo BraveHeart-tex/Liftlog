@@ -99,7 +99,7 @@ function WorkoutTemplateDetailLoaded({
   const confirmDeleteTemplate = () => {
     Alert.alert(
       'Delete template?',
-      `${template.name} will be removed from your saved templates.`,
+      `"${template.name}" will be removed from your saved templates.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
