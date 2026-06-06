@@ -13,7 +13,6 @@ import { ActiveWorkoutExerciseList } from '@/src/features/workouts/components/ac
 import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/create-custom-exercise-sheet';
 import { EmptyExerciseState } from '@/src/features/workouts/components/empty-exercise-state';
 import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise-picker-sheet';
-import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sheet';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
 import {
   useActiveWorkoutActions,
@@ -23,7 +22,7 @@ import {
 } from '@/src/features/workouts/hooks';
 import { formatDuration } from '@/src/lib/utils/date';
 import { router } from 'expo-router';
-import { EllipsisVerticalIcon, PlusIcon, TimerIcon } from 'lucide-react-native';
+import { EllipsisVerticalIcon, PlusIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, Keyboard, View } from 'react-native';
 
@@ -47,13 +46,11 @@ export function ActiveWorkoutContent({
     now,
     isExercisePickerOpen,
     setIsExercisePickerOpen,
-    isRestTimerOpen,
-    setIsRestTimerOpen,
+
     workoutExerciseRows,
     recentExerciseIds,
     isLoadingWorkoutExercises,
-    exerciseById,
-    isRestTimerRunning
+    exerciseById
   } = useActiveWorkoutContentData({ activeWorkout, exerciseRows });
   const { finishWorkout, selectExercise, createAndSelectCustomExercise } =
     useActiveWorkoutActions({
@@ -148,18 +145,13 @@ export function ActiveWorkoutContent({
           <Text variant="h2" numberOfLines={1}>
             {workoutName}
           </Text>
+          <Text variant="caption" tone="muted">
+            {formatDuration({
+              startedAt: activeWorkout.startedAt,
+              completedAt: now
+            })}
+          </Text>
         </View>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onPress={() => setIsRestTimerOpen(true)}
-        >
-          <Icon icon={TimerIcon} size="lg" className="text-foreground" />
-          {isRestTimerRunning ? (
-            <View className="bg-primary absolute top-0 right-0 h-2 w-2 rounded-full" />
-          ) : null}
-        </Button>
 
         <Button
           variant="ghost"
@@ -175,7 +167,7 @@ export function ActiveWorkoutContent({
         </Button>
 
         <Button
-          variant="secondary"
+          variant="primary"
           size="sm"
           disabled={
             isLoadingWorkoutExercises || workoutExerciseRows.length === 0
@@ -184,15 +176,6 @@ export function ActiveWorkoutContent({
         >
           Finish
         </Button>
-      </View>
-
-      <View className="px-4 pb-3">
-        <Text variant="caption" tone="muted">
-          {formatDuration({
-            startedAt: activeWorkout.startedAt,
-            completedAt: now
-          })}
-        </Text>
       </View>
 
       <StyledScrollView
@@ -261,11 +244,6 @@ export function ActiveWorkoutContent({
 
           setIsCreateCustomExerciseOpen(false);
         }}
-      />
-
-      <RestTimerSheet
-        isOpen={isRestTimerOpen}
-        onClose={() => setIsRestTimerOpen(false)}
       />
 
       <ActiveWorkoutActionsSheet
