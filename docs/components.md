@@ -14,9 +14,13 @@ Avoid:
 - component-local utility accumulation
 - mixing data access with presentation
 
-Prefer one component per file when practical.
+Default to one React component per file.
 
-Small private render helpers may remain colocated when they are tightly scoped and not reusable.
+Extract additional components into separate files, even when they are private or used only by the parent component. Keep multiple components in one file only when separating them would make the implementation harder to understand or the framework requires colocation.
+
+Default to one named helper function per file. Extract non-trivial helpers into focused feature-level files. A helper may remain colocated only when it is trivial, used once, and tightly coupled to the file's primary export.
+
+Inline callbacks and short expressions used directly by the primary component do not count as additional helper functions.
 
 ## Shared Primitives
 
@@ -59,6 +63,8 @@ src/components/common-providers.tsx
 Feature-specific UI should remain close to the owning feature.
 
 ## Helper Placement
+
+Avoid accumulating multiple named helper functions in one file.
 
 Do not keep repeated:
 

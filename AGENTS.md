@@ -55,6 +55,9 @@ drizzle/**
 - Prefer shared UI primitives from `src/components/ui`.
 - Use styled wrappers from `src/components/styled` for third-party components with multiple style props.
 - Keep components small and simple.
+- Default to one React component per file. Extract additional components into separate files unless keeping them together is clearly necessary.
+- Default to one named helper function per file. Extract additional helpers into focused files unless they are trivial, used only once, and tightly coupled to the file's primary export.
+- Do not use "private" or non-exported status alone as a reason to colocate additional components or helpers.
 - Avoid deep abstraction layers.
 
 ## Layout
