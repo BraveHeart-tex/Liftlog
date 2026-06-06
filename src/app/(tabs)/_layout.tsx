@@ -1,4 +1,5 @@
 import { useTabBarTheme } from '@/src/theme/app-theme-provider';
+import { appFonts } from '@/src/theme/fonts';
 import { iconSizes, nativeFontSizes } from '@/src/theme/sizes';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Tabs } from 'expo-router';
@@ -278,7 +279,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4
   },
   tabLabel: {
-    fontFamily: 'Inter_600SemiBold',
+    fontFamily: appFonts.faces.semiBold,
     fontSize: nativeFontSizes.tabLabel,
     fontWeight: '600',
     marginTop: 2

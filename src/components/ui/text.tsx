@@ -1,4 +1,5 @@
 import { cn } from '@/src/lib/utils/cn';
+import { appFonts, type AppFontFace } from '@/src/theme/fonts';
 import { cva, type VariantProps } from 'class-variance-authority';
 import {
   forwardRef,
@@ -21,6 +22,7 @@ const textVariantConfig = cva('', {
     },
     tone: {
       default: 'text-foreground',
+      primary: 'text-primary',
       muted: 'text-muted-foreground',
       success: 'text-success',
       warning: 'text-warning',
@@ -43,28 +45,15 @@ type TextVariant = NonNullable<TextVariants['variant']>;
 
 type TextTone = NonNullable<TextVariants['tone']>;
 
-type FontWeightMap = {
-  '400': 'Regular';
-  '500': 'Medium';
-  '600': 'SemiBold';
-  '700': 'Bold';
-};
-
-type FontFamily = 'Inter';
-
-type Font = {
-  [Weight in keyof FontWeightMap]: `${FontFamily}_${Weight}${FontWeightMap[Weight]}`;
-}[keyof FontWeightMap];
-
-const variantFontFamilies: Record<TextVariant, Font> = {
-  h1: 'Inter_700Bold',
-  h2: 'Inter_700Bold',
-  h3: 'Inter_600SemiBold',
-  body: 'Inter_400Regular',
-  bodyMedium: 'Inter_500Medium',
-  small: 'Inter_400Regular',
-  caption: 'Inter_500Medium',
-  overline: 'Inter_600SemiBold'
+const variantFontFamilies: Record<TextVariant, AppFontFace> = {
+  h1: appFonts.faces.bold,
+  h2: appFonts.faces.semiBold,
+  h3: appFonts.faces.medium,
+  body: appFonts.faces.regular,
+  bodyMedium: appFonts.faces.medium,
+  small: appFonts.faces.regular,
+  caption: appFonts.faces.medium,
+  overline: appFonts.faces.medium
 };
 
 const nativeTextDefaults: TextStyle = {

@@ -1,15 +1,10 @@
 import '@/global.css';
 import { CommonProviders } from '@/src/components/common-providers';
 import { DrizzleStudio } from '@/src/components/drizzle-studio';
-import { bootstrapThemeColorScheme } from '@/src/theme/bootstrap-theme';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
-import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  useFonts
-} from '@expo-google-fonts/inter';
+import { bootstrapThemeColorScheme } from '@/src/theme/bootstrap-theme';
+import { appFontAssets } from '@/src/theme/fonts';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -39,12 +34,7 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded, fontLoadError] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold
-  });
+  const [fontsLoaded, fontLoadError] = useFonts(appFontAssets);
 
   useEffect(() => {
     if (fontsLoaded || fontLoadError) {

@@ -1,6 +1,7 @@
 import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn';
+import { appFonts } from '@/src/theme/fonts';
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { ReactNode } from 'react';
 import { View, type GestureResponderEvent, type TextStyle } from 'react-native';
@@ -73,7 +74,7 @@ const buttonTextVariants = cva('text-body-medium', {
 });
 
 const buttonTextStyle: TextStyle = {
-  fontFamily: 'Inter_600SemiBold'
+  fontFamily: appFonts.faces.semiBold
 };
 
 function getButtonContainerClassName(className?: string) {

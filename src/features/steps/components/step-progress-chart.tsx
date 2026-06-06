@@ -4,6 +4,7 @@ import type { HealthStepDay } from '@/src/db/schema';
 import { formatCompactSteps, formatSteps } from '@/src/features/steps/display';
 import { formatWorkoutDate } from '@/src/lib/utils/date';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
+import { appFonts } from '@/src/theme/fonts';
 import { nativeFontSizes } from '@/src/theme/sizes';
 import { matchFont } from '@shopify/react-native-skia';
 import { View } from 'react-native';
@@ -35,7 +36,7 @@ function getChartDomain(days: HealthStepDay[], goal: number): [number, number] {
 export function StepProgressChart({ days, goal }: StepProgressChartProps) {
   const { colors } = useAppTheme();
   const axisFont = matchFont({
-    fontFamily: 'Inter',
+    fontFamily: appFonts.family,
     fontSize: nativeFontSizes.chartAxis
   });
   const chartData: ChartPoint[] = days.slice(-14).map(day => ({

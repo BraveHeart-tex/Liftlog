@@ -9,6 +9,7 @@ import {
 import { formatWorkoutDate } from '@/src/lib/utils/date';
 import type { WeightUnit } from '@/src/lib/utils/weight';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
+import { appFonts } from '@/src/theme/fonts';
 import { nativeFontSizes } from '@/src/theme/sizes';
 import {
   Circle,
@@ -71,7 +72,7 @@ export function ExerciseProgressChart({
     y: { value: points[0]?.value ?? 0 }
   });
   const axisFont = matchFont({
-    fontFamily: 'Inter',
+    fontFamily: appFonts.family,
     fontSize: nativeFontSizes.chartAxis
   });
   const chartData: ChartPoint[] = points.map(point => ({
