@@ -1,15 +1,14 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
-import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { RenameSheet } from '@/src/components/ui/rename-sheet';
 import { Screen } from '@/src/components/ui/screen';
-import { Text } from '@/src/components/ui/text';
 import type { Workout } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { ActiveWorkoutActionsSheet } from '@/src/features/workouts/components/active-workout-actions-sheet';
 import { ActiveWorkoutExerciseList } from '@/src/features/workouts/components/active-workout-exercise-list';
+import { ActiveWorkoutHeader } from '@/src/features/workouts/components/active-workout-header';
 import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/create-custom-exercise-sheet';
 import { EmptyExerciseState } from '@/src/features/workouts/components/empty-exercise-state';
 import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise-picker-sheet';
@@ -22,7 +21,7 @@ import {
 } from '@/src/features/workouts/hooks';
 import { formatDuration } from '@/src/lib/utils/date';
 import { router } from 'expo-router';
-import { EllipsisVerticalIcon, PlusIcon } from 'lucide-react-native';
+import { PlusIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, Keyboard, View } from 'react-native';
 
@@ -138,46 +137,16 @@ export function ActiveWorkoutContent({
 
   return (
     <Screen withPadding={false}>
-      {/* TODO: Extract this to its own component and pass the data as props */}
-      <View className="flex-row items-center justify-between gap-2 px-4 pt-4 pb-2">
-        <BackButton />
-
-        <View className="flex-1">
-          <Text variant="h2" numberOfLines={1}>
-            {workoutName}
-          </Text>
-          <Text variant="caption" tone="muted">
-            {formatDuration({
-              startedAt: activeWorkout.startedAt,
-              completedAt: now
-            })}
-          </Text>
-        </View>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          accessibilityLabel="Workout actions"
-          onPress={() => setIsActionSheetOpen(true)}
-        >
-          <Icon
-            icon={EllipsisVerticalIcon}
-            size="lg"
-            className="text-foreground"
-          />
-        </Button>
-
-        <Button
-          variant="primary"
-          size="sm"
-          disabled={
-            isLoadingWorkoutExercises || workoutExerciseRows.length === 0
-          }
-          onPress={confirmFinishWorkout}
-        >
-          Finish
-        </Button>
-      </View>
+      <ActiveWorkoutHeader
+        workoutName={workoutName}
+        duration={formatDuration({
+          startedAt: activeWorkout.startedAt,
+          completedAt: now
+        })}
+        canFinish={!isLoadingWorkoutExercises && workoutExerciseRows.length > 0}
+        onOpenActions={() => setIsActionSheetOpen(true)}
+        onFinish={confirmFinishWorkout}
+      />
 
       <StyledScrollView
         className="flex-1"
