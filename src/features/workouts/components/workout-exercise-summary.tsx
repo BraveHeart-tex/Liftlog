@@ -1,12 +1,8 @@
-import { Button } from '@/src/components/ui/button';
-import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import type { Set } from '@/src/db';
 import type { TrackingType } from '@/src/features/progress/tracking';
 import { cn } from '@/src/lib/utils/cn';
 import { formatWeightForUnit, type WeightUnit } from '@/src/lib/utils/weight';
-import { iconSizes } from '@/src/theme/sizes';
-import { EllipsisIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 import { WorkoutSetSummary } from './workout-set-summary';
 
@@ -40,30 +36,20 @@ export function WorkoutExerciseSummary({
 
   return (
     <View className={cn('gap-3', className)}>
-      <View className="flex-row items-center justify-between">
-        <View>
-          <Text variant="bodyMedium" numberOfLines={2}>
-            {exerciseName}
+      <View>
+        <Text variant="bodyMedium" numberOfLines={2}>
+          {exerciseName}
+        </Text>
+        {completedSets.length > 0 ? (
+          <Text variant="small" tone="muted" className="mt-0.5">
+            {shouldShowVolume
+              ? `${formatWeightForUnit(exerciseVolume, weightUnit, {
+                  useGrouping: true,
+                  maximumFractionDigits: 0
+                })} ${weightUnit}`
+              : ''}
           </Text>
-          {completedSets.length > 0 ? (
-            <Text variant="small" tone="muted" className="mt-0.5">
-              {shouldShowVolume
-                ? `${formatWeightForUnit(exerciseVolume, weightUnit, {
-                    useGrouping: true,
-                    maximumFractionDigits: 0
-                  })} ${weightUnit}`
-                : ''}
-            </Text>
-          ) : null}
-        </View>
-        {/* TODO: Implement menu structure and not step press for propagating */}
-        <Button variant="ghost" className="size-8">
-          <Icon
-            icon={EllipsisIcon}
-            size={iconSizes.sm}
-            className="text-foreground"
-          />
-        </Button>
+        ) : null}
       </View>
 
       <WorkoutSetSummary
