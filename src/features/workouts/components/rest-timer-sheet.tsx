@@ -10,6 +10,7 @@ import { RestTimerIdleContent } from '@/src/features/workouts/components/rest-ti
 import { RestTimerPausedContent } from '@/src/features/workouts/components/rest-timer-paused-content';
 import { RestTimerRunningContent } from '@/src/features/workouts/components/rest-timer-running-content';
 import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer-store';
+import { cn } from '@/src/lib/utils/cn';
 import { XIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
@@ -90,12 +91,22 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
       </BottomSheetHeader>
 
       <View className="gap-6 px-4 pt-4 pb-6">
-        {status === 'idle' ? (
+        <View
+          pointerEvents={status === 'idle' ? 'auto' : 'none'}
+          accessibilityElementsHidden={status !== 'idle'}
+          importantForAccessibility={
+            status === 'idle' ? 'auto' : 'no-hide-descendants'
+          }
+          className={cn(
+            'gap-6',
+            status !== 'idle' && 'absolute inset-x-4 top-4 opacity-0'
+          )}
+        >
           <RestTimerIdleContent
             defaultDuration={defaultDuration}
             openToken={openToken}
           />
-        ) : null}
+        </View>
         {status === 'running' ? <RestTimerRunningContent /> : null}
         {status === 'paused' ? <RestTimerPausedContent /> : null}
       </View>
