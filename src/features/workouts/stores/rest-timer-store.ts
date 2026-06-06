@@ -20,6 +20,7 @@ interface RestTimerState {
   syncOnOpen: (defaultDuration: number) => void;
   tick: (now?: number) => void;
   start: (durationSeconds: number) => void;
+  addTime: (seconds: number) => void;
   pause: () => void;
   resume: () => void;
   cancel: () => void;
@@ -129,6 +130,37 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
       durationSeconds: totalSeconds,
       secondsRemaining: totalSeconds,
       activeDurationSeconds: totalSeconds
+    });
+  },
+  addTime: seconds => {
+    const state = get();
+    const addedSeconds = normalizeRestTimerInput(seconds);
+
+    if (
+      addedSeconds <= 0 ||
+      (state.status !== 'running' && state.status !== 'paused')
+    ) {
+      return;
+    }
+
+    const now = Date.now();
+    const currentRemainingMs =
+      state.status === 'running' && state.endTime !== null
+        ? Math.max(0, state.endTime - now)
+        : Math.max(0, state.pausedRemainingMs ?? 0);
+    const remainingMs = Math.min(
+      MAX_REST_TIMER_SECONDS * 1000,
+      currentRemainingMs + addedSeconds * 1000
+    );
+
+    set({
+      endTime: state.status === 'running' ? now + remainingMs : null,
+      pausedRemainingMs: state.status === 'paused' ? remainingMs : null,
+      secondsRemaining: Math.ceil(remainingMs / 1000),
+      activeDurationSeconds: Math.min(
+        MAX_REST_TIMER_SECONDS,
+        state.activeDurationSeconds + addedSeconds
+      )
     });
   },
   pause: () => {

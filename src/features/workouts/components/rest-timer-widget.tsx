@@ -1,0 +1,106 @@
+import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
+import { PressableSurface } from '@/src/components/ui/pressable-surface';
+import { Text } from '@/src/components/ui/text';
+import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sheet';
+import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer-store';
+import { cn } from '@/src/lib/utils/cn';
+import { formatTime } from '@/src/lib/utils/format-time';
+import { PauseIcon, TimerIcon } from 'lucide-react-native';
+import { useState } from 'react';
+import { View } from 'react-native';
+
+const ADD_TIME_SECONDS = 30;
+
+export function RestTimerWidget() {
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const status = useRestTimerStore(state => state.status);
+  const secondsRemaining = useRestTimerStore(state => state.secondsRemaining);
+  const addTime = useRestTimerStore(state => state.addTime);
+  const cancelTimer = useRestTimerStore(state => state.cancel);
+  const isPaused = status === 'paused';
+  const timerLabel = formatTime(secondsRemaining, { padMinutes: true });
+
+  return (
+    <>
+      {status !== 'idle' ? (
+        <View className="px-4 pt-2 pb-3">
+          <View
+            className={cn(
+              'border-info/30 bg-info/10 flex-row items-center gap-2 rounded-lg border p-2',
+              isPaused && 'border-accent/30 bg-accent/10'
+            )}
+          >
+            <PressableSurface
+              containerClassName="min-w-0 flex-1"
+              className="min-h-12 flex-row items-center gap-3 rounded-md px-2"
+              accessibilityLabel={`Open rest timer, ${timerLabel} ${
+                isPaused ? 'paused' : 'remaining'
+              }`}
+              hapticFeedback="light"
+              onPress={() => setIsSheetOpen(true)}
+            >
+              <View
+                className={cn(
+                  'bg-info/15 h-10 w-10 items-center justify-center rounded-full',
+                  isPaused && 'bg-accent/15'
+                )}
+              >
+                <Icon
+                  icon={isPaused ? PauseIcon : TimerIcon}
+                  size="lg"
+                  className={cn('text-info', isPaused && 'text-accent')}
+                />
+              </View>
+
+              <View className="min-w-0 flex-1">
+                <Text
+                  variant="caption"
+                  className={cn(
+                    'text-info font-semibold',
+                    isPaused && 'text-accent'
+                  )}
+                >
+                  {isPaused ? 'Paused' : 'Rest'}
+                </Text>
+                <Text
+                  variant="h3"
+                  numberOfLines={1}
+                  style={{ fontVariant: ['tabular-nums'] }}
+                >
+                  {timerLabel}
+                </Text>
+              </View>
+            </PressableSurface>
+
+            <Button
+              variant="secondary"
+              size="sm"
+              className="min-h-10 px-2.5 py-2"
+              textClassName="text-small"
+              accessibilityLabel="Add 30 seconds to rest timer"
+              onPress={() => addTime(ADD_TIME_SECONDS)}
+            >
+              +30s
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="min-h-10 px-2.5 py-2"
+              accessibilityLabel="Skip rest timer"
+              textClassName="text-danger text-small"
+              onPress={cancelTimer}
+            >
+              Skip
+            </Button>
+          </View>
+        </View>
+      ) : null}
+
+      <RestTimerSheet
+        isOpen={isSheetOpen}
+        onClose={() => setIsSheetOpen(false)}
+      />
+    </>
+  );
+}

@@ -8,7 +8,6 @@ import {
 import { RECENT_EXERCISES_LIMIT } from '@/src/features/workouts/workout.constants';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { useEffect, useMemo, useState } from 'react';
-import { useIsRestTimerRunning } from './use-is-rest-timer-running';
 
 interface UseActiveWorkoutContentParams {
   activeWorkout: Workout;
@@ -22,8 +21,6 @@ export function useActiveWorkoutContent({
   const db = useDrizzle();
   const [now, setNow] = useState(() => Date.now());
   const [isExercisePickerOpen, setIsExercisePickerOpen] = useState(false);
-  const [isRestTimerOpen, setIsRestTimerOpen] = useState(false);
-  const isRestTimerRunning = useIsRestTimerRunning();
   const workoutExerciseResult = useLiveWithFallback(
     getWorkoutExercisesQuery(db, activeWorkout.id),
     [db, activeWorkout.id]
@@ -80,12 +77,9 @@ export function useActiveWorkoutContent({
     now,
     isExercisePickerOpen,
     setIsExercisePickerOpen,
-    isRestTimerOpen,
-    setIsRestTimerOpen,
     workoutExerciseRows: workoutExerciseResult.data,
     recentExerciseIds,
     isLoadingWorkoutExercises: !workoutExerciseResult.isLive,
-    exerciseById,
-    isRestTimerRunning
+    exerciseById
   };
 }

@@ -12,6 +12,7 @@ import { ActiveWorkoutHeader } from '@/src/features/workouts/components/active-w
 import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/create-custom-exercise-sheet';
 import { EmptyExerciseState } from '@/src/features/workouts/components/empty-exercise-state';
 import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise-picker-sheet';
+import { RestTimerWidget } from '@/src/features/workouts/components/rest-timer-widget';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
 import {
   useActiveWorkoutActions,
@@ -147,6 +148,8 @@ export function ActiveWorkoutContent({
         onOpenActions={() => setIsActionSheetOpen(true)}
         onFinish={confirmFinishWorkout}
       />
+
+      <RestTimerWidget />
 
       <StyledScrollView
         className="flex-1"
