@@ -12,11 +12,7 @@ import { useWorkoutTemplateDetail } from '@/src/features/workouts/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { getRouteParamId } from '@/src/lib/utils/route';
 import { router, useLocalSearchParams } from 'expo-router';
-import {
-  DumbbellIcon,
-  EllipsisVerticalIcon,
-  ListOrderedIcon
-} from 'lucide-react-native';
+import { DumbbellIcon, EllipsisVerticalIcon } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Alert, View } from 'react-native';
 
@@ -164,36 +160,11 @@ function WorkoutTemplateDetailLoaded({
         </Button>
       </View>
 
-      <Card className="mt-6">
-        <CardContent>
-          <View className="flex-row items-start gap-3">
-            <View className="bg-secondary h-10 w-10 items-center justify-center rounded-lg">
-              <Icon
-                icon={ListOrderedIcon}
-                className="text-secondary-foreground"
-              />
-            </View>
-            <View className="flex-1">
-              <Text variant="bodyMedium">Exercise plan</Text>
-              <Text variant="small" tone="muted" className="mt-1">
-                {exerciseSummary}
-              </Text>
-            </View>
-          </View>
-        </CardContent>
-      </Card>
-
       <View className="mt-6">
-        <View className="flex-row items-center justify-between">
-          <Text variant="caption" tone="muted" className="tracking-widest">
-            EXERCISES
-          </Text>
-          {exerciseCount > 0 ? (
-            <Text variant="caption" tone="muted">
-              {exerciseCount} total
-            </Text>
-          ) : null}
-        </View>
+        {/* TODO: Add edit mode trigger button here */}
+        <Text variant="caption" tone="muted" className="tracking-widest">
+          EXERCISES
+        </Text>
 
         {templateExerciseRows.length === 0 ? (
           <View className="mt-3 items-center py-8">
