@@ -4,12 +4,7 @@ import {
   createExercise,
   type ExerciseListItem
 } from '@/src/features/exercises/repository';
-import {
-  completeWorkout,
-  createWorkoutExercise
-} from '@/src/features/workouts/repository';
-import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
+import { createWorkoutExercise } from '@/src/features/workouts/repository';
 import { useCallback } from 'react';
 
 interface UseActiveWorkoutActionsParams {
@@ -26,12 +21,6 @@ export function useActiveWorkoutActions({
   setIsExercisePickerOpen
 }: UseActiveWorkoutActionsParams) {
   const db = useDrizzle();
-
-  const finishWorkout = useCallback(() => {
-    completeWorkout(db, activeWorkout.id);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    router.replace('/(tabs)/workout');
-  }, [activeWorkout.id, db]);
 
   const selectExercise = useCallback(
     (exercise: ExerciseListItem) => {
@@ -95,7 +84,6 @@ export function useActiveWorkoutActions({
   );
 
   return {
-    finishWorkout,
     selectExercise,
     createAndSelectCustomExercise
   };

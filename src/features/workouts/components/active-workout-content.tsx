@@ -46,13 +46,12 @@ export function ActiveWorkoutContent({
     now,
     isExercisePickerOpen,
     setIsExercisePickerOpen,
-
     workoutExerciseRows,
     recentExerciseIds,
     isLoadingWorkoutExercises,
     exerciseById
   } = useActiveWorkoutContentData({ activeWorkout, exerciseRows });
-  const { finishWorkout, selectExercise, createAndSelectCustomExercise } =
+  const { selectExercise, createAndSelectCustomExercise } =
     useActiveWorkoutActions({
       activeWorkout,
       workoutExerciseRows,
@@ -71,20 +70,6 @@ export function ActiveWorkoutContent({
     }
 
     setIsTemplateSheetOpen(true);
-  };
-
-  const confirmFinishWorkout = () => {
-    Alert.alert(
-      'Finish workout?',
-      `"${workoutName}" will be saved to your workout history.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Finish',
-          onPress: finishWorkout
-        }
-      ]
-    );
   };
 
   const confirmDiscardWorkout = () => {
@@ -140,13 +125,13 @@ export function ActiveWorkoutContent({
     <Screen withPadding={false}>
       <ActiveWorkoutHeader
         workoutName={workoutName}
+        workoutId={activeWorkout.id}
         duration={formatDuration({
           startedAt: activeWorkout.startedAt,
           completedAt: now
         })}
         canFinish={!isLoadingWorkoutExercises && workoutExerciseRows.length > 0}
         onOpenActions={() => setIsActionSheetOpen(true)}
-        onFinish={confirmFinishWorkout}
       />
 
       <RestTimerWidget />

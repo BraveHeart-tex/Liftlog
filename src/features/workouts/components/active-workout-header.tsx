@@ -2,24 +2,44 @@ import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
+import type { Workout } from '@/src/db';
+import { useFinishWorkout } from '@/src/features/workouts/hooks/use-finish-workout';
 import { EllipsisVerticalIcon } from 'lucide-react-native';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
 
 interface ActiveWorkoutHeaderProps {
   workoutName: string;
+  workoutId: Workout['id'];
   duration: string;
   canFinish: boolean;
   onOpenActions: () => void;
-  onFinish: () => void;
 }
 
 export function ActiveWorkoutHeader({
   workoutName,
+  workoutId,
   duration,
   canFinish,
-  onOpenActions,
-  onFinish
+  onOpenActions
 }: ActiveWorkoutHeaderProps) {
+  const finishWorkout = useFinishWorkout();
+
+  const confirmFinishWorkout = () => {
+    Alert.alert(
+      'Finish workout?',
+      `"${workoutName}" will be saved to your workout history.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Finish',
+          onPress: () => {
+            finishWorkout(workoutId);
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <View className="flex-row items-center justify-between gap-2 px-4 pt-4 pb-2">
       <BackButton />
@@ -50,7 +70,7 @@ export function ActiveWorkoutHeader({
         variant="primary"
         size="sm"
         disabled={!canFinish}
-        onPress={onFinish}
+        onPress={confirmFinishWorkout}
       >
         Finish
       </Button>
