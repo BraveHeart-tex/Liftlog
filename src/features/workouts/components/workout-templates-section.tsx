@@ -68,9 +68,10 @@ export const WorkoutTemplatesSection = ({
   );
 };
 
+// TODO(FE-185): Extract empty state markup to a re-usable component
 function EmptyTemplates() {
   return (
-    <View className="mt-8 items-center py-4">
+    <View className="mt-3 items-center py-4">
       <View className="bg-card h-12 w-12 items-center justify-center rounded-lg">
         <Icon
           icon={ClipboardListIcon}
