@@ -18,7 +18,7 @@ import {
 } from '@/src/features/workouts/hooks';
 import { formatDuration } from '@/src/lib/utils/date';
 import { PlusIcon } from 'lucide-react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Keyboard, View } from 'react-native';
 
 interface ActiveWorkoutContentProps {
@@ -75,6 +75,12 @@ export function ActiveWorkoutContent({
     },
     [reorderWorkoutExercises]
   );
+
+  useEffect(() => {
+    if (isEditingExercises && workoutExerciseRows.length === 0) {
+      setIsEditingExercises(false);
+    }
+  }, [isEditingExercises, workoutExerciseRows.length]);
 
   return (
     <Screen withPadding={false}>

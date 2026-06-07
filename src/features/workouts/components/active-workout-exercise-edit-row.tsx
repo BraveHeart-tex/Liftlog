@@ -3,11 +3,12 @@ import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { resolveTrackingType } from '@/src/features/progress/tracking';
 import { useSettings } from '@/src/features/settings/hooks';
+import { useRemoveWorkoutExercise } from '@/src/features/workouts/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { formatWeightForUnit } from '@/src/lib/utils/weight';
 import { iconSizes } from '@/src/theme/sizes';
 import { GripIcon, TrashIcon } from 'lucide-react-native';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
 import type { WorkoutExerciseWithSets } from './types';
 
 interface ActiveWorkoutExerciseEditRowProps {
@@ -15,13 +16,15 @@ interface ActiveWorkoutExerciseEditRowProps {
   className?: string;
   isDragging: boolean;
   onDrag: () => void;
+  shouldShowDragHandle: boolean;
 }
 
 export function ActiveWorkoutExerciseEditRow({
   item,
   className,
   isDragging,
-  onDrag
+  onDrag,
+  shouldShowDragHandle = true
 }: ActiveWorkoutExerciseEditRowProps) {
   const { weightUnit } = useSettings();
   const completedSets = item.sets.filter(set => set.status === 'completed');
@@ -40,6 +43,35 @@ export function ActiveWorkoutExerciseEditRow({
           maximumFractionDigits: 0
         })} ${weightUnit}`
       : setLabel;
+  const removeWorkoutExercise = useRemoveWorkoutExercise();
+
+  const handleRemoveExercise = () => {
+    const exerciseName = item.exercise?.name ?? 'Unknown exercise';
+    const setCount = item.sets.length;
+    const completedSetCount = completedSets.length;
+    const selectedDetails =
+      setCount > 0
+        ? `${exerciseName}\n${setCount} sets logged, ${completedSetCount} completed.`
+        : `${exerciseName}\nNo sets logged yet.`;
+
+    Alert.alert(
+      'Remove exercise?',
+      `${selectedDetails}\n\nThis will delete all sets for this exercise.`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => {
+            removeWorkoutExercise(item.workoutExercise.id);
+          }
+        }
+      ]
+    );
+  };
 
   return (
     <View
@@ -49,7 +81,7 @@ export function ActiveWorkoutExerciseEditRow({
         className
       )}
     >
-      <Button variant="ghost" size="icon">
+      <Button variant="ghost" size="icon" onPress={handleRemoveExercise}>
         <Icon icon={TrashIcon} size={iconSizes.sm} className="text-danger" />
       </Button>
 
@@ -62,19 +94,21 @@ export function ActiveWorkoutExerciseEditRow({
         </Text>
       </View>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        disabled={isDragging}
-        accessibilityLabel="Drag exercise"
-        onPressIn={onDrag}
-      >
-        <Icon
-          icon={GripIcon}
-          size={iconSizes.sm}
-          className="text-muted-foreground"
-        />
-      </Button>
+      {shouldShowDragHandle && (
+        <Button
+          variant="ghost"
+          size="icon"
+          disabled={isDragging}
+          accessibilityLabel="Drag exercise"
+          onPressIn={onDrag}
+        >
+          <Icon
+            icon={GripIcon}
+            size={iconSizes.sm}
+            className="text-muted-foreground"
+          />
+        </Button>
+      )}
     </View>
   );
 }

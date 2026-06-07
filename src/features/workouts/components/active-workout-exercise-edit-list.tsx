@@ -25,6 +25,7 @@ export const ActiveWorkoutExerciseEditList = memo(
     const [orderedRows, setOrderedRows] = useState(rows);
 
     const rowIds = rows.map(r => r.workoutExercise.id).join(',');
+    const shouldShowDragHandle = rows.length > 1;
 
     // TODO: Check the need for this while implementing delete exercise logic
     useEffect(() => {
@@ -39,9 +40,10 @@ export const ActiveWorkoutExerciseEditList = memo(
           item={item}
           isDragging={isActive}
           onDrag={drag}
+          shouldShowDragHandle={shouldShowDragHandle}
         />
       ),
-      []
+      [shouldShowDragHandle]
     );
 
     const renderFooter = useCallback(() => <View className="h-6" />, []);
