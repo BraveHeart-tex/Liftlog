@@ -19,7 +19,7 @@ import { formatWorkoutName } from '@/src/lib/utils/workout';
 import { router, type Href } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 
-const activeWorkoutRoute = '/(tabs)/workout/active' as Href;
+const activeWorkoutRoute: Href = '/(tabs)/workout/active';
 const RECENT_WORKOUT_LIMIT = 3;
 
 export interface WorkoutStartTemplateItem {
