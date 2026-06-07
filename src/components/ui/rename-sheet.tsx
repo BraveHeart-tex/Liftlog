@@ -160,7 +160,12 @@ export function RenameSheet({
           </Button>
         </View>
         <View className="flex-1">
-          <Button className="w-full" loading={isSaving} onPress={handleSubmit}>
+          <Button
+            className="w-full"
+            loading={isSaving}
+            onPress={handleSubmit}
+            disabled={name.trim().length === 0}
+          >
             {submitLabel}
           </Button>
         </View>

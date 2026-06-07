@@ -13,16 +13,6 @@ export function formatWorkoutName(value: Date | number): string {
   })} workout`;
 }
 
-export function resolveWorkoutName(name: string, startedAt: number): string {
-  const trimmedName = name.trim();
-
-  if (trimmedName.length === 0) {
-    return formatWorkoutName(startedAt);
-  }
-
-  return trimmedName;
-}
-
 export function resolveTemplateName(name: string): string {
   const trimmedName = name.trim();
 
