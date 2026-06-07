@@ -5,12 +5,9 @@ import { ActiveWorkoutSummaryCard } from '@/src/features/workouts/components/act
 import { RecentWorkoutsSection } from '@/src/features/workouts/components/recent-workouts-section';
 import { WorkoutTemplatesSection } from '@/src/features/workouts/components/workout-templates-section';
 import { useWorkoutStart } from '@/src/features/workouts/hooks';
-import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 export default function WorkoutStartScreen() {
-  const [now, setNow] = useState(() => Date.now());
-
   const {
     activeWorkout,
     recentWorkouts,
@@ -18,23 +15,6 @@ export default function WorkoutStartScreen() {
     startWorkout,
     resumeWorkout
   } = useWorkoutStart();
-
-  /* TODO: Move tick functionality into ActiveWorkoutSummaryCard */
-  useEffect(() => {
-    if (!activeWorkout) {
-      return;
-    }
-
-    setNow(Date.now());
-
-    const intervalId = setInterval(() => {
-      setNow(Date.now());
-    }, 30000);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [activeWorkout]);
 
   return (
     <Screen scroll keyboardShouldPersistTaps="handled">
@@ -48,7 +28,6 @@ export default function WorkoutStartScreen() {
       {activeWorkout ? (
         <ActiveWorkoutSummaryCard
           workout={activeWorkout}
-          now={now}
           onPress={resumeWorkout}
         />
       ) : (

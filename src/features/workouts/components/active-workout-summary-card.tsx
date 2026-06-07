@@ -3,20 +3,32 @@ import { Text } from '@/src/components/ui/text';
 import type { Workout } from '@/src/db/schema';
 import { usePressScale } from '@/src/lib/animations/use-press-scale';
 import { formatDuration } from '@/src/lib/utils/date';
+import { useEffect, useState } from 'react';
 import { Animated, Pressable } from 'react-native';
 
 interface ActiveWorkoutSummaryCardProps {
   workout: Workout;
-  now: number;
   onPress: () => void;
 }
 
 export const ActiveWorkoutSummaryCard = ({
   workout,
-  now,
   onPress
 }: ActiveWorkoutSummaryCardProps) => {
+  const [now, setNow] = useState(() => Date.now());
   const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();
+
+  useEffect(() => {
+    setNow(Date.now());
+
+    const intervalId = setInterval(() => {
+      setNow(Date.now());
+    }, 30000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [workout]);
 
   return (
     <Animated.View style={scaleStyle}>
