@@ -1,5 +1,6 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { ActiveWorkoutSummaryCard } from '@/src/features/workouts/components/active-workout-summary-card';
@@ -7,7 +8,9 @@ import { RecentWorkoutCard } from '@/src/features/workouts/components/recent-wor
 import { WorkoutTemplateCard } from '@/src/features/workouts/components/workout-template-card';
 import { useWorkoutStart } from '@/src/features/workouts/hooks';
 import { cn } from '@/src/lib/utils/cn';
-import { router, type Href } from 'expo-router';
+import { iconSizes } from '@/src/theme/sizes';
+import { Link, router, type Href } from 'expo-router';
+import { ChevronRightIcon, PlusIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
@@ -68,9 +71,22 @@ export default function WorkoutStartScreen() {
 
       {templates.length > 0 ? (
         <View className="mt-8">
-          <Text variant="overline" tone="muted">
-            Templates
-          </Text>
+          <View className="flex-row items-center justify-between">
+            <Text variant="overline" tone="muted">
+              Templates
+            </Text>
+            {/* TODO: Add create new template linking here */}
+            <View className="flex-row items-center gap-1">
+              <Icon
+                icon={PlusIcon}
+                className="text-primary"
+                size={iconSizes.xs}
+              />
+              <Text tone="primary" variant="small">
+                New
+              </Text>
+            </View>
+          </View>
 
           <StyledScrollView
             className="mt-3"
@@ -90,9 +106,23 @@ export default function WorkoutStartScreen() {
       ) : null}
 
       <View className="mt-8">
-        <Text variant="overline" tone="muted">
-          Recent workouts
-        </Text>
+        <View className="flex-row items-center justify-between">
+          <Text variant="overline" tone="muted">
+            Recent workouts
+          </Text>
+          <Link asChild href="/(tabs)/log">
+            <View className="flex-row items-center gap-1">
+              <Text tone="primary" variant="small">
+                View all
+              </Text>
+              <Icon
+                icon={ChevronRightIcon}
+                className="text-primary"
+                size={iconSizes.xs}
+              />
+            </View>
+          </Link>
+        </View>
 
         {recentWorkouts.length > 0 ? (
           <View className="mt-3">
