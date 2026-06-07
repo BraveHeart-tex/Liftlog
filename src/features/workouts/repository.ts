@@ -28,7 +28,8 @@ import {
   lt,
   lte,
   notInArray,
-  or
+  or,
+  sql
 } from 'drizzle-orm';
 
 function withWorkoutDateKey(data: NewWorkout): NewWorkout {
@@ -477,6 +478,56 @@ export function deleteWorkoutExercise(
   id: WorkoutExercise['id']
 ): void {
   db.delete(workoutExercises).where(eq(workoutExercises.id, id)).run();
+}
+
+export function reorderWorkoutExercises(
+  db: DrizzleDb,
+  workoutId: Workout['id'],
+  orderedWorkoutExerciseIds: WorkoutExercise['id'][]
+): void {
+  db.transaction(tx => {
+    const existingWorkoutExercises = tx
+      .select({ id: workoutExercises.id, order: workoutExercises.order })
+      .from(workoutExercises)
+      .where(eq(workoutExercises.workoutId, workoutId))
+      .all();
+
+    const existingById = new Map(
+      existingWorkoutExercises.map(we => [we.id, we])
+    );
+
+    const inputIdSet = new Set(orderedWorkoutExerciseIds);
+
+    if (
+      existingWorkoutExercises.length !== orderedWorkoutExerciseIds.length ||
+      inputIdSet.size !== orderedWorkoutExerciseIds.length ||
+      orderedWorkoutExerciseIds.some(id => !existingById.has(id))
+    ) {
+      throw new Error('Workout exercises changed before reorder completed.');
+    }
+
+    const toUpdate = orderedWorkoutExerciseIds.filter(
+      (id, newOrder) => existingById.get(id)!.order !== newOrder
+    );
+
+    if (toUpdate.length === 0) {
+      return;
+    }
+
+    const caseExpr = sql.join(
+      toUpdate.map(id => {
+        const newOrder = orderedWorkoutExerciseIds.indexOf(id);
+
+        return sql`WHEN ${id} THEN ${newOrder}`;
+      }),
+      sql` `
+    );
+
+    tx.update(workoutExercises)
+      .set({ order: sql`CASE id ${caseExpr} END` })
+      .where(inArray(workoutExercises.id, toUpdate))
+      .run();
+  });
 }
 
 export function deleteWorkoutTemplate(

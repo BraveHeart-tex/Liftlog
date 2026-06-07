@@ -1,13 +1,17 @@
+import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import type { WorkoutExercise } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { useActiveWorkoutExerciseList } from '@/src/features/workouts/hooks';
 import { ActiveWorkoutExerciseCard } from './active-workout-exercise-card';
-import { ActiveWorkoutExerciseEditRow } from './active-workout-exercise-edit-row';
+import { ActiveWorkoutExerciseEditList } from './active-workout-exercise-edit-list';
 
 interface ActiveWorkoutExerciseListProps {
   workoutExercises: WorkoutExercise[];
   exerciseById: Map<ExerciseListItem['id'], ExerciseListItem>;
   onEnterEditMode: () => void;
+  onReorderExercises: (
+    orderedWorkoutExerciseIds: WorkoutExercise['id'][]
+  ) => boolean;
   isEditing: boolean;
 }
 
@@ -15,6 +19,7 @@ export function ActiveWorkoutExerciseList({
   workoutExercises,
   exerciseById,
   onEnterEditMode,
+  onReorderExercises,
   isEditing
 }: ActiveWorkoutExerciseListProps) {
   const workoutExercisesWithSets = useActiveWorkoutExerciseList({
@@ -22,19 +27,30 @@ export function ActiveWorkoutExerciseList({
     exerciseById
   });
 
-  return workoutExercisesWithSets.map(workoutExercise =>
-    isEditing ? (
-      <ActiveWorkoutExerciseEditRow
-        key={workoutExercise.workoutExercise.id}
-        item={workoutExercise}
+  if (isEditing) {
+    return (
+      <ActiveWorkoutExerciseEditList
+        rows={workoutExercisesWithSets}
+        onReorderExercises={onReorderExercises}
       />
-    ) : (
-      <ActiveWorkoutExerciseCard
-        key={workoutExercise.workoutExercise.id}
-        item={workoutExercise}
-        className="mt-4"
-        onLongPress={onEnterEditMode}
-      />
-    )
+    );
+  }
+
+  return (
+    <StyledScrollView
+      className="flex-1"
+      contentContainerClassName="flex-grow px-4 pb-6"
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
+      {workoutExercisesWithSets.map(workoutExercise => (
+        <ActiveWorkoutExerciseCard
+          key={workoutExercise.workoutExercise.id}
+          item={workoutExercise}
+          className="mt-4"
+          onLongPress={onEnterEditMode}
+        />
+      ))}
+    </StyledScrollView>
   );
 }

@@ -11,6 +11,7 @@ export {
   useWorkoutRowsForDate
 } from './use-workout-log';
 export { useRemoveWorkoutExercise } from './use-remove-workout-exercise';
+export { useReorderWorkoutExercises } from './use-reorder-workout-exercises';
 export { useRepeatWorkout } from './use-repeat-workout';
 export { useSaveWorkoutTemplate } from './use-save-workout-template';
 export { useWorkoutDelete } from './use-workout-delete';

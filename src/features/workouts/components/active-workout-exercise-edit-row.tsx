@@ -13,11 +13,15 @@ import type { WorkoutExerciseWithSets } from './types';
 interface ActiveWorkoutExerciseEditRowProps {
   item: WorkoutExerciseWithSets;
   className?: string;
+  isDragging: boolean;
+  onDrag: () => void;
 }
 
 export function ActiveWorkoutExerciseEditRow({
   item,
-  className
+  className,
+  isDragging,
+  onDrag
 }: ActiveWorkoutExerciseEditRowProps) {
   const { weightUnit } = useSettings();
   const completedSets = item.sets.filter(set => set.status === 'completed');
@@ -41,6 +45,7 @@ export function ActiveWorkoutExerciseEditRow({
     <View
       className={cn(
         'border-border flex-row items-center gap-3 border-b py-4',
+        isDragging && 'bg-muted/50',
         className
       )}
     >
@@ -57,7 +62,13 @@ export function ActiveWorkoutExerciseEditRow({
         </Text>
       </View>
 
-      <Button variant="ghost" size="icon">
+      <Button
+        variant="ghost"
+        size="icon"
+        disabled={isDragging}
+        accessibilityLabel="Drag exercise"
+        onPressIn={onDrag}
+      >
         <Icon
           icon={GripIcon}
           size={iconSizes.sm}
