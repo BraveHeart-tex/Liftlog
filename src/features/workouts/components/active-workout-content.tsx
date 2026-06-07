@@ -5,6 +5,7 @@ import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import type { Workout } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
+import { ActiveWorkoutEditHeader } from '@/src/features/workouts/components/active-workout-edit-header';
 import { ActiveWorkoutExerciseList } from '@/src/features/workouts/components/active-workout-exercise-list';
 import { ActiveWorkoutHeaderWithActions } from '@/src/features/workouts/components/active-workout-header-with-actions';
 import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/create-custom-exercise-sheet';
@@ -29,6 +30,8 @@ export function ActiveWorkoutContent({
   activeWorkout,
   exerciseRows
 }: ActiveWorkoutContentProps) {
+  const [isEditingExercises, setIsEditingExercises] = useState(false);
+
   const [isCreateCustomExerciseOpen, setIsCreateCustomExerciseOpen] =
     useState(false);
   const [initialCustomExerciseName, setInitialCustomExerciseName] =
@@ -54,24 +57,34 @@ export function ActiveWorkoutContent({
   const hasExercisesLogged =
     !isLoadingWorkoutExercises && workoutExerciseRows.length > 0;
 
+  const enterEditMode = () => setIsEditingExercises(true);
+  const exitEditMode = () => setIsEditingExercises(false);
+
   return (
     <Screen withPadding={false}>
-      <ActiveWorkoutHeaderWithActions
-        workoutName={workoutName}
-        workoutId={activeWorkout.id}
-        duration={formatDuration({
-          startedAt: activeWorkout.startedAt,
-          completedAt: now
-        })}
-        canFinish={hasExercisesLogged}
-        canSaveTemplate={hasExercisesLogged}
-        workoutExerciseRows={workoutExerciseRows.map(workoutExercise => ({
-          exerciseId: workoutExercise.exerciseId,
-          order: workoutExercise.order
-        }))}
-      />
+      {isEditingExercises ? (
+        <ActiveWorkoutEditHeader
+          workoutName={workoutName}
+          onDone={exitEditMode}
+        />
+      ) : (
+        <ActiveWorkoutHeaderWithActions
+          workoutName={workoutName}
+          workoutId={activeWorkout.id}
+          duration={formatDuration({
+            startedAt: activeWorkout.startedAt,
+            completedAt: now
+          })}
+          canFinish={hasExercisesLogged}
+          canSaveTemplate={hasExercisesLogged}
+          workoutExerciseRows={workoutExerciseRows.map(workoutExercise => ({
+            exerciseId: workoutExercise.exerciseId,
+            order: workoutExercise.order
+          }))}
+        />
+      )}
 
-      <RestTimerWidget />
+      {!isEditingExercises && <RestTimerWidget />}
 
       <StyledScrollView
         className="flex-1"
@@ -85,6 +98,8 @@ export function ActiveWorkoutContent({
           <ActiveWorkoutExerciseList
             workoutExercises={workoutExerciseRows}
             exerciseById={exerciseById}
+            isEditing={isEditingExercises}
+            onEnterEditMode={enterEditMode}
           />
         ) : (
           <EmptyExerciseState
@@ -93,21 +108,23 @@ export function ActiveWorkoutContent({
         )}
       </StyledScrollView>
 
-      {!isLoadingWorkoutExercises && workoutExerciseRows.length > 0 && (
-        <View className="border-border bg-background border-t px-4 py-4">
-          <Button
-            variant="secondary"
-            className="w-full"
-            disabled={isLoadingWorkoutExercises}
-            leftIcon={
-              <Icon icon={PlusIcon} size="sm" className="text-foreground" />
-            }
-            onPress={() => setIsExercisePickerOpen(true)}
-          >
-            Add exercise
-          </Button>
-        </View>
-      )}
+      {!isEditingExercises &&
+        !isLoadingWorkoutExercises &&
+        workoutExerciseRows.length > 0 && (
+          <View className="border-border bg-background border-t px-4 py-4">
+            <Button
+              variant="secondary"
+              className="w-full"
+              disabled={isLoadingWorkoutExercises}
+              leftIcon={
+                <Icon icon={PlusIcon} size="sm" className="text-foreground" />
+              }
+              onPress={() => setIsExercisePickerOpen(true)}
+            >
+              Add exercise
+            </Button>
+          </View>
+        )}
 
       <ExercisePickerSheet
         isOpen={isExercisePickerOpen}

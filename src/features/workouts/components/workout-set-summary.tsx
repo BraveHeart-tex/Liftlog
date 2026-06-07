@@ -62,7 +62,7 @@ export function WorkoutSetSummary({
             <View
               key={group.setIds.join('-')}
               className={cn(
-                'flex-row items-center justify-between py-3 pr-2',
+                'flex-row items-center justify-between py-2 pr-2',
                 !isLast && 'border-border border-b',
                 isLast && 'pb-0'
               )}
