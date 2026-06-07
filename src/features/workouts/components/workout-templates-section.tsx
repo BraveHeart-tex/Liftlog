@@ -32,7 +32,7 @@ export const WorkoutTemplatesSection = ({
           Templates
         </Text>
         {templates.length > 0 && (
-          // TODO: Add create new template linking here
+          // TODO(FE-178): Add create new template linking here
           <View className="flex-row items-center gap-1">
             <Icon
               icon={PlusIcon}
@@ -87,7 +87,7 @@ function EmptyTemplates() {
         Save a routine to start faster next time.
       </Text>
 
-      {/* TODO: Add create new template linking here  */}
+      {/* TODO(FE-178): Add create new template linking here  */}
       <Button
         variant="secondary"
         size="sm"
