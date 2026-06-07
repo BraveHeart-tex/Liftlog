@@ -4,12 +4,12 @@ import { LoadingState } from '@/src/components/ui/loading-state';
 import { RenameSheet } from '@/src/components/ui/rename-sheet';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
+import { resolveTrackingType } from '@/src/features/progress/tracking';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
 import { WorkoutDetailActionsSheet } from '@/src/features/workouts/components/workout-detail-actions-sheet';
 import { WorkoutDetailHeader } from '@/src/features/workouts/components/workout-detail-header';
 import { WorkoutHistoryExerciseCard } from '@/src/features/workouts/components/workout-history-exercise-card';
 import { WorkoutMetricCard } from '@/src/features/workouts/components/workout-metric-card';
-import { resolveTrackingType } from '@/src/features/progress/tracking';
 import {
   useRepeatWorkout,
   useWorkoutDelete,
@@ -170,7 +170,10 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
 
   const handleRenameWorkout = (nextName: string) => {
     try {
-      const updatedWorkout = renameWorkout(workout, nextName);
+      const updatedWorkout = renameWorkout({
+        workoutId: workout.id,
+        nextName
+      });
 
       if (!updatedWorkout) {
         return 'Could not rename workout. Try again.';
