@@ -18,12 +18,7 @@ export default function WorkoutStartScreen() {
 
   return (
     <Screen scroll keyboardShouldPersistTaps="handled">
-      <View>
-        <Text variant="h1">Workout</Text>
-        <Text variant="small" tone="muted" className="mt-2">
-          Start a new session or resume where you left off.
-        </Text>
-      </View>
+      <Text variant="h1">Workout</Text>
 
       {activeWorkout ? (
         <ActiveWorkoutSummaryCard
@@ -31,9 +26,14 @@ export default function WorkoutStartScreen() {
           onPress={resumeWorkout}
         />
       ) : (
-        <Button className="mt-6 w-full" onPress={startWorkout}>
-          Start Workout
-        </Button>
+        <View className="gap-4">
+          <Button className="mt-6 w-full" onPress={startWorkout}>
+            Start Workout
+          </Button>
+          <Text tone="muted" variant="caption" className="text-center">
+            Log exercises as you go, no setup needed.
+          </Text>
+        </View>
       )}
 
       <WorkoutTemplatesSection templates={templates} />
