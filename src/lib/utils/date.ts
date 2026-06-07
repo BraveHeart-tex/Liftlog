@@ -75,3 +75,17 @@ export function getTimerParts(totalSeconds: number) {
     seconds: totalSeconds % 60
   };
 }
+
+export function formatTimerDuration(totalSeconds: number): string {
+  const elapsedSeconds = Math.max(0, Math.floor(totalSeconds));
+  const hours = Math.floor(elapsedSeconds / 3600);
+  const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+  const seconds = elapsedSeconds % 60;
+  const paddedSeconds = `${seconds}`.padStart(2, '0');
+
+  if (hours === 0) {
+    return `${minutes}:${paddedSeconds}`;
+  }
+
+  return `${hours}:${`${minutes}`.padStart(2, '0')}:${paddedSeconds}`;
+}

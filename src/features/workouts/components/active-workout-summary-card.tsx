@@ -1,10 +1,11 @@
+import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
+import { PulsatingDot } from '@/src/components/ui/pulsating-dot';
 import { Text } from '@/src/components/ui/text';
 import type { Workout } from '@/src/db/schema';
+import { ActiveWorkoutDuration } from '@/src/features/workouts/components/active-workout-duration';
 import { usePressScale } from '@/src/lib/animations/use-press-scale';
-import { formatDuration } from '@/src/lib/utils/date';
-import { useEffect, useState } from 'react';
-import { Animated, Pressable } from 'react-native';
+import { Animated, Pressable, View } from 'react-native';
 
 interface ActiveWorkoutSummaryCardProps {
   workout: Workout;
@@ -15,20 +16,7 @@ export const ActiveWorkoutSummaryCard = ({
   workout,
   onPress
 }: ActiveWorkoutSummaryCardProps) => {
-  const [now, setNow] = useState(() => Date.now());
   const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();
-
-  useEffect(() => {
-    setNow(Date.now());
-
-    const intervalId = setInterval(() => {
-      setNow(Date.now());
-    }, 30000);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [workout]);
 
   return (
     <Animated.View style={scaleStyle}>
@@ -42,18 +30,21 @@ export const ActiveWorkoutSummaryCard = ({
           className={pressed ? 'border-primary opacity-80' : 'border-primary'}
         >
           <CardContent>
-            <Text variant="caption" tone="muted">
-              Workout in progress
-            </Text>
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center gap-2">
+                <PulsatingDot />
+                <Text variant="overline" tone="muted">
+                  In progress
+                </Text>
+              </View>
+              <ActiveWorkoutDuration startedAt={workout.startedAt} />
+            </View>
             <Text variant="bodyMedium" className="mt-2">
               {workout.name}
             </Text>
-            <Text variant="small" tone="muted" className="mt-2">
-              {formatDuration({
-                startedAt: workout.startedAt,
-                completedAt: now
-              })}
-            </Text>
+            <Button className="mt-4" onPress={onPress}>
+              Resume Workout
+            </Button>
           </CardContent>
         </Card>
       </Pressable>
