@@ -8,7 +8,7 @@ import {
   createWorkout,
   createWorkoutFromTemplate,
   deleteWorkoutTemplate,
-  getActiveWorkoutQuery,
+  getActiveWorkoutSummaryQuery,
   getRecentWorkoutsQuery,
   getWorkoutTemplateExercisesForTemplatesQuery,
   getWorkoutTemplatesQuery,
@@ -50,9 +50,10 @@ function buildTemplateSummary(
 
 export function useWorkoutStart() {
   const db = useDrizzle();
-  const activeWorkoutResult = useLiveWithFallback(getActiveWorkoutQuery(db), [
-    db
-  ]);
+  const activeWorkoutResult = useLiveWithFallback(
+    getActiveWorkoutSummaryQuery(db),
+    [db]
+  );
   const recentWorkoutResult = useLiveWithFallback(
     getRecentWorkoutsQuery(db, RECENT_WORKOUT_LIMIT),
     [db]
@@ -92,7 +93,14 @@ export function useWorkoutStart() {
     [db, exerciseIdKey]
   );
 
-  const activeWorkout = activeWorkoutResult.data[0];
+  const activeWorkoutSummary = activeWorkoutResult.data[0];
+  const activeWorkout = activeWorkoutSummary
+    ? {
+        ...activeWorkoutSummary.workout,
+        exerciseCount: activeWorkoutSummary.exerciseCount,
+        completedSetCount: activeWorkoutSummary.completedSetCount
+      }
+    : undefined;
   const exerciseById = useMemo(
     () =>
       new Map<ExerciseListItem['id'], ExerciseListItem>(

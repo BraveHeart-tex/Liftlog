@@ -4,11 +4,15 @@ import { PulsatingDot } from '@/src/components/ui/pulsating-dot';
 import { Text } from '@/src/components/ui/text';
 import type { Workout } from '@/src/db/schema';
 import { ActiveWorkoutDuration } from '@/src/features/workouts/components/active-workout-duration';
+import { ActiveWorkoutStats } from '@/src/features/workouts/components/active-workout-stats';
 import { usePressScale } from '@/src/lib/animations/use-press-scale';
 import { Animated, Pressable, View } from 'react-native';
 
 interface ActiveWorkoutSummaryCardProps {
-  workout: Workout;
+  workout: Workout & {
+    completedSetCount: number;
+    exerciseCount: number;
+  };
   onPress: () => void;
 }
 
@@ -39,12 +43,14 @@ export const ActiveWorkoutSummaryCard = ({
               </View>
               <ActiveWorkoutDuration startedAt={workout.startedAt} />
             </View>
-            <Text variant="bodyMedium" className="mt-2">
+            <Text variant="h3" className="mt-2">
               {workout.name}
             </Text>
-            <Button className="mt-4" onPress={onPress}>
-              Resume Workout
-            </Button>
+            <ActiveWorkoutStats
+              exerciseCount={workout.exerciseCount}
+              completedSetCount={workout.completedSetCount}
+            />
+            <Button onPress={onPress}>Resume Workout</Button>
           </CardContent>
         </Card>
       </Pressable>

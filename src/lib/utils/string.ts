@@ -7,5 +7,9 @@ export function toTitleCase(value: string) {
 }
 
 export function pluralize(value: number, unit: string) {
-  return `${value} ${unit}${value === 1 ? '' : 's'}`;
+  return `${value} ${pluralizeUnit(value, unit)}`;
+}
+
+export function pluralizeUnit(value: number, unit: string) {
+  return value === 1 ? unit : `${unit}s`;
 }

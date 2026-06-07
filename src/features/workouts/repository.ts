@@ -20,6 +20,7 @@ import {
   and,
   asc,
   count,
+  countDistinct,
   desc,
   eq,
   gte,
@@ -237,6 +238,27 @@ export function getActiveWorkoutQuery(db: DrizzleDb) {
     .select()
     .from(workouts)
     .where(eq(workouts.status, 'in_progress'))
+    .orderBy(desc(workouts.startedAt));
+}
+
+export function getActiveWorkoutSummaryQuery(db: DrizzleDb) {
+  return db
+    .select({
+      workout: workouts,
+      exerciseCount: countDistinct(workoutExercises.id),
+      completedSetCount: count(sets.id)
+    })
+    .from(workouts)
+    .leftJoin(workoutExercises, eq(workoutExercises.workoutId, workouts.id))
+    .leftJoin(
+      sets,
+      and(
+        eq(sets.workoutExerciseId, workoutExercises.id),
+        eq(sets.status, 'completed')
+      )
+    )
+    .where(eq(workouts.status, 'in_progress'))
+    .groupBy(workouts.id)
     .orderBy(desc(workouts.startedAt));
 }
 
