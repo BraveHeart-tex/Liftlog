@@ -40,9 +40,7 @@ export default function OnboardingScreen() {
 
         <View className="mt-10 gap-8">
           <View>
-            <Text variant="small" className="mb-2">
-              Your name
-            </Text>
+            <Text variant="small">Your name</Text>
             <Input
               value={name}
               onChangeText={setName}
