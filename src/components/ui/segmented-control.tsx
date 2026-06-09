@@ -55,7 +55,13 @@ export function SegmentedControl<T extends string>({
   }));
 
   function handleLayout(event: LayoutChangeEvent) {
-    setWidth(event.nativeEvent.layout.width);
+    const nextWidth = event.nativeEvent.layout.width;
+
+    if (nextWidth <= 0) {
+      return;
+    }
+
+    setWidth(nextWidth);
   }
 
   return (

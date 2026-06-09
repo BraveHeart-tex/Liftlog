@@ -42,7 +42,7 @@ export const WorkoutPreferencesSection = () => {
                 options={WEIGHT_UNIT_OPTIONS}
                 onChange={setWeightUnit}
                 className="bg-muted ml-4 w-32"
-                indicatorClassName="bg-card!"
+                indicatorClassName="bg-card"
               />
             </View>
             <View className="border-border flex-row items-center justify-between border-t pt-4">
