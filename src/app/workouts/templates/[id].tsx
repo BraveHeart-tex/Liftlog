@@ -89,8 +89,7 @@ function WorkoutTemplateDetailLoaded({
       ),
     [draftExercises, orderedExercises]
   );
-  const canSaveExercises =
-    draftExercises.length > 0 && hasExerciseChanges && !isSavingExercises;
+  const canSaveExercises = hasExerciseChanges && !isSavingExercises;
 
   const handleStartWorkout = () => {
     if (activeWorkout) {

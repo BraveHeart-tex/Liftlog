@@ -6,11 +6,13 @@ import { Text } from '@/src/components/ui/text';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { TemplateExerciseEditor } from '@/src/features/workouts/components/template-exercise-editor';
 import { useSaveWorkoutTemplate } from '@/src/features/workouts/hooks';
+import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Alert, View } from 'react-native';
 
 export function NewTemplateContent() {
+  const navigation = useNavigation();
   const saveWorkoutTemplate = useSaveWorkoutTemplate();
   const isSavingRef = useRef(false);
   const [name, setName] = useState('');
@@ -18,6 +20,7 @@ export function NewTemplateContent() {
   const [selectedExercises, setSelectedExercises] = useState<
     ExerciseListItem[]
   >([]);
+  const hasChanges = name.trim().length > 0 || selectedExercises.length > 0;
   const canSave = name.trim().length > 0 && selectedExercises.length > 0;
 
   const saveTemplate = () => {
@@ -44,11 +47,9 @@ export function NewTemplateContent() {
     }
   };
 
-  const handleBackPress = () => {
-    const hasChanges = name.trim().length > 0 || selectedExercises.length > 0;
-
-    if (!hasChanges) {
-      router.back();
+  usePreventRemove(hasChanges, ({ data }) => {
+    if (isSavingRef.current) {
+      navigation.dispatch(data.action);
 
       return;
     }
@@ -61,11 +62,11 @@ export function NewTemplateContent() {
         {
           text: 'Discard',
           style: 'destructive',
-          onPress: () => router.back()
+          onPress: () => navigation.dispatch(data.action)
         }
       ]
     );
-  };
+  });
 
   return (
     <Screen
@@ -83,7 +84,7 @@ export function NewTemplateContent() {
     >
       <View className="px-4 pt-6">
         <View className="flex-row items-center gap-3">
-          <BackButton onPress={handleBackPress} />
+          <BackButton />
           <Text variant="h1">New template</Text>
         </View>
 
