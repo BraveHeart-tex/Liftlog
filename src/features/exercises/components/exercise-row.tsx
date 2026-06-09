@@ -3,13 +3,19 @@ import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { usePressScale } from '@/src/lib/animations/use-press-scale';
 import { cn } from '@/src/lib/utils/cn';
 import type { ReactNode } from 'react';
-import { Animated, Pressable, View } from 'react-native';
+import {
+  Animated,
+  Pressable,
+  View,
+  type AccessibilityState
+} from 'react-native';
 
 interface ExerciseRowProps {
   exercise: ExerciseListItem;
   subtitle: string;
   onPress: (exercise: ExerciseListItem) => void;
   disabled?: boolean;
+  accessibilityState?: AccessibilityState;
   className?: string;
   titleClassName?: string;
   rightAccessory?: ReactNode;
@@ -20,6 +26,7 @@ export function ExerciseRow({
   subtitle,
   onPress,
   disabled = false,
+  accessibilityState,
   className,
   titleClassName,
   rightAccessory
@@ -33,6 +40,7 @@ export function ExerciseRow({
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         disabled={disabled}
+        accessibilityState={accessibilityState}
         className={cn(
           'border-border flex-row items-center justify-between border-b py-4',
           className,

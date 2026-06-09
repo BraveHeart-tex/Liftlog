@@ -25,6 +25,7 @@ export const ExercisePickerRow = ({
       exercise={exercise}
       subtitle={metadataLabel}
       onPress={onPress}
+      accessibilityState={{ selected: isSelected }}
       className={cn(isSelected && 'bg-secondary rounded-lg px-3')}
       titleClassName={cn(isSelected && 'text-secondary-foreground')}
       rightAccessory={
