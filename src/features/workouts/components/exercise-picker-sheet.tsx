@@ -240,7 +240,12 @@ export function ExercisePickerSheet({
     >
       <BottomSheetHeader>
         <View className="flex w-full flex-row items-center justify-between">
-          <BottomSheetTitle>Add exercise</BottomSheetTitle>
+          <View>
+            <BottomSheetTitle>Add exercise</BottomSheetTitle>
+            <BottomSheetDescription>
+              Choose an exercise for this workout.
+            </BottomSheetDescription>
+          </View>
           <Button
             variant="secondary"
             size="icon"
@@ -250,9 +255,6 @@ export function ExercisePickerSheet({
             <Icon icon={XIcon} size="lg" className="text-foreground" />
           </Button>
         </View>
-        <BottomSheetDescription>
-          Choose an exercise for this workout.
-        </BottomSheetDescription>
       </BottomSheetHeader>
 
       <View className="px-4 pb-3">
