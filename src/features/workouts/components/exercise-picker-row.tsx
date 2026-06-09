@@ -1,11 +1,9 @@
-import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
-import { Text } from '@/src/components/ui/text';
 import { ExerciseRow } from '@/src/features/exercises/components/exercise-row';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { getCategoryLabel } from '@/src/features/workouts/components/utils';
 import { cn } from '@/src/lib/utils/cn';
-import { PlusIcon } from 'lucide-react-native';
+import { CheckIcon, PlusIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
 interface ExercisePickerRowProps {
@@ -27,29 +25,24 @@ export const ExercisePickerRow = ({
       exercise={exercise}
       subtitle={metadataLabel}
       onPress={onPress}
-      disabled={isSelected}
-      titleClassName={cn(isSelected && 'text-muted-foreground line-through')}
+      className={cn(isSelected && 'bg-secondary rounded-lg px-3')}
+      titleClassName={cn(isSelected && 'text-secondary-foreground')}
       rightAccessory={
-        isSelected ? (
-          <View className="bg-muted rounded-md px-3 py-1.5">
-            <Text variant="small" tone="muted">
-              Added
-            </Text>
-          </View>
-        ) : (
-          <Button
-            variant="secondary"
-            size="icon"
-            className="rounded-full"
-            onPress={() => onPress(exercise)}
-          >
-            <Icon
-              icon={PlusIcon}
-              size="sm"
-              className="text-secondary-foreground"
-            />
-          </Button>
-        )
+        <View
+          className={cn(
+            'border-border bg-card h-12 w-12 items-center justify-center rounded-full border',
+            isSelected && 'border-primary bg-primary'
+          )}
+        >
+          <Icon
+            icon={isSelected ? CheckIcon : PlusIcon}
+            size="sm"
+            className={cn(
+              'text-secondary-foreground',
+              isSelected && 'text-primary-foreground'
+            )}
+          />
+        </View>
       }
     />
   );

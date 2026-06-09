@@ -10,6 +10,7 @@ interface ExerciseRowProps {
   subtitle: string;
   onPress: (exercise: ExerciseListItem) => void;
   disabled?: boolean;
+  className?: string;
   titleClassName?: string;
   rightAccessory?: ReactNode;
 }
@@ -19,6 +20,7 @@ export function ExerciseRow({
   subtitle,
   onPress,
   disabled = false,
+  className,
   titleClassName,
   rightAccessory
 }: ExerciseRowProps) {
@@ -33,6 +35,7 @@ export function ExerciseRow({
         disabled={disabled}
         className={cn(
           'border-border flex-row items-center justify-between border-b py-4',
+          className,
           pressed && !disabled && 'opacity-70'
         )}
       >

@@ -28,15 +28,26 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Keyboard, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-interface ExercisePickerSheetProps {
+interface ExercisePickerSheetCommonProps {
   isOpen: boolean;
   exercises: ExerciseListItem[];
   recentExerciseIds?: ExerciseListItem['id'][];
   selectedExerciseIds: ExerciseListItem['id'][];
   onClose: () => void;
-  onSelectExercise: (exercise: ExerciseListItem) => void;
   onCreateCustomExercise: (initialName?: string) => void;
 }
+
+type ExercisePickerSheetProps = ExercisePickerSheetCommonProps &
+  (
+    | {
+        mode?: 'single';
+        onSelectExercise: (exercise: ExerciseListItem) => void;
+      }
+    | {
+        mode: 'multiple';
+        onSelectExercises: (exercises: ExerciseListItem[]) => void;
+      }
+  );
 
 const SNAP_POINTS = ['90%'];
 const RECENTLY_USED_SECTION_ID = 'section-recently-used';
@@ -67,18 +78,23 @@ export function ExercisePickerSheet({
   recentExerciseIds = [],
   selectedExerciseIds,
   onClose,
-  onSelectExercise,
-  onCreateCustomExercise
+  onCreateCustomExercise,
+  ...selectionProps
 }: ExercisePickerSheetProps) {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [selectedFilter, setSelectedFilter] =
     useState<ExercisePickerFilter>('all');
+  const [pendingExercises, setPendingExercises] = useState<ExerciseListItem[]>(
+    []
+  );
+  const isMultiple = selectionProps.mode === 'multiple';
 
   useEffect(() => {
     if (!isOpen) {
       setQuery('');
       setSelectedFilter('all');
+      setPendingExercises([]);
     }
   }, [isOpen]);
 
@@ -211,6 +227,48 @@ export function ExercisePickerSheet({
     trimmedQuery.length > 0
       ? `Create "${trimmedQuery}"`
       : 'Create custom exercise';
+  const addButtonLabel = `Add ${pendingExercises.length} ${
+    pendingExercises.length === 1 ? 'exercise' : 'exercises'
+  }`;
+
+  const selectExercise = (exercise: ExerciseListItem) => {
+    if (selectionProps.mode !== 'multiple') {
+      selectionProps.onSelectExercise(exercise);
+
+      return;
+    }
+
+    setPendingExercises(currentExercises => {
+      if (
+        currentExercises.some(
+          currentExercise => currentExercise.id === exercise.id
+        )
+      ) {
+        return currentExercises.filter(
+          currentExercise => currentExercise.id !== exercise.id
+        );
+      }
+
+      return [...currentExercises, exercise];
+    });
+  };
+
+  const addPendingExercises = () => {
+    if (selectionProps.mode !== 'multiple' || pendingExercises.length === 0) {
+      return;
+    }
+
+    selectionProps.onSelectExercises(pendingExercises);
+    onClose();
+  };
+
+  const createCustomExercise = () => {
+    if (selectionProps.mode === 'multiple' && pendingExercises.length > 0) {
+      selectionProps.onSelectExercises(pendingExercises);
+    }
+
+    onCreateCustomExercise(trimmedQuery);
+  };
 
   const keyExtractor = useCallback(
     (item: ExerciseListDataItem) =>
@@ -227,23 +285,32 @@ export function ExercisePickerSheet({
       footer={
         <View
           style={{ paddingBottom: insets.bottom }}
-          className="border-border bg-card border-t px-4 pt-3"
+          className="border-border bg-card gap-2 border-t px-4 pt-3"
         >
-          <Button
-            variant="secondary"
-            onPress={() => onCreateCustomExercise(trimmedQuery)}
-          >
+          <Button variant="secondary" onPress={createCustomExercise}>
             {createButtonLabel}
           </Button>
+          {isMultiple && (
+            <Button
+              disabled={pendingExercises.length === 0}
+              onPress={addPendingExercises}
+            >
+              {addButtonLabel}
+            </Button>
+          )}
         </View>
       }
     >
       <BottomSheetHeader>
         <View className="flex w-full flex-row items-center justify-between">
           <View>
-            <BottomSheetTitle>Add exercise</BottomSheetTitle>
+            <BottomSheetTitle>
+              {isMultiple ? 'Add exercises' : 'Add exercise'}
+            </BottomSheetTitle>
             <BottomSheetDescription>
-              Choose an exercise for this workout.
+              {isMultiple
+                ? 'Choose exercises to add to this template.'
+                : 'Choose an exercise for this workout.'}
             </BottomSheetDescription>
           </View>
           <Button
@@ -280,7 +347,7 @@ export function ExercisePickerSheet({
       <StyledBottomSheetFlatList
         data={listData}
         keyExtractor={keyExtractor}
-        contentContainerClassName="px-4 pb-32"
+        contentContainerClassName={isMultiple ? 'px-4 pb-48' : 'px-4 pb-32'}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         onScrollBeginDrag={Keyboard.dismiss}
@@ -303,8 +370,10 @@ export function ExercisePickerSheet({
           return (
             <ExercisePickerRow
               exercise={item.exercise}
-              isSelected={selectedExerciseIds.includes(item.exercise.id)}
-              onPress={onSelectExercise}
+              isSelected={pendingExercises.some(
+                exercise => exercise.id === item.exercise.id
+              )}
+              onPress={selectExercise}
             />
           );
         }}

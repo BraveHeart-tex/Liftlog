@@ -38,9 +38,8 @@ export function TemplateExerciseEditor({
     [exercises, onChange]
   );
 
-  const selectExercise = (exercise: ExerciseListItem) => {
-    onChange([...exercises, exercise]);
-    setIsExercisePickerOpen(false);
+  const selectExercises = (selectedExercises: ExerciseListItem[]) => {
+    onChange([...exercises, ...selectedExercises]);
   };
 
   return (
@@ -82,11 +81,12 @@ export function TemplateExerciseEditor({
       )}
 
       <ExercisePickerSheet
+        mode="multiple"
         isOpen={isExercisePickerOpen}
         exercises={availableExercises}
         selectedExerciseIds={exercises.map(exercise => exercise.id)}
         onClose={() => setIsExercisePickerOpen(false)}
-        onSelectExercise={selectExercise}
+        onSelectExercises={selectExercises}
         onCreateCustomExercise={initialName => {
           Keyboard.dismiss();
           setInitialCustomExerciseName(initialName ?? '');
