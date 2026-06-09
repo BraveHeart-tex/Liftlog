@@ -29,6 +29,7 @@ function RootNavigator() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="exercises/new" />
       <Stack.Screen name="workouts/[id]" />
+      <Stack.Screen name="workouts/templates/new" />
     </Stack>
   );
 }

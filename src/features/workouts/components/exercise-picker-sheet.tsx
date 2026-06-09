@@ -24,14 +24,14 @@ import {
 } from '@/src/features/workouts/components/exercise-picker-filters';
 import { ExercisePickerRow } from '@/src/features/workouts/components/exercise-picker-row';
 import { XIcon } from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Keyboard, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ExercisePickerSheetProps {
   isOpen: boolean;
   exercises: ExerciseListItem[];
-  recentExerciseIds: ExerciseListItem['id'][];
+  recentExerciseIds?: ExerciseListItem['id'][];
   selectedExerciseIds: ExerciseListItem['id'][];
   onClose: () => void;
   onSelectExercise: (exercise: ExerciseListItem) => void;
@@ -64,7 +64,7 @@ function exerciseMatchesFilter(
 export function ExercisePickerSheet({
   isOpen,
   exercises,
-  recentExerciseIds,
+  recentExerciseIds = [],
   selectedExerciseIds,
   onClose,
   onSelectExercise,
@@ -212,6 +212,12 @@ export function ExercisePickerSheet({
       ? `Create "${trimmedQuery}"`
       : 'Create custom exercise';
 
+  const keyExtractor = useCallback(
+    (item: ExerciseListDataItem) =>
+      item.type === 'section-header' ? item.id : item.exercise.id,
+    []
+  );
+
   return (
     <BottomSheet
       isOpen={isOpen}
@@ -271,9 +277,7 @@ export function ExercisePickerSheet({
 
       <StyledBottomSheetFlatList
         data={listData}
-        keyExtractor={(item: ExerciseListDataItem) =>
-          item.type === 'section-header' ? item.id : item.exercise.id
-        }
+        keyExtractor={keyExtractor}
         contentContainerClassName="px-4 pb-32"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"

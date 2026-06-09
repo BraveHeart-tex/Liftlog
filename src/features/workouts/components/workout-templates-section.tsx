@@ -25,6 +25,10 @@ export const WorkoutTemplatesSection = ({
     });
   };
 
+  const handleCreateTemplatePress = () => {
+    router.push('/workouts/templates/new');
+  };
+
   return (
     <View className="mt-8">
       <View className="flex-row items-center justify-between">
@@ -32,22 +36,27 @@ export const WorkoutTemplatesSection = ({
           Templates
         </Text>
         {templates.length > 0 && (
-          // TODO(FE-178): Add create new template linking here
-          <View className="flex-row items-center gap-1">
-            <Icon
-              icon={PlusIcon}
-              className="text-primary"
-              size={iconSizes.xs}
-            />
-            <Text tone="primary" variant="small">
-              New
-            </Text>
-          </View>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="min-h-0 px-0 py-0"
+            textClassName="text-primary text-sm"
+            leftIcon={
+              <Icon
+                icon={PlusIcon}
+                className="text-primary"
+                size={iconSizes.xs}
+              />
+            }
+            onPress={handleCreateTemplatePress}
+          >
+            New
+          </Button>
         )}
       </View>
 
       {templates.length === 0 ? (
-        <EmptyTemplates />
+        <EmptyTemplates onCreateTemplate={handleCreateTemplatePress} />
       ) : (
         <StyledScrollView
           className="mt-3"
@@ -69,7 +78,11 @@ export const WorkoutTemplatesSection = ({
 };
 
 // TODO(FE-185): Extract empty state markup to a re-usable component
-function EmptyTemplates() {
+interface EmptyTemplatesProps {
+  onCreateTemplate: () => void;
+}
+
+function EmptyTemplates({ onCreateTemplate }: EmptyTemplatesProps) {
   return (
     <View className="mt-3 items-center py-4">
       <View className="bg-card h-12 w-12 items-center justify-center rounded-lg">
@@ -87,12 +100,12 @@ function EmptyTemplates() {
         Save a routine to start faster next time.
       </Text>
 
-      {/* TODO(FE-178): Add create new template linking here  */}
       <Button
         variant="secondary"
         size="sm"
         className="mt-3"
         textClassName="text-primary text-sm"
+        onPress={onCreateTemplate}
       >
         Create template
       </Button>
