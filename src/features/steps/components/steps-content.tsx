@@ -3,7 +3,6 @@ import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
-import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 import { Text } from '@/src/components/ui/text';
 import { StepDayRow } from '@/src/features/steps/components/step-day-row';
 import { StepsActionsSheet } from '@/src/features/steps/components/steps-actions-sheet';
@@ -25,7 +24,7 @@ import { View } from 'react-native';
 
 const RECENT_STEP_HISTORY_LIMIT = 7;
 
-export default function StepsScreen() {
+export function StepsContent() {
   const [isActionsSheetOpen, setIsActionsSheetOpen] = useState(false);
   const {
     availability,
@@ -67,15 +66,7 @@ export default function StepsScreen() {
   );
 
   if (isLoading) {
-    return (
-      <SafeAreaView
-        style={{ flex: 1 }}
-        className="bg-background"
-        edges={['top']}
-      >
-        <LoadingState label="Loading steps..." />
-      </SafeAreaView>
-    );
+    return <LoadingState label="Loading steps..." />;
   }
 
   if (
@@ -83,63 +74,49 @@ export default function StepsScreen() {
     (isStepTrackingUnavailable || shouldConnectSteps)
   ) {
     return (
-      <SafeAreaView
-        style={{ flex: 1 }}
-        className="bg-background"
-        edges={['top']}
+      <StyledScrollView
+        className="flex-1"
+        contentContainerClassName="flex-grow px-4 pt-4 pb-6"
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <StyledScrollView
-          className="flex-1"
-          contentContainerClassName="flex-grow px-4 py-6"
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View className="flex-row items-start justify-between gap-4">
-            <View className="flex-1 gap-1">
-              <Text variant="h1">Steps</Text>
-              <StepsConnectionBadge
-                availabilityLabel={
-                  isStepTrackingUnavailable ? availabilityLabel : undefined
-                }
-                isConnected={isConnected}
-              />
-            </View>
+        <StepsConnectionBadge
+          availabilityLabel={
+            isStepTrackingUnavailable ? availabilityLabel : undefined
+          }
+          isConnected={isConnected}
+        />
+
+        {errorMessage ? (
+          <View className="border-danger bg-card mt-4 rounded-lg border px-4 py-3">
+            <Text variant="small" className="text-danger">
+              {errorMessage}
+            </Text>
           </View>
+        ) : null}
 
-          {errorMessage ? (
-            <View className="border-danger bg-card mt-4 rounded-lg border px-4 py-3">
-              <Text variant="small" className="text-danger">
-                {errorMessage}
-              </Text>
-            </View>
-          ) : null}
-
-          {isStepTrackingUnavailable ? (
-            <StepsUnavailableState availability={availability} />
-          ) : (
-            <StepsEmptyState isSyncing={isSyncing} onConnect={connectSteps} />
-          )}
-        </StyledScrollView>
-      </SafeAreaView>
+        {isStepTrackingUnavailable ? (
+          <StepsUnavailableState availability={availability} />
+        ) : (
+          <StepsEmptyState isSyncing={isSyncing} onConnect={connectSteps} />
+        )}
+      </StyledScrollView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
+    <>
       <StyledFlatList
         data={recentStepDays}
         keyExtractor={item => item.dateKey}
         style={{ flex: 1 }}
-        contentContainerClassName="px-4 py-6"
+        contentContainerClassName="px-4 pt-4 pb-6"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View className="mb-6">
             <View className="flex-row items-start justify-between gap-4">
-              <View className="flex-1 gap-1">
-                <Text variant="h1">Steps</Text>
-                <StepsConnectionBadge isConnected={isConnected} />
-              </View>
+              <StepsConnectionBadge isConnected={isConnected} />
 
               <Button
                 variant="secondary"
@@ -222,6 +199,6 @@ export default function StepsScreen() {
         onManage={openHealthConnectSettings}
         onRefresh={refreshSteps}
       />
-    </SafeAreaView>
+    </>
   );
 }

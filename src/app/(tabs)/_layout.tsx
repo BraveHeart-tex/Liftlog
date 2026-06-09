@@ -3,14 +3,8 @@ import { appFonts } from '@/src/theme/fonts';
 import { iconSizes, nativeFontSizes } from '@/src/theme/sizes';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Tabs } from 'expo-router';
-import {
-  ClockIcon,
-  DumbbellIcon,
-  FootprintsIcon,
-  ListIcon,
-  SettingsIcon
-} from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { ClockIcon, DumbbellIcon, ListIcon } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
 import {
   Text as NativeText,
   Platform,
@@ -47,13 +41,7 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
   const bottomPadding = Math.max(insets.bottom, tabBarBottomPadding);
 
-  const visibleRoutes = useMemo(
-    () =>
-      state.routes.filter(route => {
-        return Platform.OS === 'android' || route.name !== 'steps';
-      }),
-    [state.routes]
-  );
+  const visibleRoutes = state.routes;
 
   const activeRouteKey = state.routes[state.index]?.key;
   const activeIndex = Math.max(
@@ -221,25 +209,6 @@ export default function TabLayout() {
           title: 'Log',
           tabBarIcon: ({ color, size }) => (
             <ClockIcon color={color} size={size} />
-          )
-        }}
-      />
-      <Tabs.Screen
-        name="steps"
-        options={{
-          href: Platform.OS === 'android' ? undefined : null,
-          title: 'Steps',
-          tabBarIcon: ({ color, size }) => (
-            <FootprintsIcon color={color} size={size} />
-          )
-        }}
-      />
-      <Tabs.Screen
-        name="settings/index"
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ color, size }) => (
-            <SettingsIcon color={color} size={size} />
           )
         }}
       />
