@@ -1,6 +1,6 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import type { WorkoutExercise } from '@/src/db/schema';
-import { createWorkoutTemplateFromWorkout } from '@/src/features/workouts/repository';
+import type { WorkoutTemplateExercise } from '@/src/db/schema';
+import { createWorkoutTemplate } from '@/src/features/workouts/repository';
 import { useCallback } from 'react';
 
 export function useSaveWorkoutTemplate() {
@@ -9,11 +9,11 @@ export function useSaveWorkoutTemplate() {
   return useCallback(
     (
       name: string,
-      workoutExerciseRows: Pick<WorkoutExercise, 'exerciseId' | 'order'>[]
+      exerciseRows: Pick<WorkoutTemplateExercise, 'exerciseId' | 'order'>[]
     ) =>
-      createWorkoutTemplateFromWorkout(db, {
+      createWorkoutTemplate(db, {
         name,
-        workoutExerciseRows
+        exerciseRows
       }),
     [db]
   );

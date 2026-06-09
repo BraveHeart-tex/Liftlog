@@ -48,7 +48,7 @@ export const ActiveWorkoutExerciseEditList = memo(
 
     const renderFooter = useCallback(() => <View className="h-6" />, []);
 
-    // This is bad, but we have to use to solve the list flickering issue
+    // TODO(FE-195): This is bad, but we have to use to solve the list flickering issue
     const getRowKey = useCallback(
       (item: WorkoutExerciseWithSets, index: number) =>
         `${item.workoutExercise.id}-${index}`,

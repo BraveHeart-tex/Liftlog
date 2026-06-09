@@ -45,7 +45,11 @@ export function NewTemplateExerciseList({
     [onReorderExercises]
   );
 
-  const keyExtractor = useCallback((exercise: Exercise) => exercise.id, []);
+  // TODO(FE-195): This is bad, but we have to use to solve the list flickering issue
+  const keyExtractor = useCallback(
+    (exercise: Exercise, index: number) => `${exercise.id}-${index}`,
+    []
+  );
 
   return (
     <DraggableFlatList

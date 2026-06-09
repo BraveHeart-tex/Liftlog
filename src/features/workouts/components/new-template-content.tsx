@@ -13,16 +13,20 @@ import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/cr
 import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise-picker-sheet';
 import { NewTemplateEmptyState } from '@/src/features/workouts/components/new-template-empty-state';
 import { NewTemplateExerciseList } from '@/src/features/workouts/components/new-template-exercise-list';
+import { useSaveWorkoutTemplate } from '@/src/features/workouts/hooks';
 import { router } from 'expo-router';
 import { PlusIcon } from 'lucide-react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Alert, Keyboard, View } from 'react-native';
 
 export function NewTemplateContent() {
   const exercises = useExercises();
 
   const { createCustomExercise } = useExerciseActions();
+  const saveWorkoutTemplate = useSaveWorkoutTemplate();
+  const isSavingRef = useRef(false);
   const [name, setName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedExercises, setSelectedExercises] = useState<
     ExerciseListItem[]
   >([]);
@@ -42,6 +46,30 @@ export function NewTemplateContent() {
   const selectExercise = (exercise: ExerciseListItem) => {
     setSelectedExercises(current => [...current, exercise]);
     setIsExercisePickerOpen(false);
+  };
+
+  const saveTemplate = () => {
+    if (!canSave || isSavingRef.current) {
+      return;
+    }
+
+    isSavingRef.current = true;
+    setIsSaving(true);
+
+    try {
+      saveWorkoutTemplate(
+        name,
+        selectedExercises.map((exercise, order) => ({
+          exerciseId: exercise.id,
+          order
+        }))
+      );
+      router.back();
+    } catch {
+      isSavingRef.current = false;
+      setIsSaving(false);
+      Alert.alert('Could not save template', 'Please try again.');
+    }
   };
 
   const handleBackPress = () => {
@@ -71,7 +99,12 @@ export function NewTemplateContent() {
     <Screen
       withPadding={false}
       footer={
-        <Button className="w-full" disabled={!canSave}>
+        <Button
+          className="w-full"
+          disabled={!canSave}
+          loading={isSaving}
+          onPress={saveTemplate}
+        >
           Save template
         </Button>
       }

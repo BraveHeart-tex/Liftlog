@@ -12,7 +12,8 @@ import {
   type Set,
   type Workout,
   type WorkoutExercise,
-  type WorkoutTemplate
+  type WorkoutTemplate,
+  type WorkoutTemplateExercise
 } from '@/src/db/schema';
 import { toLocalDateKey } from '@/src/lib/utils/date';
 import { resolveTemplateName } from '@/src/lib/utils/workout';
@@ -557,14 +558,14 @@ export function deleteSet(db: DrizzleDb, id: Set['id']): void {
   db.delete(sets).where(eq(sets.id, id)).run();
 }
 
-export function createWorkoutTemplateFromWorkout(
+export function createWorkoutTemplate(
   db: DrizzleDb,
   {
     name,
-    workoutExerciseRows
+    exerciseRows
   }: {
     name: string;
-    workoutExerciseRows: Pick<WorkoutExercise, 'exerciseId' | 'order'>[];
+    exerciseRows: Pick<WorkoutTemplateExercise, 'exerciseId' | 'order'>[];
   }
 ): WorkoutTemplate {
   const now = Date.now();
@@ -585,16 +586,16 @@ export function createWorkoutTemplateFromWorkout(
 
     const createdTemplateRow = createdTemplate;
 
-    if (!createdTemplateRow || workoutExerciseRows.length === 0) {
+    if (!createdTemplateRow || exerciseRows.length === 0) {
       return;
     }
 
     tx.insert(workoutTemplateExercises)
       .values(
-        workoutExerciseRows.map(workoutExercise => ({
+        exerciseRows.map(exercise => ({
           templateId: createdTemplateRow.id,
-          exerciseId: workoutExercise.exerciseId,
-          order: workoutExercise.order
+          exerciseId: exercise.exerciseId,
+          order: exercise.order
         }))
       )
       .run();
