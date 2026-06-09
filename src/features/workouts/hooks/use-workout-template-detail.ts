@@ -10,6 +10,7 @@ import {
   getActiveWorkoutQuery,
   getWorkoutTemplateByIdQuery,
   getWorkoutTemplateExercisesQuery,
+  updateWorkoutTemplateExercises,
   updateWorkoutTemplateName
 } from '@/src/features/workouts/repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
@@ -57,6 +58,13 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
       ),
     [exerciseResult.data]
   );
+  const orderedExercises = useMemo(
+    () =>
+      templateExerciseRows
+        .map(templateExercise => exerciseById.get(templateExercise.exerciseId))
+        .filter((exercise): exercise is ExerciseListItem => Boolean(exercise)),
+    [exerciseById, templateExerciseRows]
+  );
 
   const startWorkoutFromTemplate = useCallback(() => {
     if (!template) {
@@ -97,6 +105,16 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
     [db]
   );
 
+  const saveTemplateExercises = useCallback(
+    (nextTemplateId: WorkoutTemplate['id'], exercises: ExerciseListItem[]) =>
+      updateWorkoutTemplateExercises(
+        db,
+        nextTemplateId,
+        exercises.map(exercise => exercise.id)
+      ),
+    [db]
+  );
+
   const removeTemplate = useCallback(
     (nextTemplateId: WorkoutTemplate['id']) => {
       deleteWorkoutTemplate(db, nextTemplateId);
@@ -109,11 +127,16 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
     template,
     templateExerciseRows,
     exerciseById,
+    orderedExercises,
     startWorkoutFromTemplate,
     discardActiveWorkoutAndStartTemplate,
     resumeWorkout,
     renameTemplate,
+    saveTemplateExercises,
     removeTemplate,
-    isLoading: Boolean(templateId) && !templateResult.isLive
+    isLoading: Boolean(templateId) && !templateResult.isLive,
+    isLoadingExercises:
+      Boolean(templateId) &&
+      (!templateExerciseResult.isLive || !exerciseResult.isLive)
   };
 }

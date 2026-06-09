@@ -5,15 +5,18 @@ import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
+import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { DiscardWorkoutSheet } from '@/src/features/workouts/components/discard-workout-sheet';
 import { RenameTemplateSheet } from '@/src/features/workouts/components/rename-template-sheet';
+import { TemplateExerciseEditor } from '@/src/features/workouts/components/template-exercise-editor';
 import { WorkoutTemplateActionsSheet } from '@/src/features/workouts/components/workout-template-actions-sheet';
 import { useWorkoutTemplateDetail } from '@/src/features/workouts/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { getRouteParamId } from '@/src/lib/utils/route';
+import { usePreventRemove } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { DumbbellIcon, EllipsisVerticalIcon } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Alert, View } from 'react-native';
 
 export default function WorkoutTemplateDetailScreen() {
@@ -65,23 +68,29 @@ function WorkoutTemplateDetailLoaded({
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
   const [isRenameSheetOpen, setIsRenameSheetOpen] = useState(false);
   const [isReplaceSheetOpen, setIsReplaceSheetOpen] = useState(false);
+  const [isEditingExercises, setIsEditingExercises] = useState(false);
+  const [isSavingExercises, setIsSavingExercises] = useState(false);
+  const [draftExercises, setDraftExercises] = useState<ExerciseListItem[]>([]);
+  const isSavingExercisesRef = useRef(false);
 
-  const { activeWorkout, template, templateExerciseRows, exerciseById } =
-    detail;
+  const {
+    activeWorkout,
+    template,
+    templateExerciseRows,
+    exerciseById,
+    orderedExercises
+  } = detail;
   const exerciseCount = templateExerciseRows.length;
-  const exerciseSummary = useMemo(() => {
-    const exerciseNames = templateExerciseRows
-      .map(
-        templateExercise => exerciseById.get(templateExercise.exerciseId)?.name
-      )
-      .filter((name): name is string => Boolean(name));
-
-    if (exerciseNames.length === 0) {
-      return 'No exercises';
-    }
-
-    return exerciseNames.join(' • ');
-  }, [exerciseById, templateExerciseRows]);
+  const hasExerciseChanges = useMemo(
+    () =>
+      draftExercises.length !== orderedExercises.length ||
+      draftExercises.some(
+        (exercise, index) => exercise.id !== orderedExercises[index]?.id
+      ),
+    [draftExercises, orderedExercises]
+  );
+  const canSaveExercises =
+    draftExercises.length > 0 && hasExerciseChanges && !isSavingExercises;
 
   const handleStartWorkout = () => {
     if (activeWorkout) {
@@ -95,6 +104,67 @@ function WorkoutTemplateDetailLoaded({
 
   const handleRenameTemplate = (nextTemplateId: string, name: string) =>
     Boolean(detail.renameTemplate(nextTemplateId, name));
+
+  const enterExerciseEditMode = () => {
+    if (detail.isLoadingExercises) {
+      return;
+    }
+
+    setDraftExercises(orderedExercises);
+    setIsEditingExercises(true);
+  };
+
+  const exitExerciseEditMode = () => {
+    setDraftExercises([]);
+    setIsEditingExercises(false);
+  };
+
+  const confirmDiscardExerciseChanges = () => {
+    if (!hasExerciseChanges) {
+      exitExerciseEditMode();
+
+      return;
+    }
+
+    Alert.alert('Discard changes?', 'Your exercise changes will be lost.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Discard',
+        style: 'destructive',
+        onPress: exitExerciseEditMode
+      }
+    ]);
+  };
+
+  const saveExerciseChanges = () => {
+    if (!canSaveExercises || isSavingExercisesRef.current) {
+      return;
+    }
+
+    isSavingExercisesRef.current = true;
+    setIsSavingExercises(true);
+
+    try {
+      const updatedTemplate = detail.saveTemplateExercises(
+        template.id,
+        draftExercises
+      );
+
+      if (!updatedTemplate) {
+        throw new Error('Template no longer exists.');
+      }
+
+      exitExerciseEditMode();
+    } catch (error) {
+      console.error('Failed to update template exercises', error);
+      Alert.alert('Could not save changes', 'Please try again.');
+    } finally {
+      isSavingExercisesRef.current = false;
+      setIsSavingExercises(false);
+    }
+  };
+
+  usePreventRemove(isEditingExercises, confirmDiscardExerciseChanges);
 
   const confirmDeleteTemplate = () => {
     Alert.alert(
@@ -121,21 +191,42 @@ function WorkoutTemplateDetailLoaded({
 
   return (
     <Screen
-      scroll
+      scroll={!isEditingExercises}
+      withPadding={!isEditingExercises}
       footer={
-        <Button
-          className="w-full"
-          leftIcon={
-            <Icon icon={DumbbellIcon} className="text-primary-foreground" />
-          }
-          onPress={handleStartWorkout}
-        >
-          Start workout
-        </Button>
+        isEditingExercises ? (
+          <Button
+            className="w-full"
+            disabled={!canSaveExercises}
+            loading={isSavingExercises}
+            onPress={saveExerciseChanges}
+          >
+            Save changes
+          </Button>
+        ) : (
+          <Button
+            className="w-full"
+            leftIcon={
+              <Icon icon={DumbbellIcon} className="text-primary-foreground" />
+            }
+            onPress={handleStartWorkout}
+          >
+            Start workout
+          </Button>
+        )
       }
     >
-      <View className="flex-row items-start gap-3">
-        <BackButton />
+      <View
+        className={cn(
+          'flex-row items-start gap-3',
+          isEditingExercises && 'px-4 pt-6'
+        )}
+      >
+        <BackButton
+          onPress={
+            isEditingExercises ? confirmDiscardExerciseChanges : undefined
+          }
+        />
 
         <View className="flex-1">
           <Text variant="h1" numberOfLines={2}>
@@ -146,63 +237,93 @@ function WorkoutTemplateDetailLoaded({
           </Text>
         </View>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          accessibilityLabel="Template actions"
-          onPress={() => setIsActionSheetOpen(true)}
-        >
-          <Icon
-            icon={EllipsisVerticalIcon}
-            size="lg"
-            className="text-foreground"
-          />
-        </Button>
-      </View>
-
-      <View className="mt-6">
-        {/* TODO: Add edit mode trigger button here */}
-        <Text variant="caption" tone="muted" className="tracking-widest">
-          EXERCISES
-        </Text>
-
-        {templateExerciseRows.length === 0 ? (
-          <View className="mt-3 items-center py-8">
-            <Text variant="small" tone="muted" className="text-center">
-              No exercises saved in this template.
-            </Text>
-          </View>
+        {isEditingExercises ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={confirmDiscardExerciseChanges}
+          >
+            Cancel
+          </Button>
         ) : (
-          <View className="mt-3">
-            {templateExerciseRows.map((templateExercise, index) => {
-              const exercise = exerciseById.get(templateExercise.exerciseId);
-
-              return (
-                <Card
-                  key={templateExercise.id}
-                  className={cn(index > 0 && 'mt-3')}
-                >
-                  <CardContent className="flex-row items-center gap-3">
-                    <View className="bg-muted h-9 w-9 items-center justify-center rounded-lg">
-                      <Text variant="caption" tone="muted">
-                        {index + 1}
-                      </Text>
-                    </View>
-                    <View className="flex-1">
-                      <Text variant="bodyMedium">
-                        {exercise?.name ?? 'Unknown exercise'}
-                      </Text>
-                      <Text variant="caption" tone="muted" className="mt-1">
-                        {exercise?.category ?? 'Exercise'}
-                      </Text>
-                    </View>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </View>
+          <Button
+            variant="ghost"
+            size="icon"
+            accessibilityLabel="Template actions"
+            onPress={() => setIsActionSheetOpen(true)}
+          >
+            <Icon
+              icon={EllipsisVerticalIcon}
+              size="lg"
+              className="text-foreground"
+            />
+          </Button>
         )}
       </View>
+
+      {isEditingExercises ? (
+        <View className="mt-6 flex-1">
+          <TemplateExerciseEditor
+            exercises={draftExercises}
+            onChange={setDraftExercises}
+          />
+        </View>
+      ) : (
+        <View className="mt-6">
+          <View className="flex-row items-center justify-between">
+            <Text variant="overline" tone="muted" className="tracking-widest">
+              EXERCISES
+            </Text>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="min-h-0 px-0 py-0"
+              textClassName="text-primary text-sm"
+              disabled={detail.isLoadingExercises}
+              onPress={enterExerciseEditMode}
+            >
+              Edit
+            </Button>
+          </View>
+
+          {templateExerciseRows.length === 0 ? (
+            <View className="mt-3 items-center py-8">
+              <Text variant="small" tone="muted" className="text-center">
+                No exercises saved in this template.
+              </Text>
+            </View>
+          ) : (
+            <View className="mt-3">
+              {templateExerciseRows.map((templateExercise, index) => {
+                const exercise = exerciseById.get(templateExercise.exerciseId);
+
+                return (
+                  <Card
+                    key={templateExercise.id}
+                    className={cn(index > 0 && 'mt-3')}
+                  >
+                    <CardContent className="flex-row items-center gap-3">
+                      <View className="bg-muted h-9 w-9 items-center justify-center rounded-lg">
+                        <Text variant="caption" tone="muted">
+                          {index + 1}
+                        </Text>
+                      </View>
+                      <View className="flex-1">
+                        <Text variant="bodyMedium">
+                          {exercise?.name ?? 'Unknown exercise'}
+                        </Text>
+                        <Text variant="caption" tone="muted" className="mt-1">
+                          {exercise?.category ?? 'Exercise'}
+                        </Text>
+                      </View>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </View>
+          )}
+        </View>
+      )}
 
       <RenameTemplateSheet
         isOpen={isRenameSheetOpen}

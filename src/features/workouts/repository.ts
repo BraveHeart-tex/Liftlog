@@ -450,6 +450,47 @@ export function updateWorkoutTemplateName(
     .get();
 }
 
+export function updateWorkoutTemplateExercises(
+  db: DrizzleDb,
+  id: WorkoutTemplate['id'],
+  exerciseIds: WorkoutTemplateExercise['exerciseId'][]
+): WorkoutTemplate | undefined {
+  let updatedTemplate: WorkoutTemplate | undefined;
+
+  db.transaction(tx => {
+    const existingTemplate = getWorkoutTemplateRecordById(tx, id);
+
+    if (!existingTemplate) {
+      return;
+    }
+
+    tx.delete(workoutTemplateExercises)
+      .where(eq(workoutTemplateExercises.templateId, id))
+      .run();
+
+    if (exerciseIds.length > 0) {
+      tx.insert(workoutTemplateExercises)
+        .values(
+          exerciseIds.map((exerciseId, order) => ({
+            templateId: id,
+            exerciseId,
+            order
+          }))
+        )
+        .run();
+    }
+
+    updatedTemplate = tx
+      .update(workoutTemplates)
+      .set({ updatedAt: Date.now() })
+      .where(eq(workoutTemplates.id, id))
+      .returning()
+      .get();
+  });
+
+  return updatedTemplate;
+}
+
 export function completeWorkout(db: DrizzleDb, id: Workout['id']): void {
   const existingWorkout = getWorkoutRecordById(db, id);
 
