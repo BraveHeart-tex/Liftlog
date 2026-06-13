@@ -19,6 +19,18 @@ Built with Expo, React Native, TypeScript, NativeWind, Expo SQLite, and Drizzle 
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/d6f9219d-0f2b-41d8-bf5f-d68e330a1286" width="180" />
+  <img src="https://github.com/user-attachments/assets/b2d9b2e1-8fab-4904-8096-7f5a97dbecb4" width="180" />
+  <img src="https://github.com/user-attachments/assets/aae0f623-3ddb-465c-91ef-1d95bf8c8c54" width="180" />
+  <img src="https://github.com/user-attachments/assets/ccdc8350-13ff-44a6-a980-268c0fabc71e" width="180" />
+  <img src="https://github.com/user-attachments/assets/7870f951-e156-4952-8e40-15941cce4899" width="180" />
+</p>
+
+---
+
 ## Requirements
 
 - Node `>=22.12.0 <23`
@@ -39,7 +51,8 @@ pnpm ios        # or pnpm android
 
 ```bash
 pnpm start              # Expo dev server
-pnpm ios / android      # Run on simulator or device
+pnpm ios                # Run on iOS simulator
+pnpm android            # Run on Android device/emulator
 pnpm run ts-check       # Type check
 pnpm run lint           # Lint
 pnpm run format         # Prettier + lint fix
