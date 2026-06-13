@@ -1,176 +1,91 @@
 # Liftlog
 
-Liftlog is a mobile workout tracker focused on fast strength logging, minimal friction, and clear progressive-overload feedback. The app is built with Expo, Expo Router, React Native, TypeScript, NativeWind, Expo SQLite, and Drizzle ORM.
+A fast, minimal strength tracking app for Android and iOS. Log workouts, track progressive overload, and review your history — all stored locally on device.
 
-The app includes:
+Built with Expo, React Native, TypeScript, NativeWind, Expo SQLite, and Drizzle ORM.
 
-- onboarding for name and weight-unit preference
-- a workout tab for starting, resuming, and completing sessions
-- exercise picking, set logging, and per-exercise workout detail
-- an exercises tab with search, category filters, custom exercises, and archive/delete behavior
-- a log tab with a calendar view for completed workouts
-- an Android-only steps tab with Health Connect sync, live step counting, and step history
-- settings for theme, weight unit, default rest timer duration, and steps preferences
-- local rest-timer audio and persisted local data
+---
 
-## Tech Stack
+## Features
 
-- Expo 54
-- React Native 0.81
-- React 19
-- Expo Router
-- TypeScript
-- NativeWind 5 with Tailwind CSS v4
-- Expo SQLite
-- Drizzle ORM
-- Gorhom Bottom Sheet
-- Lucide React Native
-- `expo-audio`
-- `expo-step-counter`
-- `react-native-health-connect`
-- `react-native-notify-kit`
-- `react-native-calendars`
+- Start, resume, and complete workout sessions
+- Log sets with weight and reps per exercise
+- Exercise library with search, category filters, custom exercises, and archive/delete
+- Calendar view of completed workouts
+- Progressive overload feedback per exercise
+- Android: live step counting and Health Connect sync
+- Settings: theme, weight unit, rest timer duration, steps preferences
+- Fully local — no account or internet required
+
+---
 
 ## Requirements
 
 - Node `>=22.12.0 <23`
 - pnpm `>=10.33.0 <11`
 
-## Getting Started
+---
 
-Install dependencies:
+## Getting Started
 
 ```bash
 pnpm install
+pnpm ios        # or pnpm android
 ```
 
-Start the Expo dev server:
-
-```bash
-pnpm start
-```
-
-Run the native app:
-
-```bash
-pnpm ios
-pnpm android
-```
+---
 
 ## Scripts
 
 ```bash
-pnpm start
-pnpm ios
-pnpm android
-pnpm run ts-check
-pnpm run lint
-pnpm run lint:fix
-pnpm run prettier:check
-pnpm run prettier:fix
-pnpm run format
-pnpm run knip
+pnpm start              # Expo dev server
+pnpm ios / android      # Run on simulator or device
+pnpm run ts-check       # Type check
+pnpm run lint           # Lint
+pnpm run format         # Prettier + lint fix
+pnpm run knip           # Unused exports check
 ```
 
-## App Structure
+---
 
-```text
+## Stack
+
+| Layer      | Technology                                                         |
+| ---------- | ------------------------------------------------------------------ |
+| Framework  | Expo 54 · React Native 0.81 · React 19                             |
+| Navigation | Expo Router                                                        |
+| Language   | TypeScript                                                         |
+| Styling    | NativeWind 5 · Tailwind CSS v4                                     |
+| Database   | Expo SQLite · Drizzle ORM                                          |
+| UI         | Gorhom Bottom Sheet · Lucide React Native                          |
+| Platform   | `expo-audio` · `expo-step-counter` · `react-native-health-connect` |
+
+---
+
+## Project Structure
+
+```
 src/
-  app/
-    (tabs)/
-      workout/
-      exercises/
-      log/
-      steps/
-      settings/
+  app/                  # Routes and screens (Expo Router)
   components/
-    styled/
-    ui/
-  db/
-    migrations/
-  features/
-    exercises/
-    progress/
-    settings/
-    steps/
-    workouts/
-  lib/
-    db/
-    utils/
-  theme/
+    ui/                 # Shared primitives (Screen, Button, Card, …)
+    styled/             # NativeWind wrappers for third-party components
+  db/                   # Schema, migrations, seed data
+  features/             # Feature modules (exercises, workouts, steps, …)
+  lib/                  # Shared DB utilities and cross-feature helpers
+  theme/                # Token values for native props
 ```
 
-Important entry points:
-
-- `src/app/_layout.tsx` loads `global.css` and wires the root stack.
-- `src/app/index.tsx` redirects into onboarding or the main tabs.
-- `src/components/common-providers.tsx` composes gesture, safe-area, database, and theme providers.
-- `src/components/database-provider.tsx` initializes SQLite, runs Drizzle migrations, and seeds starter data.
-- `src/components/ui/screen.tsx` is the default screen primitive.
-- `global.css` defines the NativeWind theme tokens used across the app.
-- `src/theme/tokens.ts` exposes raw token values for native props that cannot consume class names.
-
-## Navigation
-
-Top-level routes currently include:
-
-- `src/app/onboarding.tsx`
-- `src/app/(tabs)/workout`
-- `src/app/(tabs)/exercises`
-- `src/app/(tabs)/log`
-- `src/app/(tabs)/steps` for Android Health Connect step tracking
-- `src/app/(tabs)/settings`
-- `src/app/workouts/[id].tsx` for completed workout detail
-
-The main tab bar contains `Workout`, `Exercises`, `Log`, `Steps`, and `Settings`.
-The `Steps` tab is only shown on Android.
+---
 
 ## Database
 
-Liftlog stores app data locally with Expo SQLite and Drizzle ORM.
+All data is stored locally via Expo SQLite. Drizzle ORM manages the schema and migrations.
 
-Core tables:
-
-- `app_meta`
-- `exercises`
-- `workouts`
-- `workout_exercises`
-- `sets`
-- `personal_records`
-
-Relevant files:
-
-- Schema: `src/db/schema.ts`
-- Migrations: `src/db/migrations/`
-- Drizzle config: `drizzle.config.ts`
-- Seed data: `src/db/seed.ts`
-
-Generate a migration after changing the schema:
+After changing `src/db/schema.ts`, generate a migration:
 
 ```bash
 pnpm exec drizzle-kit generate
 ```
 
-Migrations run automatically through `DatabaseProvider` when the app initializes. Starter exercise data is seeded when needed.
-
-## Architecture Notes
-
-- Route screens stay thin and consume feature hooks from `src/features/*/hooks`.
-- Drizzle queries and writes live in feature repositories under `src/features/*/repository.ts`.
-- Reactive reads use `useLiveWithFallback` from `src/lib/db/use-live-with-fallback`.
-- Standard screens should prefer the shared `Screen` primitive or the local safe-area wrapper in `src/components/ui/safe-area-view.tsx`.
-
-## Styling
-
-- Use NativeWind `className` for core React Native components.
-- Prefer semantic tokens from `global.css` such as `bg-background`, `bg-card`, `text-foreground`, and `border-border`.
-- Use the shared `cn` helper from `src/lib/utils/cn.ts` for conditional classes.
-- Use wrappers in `src/components/styled` for third-party components with multiple style props.
-- Use raw values from `src/theme/tokens.ts` only for native props that cannot consume NativeWind classes.
-
-## Tooling
-
-- ESLint is configured in `eslint.config.mjs`
-- Prettier is configured with `prettier-plugin-tailwindcss`
-- Husky and lint-staged run formatting/linting on staged files
-- Commit messages are checked with Commitlint via `.commitlintrc.json`
+Migrations run automatically on app start via `DatabaseProvider`.
