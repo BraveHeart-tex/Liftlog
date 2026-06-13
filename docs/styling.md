@@ -1,121 +1,40 @@
-## Styling Rules
+## Styling
 
-Use NativeWind `className` by default.
+NativeWind `className` by default. Semantic tokens from `global.css`. `cn` from `@/src/lib/utils/cn` — no local alternatives.
 
-Use semantic theme tokens from `global.css`.
-
-Do not hardcode:
-
-- colors
-- font sizes
-- radius values
-- theme-dependent visual values
-
-Use the shared `cn` helper:
+No hardcoded colors, font sizes, radius, or theme-dependent values. No inline styles except for animated values, native-only props, or layout edge cases that NativeWind can't express.
 
 ```tsx
-import { cn } from '@/src/lib/utils/cn';
-```
-
-Do not create local `joinClassNames`, `classNames`, or `cn` helpers.
-
-## Core React Native Components
-
-Use `className` for normal styling.
-
-Good:
-
-```tsx
+// ✅
 <View className="border-border bg-card rounded-lg border p-4" />
-```
-
-Avoid inline styles on core React Native components unless required for:
-
-- animated values
-- raw native API values
-- native-only props
-- layout-critical edge cases that cannot be expressed safely with NativeWind
-
-Bad:
-
-```tsx
+// ❌
 <View style={{ backgroundColor: '#111' }} />
 ```
 
+---
+
 ## Third-Party Components
 
-For third-party components with multiple style props, use wrappers from:
+Use wrappers from `src/components/styled` instead of direct imports:
 
-```txt
-src/components/styled
-```
+`StyledScrollView` · `StyledGestureScrollView` · `StyledFlatList` · `StyledFlashList` · `StyledBottomSheetFlatList` · `StyledBottomSheetBackdrop` · `StyledBottomSheetScrollView` · `StyledBottomSheetTextInput` · `StyledTextInput` · `StyledActivityIndicator`
 
-Existing wrappers include:
+To add a new wrapper, follow the existing pattern in `src/components/styled`.
 
-- StyledScrollView
-- StyledGestureScrollView
-- StyledFlatList
-- StyledFlashList
-- StyledBottomSheetFlatList
-- StyledBottomSheetBackdrop
-- StyledBottomSheetScrollView
-- StyledBottomSheetTextInput
-- StyledTextInput
-- StyledActivityIndicator
+---
 
-Use wrappers instead of direct third-party imports at call sites.
+## NativeWind Constraints
 
-Good:
+Version: `nativewind@5.0.0-preview.3` — do not use `remapProps` or `cssInterop` (not exported). Use `styled(...)` from `nativewind`.
 
-```tsx
-<StyledScrollView
-  className="flex-1"
-  contentContainerClassName="flex-grow px-4 py-6"
-/>
-```
+---
 
-If a third-party component needs a new style-prop mapping, add or update a colocated wrapper in:
+## Raw Theme Values
 
-```txt
-src/components/styled
-```
+Use `@/src/theme/tokens` only for native/third-party props that can't consume NativeWind classes: React Navigation tab options, `TextInput` placeholder/selection colors, backdrop styles, animated transforms. Never when a semantic class works.
 
-## NativeWind Version Constraints
+---
 
-This project uses:
+## Typography
 
-```txt
-nativewind@5.0.0-preview.3
-```
-
-Do not use:
-
-- `remapProps`
-- `cssInterop`
-
-They are not exported in this project version.
-
-Use `styled(...)` mappings from `nativewind`, following the existing wrapper pattern.
-
-## Theme Token Exceptions
-
-Use raw values from `@/src/theme/tokens` only for native or third-party props that cannot consume NativeWind classes.
-
-Allowed examples:
-
-- React Navigation tab options
-- `TextInput` placeholder colors
-- `TextInput` selection colors
-- bottom sheet backdrop styles
-- animated transforms
-- raw native API values
-
-Do not use raw theme values when a semantic NativeWind class can be used.
-
-## React Native Typography
-
-Do not define or rely on global line-height tokens.
-
-React Native treats `lineHeight` as actual layout height, which can cause spacing issues.
-
-Use project typography classes and the shared `Text` primitive instead of ad-hoc font styling.
+No global `lineHeight` tokens — RN treats `lineHeight` as layout height, causing spacing issues. Use the shared `Text` primitive and project typography classes instead of ad-hoc font styling.

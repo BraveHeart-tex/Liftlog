@@ -1,104 +1,20 @@
-## Database Lifecycle
+## Database
 
-`DatabaseProvider` owns:
+`DatabaseProvider` is the single lifecycle entry point — owns `SQLiteProvider`, migrations, seeding, and Drizzle context. No duplicate init logic elsewhere.
 
-- `SQLiteProvider`
-- migrations
-- seeding
-- Drizzle context setup
+`src/db/client.ts` owns DB config, WAL, foreign keys, and `createDrizzleDb`. App code must not call `useSQLiteContext`, `createDrizzleDb`, `migrate`, or `runSeedIfNeeded` directly — these are infrastructure-level. Exception: dev-only tooling (`src/components/drizzle-studio.tsx`).
 
-App code should treat `DatabaseProvider` as the single database lifecycle entry point.
+---
 
-Avoid duplicating database initialization logic elsewhere.
+## Schema & Migrations
 
-## SQLite / Drizzle Ownership Boundaries
+- Schema: `src/db/schema.ts`
+- Migrations: `src/db/migrations` (tool-managed, never touch manually)
 
-`src/db/client.ts` owns:
+**To change schema:**
 
-- database configuration
-- WAL setup
-- foreign key configuration
-- database name/options
-- `createDrizzleDb`
+1. Edit `src/db/schema.ts`
+2. Run `pnpm exec drizzle-kit generate`
+3. Let the app migration flow apply it
 
-Application code should not call these directly outside provider setup:
-
-- `useSQLiteContext`
-- `createDrizzleDb`
-- `migrate`
-- `runSeedIfNeeded`
-
-These APIs are infrastructure-level concerns.
-
-Dev-only tooling may use `useSQLiteContext` when required.
-
-Example:
-
-```txt id="4j2khj"
-src/components/drizzle-studio.tsx
-```
-
-## Schema and Migrations
-
-Schema source of truth:
-
-```txt id="ixdmp0"
-src/db/schema.ts
-```
-
-Migration location:
-
-```txt id="2h1y6z"
-src/db/migrations
-```
-
-When changing schema:
-
-1. update `src/db/schema.ts`
-2. generate migrations with:
-
-```sh id="bqarfm"
-pnpm exec drizzle-kit generate
-```
-
-Never manually create migration files.
-
-## Generated Migration Restrictions
-
-Generated migration files are considered off-limits.
-
-Never manually edit:
-
-- migration SQL
-- migration snapshots
-- `_journal.json`
-- `migrations.js`
-
-Never:
-
-- patch the SQLite database manually
-- hand-write migration state
-- bypass migration generation flow
-
-Generated files should remain fully tool-managed.
-
-## Migration Workflow
-
-Required workflow:
-
-```txt id="0j2rte"
-Update schema.ts -> generate migration -> run app migration flow
-```
-
-Avoid:
-
-- ad-hoc schema patching
-- temporary migration hacks
-- modifying generated migration output
-
-Schema changes should remain:
-
-- reproducible
-- deterministic
-- tool-generated
-- source-controlled
+Never manually edit migration SQL, snapshots, `_journal.json`, or `migrations.js`. Never patch the DB directly or hand-write migration state. Schema changes must be reproducible, deterministic, and source-controlled.

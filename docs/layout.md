@@ -1,44 +1,16 @@
-## Layout Rules
+## Layout
 
-Layouts should prioritize:
+Prioritize: mobile usability · readability · predictable spacing · safe scrolling · keyboard safety
 
-- mobile usability
-- readability
-- predictable spacing
-- safe scrolling behavior
-- keyboard safety
+Avoid: overflowing content · hidden footer actions · unnecessary nesting · `flex-1` overuse · web-dependent layouts
 
-Avoid:
-
-- overflowing content
-- hidden footer actions
-- unnecessary nesting
-- excessive `flex-1` usage
-- layouts that depend on web behavior
+---
 
 ## Screen Roots
 
-Prefer the shared `Screen` primitive for standard screens:
+Use `Screen` (`@/src/components/ui/screen`) for standard pages, forms, scrolling layouts, keyboard handling, and sticky footers.
 
-```tsx
-import { Screen } from '@/src/components/ui/screen';
-```
-
-Use `Screen` for:
-
-- standard pages
-- forms
-- scrolling layouts
-- keyboard handling
-- sticky footers
-
-When a custom safe-area root is required, use:
-
-```tsx
-import { SafeAreaView } from '@/src/components/ui/safe-area-view';
-```
-
-Example:
+For custom safe-area roots use `SafeAreaView` from `@/src/components/ui/safe-area-view` — never from `react-native-safe-area-context` directly.
 
 ```tsx
 <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
@@ -46,32 +18,13 @@ Example:
 </SafeAreaView>
 ```
 
-Do not import `SafeAreaView` directly from:
-
-```txt
-react-native-safe-area-context
-```
-
-inside app UI code.
+---
 
 ## Scrollable Content
 
-If content can exceed screen height, use:
+Use a scroll view or list whenever content can exceed screen height. Never use plain `View` for vertically scrollable layouts.
 
-- a scroll view
-- a list
-- a bottom-sheet-aware list
-
-Preferred components:
-
-- StyledScrollView
-- StyledFlatList
-- StyledBottomSheetFlatList
-- StyledFlashList
-
-Do not rely on a plain `View` for vertically scrollable layouts.
-
-Good:
+Preferred: `StyledScrollView` · `StyledFlatList` · `StyledBottomSheetFlatList` · `StyledFlashList`
 
 ```tsx
 <StyledScrollView
@@ -80,15 +33,13 @@ Good:
 />
 ```
 
-Avoid unnecessary nested scroll containers.
+Avoid nested scroll containers. Avoid `flex-1` on non-scroll stacks — it can push content off-screen.
 
-Avoid overusing `flex-1` on non-scroll content stacks because it can push content off-screen.
+---
 
 ## Sticky Footers
 
-Prefer `Screen` first.
-
-If building a custom sticky-footer layout:
+Prefer `Screen`. For custom layouts:
 
 ```tsx
 <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
@@ -98,51 +49,26 @@ If building a custom sticky-footer layout:
   >
     {children}
   </StyledScrollView>
-
   <View className="border-border bg-background border-t px-4 py-4">
     {footer}
   </View>
 </SafeAreaView>
 ```
 
-Footer actions should:
+Footer must stay visible, respect safe areas, and remain reachable while scrolling.
 
-- remain visible
-- respect safe areas
-- remain reachable while scrolling
+---
 
-## Keyboard Behavior
+## Keyboard
 
-The shared `Screen` primitive owns the default keyboard behavior.
+`Screen` owns default keyboard behavior. Do not add custom keyboard listeners, manual footer offset state, or custom keyboard animation systems unless `Screen` is proven insufficient.
 
-Do not add:
+Do not set Android keyboard behavior back to `height` — previously caused stale bottom gaps after dismissal.
 
-- custom keyboard listeners
-- manual footer offset state
-- custom keyboard animation systems
+---
 
-unless `Screen` is proven insufficient.
+## Spacing Scale
 
-Do not switch Android `Screen` keyboard behavior back to `height`.
+`mt-1` tight · `mt-2` small · `mt-3` medium · `mt-4` section · `mt-6` large break
 
-It previously caused stale bottom gaps after keyboard dismissal.
-
-## Spacing
-
-Use the standard spacing scale:
-
-```txt
-mt-1 tight spacing
-mt-2 small spacing
-mt-3 medium spacing
-mt-4 section spacing
-mt-6 large section break
-```
-
-Prefer consistent spacing patterns across screens.
-
-Avoid arbitrary spacing values unless required for:
-
-- native edge cases
-- animation alignment
-- visual centering corrections
+No arbitrary values except for native edge cases, animation alignment, or visual centering corrections.

@@ -1,111 +1,40 @@
 # Engineering Principles
 
-## Core Principles
+Simple > clever. Working > perfect. Explicit > abstract. Readable > smart. Follow existing patterns before introducing new ones. Optimize for mobile UX and low-friction interactions.
 
-- Keep solutions simple.
-- Avoid abstractions unless they clearly improve readability or reuse.
-- Prefer working features over perfect architecture.
-- Follow existing project patterns before introducing new ones.
-- Optimize for mobile UX and low-friction interactions.
-- Prioritize readability and maintainability over cleverness.
-- Prefer explicit code over deep abstraction layers.
+---
 
-## Dependency Policy
+## Dependencies
 
-Do not add production dependencies without approval.
+No new prod dependencies without approval. Prefer existing utilities, primitives, or small explicit implementations over libraries for formatting helpers, simple hooks, lightweight UI behavior, or one-off utilities.
 
-Before adding a dependency:
+---
 
-- prefer existing utilities
-- prefer existing primitives
-- prefer small explicit implementations
+## Comments
 
-Avoid libraries for:
+Only for non-obvious edge cases, platform-specific behavior, complex invariants, or unusual constraints. Prefer self-explanatory code and naming.
 
-- small formatting helpers
-- simple hooks
-- lightweight UI behavior
-- one-off utilities
-
-## Comment Policy
-
-Avoid comments unless they are necessary to explain:
-
-- non-obvious edge cases
-- platform-specific behavior
-- complex invariants
-- unusual implementation constraints
-
-Prefer self-explanatory code and naming.
+---
 
 ## TypeScript
 
-Use TypeScript throughout the codebase.
+- `interface` → props, params, state, context, object-shaped contracts
+- `type` → unions, literals, mapped/conditional types, inferred ORM aliases, utility compositions
 
-Prefer `interface` for:
+Explicit types when they aid clarity. No unnecessary generic complexity.
 
-- props
-- params
-- state objects
-- context values
-- object-shaped contracts
+---
 
-Prefer `type` for:
+## React Native / Expo
 
-- unions
-- literals
-- mapped types
-- conditional types
-- inferred ORM/schema aliases
-- utility compositions
+No browser APIs, DOM assumptions, CSS-only solutions, or web-only layout patterns. All solutions must work in RN + Expo mobile environments.
 
-Prefer explicit types when they improve clarity.
+---
 
-Avoid unnecessary generic complexity.
+## Avoid
 
-## React Native / Expo Assumptions
-
-Solutions must work correctly in:
-
-- React Native
-- Expo
-- mobile environments
-
-Avoid:
-
-- browser-only APIs
-- DOM assumptions
-- CSS-only solutions
-- web-only layout patterns
-
-Prefer React Native-compatible patterns and APIs.
-
-## Common Pitfalls
-
-Avoid:
-
-- unnecessary abstractions
-- unrelated refactors
-- hardcoded design values
-- overusing `flex-1`
-- deep component hierarchies
-- tiny touch targets
-- excessive prop drilling
-- unnecessary rerenders
-- logic-heavy route screens
-- direct database access in UI components
-
-Do not:
-
-- build Drizzle queries inside components
-- import third-party components directly when wrappers exist
-- manually modify generated migration files
-- manually patch the SQLite database
-
-Prefer:
-
-- feature-level organization
-- reusable primitives
-- compact readable UI
-- predictable patterns
-- focused components
+- Unnecessary abstractions, unrelated refactors, hardcoded design values
+- `flex-1` overuse, deep hierarchies, tiny touch targets, excessive prop drilling
+- Logic-heavy route screens, direct DB access in UI, unnecessary rerenders
+- Drizzle queries inside components, direct third-party imports when wrappers exist
+- Manually editing generated migrations or patching the SQLite DB directly

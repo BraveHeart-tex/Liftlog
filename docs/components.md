@@ -1,142 +1,51 @@
 ## Component Structure
 
-Prefer:
+One component per file. One named helper per file.
 
-- small focused components
-- explicit composition
-- predictable file structure
-- reusable primitives
+Extract additional components into separate files even when private — colocate only when separation would harm understanding or the framework requires it. Inline callbacks and short expressions don't count as helpers.
 
-Avoid:
+Extract non-trivial helpers into feature-level files. A helper may stay colocated only when trivial, used once, and tightly coupled to the file's primary export.
 
-- deeply nested abstractions
-- oversized component files
-- component-local utility accumulation
-- mixing data access with presentation
+Prefer: small focused components · explicit composition · reusable primitives · predictable file structure
 
-Default to one React component per file.
+Avoid: deep abstractions · oversized files · component-local utility accumulation · mixing data access with presentation
 
-Extract additional components into separate files, even when they are private or used only by the parent component. Keep multiple components in one file only when separating them would make the implementation harder to understand or the framework requires colocation.
+---
 
-Default to one named helper function per file. Extract non-trivial helpers into focused feature-level files. A helper may remain colocated only when it is trivial, used once, and tightly coupled to the file's primary export.
-
-Inline callbacks and short expressions used directly by the primary component do not count as additional helper functions.
-
-## Shared Primitives
-
-Prefer shared UI primitives:
-
-- Screen
-- Card
-- Button
-- Input
-- Badge
-- Text
-- Dialog
-- BottomSheet
-- EmptyState
-- Icon
+## Primitives & Locations
 
 Prefer extending existing primitives before introducing new UI systems.
 
-## Shared Locations
+| Type                                                                                                       | Location                                                                      |
+| ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| UI primitives (`Screen` `Card` `Button` `Input` `Badge` `Text` `Dialog` `BottomSheet` `EmptyState` `Icon`) | `src/components/ui`                                                           |
+| Styled wrappers (third-party)                                                                              | `src/components/styled`                                                       |
+| Shared providers                                                                                           | `src/components/database-provider.tsx`, `src/components/common-providers.tsx` |
 
-Shared UI primitives:
+Feature-specific UI stays close to the owning feature.
 
-```txt id="cvvkjs"
-src/components/ui
-```
+---
 
-Styled wrappers:
+## Helper & Utility Placement
 
-```txt id="5t3d5g"
-src/components/styled
-```
+- Feature-level helpers (formatting, labels, status mappings, display transforms) → `src/features/<name>/display.ts`
+- Cross-feature domain-neutral utilities → `src/lib/utils`
+- Do not accumulate helpers in route screens or large component files.
+- Do not place generic utilities inside component files. Avoid duplication across features.
 
-Shared providers:
+---
 
-```txt id="6r39xw"
-src/components/database-provider.tsx
-src/components/common-providers.tsx
-```
+## Abstractions
 
-Feature-specific UI should remain close to the owning feature.
+Introduce only when duplication is meaningful, readability improves, reuse is proven, or complexity is reduced. Not for theoretical reuse.
 
-## Helper Placement
+---
 
-Avoid accumulating multiple named helper functions in one file.
+## Ownership
 
-Do not keep repeated:
+| Layer                        | Owns                                                  |
+| ---------------------------- | ----------------------------------------------------- |
+| UI components                | rendering, prepared data display                      |
+| Feature hooks & repositories | orchestration, derived data, DB logic, business rules |
 
-- formatting helpers
-- labels
-- status mappings
-- display transforms
-- presentation logic
-
-inside:
-
-- route screens
-- large component files
-
-Prefer feature-level helper files such as:
-
-```txt id="r46m79"
-src/features/steps/display.ts
-```
-
-Keep feature-specific logic inside the owning feature directory whenever possible.
-
-## Utility Placement
-
-Use:
-
-```txt id="fdt6si"
-src/lib/utils
-```
-
-only for:
-
-- cross-feature
-- domain-neutral
-- reusable utilities
-
-Do not place generic reusable utilities inside component files.
-
-Avoid utility duplication across features.
-
-## Abstraction Rules
-
-Avoid deep abstraction layers early.
-
-Prefer:
-
-- explicit code
-- composition
-- reusable primitives
-- lightweight helpers
-
-Introduce abstractions only when:
-
-- duplication becomes meaningful
-- readability improves
-- reuse is proven
-- complexity is reduced
-
-Do not abstract prematurely for theoretical reuse.
-
-## Component Ownership Boundaries
-
-UI components should:
-
-- focus on rendering
-- receive prepared data
-- avoid direct database access
-- avoid owning business logic
-
-Feature hooks and repositories should own:
-
-- orchestration
-- derived data
-- database logic
-- business rules
+UI components must not access the database or own business logic.

@@ -1,33 +1,14 @@
 ## Gorhom Bottom Sheet
 
-Use Gorhom Bottom Sheet patterns consistently across the app.
+Prefer: predictable keyboard behavior · stable sizing · bottom-sheet-aware inputs · direct child lists · safe-area footers
 
-Prefer:
+Avoid: conflicting sizing modes · nested scroll edge cases · keyboard overlap · layout jitter
 
-- predictable keyboard behavior
-- stable sizing behavior
-- bottom-sheet-aware inputs
-- direct child list usage
-- safe-area-aware footers
+---
 
-Avoid:
+## Dynamic Sizing
 
-- conflicting sizing modes
-- nested scrolling edge cases
-- keyboard overlap bugs
-- layout jitter during open/close transitions
-
-## Dynamic Sizing Sheets
-
-Use dynamic sizing sheets for:
-
-- forms
-- menus
-- dialogs
-- pickers
-- variable-height content
-
-Pattern:
+Use for: forms · menus · dialogs · pickers · variable-height content
 
 ```tsx
 <BottomSheet
@@ -38,30 +19,13 @@ Pattern:
 />
 ```
 
-Rules:
+- No `snapPoints`. No `animateOnMount={false}`. No auto-focus on open.
 
-- do not pass `snapPoints`
-- do not use `animateOnMount={false}`
-- do not auto-focus inputs on open
-- use `keyboardBehavior="interactive"`
-- use `keyboardBlurBehavior="restore"`
+---
 
-Dynamic sizing should remain:
+## Snap Points
 
-- content-driven
-- stable
-- keyboard-safe
-
-## Snap Point Sheets
-
-Use snap point sheets for:
-
-- search + list layouts
-- tall pickers
-- fixed-height flows
-- predictable content heights
-
-Pattern:
+Use for: search + list layouts · tall pickers · fixed-height flows
 
 ```tsx
 <BottomSheet
@@ -71,52 +35,32 @@ Pattern:
 />
 ```
 
-Rules:
+- No `interactive` keyboard behavior with snap points — causes keyboard height stacking.
+- Use `androidKeyboardInputMode="adjustPan"` when footer must rise with keyboard.
 
-- do not use `interactive` keyboard behavior with snap points
-- use `androidKeyboardInputMode="adjustPan"` when footer actions must rise with the keyboard
+---
 
-Avoid combining:
+## Inputs
 
-- snap points
-- interactive keyboard behavior
+Use bottom-sheet-aware inputs inside keyboard-sensitive sheets:
+`BottomSheetInput` · `StyledBottomSheetTextInput` · wrappers on `BottomSheetTextInput`
 
-This can cause keyboard height stacking issues.
+Avoid plain RN `TextInput` inside keyboard-sensitive sheets unless Android behavior is verified.
 
-## Inputs Inside Sheets
+---
 
-Keyboard-sensitive sheets must use bottom-sheet-aware input components.
+## Lists
 
-Preferred options:
-
-- `BottomSheetInput`
-- `StyledBottomSheetTextInput`
-- wrappers built on `BottomSheetTextInput`
-
-Avoid plain React Native `TextInput` inside keyboard-sensitive sheets unless behavior has been verified on Android.
-
-Input behavior should remain:
-
-- keyboard-safe
-- focus-safe
-- layout-stable
-
-## Lists Inside Sheets
-
-`BottomSheetFlatList` must be a direct child of the sheet.
-
-Good:
+`BottomSheetFlatList` must be a **direct child** of the sheet — no wrapping containers.
 
 ```tsx
+// ✅
 <GorhomBottomSheet snapPoints={['70%', '90%']}>
   <View>{/* header */}</View>
   <StyledBottomSheetFlatList data={items} />
 </GorhomBottomSheet>
-```
 
-Bad:
-
-```tsx
+// ❌
 <GorhomBottomSheet snapPoints={['70%', '90%']}>
   <BottomSheetView style={{ flex: 1 }}>
     <StyledBottomSheetFlatList data={items} />
@@ -124,24 +68,15 @@ Bad:
 </GorhomBottomSheet>
 ```
 
-Avoid unnecessary wrapping containers around bottom-sheet-aware lists.
+The shared `BottomSheet` primitive handles correct structure automatically.
 
-The shared `BottomSheet` primitive should handle the correct structure automatically.
+---
 
-## Bottom Safe Area
-
-Bottom sheet footer actions should respect safe areas.
-
-Pattern:
+## Safe Area Footer
 
 ```tsx
 const insets = useSafeAreaInsets();
-
 <View style={{ paddingBottom: insets.bottom + 16 }}>{children}</View>;
 ```
 
-Footer actions should:
-
-- remain reachable
-- avoid home-indicator overlap
-- stay visible during keyboard interaction
+Footer actions must stay reachable, avoid home-indicator overlap, and remain visible during keyboard interaction.

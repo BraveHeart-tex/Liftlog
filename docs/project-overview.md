@@ -1,115 +1,27 @@
 # Project Overview
 
-This project is a mobile workout tracking app focused on:
+A mobile workout tracker focused on progressive overload, fast logging, and minimal interaction friction. Dark-mode UI, strong mobile usability, lightweight UX.
 
-- progressive overload
-- fast workout logging
-- minimal interaction friction
-- clean dark-mode UI
-- strong mobile usability
+---
 
-The app prioritizes:
+## Stack
 
-- speed
-- clarity
-- maintainability
-- lightweight UX
-- practical architecture
+Expo · React Native · Expo Router · TypeScript · NativeWind / Tailwind CSS v4 · Expo SQLite · Drizzle ORM
 
-## Tech Stack
+Libraries: Gorhom Bottom Sheet · Lucide React Native · expo-audio · expo-step-counter · react-native-health-connect · react-native-notify-kit
 
-Core stack:
+---
 
-- Expo
-- React Native
-- Expo Router
-- TypeScript
-- NativeWind / Tailwind CSS v4
-- Expo SQLite
-- Drizzle ORM
+## Goals
 
-Primary libraries:
+**Architecture:** simple explicit solutions · predictable patterns · feature-based organization · reusable UI primitives · low cognitive overhead. No premature abstractions, unnecessary dependencies, or deep hierarchies.
 
-- Gorhom Bottom Sheet
-- Lucide React Native
-- react-native-calendars
-- expo-audio
-- expo-step-counter
-- react-native-health-connect
-- react-native-notify-kit
+**UX:** fast · responsive · compact · low friction. Workout UI emphasizes quick scanning, progression visibility, large touch targets, minimal typing.
 
-## Platform Focus
+**Design system:** semantic theme tokens · shared primitives · predictable spacing · consistent typography · mobile-focused.
 
-Primary target:
+---
 
-- mobile-first React Native UX
+## Platform
 
-Solutions should:
-
-- work correctly in Expo environments
-- avoid web-only assumptions
-- prioritize touch ergonomics
-- optimize for mobile interaction speed
-
-## Architecture Goals
-
-The codebase should favor:
-
-- simple explicit solutions
-- predictable patterns
-- feature-based organization
-- reusable UI primitives
-- low cognitive overhead
-
-Avoid:
-
-- premature abstractions
-- unnecessary dependencies
-- over-engineering
-- deep component hierarchies
-
-## UX Goals
-
-The app should feel:
-
-- fast
-- responsive
-- compact
-- readable
-- low friction
-
-Workout and progress UI should emphasize:
-
-- quick scanning
-- progression visibility
-- minimal typing
-- large touch targets
-- readable workout summaries
-
-## Design System Goals
-
-The UI system should remain:
-
-- consistent
-- semantic
-- theme-driven
-- reusable
-- mobile-focused
-
-Prefer:
-
-- semantic theme tokens
-- shared primitives
-- predictable spacing
-- compact layouts
-- consistent typography
-
-## Long-Term Goal
-
-Build a fast, minimal, high-quality workout tracker with:
-
-- excellent mobile UX
-- maintainable architecture
-- scalable feature organization
-- clean design consistency
-- strong performance characteristics
+Mobile-first RN + Expo. No web-only assumptions. Prioritize touch ergonomics and interaction speed.

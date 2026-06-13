@@ -1,81 +1,28 @@
 ## Theme Tokens
 
-Prefer semantic theme tokens from `global.css`.
+Semantic tokens from `global.css` only. No hardcoded colors, font sizes, radius, or theme-dependent values.
 
-Use tokens instead of raw visual values whenever possible.
+**Colors**
 
-Do not hardcode:
+```
+bg-background · bg-card · bg-popover · bg-primary · bg-secondary · bg-muted · bg-accent · bg-input
+bg-success · bg-warning · bg-danger · bg-info
 
-- colors
-- font sizes
-- radius values
-- theme-dependent styling values
+text-foreground · text-card-foreground · text-popover-foreground · text-primary-foreground
+text-secondary-foreground · text-muted-foreground · text-accent-foreground · text-danger-foreground
+text-success · text-warning · text-danger · text-info · text-progress-up · text-progress-same · text-progress-down
 
-## Colors
-
-Preferred color tokens:
-
-```txt
-bg-background
-bg-card
-bg-popover
-bg-primary
-bg-secondary
-bg-muted
-bg-accent
-bg-input
-bg-success
-bg-warning
-bg-danger
-bg-info
-
-text-foreground
-text-card-foreground
-text-popover-foreground
-text-primary-foreground
-text-secondary-foreground
-text-muted-foreground
-text-accent-foreground
-text-danger-foreground
-text-success
-text-warning
-text-danger
-text-info
-text-progress-up
-text-progress-same
-text-progress-down
-
-border-border
-border-ring
+border-border · border-ring
 ```
 
-## Typography
+**Typography** — use `Text` primitive; no ad-hoc font sizes
 
-Preferred typography tokens:
-
-```txt
-text-h1
-text-h2
-text-h3
-text-body
-text-body-medium
-text-small
-text-caption
+```
+text-h1 · text-h2 · text-h3 · text-body · text-body-medium · text-small · text-caption
 ```
 
-Use the shared `Text` primitive when possible.
+**Radius** — no arbitrary values except native/platform requirements
 
-Avoid ad-hoc font sizes.
-
-## Radius
-
-Preferred radius tokens:
-
-```txt
-rounded-sm
-rounded-md
-rounded-lg
-rounded-xl
 ```
-
-Avoid arbitrary radius values unless a component has a specific native/platform requirement.
+rounded-sm · rounded-md · rounded-lg · rounded-xl
+```

@@ -1,121 +1,42 @@
-## Data Access Rules
+## Data Access
 
-Keep database access out of:
+Flow: `Screen → feature screen hook → feature data/action hook → repository → Drizzle`
 
-- route screens
-- presentational components
-- UI primitives
+Keep DB access out of route screens, presentational components, and UI primitives. No query construction in components, no direct Drizzle in screens, no duplicated query logic.
 
-Prefer feature-level data ownership and predictable data flow.
+Screens (`src/features/*/hooks`) should be lightweight — layout, orchestration, composition only.
 
-Avoid:
-
-- query construction inside components
-- direct Drizzle access in screens
-- duplicated query logic
-- mixing UI and database concerns
-
-## Preferred Data Flow
-
-Required flow:
-
-```txt
-Screen -> feature screen hook -> feature data/action hook -> repository -> Drizzle
-```
-
-Screens should consume feature-level hooks from:
-
-```txt
-src/features/*/hooks
-```
-
-Prefer lightweight route screens focused on:
-
-- layout
-- orchestration
-- feature composition
+---
 
 ## Feature Hooks
 
-Feature hooks may:
+Own: screen state · derived data · filtering · sorting · live query subscriptions
 
-- call repositories
-- compose live queries
-- call `useDrizzle`
-- expose formatted screen data
-- coordinate feature-level actions
-
-Feature hooks should own:
-
-- screen state
-- derived data
-- filtering
-- sorting
-- live query subscriptions
-
-Good:
+May: call repositories · compose live queries · call `useDrizzle` · expose formatted data · coordinate actions
 
 ```tsx
-export default function ExercisesScreen() {
-  const { exercises, filteredExercises } = useExercisesScreen();
-}
+// ✅
+const { exercises, filteredExercises } = useExercisesScreen();
+
+// ❌
+const db = useDrizzle(); // directly in screen
 ```
 
-Avoid:
+---
 
-```tsx
-export default function ExercisesScreen() {
-  const db = useDrizzle();
-}
-```
+## Repositories
 
-## Repository Responsibilities
+Own: Drizzle table imports · query construction · transactions · reads/writes · DB invariants
 
-Repositories own:
+Expose reusable query builders named `*Query` for consistent reuse across live, fallback, and derived hooks.
 
-- Drizzle table imports
-- query construction
-- transactions
-- synchronous reads/writes
-- database invariants
-- reusable query builders
-
-Repositories should expose reusable query builders named:
-
-```txt
-*Query
-```
-
-so they can be reused consistently across:
-
-- live queries
-- fallback queries
-- derived feature hooks
-
-Avoid placing business rules directly in screens or UI components.
+---
 
 ## Live Queries
 
-For reactive data, use:
-
 ```tsx
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
-
-const db = useDrizzle();
-
 const { data } = useLiveWithFallback(getExercisesQuery(db), [db]);
 ```
 
-Rules:
-
-- use the same repository query builder for live + fallback paths
-- avoid rebuilding queries unnecessarily
-- keep live query logic inside feature hooks
-- avoid direct live query subscriptions inside UI components
-
-Live queries should remain:
-
-- predictable
-- reusable
-- centralized
-- feature-owned
+- Use the same `*Query` builder for live + fallback paths.
+- Keep live query logic inside feature hooks — not in UI components.

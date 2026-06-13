@@ -52,9 +52,15 @@ Flow: `Screen → feature hook → repository → Drizzle`
 - Repositories own query construction and DB invariants.
 - `useLiveWithFallback` for reactive reads.
 
-## Docs (read before implementing)
+## Docs (read only what matches your task)
 
-`project-overview` · `engineering-principles` · `styling` · `theme-tokens` · `layout` · `data-access` · `database` · `components` · `bottom-sheet` · `ux-display` · `project-structure`
+| Working on…                 | Read                                                        |
+| --------------------------- | ----------------------------------------------------------- |
+| UI / screens                | `styling` `theme-tokens` `layout` `components` `ux-display` |
+| Bottom sheets               | `bottom-sheet`                                              |
+| Data / DB                   | `data-access` `database`                                    |
+| New feature / file creation | `project-structure`                                         |
+| Unclear scope               | `project-overview` `engineering-principles`                 |
 
 ## Token Discipline
 
