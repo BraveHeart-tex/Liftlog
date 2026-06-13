@@ -42,11 +42,7 @@ export const WorkoutTemplatesSection = ({
             className="min-h-0 px-0 py-0"
             textClassName="text-primary text-sm"
             leftIcon={
-              <Icon
-                icon={PlusIcon}
-                className="text-primary"
-                size={iconSizes.xs}
-              />
+              <Icon icon={PlusIcon} tone="primary" size={iconSizes.xs} />
             }
             onPress={handleCreateTemplatePress}
           >
@@ -86,11 +82,7 @@ function EmptyTemplates({ onCreateTemplate }: EmptyTemplatesProps) {
   return (
     <View className="mt-3 items-center py-4">
       <View className="bg-card h-12 w-12 items-center justify-center rounded-lg">
-        <Icon
-          icon={ClipboardListIcon}
-          className="text-muted-foreground"
-          size="md"
-        />
+        <Icon icon={ClipboardListIcon} tone="mutedForeground" size="md" />
       </View>
 
       <Text variant="bodyMedium" className="mt-3 text-center">

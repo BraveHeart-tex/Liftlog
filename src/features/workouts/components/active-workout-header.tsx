@@ -59,11 +59,7 @@ export function ActiveWorkoutHeader({
         accessibilityLabel="Workout actions"
         onPress={onOpenActions}
       >
-        <Icon
-          icon={EllipsisVerticalIcon}
-          size="lg"
-          className="text-foreground"
-        />
+        <Icon icon={EllipsisVerticalIcon} size="lg" tone="foreground" />
       </Button>
 
       <Button

@@ -1,6 +1,6 @@
 import { usePressScale } from '@/src/lib/animations/use-press-scale';
 import { cn } from '@/src/lib/utils/cn';
-import * as Haptics from 'expo-haptics';
+import { ImpactFeedbackStyle, impactAsync, selectionAsync } from 'expo-haptics';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import { Animated, Pressable, type GestureResponderEvent } from 'react-native';
 
@@ -23,21 +23,21 @@ interface PressableSurfaceProps extends NativePressableProps {
 
 const impactFeedbackStyles: Record<
   Exclude<HapticFeedback, 'selection'>,
-  Haptics.ImpactFeedbackStyle
+  ImpactFeedbackStyle
 > = {
-  light: Haptics.ImpactFeedbackStyle.Light,
-  medium: Haptics.ImpactFeedbackStyle.Medium,
-  heavy: Haptics.ImpactFeedbackStyle.Heavy
+  light: ImpactFeedbackStyle.Light,
+  medium: ImpactFeedbackStyle.Medium,
+  heavy: ImpactFeedbackStyle.Heavy
 };
 
 function triggerHapticFeedback(hapticFeedback: HapticFeedback) {
   if (hapticFeedback === 'selection') {
-    void Haptics.selectionAsync();
+    void selectionAsync();
 
     return;
   }
 
-  void Haptics.impactAsync(impactFeedbackStyles[hapticFeedback]);
+  void impactAsync(impactFeedbackStyles[hapticFeedback]);
 }
 
 export function PressableSurface({

@@ -1,5 +1,5 @@
 import { StyledFlashList } from '@/src/components/styled/flash-list';
-import { Icon } from '@/src/components/ui/icon';
+import { Icon, type IconTone } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import {
   formatPersonalRecordValue,
@@ -66,6 +66,14 @@ function getProgressionToneClassName(delta: number | null) {
   return delta > 0 ? 'text-progress-up' : 'text-progress-down';
 }
 
+function getProgressionTone(delta: number | null): IconTone {
+  if (delta === null || delta === 0) {
+    return 'progressSame';
+  }
+
+  return delta > 0 ? 'progressUp' : 'progressDown';
+}
+
 function ExerciseHistoryWidgets({
   latestPersonalRecord,
   monthlyProgression,
@@ -74,6 +82,7 @@ function ExerciseHistoryWidgets({
 }: Omit<ExerciseHistoryListProps, 'history' | 'prSetIds'>) {
   const progressionDelta = monthlyProgression?.delta ?? null;
   const ProgressionIcon = getProgressionIcon(progressionDelta);
+  const progressionTone = getProgressionTone(progressionDelta);
   const progressionToneClassName =
     getProgressionToneClassName(progressionDelta);
 
@@ -82,7 +91,7 @@ function ExerciseHistoryWidgets({
       <View className="flex-row gap-3">
         <View className="border-border bg-card min-w-0 flex-1 rounded-lg border px-3 py-3">
           <View className="flex-row items-center gap-2">
-            <Icon icon={StarIcon} className="text-warning" size="md" />
+            <Icon icon={StarIcon} tone="warning" size="md" />
             <View className="min-w-0 flex-1">
               <Text variant="bodyMedium" numberOfLines={1}>
                 {latestPersonalRecord
@@ -98,11 +107,7 @@ function ExerciseHistoryWidgets({
 
         <View className="border-border bg-card min-w-0 flex-1 rounded-lg border px-3 py-3">
           <View className="flex-row items-center gap-2">
-            <Icon
-              icon={ProgressionIcon}
-              className={progressionToneClassName}
-              size="md"
-            />
+            <Icon icon={ProgressionIcon} tone={progressionTone} size="md" />
             <View className="min-w-0 flex-1">
               <Text
                 variant="bodyMedium"

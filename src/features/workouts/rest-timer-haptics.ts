@@ -1,10 +1,10 @@
-import * as Haptics from 'expo-haptics';
+import { impactAsync, type ImpactFeedbackStyle } from 'expo-haptics';
 
 export function triggerRestTimerImpact(
-  style: Haptics.ImpactFeedbackStyle,
+  style: ImpactFeedbackStyle,
   errorMessage: string
 ) {
-  Haptics.impactAsync(style).catch(error => {
+  impactAsync(style).catch(error => {
     console.error(errorMessage, error);
   });
 }

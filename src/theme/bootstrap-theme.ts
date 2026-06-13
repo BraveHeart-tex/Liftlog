@@ -3,7 +3,7 @@ import {
   toAppearanceColorScheme
 } from '@/src/features/settings/theme-preference-storage';
 import { getThemeColors } from '@/src/theme/tokens';
-import * as SystemUI from 'expo-system-ui';
+import { setBackgroundColorAsync } from 'expo-system-ui';
 import { Appearance } from 'react-native';
 
 export function bootstrapThemeColorScheme() {
@@ -13,7 +13,5 @@ export function bootstrapThemeColorScheme() {
   const appColorScheme = colorScheme === 'dark' ? 'dark' : 'light';
 
   Appearance.setColorScheme(requestedColorScheme);
-  void SystemUI.setBackgroundColorAsync(
-    getThemeColors(appColorScheme).background
-  );
+  void setBackgroundColorAsync(getThemeColors(appColorScheme).background);
 }

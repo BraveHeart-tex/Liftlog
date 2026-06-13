@@ -34,9 +34,7 @@ export function EmptyState({
         className
       )}
     >
-      {icon ? (
-        <Icon icon={icon} className="text-muted-foreground" size="empty" />
-      ) : null}
+      {icon ? <Icon icon={icon} tone="mutedForeground" size="empty" /> : null}
       <Text variant="h3" className={cn('text-center', icon && 'mt-4')}>
         {title}
       </Text>

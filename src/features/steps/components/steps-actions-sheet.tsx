@@ -58,7 +58,7 @@ export function StepsActionsSheet({
           disabled={isSyncing}
           onPress={handleRefresh}
         >
-          <Icon icon={RefreshCwIcon} size="lg" className="text-foreground" />
+          <Icon icon={RefreshCwIcon} size="lg" tone="foreground" />
           <Text variant="bodyMedium" className="text-center">
             {isSyncing ? 'Syncing steps...' : 'Refresh steps'}
           </Text>
@@ -71,7 +71,7 @@ export function StepsActionsSheet({
           className="min-h-14 flex-row items-center justify-center gap-3 rounded-lg px-3 py-3"
           onPress={handleManage}
         >
-          <Icon icon={SettingsIcon} size="lg" className="text-foreground" />
+          <Icon icon={SettingsIcon} size="lg" tone="foreground" />
           <Text variant="bodyMedium" className="text-center">
             Manage Health Connect
           </Text>

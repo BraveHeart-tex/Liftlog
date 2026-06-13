@@ -322,7 +322,7 @@ export function ExercisePickerSheet({
             onPress={onClose}
             accessibilityLabel="Close exercise picker sheet"
           >
-            <Icon icon={XIcon} size="lg" className="text-foreground" />
+            <Icon icon={XIcon} size="lg" tone="foreground" />
           </Button>
         </View>
       </BottomSheetHeader>

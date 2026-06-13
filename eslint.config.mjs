@@ -94,7 +94,14 @@ export default defineConfig([
       curly: ['error', 'all'],
       eqeqeq: ['error', 'always', { null: 'ignore' }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
-      'no-duplicate-imports': ['error', { allowSeparateTypeImports: true }]
+      'no-duplicate-imports': ['error', { allowSeparateTypeImports: true }],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'ImportNamespaceSpecifier',
+          message: 'Use named imports instead of namespace imports.'
+        }
+      ]
     }
   },
   {
@@ -122,6 +129,10 @@ export default defineConfig([
     rules: {
       'no-restricted-syntax': [
         'error',
+        {
+          selector: 'ImportNamespaceSpecifier',
+          message: 'Use named imports instead of namespace imports.'
+        },
         {
           selector: 'ExportDefaultDeclaration',
           message:

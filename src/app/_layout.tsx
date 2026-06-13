@@ -6,11 +6,11 @@ import { bootstrapThemeColorScheme } from '@/src/theme/bootstrap-theme';
 import { appFontAssets } from '@/src/theme/fonts';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
+import { hideAsync, preventAutoHideAsync } from 'expo-splash-screen';
 import { useEffect } from 'react';
 
 bootstrapThemeColorScheme();
-void SplashScreen.preventAutoHideAsync();
+void preventAutoHideAsync();
 
 function RootNavigator() {
   const { colors } = useAppTheme();
@@ -40,7 +40,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded || fontLoadError) {
-      void SplashScreen.hideAsync();
+      void hideAsync();
     }
   }, [fontLoadError, fontsLoaded]);
 

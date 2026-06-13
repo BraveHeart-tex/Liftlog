@@ -89,7 +89,7 @@ export function StepsContent() {
 
         {errorMessage ? (
           <View className="border-danger bg-card mt-4 rounded-lg border px-4 py-3">
-            <Text variant="small" className="text-danger">
+            <Text variant="small" tone="danger">
               {errorMessage}
             </Text>
           </View>
@@ -127,14 +127,14 @@ export function StepsContent() {
                 <Icon
                   icon={EllipsisVerticalIcon}
                   size="md"
-                  className="text-secondary-foreground"
+                  tone="secondaryForeground"
                 />
               </Button>
             </View>
 
             {errorMessage ? (
               <View className="border-danger bg-card mt-4 rounded-lg border px-4 py-3">
-                <Text variant="small" className="text-danger">
+                <Text variant="small" tone="danger">
                   {errorMessage}
                 </Text>
               </View>

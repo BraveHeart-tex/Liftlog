@@ -49,7 +49,7 @@ export function RestTimerWidget() {
                 <Icon
                   icon={isPaused ? PauseIcon : TimerIcon}
                   size="lg"
-                  className={cn('text-info', isPaused && 'text-accent')}
+                  tone={isPaused ? 'accent' : 'info'}
                 />
               </View>
 

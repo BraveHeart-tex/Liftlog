@@ -104,7 +104,7 @@ export const StepGoalSheet = ({
           accessibilityLabel="Close step goal sheet"
           className="px-0"
         >
-          <Icon icon={XIcon} size="lg" className="text-foreground" />
+          <Icon icon={XIcon} size="lg" tone="foreground" />
         </Button>
       </BottomSheetHeader>
 

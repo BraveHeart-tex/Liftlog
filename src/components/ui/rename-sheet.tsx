@@ -126,7 +126,7 @@ export function RenameSheet({
           onPress={handleClose}
           accessibilityLabel="Close rename sheet"
         >
-          <Icon icon={XIcon} size="lg" className="text-foreground" />
+          <Icon icon={XIcon} size="lg" tone="foreground" />
         </Button>
       </BottomSheetHeader>
 

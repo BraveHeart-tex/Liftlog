@@ -40,11 +40,7 @@ export function WorkoutDetailHeader({
         disabled={actionsDisabled}
         onPress={onOpenActions}
       >
-        <Icon
-          icon={EllipsisVerticalIcon}
-          size="lg"
-          className="text-foreground"
-        />
+        <Icon icon={EllipsisVerticalIcon} size="lg" tone="foreground" />
       </Button>
     </View>
   );

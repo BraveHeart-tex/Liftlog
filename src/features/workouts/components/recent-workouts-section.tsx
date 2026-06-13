@@ -31,7 +31,7 @@ export const RecentWorkoutsSection = ({
               </Text>
               <Icon
                 icon={ChevronRightIcon}
-                className="text-primary"
+                tone="primary"
                 size={iconSizes.xs}
               />
             </View>
@@ -59,11 +59,7 @@ export const RecentWorkoutsSection = ({
         // TODO(FE-185): Extract empty state markup to a re-usable component
         <View className="mt-3 items-center justify-center rounded-lg px-6 py-10">
           <View className="bg-card h-12 w-12 items-center justify-center rounded-lg">
-            <Icon
-              icon={DumbbellIcon}
-              className="text-muted-foreground"
-              size="md"
-            />
+            <Icon icon={DumbbellIcon} tone="mutedForeground" size="md" />
           </View>
           <Text variant="bodyMedium" className="mt-3 text-center">
             No workouts yet

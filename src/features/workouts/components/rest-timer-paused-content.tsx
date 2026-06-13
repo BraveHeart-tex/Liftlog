@@ -4,7 +4,7 @@ import { RestTimerCountdown } from '@/src/features/workouts/components/rest-time
 import { triggerRestTimerImpact } from '@/src/features/workouts/rest-timer-haptics';
 import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer-store';
 import { iconSizes } from '@/src/theme/sizes';
-import * as Haptics from 'expo-haptics';
+import { ImpactFeedbackStyle } from 'expo-haptics';
 import { PlayIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
@@ -19,7 +19,7 @@ export function RestTimerPausedContent() {
 
   const handleResume = () => {
     triggerRestTimerImpact(
-      Haptics.ImpactFeedbackStyle.Medium,
+      ImpactFeedbackStyle.Medium,
       'Failed to trigger rest timer resume haptics'
     );
     resumeTimer();
@@ -27,7 +27,7 @@ export function RestTimerPausedContent() {
 
   const handleCancel = () => {
     triggerRestTimerImpact(
-      Haptics.ImpactFeedbackStyle.Light,
+      ImpactFeedbackStyle.Light,
       'Failed to trigger rest timer cancel haptics'
     );
     cancelTimer();
@@ -60,7 +60,7 @@ export function RestTimerPausedContent() {
             leftIcon={
               <Icon
                 icon={PlayIcon}
-                className="text-secondary-foreground"
+                tone="secondaryForeground"
                 size={iconSizes.md}
               />
             }

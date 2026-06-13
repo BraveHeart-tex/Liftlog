@@ -83,7 +83,7 @@ export const StepsSection = () => {
                       <Icon
                         icon={ChevronDown}
                         size={iconSizes.sm}
-                        className="text-secondary-foreground"
+                        tone="secondaryForeground"
                       />
                     }
                     textClassName="text-small"
@@ -118,11 +118,7 @@ export const StepsSection = () => {
             textClassName="text-small text-primary py-2"
             className="border-t-border rounded-none border-0 border-t"
             rightIcon={
-              <Icon
-                icon={ExternalLink}
-                className="text-primary"
-                size={iconSizes.sm}
-              />
+              <Icon icon={ExternalLink} tone="primary" size={iconSizes.sm} />
             }
           >
             Open Health Connect settings

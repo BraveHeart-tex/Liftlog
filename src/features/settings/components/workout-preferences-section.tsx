@@ -57,7 +57,7 @@ export const WorkoutPreferencesSection = () => {
                     <Icon
                       icon={ChevronDown}
                       size={iconSizes.sm}
-                      className="text-secondary-foreground"
+                      tone="secondaryForeground"
                     />
                   }
                   textClassName="text-small"

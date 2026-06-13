@@ -205,9 +205,7 @@ function WorkoutTemplateDetailLoaded({
         ) : (
           <Button
             className="w-full"
-            leftIcon={
-              <Icon icon={DumbbellIcon} className="text-primary-foreground" />
-            }
+            leftIcon={<Icon icon={DumbbellIcon} tone="primaryForeground" />}
             onPress={handleStartWorkout}
           >
             Start workout
@@ -251,11 +249,7 @@ function WorkoutTemplateDetailLoaded({
             accessibilityLabel="Template actions"
             onPress={() => setIsActionSheetOpen(true)}
           >
-            <Icon
-              icon={EllipsisVerticalIcon}
-              size="lg"
-              className="text-foreground"
-            />
+            <Icon icon={EllipsisVerticalIcon} size="lg" tone="foreground" />
           </Button>
         )}
       </View>

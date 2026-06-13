@@ -49,7 +49,7 @@ export function WorkoutTemplateActionsSheet({
           className="min-h-14 flex-row items-center justify-center gap-3 rounded-lg px-3 py-3"
           onPress={handleRename}
         >
-          <Icon icon={PencilIcon} size="lg" className="text-foreground" />
+          <Icon icon={PencilIcon} size="lg" tone="foreground" />
           <Text variant="bodyMedium" className="text-center">
             Rename template
           </Text>
@@ -62,7 +62,7 @@ export function WorkoutTemplateActionsSheet({
           className="min-h-14 flex-row items-center justify-center gap-3 rounded-lg px-3 py-3"
           onPress={handleDelete}
         >
-          <Icon icon={Trash2Icon} size="lg" className="text-danger" />
+          <Icon icon={Trash2Icon} size="lg" tone="danger" />
           <Text variant="bodyMedium" tone="danger" className="text-center">
             Delete template
           </Text>

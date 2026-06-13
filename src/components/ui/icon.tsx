@@ -1,4 +1,3 @@
-import { cn } from '@/src/lib/utils/cn';
 import { iconSizes, type IconSize } from '@/src/theme/sizes';
 import type { LucideIcon, LucideProps } from 'lucide-react-native';
 import { styled } from 'nativewind';
@@ -39,10 +38,44 @@ function createStyledIcon(Icon: IconComponent): StyledIconComponent {
   return StyledIcon;
 }
 
-type AppIconProps = Omit<LucideProps, 'ref' | 'size'> & {
+type AppIconProps = Omit<
+  LucideProps,
+  'className' | 'color' | 'ref' | 'size'
+> & {
   icon: IconComponent;
-  className?: string;
   size?: IconSize | number;
+  tone?: IconTone;
+};
+
+export type IconTone =
+  | 'foreground'
+  | 'primary'
+  | 'primaryForeground'
+  | 'secondaryForeground'
+  | 'mutedForeground'
+  | 'accent'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'info'
+  | 'progressUp'
+  | 'progressSame'
+  | 'progressDown';
+
+const iconToneClassNames: Record<IconTone, string> = {
+  foreground: 'text-foreground',
+  primary: 'text-primary',
+  primaryForeground: 'text-primary-foreground',
+  secondaryForeground: 'text-secondary-foreground',
+  mutedForeground: 'text-muted-foreground',
+  accent: 'text-accent',
+  success: 'text-success',
+  warning: 'text-warning',
+  danger: 'text-danger',
+  info: 'text-info',
+  progressUp: 'text-progress-up',
+  progressSame: 'text-progress-same',
+  progressDown: 'text-progress-down'
 };
 
 function getIconSize(size: IconSize | number) {
@@ -51,9 +84,8 @@ function getIconSize(size: IconSize | number) {
 
 export function Icon({
   icon,
-  className,
   size = iconSizes.md,
-  color,
+  tone = 'foreground',
   strokeWidth = 2,
   ...props
 }: AppIconProps) {
@@ -61,9 +93,8 @@ export function Icon({
 
   return (
     <StyledIcon
-      className={cn('text-inherit', className)}
+      className={iconToneClassNames[tone]}
       size={getIconSize(size)}
-      color={color}
       strokeWidth={strokeWidth}
       {...props}
     />

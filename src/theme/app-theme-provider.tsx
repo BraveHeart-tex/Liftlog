@@ -14,7 +14,7 @@ import {
   type Theme
 } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
-import * as SystemUI from 'expo-system-ui';
+import { setBackgroundColorAsync } from 'expo-system-ui';
 import {
   createContext,
   useContext,
@@ -83,9 +83,7 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
   }, [themePreference]);
 
   useEffect(() => {
-    void SystemUI.setBackgroundColorAsync(
-      getThemeColors(colorScheme).background
-    );
+    void setBackgroundColorAsync(getThemeColors(colorScheme).background);
   }, [colorScheme]);
 
   const value = useMemo(

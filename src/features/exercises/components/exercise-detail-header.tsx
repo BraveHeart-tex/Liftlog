@@ -50,11 +50,7 @@ export function ExerciseDetailHeader({
             accessibilityLabel="Exercise actions"
             onPress={() => setIsActionsOpen(true)}
           >
-            <Icon
-              icon={EllipsisVerticalIcon}
-              size="lg"
-              className="text-foreground"
-            />
+            <Icon icon={EllipsisVerticalIcon} size="lg" tone="foreground" />
           </Button>
         ) : null}
       </View>

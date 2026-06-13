@@ -91,11 +91,7 @@ export function ExercisePickerFilters({
               <Icon
                 icon={filter.icon}
                 size="sm"
-                className={
-                  isSelected
-                    ? 'text-primary-foreground'
-                    : 'text-muted-foreground'
-                }
+                tone={isSelected ? 'primaryForeground' : 'mutedForeground'}
               />
             ) : undefined
           }

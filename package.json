@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "android:clean": "pnpm run prebuild:clean && pnpm run android:device",
-    "android:device": "expo run:android --device",
+    "android:device": "EXPO_UNSTABLE_ATLAS=true expo run:android --device",
     "android": "expo run:android",
     "format": "pnpm run prettier:fix",
     "ios": "expo run:ios",
@@ -85,6 +85,7 @@
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "eslint-plugin-unused-imports": "4.4.1",
+    "expo-atlas": "^0.4.0",
     "husky": "9.1.7",
     "knip": "^6.6.2",
     "lint-staged": "16.4.0",

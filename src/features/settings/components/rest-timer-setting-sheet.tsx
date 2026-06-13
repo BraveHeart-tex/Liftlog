@@ -98,7 +98,7 @@ export const RestTimerSettingSheet = ({
           accessibilityLabel="Close rest timer sheet"
           className="px-0"
         >
-          <Icon icon={XIcon} size="lg" className="text-foreground" />
+          <Icon icon={XIcon} size="lg" tone="foreground" />
         </Button>
       </BottomSheetHeader>
 

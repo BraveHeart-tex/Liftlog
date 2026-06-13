@@ -38,10 +38,7 @@ export const ExercisePickerRow = ({
           <Icon
             icon={isSelected ? CheckIcon : PlusIcon}
             size="sm"
-            className={cn(
-              'text-secondary-foreground',
-              isSelected && 'text-primary-foreground'
-            )}
+            tone={isSelected ? 'primaryForeground' : 'secondaryForeground'}
           />
         </View>
       }

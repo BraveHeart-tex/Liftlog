@@ -20,9 +20,7 @@ export function ExerciseListRow({ exercise, onPress }: ExerciseListRowProps) {
       exercise={exercise}
       subtitle={metadataLabel}
       onPress={onPress}
-      rightAccessory={
-        <Icon icon={ChevronRightIcon} className="text-muted-foreground" />
-      }
+      rightAccessory={<Icon icon={ChevronRightIcon} tone="mutedForeground" />}
     />
   );
 }

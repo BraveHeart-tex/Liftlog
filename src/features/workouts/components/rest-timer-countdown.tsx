@@ -122,7 +122,7 @@ export function RestTimerCountdown({
           {status === 'paused' ? (
             <View className="mb-4 w-full items-center justify-center">
               <Badge className="bg-accent/15 mx-auto px-3 py-1">
-                <Icon icon={PauseIcon} size="sm" className="text-accent" />
+                <Icon icon={PauseIcon} size="sm" tone="accent" />
                 <Text variant="caption" className="text-accent font-semibold">
                   PAUSED
                 </Text>

@@ -5,25 +5,28 @@ import {
   setIsAudioActiveAsync,
   useAudioPlayer
 } from 'expo-audio';
-import * as Haptics from 'expo-haptics';
+import {
+  ImpactFeedbackStyle,
+  NotificationFeedbackType,
+  impactAsync,
+  notificationAsync
+} from 'expo-haptics';
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 
 function triggerCompletionHaptics() {
-  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
-    error => {
-      console.error('Failed to trigger rest timer completion haptics', error);
-    }
-  );
+  notificationAsync(NotificationFeedbackType.Warning).catch(error => {
+    console.error('Failed to trigger rest timer completion haptics', error);
+  });
 
   setTimeout(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(error => {
+    impactAsync(ImpactFeedbackStyle.Heavy).catch(error => {
       console.error('Failed to trigger rest timer impact haptics', error);
     });
   }, 200);
 
   setTimeout(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(error => {
+    impactAsync(ImpactFeedbackStyle.Heavy).catch(error => {
       console.error('Failed to trigger rest timer impact haptics', error);
     });
   }, 400);

@@ -31,7 +31,7 @@ export function RestTimerTrigger({ onPress }: RestTimerTriggerProps) {
         className="h-10 w-10"
         onPress={onPress}
       >
-        <Icon icon={TimerIcon} size="lg" className="text-foreground" />
+        <Icon icon={TimerIcon} size="lg" tone="foreground" />
       </Button>
     );
   }
@@ -52,7 +52,7 @@ export function RestTimerTrigger({ onPress }: RestTimerTriggerProps) {
         <Icon
           icon={isRestTimerPaused ? PauseIcon : TimerIcon}
           size="md"
-          className={cn('text-info', isRestTimerPaused && 'text-accent')}
+          tone={isRestTimerPaused ? 'accent' : 'info'}
         />
         <Text
           variant="small"

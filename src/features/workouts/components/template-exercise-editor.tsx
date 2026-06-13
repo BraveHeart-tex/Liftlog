@@ -54,9 +54,7 @@ export function TemplateExerciseEditor({
             size="sm"
             className="min-h-0 px-0 py-0"
             textClassName="text-primary text-sm"
-            leftIcon={
-              <Icon icon={PlusIcon} size="sm" className="text-primary" />
-            }
+            leftIcon={<Icon icon={PlusIcon} size="sm" tone="primary" />}
             onPress={() => setIsExercisePickerOpen(true)}
           >
             Add

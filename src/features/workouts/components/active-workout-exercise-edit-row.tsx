@@ -82,7 +82,7 @@ export function ActiveWorkoutExerciseEditRow({
       )}
     >
       <Button variant="ghost" size="icon" onPress={handleRemoveExercise}>
-        <Icon icon={TrashIcon} size={iconSizes.sm} className="text-danger" />
+        <Icon icon={TrashIcon} size={iconSizes.sm} tone="danger" />
       </Button>
 
       <View className="flex-1">
@@ -102,11 +102,7 @@ export function ActiveWorkoutExerciseEditRow({
           accessibilityLabel="Drag exercise"
           onPressIn={onDrag}
         >
-          <Icon
-            icon={GripIcon}
-            size={iconSizes.sm}
-            className="text-muted-foreground"
-          />
+          <Icon icon={GripIcon} size={iconSizes.sm} tone="mutedForeground" />
         </Button>
       )}
     </View>

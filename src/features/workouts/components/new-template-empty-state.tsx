@@ -14,11 +14,7 @@ export function NewTemplateEmptyState({
   return (
     <View className="items-center py-8">
       <View className="bg-card h-12 w-12 items-center justify-center rounded-lg">
-        <Icon
-          icon={ClipboardListIcon}
-          className="text-muted-foreground"
-          size="md"
-        />
+        <Icon icon={ClipboardListIcon} tone="mutedForeground" size="md" />
       </View>
 
       <Text variant="bodyMedium" className="mt-3 text-center">
@@ -33,7 +29,7 @@ export function NewTemplateEmptyState({
         size="sm"
         className="mt-3"
         textClassName="text-primary text-sm"
-        leftIcon={<Icon icon={PlusIcon} size="sm" className="text-primary" />}
+        leftIcon={<Icon icon={PlusIcon} size="sm" tone="primary" />}
         onPress={onAddExercise}
       >
         Add exercise

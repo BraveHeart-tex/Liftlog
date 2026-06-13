@@ -509,7 +509,7 @@ export function SetForm({
           onDelete();
         }}
       >
-        <Icon icon={Trash2Icon} className="text-danger" size="md" />
+        <Icon icon={Trash2Icon} tone="danger" size="md" />
       </Button>
     </View>
   );
@@ -539,11 +539,7 @@ export function SetForm({
               </HeaderCell>
             ))}
             <View className="w-12 items-center">
-              <Icon
-                icon={CheckIcon}
-                className="text-muted-foreground"
-                size="sm"
-              />
+              <Icon icon={CheckIcon} tone="mutedForeground" size="sm" />
             </View>
           </View>
 
@@ -609,13 +605,13 @@ export function SetForm({
                   >
                     <Icon
                       icon={CheckIcon}
-                      className={cn(
+                      tone={
                         row.isCommitted
-                          ? 'text-success'
+                          ? 'success'
                           : isValid
-                            ? 'text-primary'
-                            : 'text-muted-foreground'
-                      )}
+                            ? 'primary'
+                            : 'mutedForeground'
+                      }
                       size="md"
                     />
                   </Button>
@@ -656,9 +652,7 @@ export function SetForm({
           <Button
             onPress={handleAddDraftRow}
             className="mt-4 bg-transparent"
-            leftIcon={
-              <Icon icon={PlusIcon} className="text-foreground" size="sm" />
-            }
+            leftIcon={<Icon icon={PlusIcon} tone="foreground" size="sm" />}
             variant="secondary"
           >
             <Text variant="bodyMedium">Add Set</Text>
@@ -681,11 +675,7 @@ export function SetForm({
           <Button
             className="mt-6 border-solid"
             leftIcon={
-              <Icon
-                icon={PlusIcon}
-                className="text-primary-foreground"
-                size="sm"
-              />
+              <Icon icon={PlusIcon} tone="primaryForeground" size="sm" />
             }
             onPress={handleAddDraftRow}
           >

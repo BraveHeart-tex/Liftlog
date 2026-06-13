@@ -16,7 +16,7 @@ import {
   Line as SkiaLine,
   matchFont
 } from '@shopify/react-native-skia';
-import * as Haptics from 'expo-haptics';
+import { selectionAsync } from 'expo-haptics';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useAnimatedReaction } from 'react-native-reanimated';
@@ -96,7 +96,7 @@ export function ExerciseProgressChart({
       return;
     }
 
-    void Haptics.selectionAsync();
+    void selectionAsync();
   }, [isPressActive, selectedIndex]);
 
   return (

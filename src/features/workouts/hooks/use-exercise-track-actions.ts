@@ -14,7 +14,12 @@ import {
   deleteSet,
   updateSet
 } from '@/src/features/workouts/repository';
-import * as Haptics from 'expo-haptics';
+import {
+  ImpactFeedbackStyle,
+  NotificationFeedbackType,
+  impactAsync,
+  notificationAsync
+} from 'expo-haptics';
 import { useCallback } from 'react';
 import type {
   SetValues,
@@ -100,9 +105,9 @@ export function useExerciseTrackActions({
       const isPR = checkAndCreatePRForNewSet(newSet.id, values);
 
       if (isPR) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        notificationAsync(NotificationFeedbackType.Success);
       } else {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        impactAsync(ImpactFeedbackStyle.Light);
       }
 
       return newSet;
@@ -124,9 +129,9 @@ export function useExerciseTrackActions({
       const isPR = checkAndCreatePR(setId, values);
 
       if (isPR) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        notificationAsync(NotificationFeedbackType.Success);
       } else {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        impactAsync(ImpactFeedbackStyle.Light);
       }
 
       setEditingSetId(null);

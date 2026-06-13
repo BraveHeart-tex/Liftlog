@@ -196,7 +196,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
           onPress={repeatWorkout}
           leftIcon={
             activeWorkout ? undefined : (
-              <Icon icon={RepeatIcon} className="text-primary-foreground" />
+              <Icon icon={RepeatIcon} tone="primaryForeground" />
             )
           }
         >
@@ -227,9 +227,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
           className="w-full"
           disabled={workoutExerciseRows.length === 0}
           onPress={() => setIsTemplateSheetOpen(true)}
-          leftIcon={
-            <Icon icon={BookmarkIcon} className="text-secondary-foreground" />
-          }
+          leftIcon={<Icon icon={BookmarkIcon} tone="secondaryForeground" />}
         >
           Save as template
         </Button>

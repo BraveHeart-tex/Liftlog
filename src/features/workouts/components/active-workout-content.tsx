@@ -136,9 +136,7 @@ export function ActiveWorkoutContent({
               variant="secondary"
               className="w-full"
               disabled={isLoadingWorkoutExercises}
-              leftIcon={
-                <Icon icon={PlusIcon} size="sm" className="text-foreground" />
-              }
+              leftIcon={<Icon icon={PlusIcon} size="sm" tone="foreground" />}
               onPress={() => setIsExercisePickerOpen(true)}
             >
               Add exercise

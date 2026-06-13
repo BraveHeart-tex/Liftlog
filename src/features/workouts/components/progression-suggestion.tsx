@@ -40,7 +40,7 @@ export function ProgressionSuggestion({
     <View className="border-border bg-card mb-5 rounded-lg border px-3 py-2">
       <View className="flex-row items-center gap-2">
         <View className="bg-primary/10 h-8 w-8 items-center justify-center rounded-lg">
-          <Icon icon={TrendingUpIcon} className="text-primary" size="sm" />
+          <Icon icon={TrendingUpIcon} tone="primary" size="sm" />
         </View>
 
         <View className="min-w-0 flex-1">
@@ -61,14 +61,10 @@ export function ProgressionSuggestion({
           }}
         >
           <View className="flex-row items-center gap-1">
-            <Text className="text-primary" variant="small">
+            <Text tone="primary" variant="small">
               History
             </Text>
-            <Icon
-              icon={ChevronRightIcon}
-              className="text-primary"
-              size={iconSizes.sm}
-            />
+            <Icon icon={ChevronRightIcon} tone="primary" size={iconSizes.sm} />
           </View>
         </Link>
       </View>
