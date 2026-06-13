@@ -5,34 +5,70 @@ import { Input } from '@/src/components/ui/input';
 import { Screen } from '@/src/components/ui/screen';
 import { SearchInputIcon } from '@/src/components/ui/search-input-icon';
 import { Text } from '@/src/components/ui/text';
-import { ExerciseCategoryFilters } from '@/src/features/exercises/components/exercise-category-filters';
 import { ExerciseListRow } from '@/src/features/exercises/components/exercise-list-row';
 import type { ExerciseListDataItem } from '@/src/features/exercises/display';
 import { useExercisesScreen } from '@/src/features/exercises/hooks';
+import { ExercisePickerFilters } from '@/src/features/workouts/components/exercise-picker-filters';
 import { iconSizes } from '@/src/theme/sizes';
 import { router } from 'expo-router';
 import { PlusIcon, SearchXIcon } from 'lucide-react-native';
+import { useCallback } from 'react';
 import { View } from 'react-native';
 
 export default function ExercisesScreen() {
   const {
     query,
     setQuery,
-    selectedCategory,
-    setSelectedCategory,
+    selectedFilter,
+    setSelectedFilter,
     filteredExercises,
     exerciseListItems,
     hasCustomExercise
   } = useExercisesScreen();
+
   const trimmedQuery = query.trim();
   const hasActiveSearchOrFilter =
-    trimmedQuery.length > 0 || selectedCategory !== 'all';
+    trimmedQuery.length > 0 || selectedFilter !== 'all';
   const emptyDescription =
     trimmedQuery.length > 0
       ? `We couldn't find anything matching "${trimmedQuery}". Try adjusting your search or add it yourself.`
-      : selectedCategory !== 'all'
+      : selectedFilter !== 'all'
         ? "We couldn't find anything in this category. Try a different filter or add it yourself."
         : 'Your exercise library is empty. Create a custom exercise to get started.';
+
+  const keyExtractor = useCallback(
+    (item: ExerciseListDataItem) =>
+      item.type === 'section-header' ? item.id : item.exercise.id,
+    []
+  );
+
+  const renderItem = useCallback(({ item }: { item: ExerciseListDataItem }) => {
+    if (item.type === 'section-header') {
+      return (
+        <View className="pt-5 pb-1">
+          <Text
+            variant="small"
+            tone="muted"
+            className="font-semibold tracking-widest uppercase"
+          >
+            {item.title}
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <ExerciseListRow
+        exercise={item.exercise}
+        onPress={exercise =>
+          router.push({
+            pathname: '/exercises/[id]',
+            params: { id: exercise.id }
+          })
+        }
+      />
+    );
+  }, []);
 
   return (
     <Screen withPadding={false}>
@@ -68,18 +104,16 @@ export default function ExercisesScreen() {
 
       <StyledFlatList
         data={exerciseListItems}
-        keyExtractor={(item: ExerciseListDataItem) =>
-          item.type === 'section-header' ? item.id : item.exercise.id
-        }
+        keyExtractor={keyExtractor}
         className="flex-1"
         contentContainerClassName="px-4 pb-6"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View>
-            <ExerciseCategoryFilters
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
+            <ExercisePickerFilters
+              selectedFilter={selectedFilter}
+              setSelectedFilter={setSelectedFilter}
               shouldShowCustomExerciseFilter={hasCustomExercise}
             />
 
@@ -92,33 +126,7 @@ export default function ExercisesScreen() {
             </View>
           </View>
         }
-        renderItem={({ item }: { item: ExerciseListDataItem }) => {
-          if (item.type === 'section-header') {
-            return (
-              <View className="pt-5 pb-1">
-                <Text
-                  variant="small"
-                  tone="muted"
-                  className="font-semibold tracking-widest uppercase"
-                >
-                  {item.title}
-                </Text>
-              </View>
-            );
-          }
-
-          return (
-            <ExerciseListRow
-              exercise={item.exercise}
-              onPress={exercise =>
-                router.push({
-                  pathname: '/exercises/[id]',
-                  params: { id: exercise.id }
-                })
-              }
-            />
-          );
-        }}
+        renderItem={renderItem}
         ListEmptyComponent={
           <View className="items-center px-2 pt-16 pb-10">
             <View className="border-border/60 bg-card h-28 w-28 items-center justify-center rounded-full border">
@@ -149,7 +157,7 @@ export default function ExercisesScreen() {
                 onPress={() => {
                   router.push('/exercises/new');
                   setQuery('');
-                  setSelectedCategory('all');
+                  setSelectedFilter('all');
                 }}
                 leftIcon={
                   <Icon
@@ -168,7 +176,7 @@ export default function ExercisesScreen() {
                   className="w-full"
                   onPress={() => {
                     setQuery('');
-                    setSelectedCategory('all');
+                    setSelectedFilter('all');
                   }}
                 >
                   Clear Search

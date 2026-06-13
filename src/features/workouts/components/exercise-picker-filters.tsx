@@ -31,6 +31,7 @@ interface ExercisePickerFilterOption {
 interface ExercisePickerFiltersProps {
   selectedFilter: ExercisePickerFilter;
   setSelectedFilter: (filter: ExercisePickerFilter) => void;
+  shouldShowCustomExerciseFilter: boolean;
 }
 
 type CategoryOption = Extract<
@@ -44,7 +45,8 @@ const CATEGORY_OPTIONS = CATEGORY_FILTERS.filter(
 
 export function ExercisePickerFilters({
   selectedFilter,
-  setSelectedFilter
+  setSelectedFilter,
+  shouldShowCustomExerciseFilter
 }: ExercisePickerFiltersProps) {
   const filterScrollRef =
     useRef<ComponentRef<typeof StyledGestureScrollView>>(null);
@@ -56,7 +58,9 @@ export function ExercisePickerFilters({
   const leadingFilters: ExercisePickerFilterOption[] = [
     { label: 'All', value: 'all' },
     { label: 'Recent', value: 'recent' },
-    { label: 'Custom', value: 'custom', icon: UserIcon }
+    ...(shouldShowCustomExerciseFilter
+      ? [{ label: 'Custom', value: 'custom', icon: UserIcon } as const]
+      : [])
   ];
 
   const renderFilter = (filter: ExercisePickerFilterOption) => {
@@ -122,6 +126,12 @@ export function ExercisePickerFilters({
     },
     [filterViewportWidth]
   );
+
+  useEffect(() => {
+    if (!shouldShowCustomExerciseFilter && selectedFilter === 'custom') {
+      setSelectedFilter('all');
+    }
+  }, [selectedFilter, setSelectedFilter, shouldShowCustomExerciseFilter]);
 
   useEffect(() => {
     const animationFrame = requestAnimationFrame(() => {

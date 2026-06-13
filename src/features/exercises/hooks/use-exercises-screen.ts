@@ -1,57 +1,77 @@
-import type { CategoryFilter } from '@/src/features/exercises/constants';
+import { useDrizzle } from '@/src/components/database-provider';
 import {
   buildAlphabetizedExerciseListItems,
   matchesExerciseSearch
 } from '@/src/features/exercises/display';
-import type { ExerciseListItem } from '@/src/features/exercises/repository';
-import { useEffect, useMemo, useState } from 'react';
 import { useExercises } from '@/src/features/exercises/hooks/use-exercises';
+import type { ExerciseListItem } from '@/src/features/exercises/repository';
+import type { ExercisePickerFilter } from '@/src/features/workouts/components/exercise-picker-filters';
+import { getRecentExerciseIdsQuery } from '@/src/features/workouts/repository';
+import { RECENT_EXERCISES_LIMIT } from '@/src/features/workouts/workout.constants';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
+import { useEffect, useMemo, useState } from 'react';
 
-function matchesExerciseCategory(
+function matchesExerciseFilter(
   exercise: ExerciseListItem,
-  selectedCategory: CategoryFilter
+  selectedFilter: ExercisePickerFilter,
+  recentExerciseIdSet: Set<ExerciseListItem['id']>
 ) {
-  switch (selectedCategory) {
+  switch (selectedFilter) {
     case 'all':
       return true;
+    case 'recent':
+      return recentExerciseIdSet.has(exercise.id);
     case 'custom':
       return exercise.isCustom === 1;
     default:
-      return exercise.category.toLocaleLowerCase() === selectedCategory;
+      return exercise.category.toLocaleLowerCase() === selectedFilter;
   }
 }
 
 export function useExercisesScreen() {
+  const db = useDrizzle();
   const [query, setQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] =
-    useState<CategoryFilter>('all');
+  const [selectedFilter, setSelectedFilter] =
+    useState<ExercisePickerFilter>('all');
 
   const exercises = useExercises();
+  const recentExerciseResult = useLiveWithFallback(
+    getRecentExerciseIdsQuery(db, [], RECENT_EXERCISES_LIMIT),
+    [db]
+  );
+  const recentExerciseIdSet = useMemo(
+    () =>
+      new Set(
+        recentExerciseResult.data.map(
+          recentExercise => recentExercise.exerciseId
+        )
+      ),
+    [recentExerciseResult.data]
+  );
   const hasCustomExercise = useMemo(
     () => exercises.some(exercise => exercise.isCustom === 1),
     [exercises]
   );
 
   useEffect(() => {
-    if (!hasCustomExercise && selectedCategory === 'custom') {
-      setSelectedCategory('all');
+    if (!hasCustomExercise && selectedFilter === 'custom') {
+      setSelectedFilter('all');
     }
-  }, [hasCustomExercise, selectedCategory]);
+  }, [hasCustomExercise, selectedFilter]);
 
   const filteredExercises = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
 
     return exercises.filter(exercise => {
-      const matchesCategory = matchesExerciseCategory(
+      const matchesFilter = matchesExerciseFilter(
         exercise,
-        selectedCategory
+        selectedFilter,
+        recentExerciseIdSet
       );
 
-      return (
-        matchesExerciseSearch(exercise, normalizedQuery) && matchesCategory
-      );
+      return matchesExerciseSearch(exercise, normalizedQuery) && matchesFilter;
     });
-  }, [exercises, query, selectedCategory]);
+  }, [exercises, query, recentExerciseIdSet, selectedFilter]);
 
   const exerciseListItems = useMemo(
     () => buildAlphabetizedExerciseListItems(filteredExercises),
@@ -61,8 +81,8 @@ export function useExercisesScreen() {
   return {
     query,
     setQuery,
-    selectedCategory,
-    setSelectedCategory,
+    selectedFilter,
+    setSelectedFilter,
     exercises,
     filteredExercises,
     exerciseListItems,

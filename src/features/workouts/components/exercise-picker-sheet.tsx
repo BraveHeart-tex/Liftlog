@@ -89,6 +89,9 @@ export function ExercisePickerSheet({
     []
   );
   const isMultiple = selectionProps.mode === 'multiple';
+  const shouldShowCustomExerciseFilter = exercises.some(
+    exercise => exercise.isCustom === 1
+  );
 
   useEffect(() => {
     if (!isOpen) {
@@ -341,6 +344,7 @@ export function ExercisePickerSheet({
             Keyboard.dismiss();
             setSelectedFilter(filter);
           }}
+          shouldShowCustomExerciseFilter={shouldShowCustomExerciseFilter}
         />
       </View>
 
