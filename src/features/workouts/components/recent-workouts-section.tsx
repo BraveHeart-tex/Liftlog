@@ -1,3 +1,4 @@
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import type { Workout } from '@/src/db';
@@ -56,18 +57,13 @@ export const RecentWorkoutsSection = ({
           ))}
         </View>
       ) : (
-        // TODO(FE-185): Extract empty state markup to a re-usable component
-        <View className="mt-3 items-center justify-center rounded-lg px-6 py-10">
-          <View className="bg-card h-12 w-12 items-center justify-center rounded-lg">
-            <Icon icon={DumbbellIcon} tone="mutedForeground" size="md" />
-          </View>
-          <Text variant="bodyMedium" className="mt-3 text-center">
-            No workouts yet
-          </Text>
-          <Text variant="small" tone="muted" className="mt-1 text-center">
-            Start your first session to see history here.
-          </Text>
-        </View>
+        <EmptyState
+          layout="section"
+          icon={DumbbellIcon}
+          title="No workouts yet"
+          description="Start your first session to see history here."
+          className="mt-3 rounded-lg px-6 py-10"
+        />
       )}
     </View>
   );

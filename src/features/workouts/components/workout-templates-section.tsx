@@ -1,5 +1,6 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { Button } from '@/src/components/ui/button';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { WorkoutTemplateCard } from '@/src/features/workouts/components/workout-template-card';
@@ -52,7 +53,23 @@ export const WorkoutTemplatesSection = ({
       </View>
 
       {templates.length === 0 ? (
-        <EmptyTemplates onCreateTemplate={handleCreateTemplatePress} />
+        <EmptyState
+          layout="section"
+          icon={ClipboardListIcon}
+          title="No templates yet"
+          description="Save a routine to start faster next time."
+          className="mt-3"
+          action={
+            <Button
+              variant="secondary"
+              size="sm"
+              textClassName="text-primary text-sm"
+              onPress={handleCreateTemplatePress}
+            >
+              Create template
+            </Button>
+          }
+        />
       ) : (
         <StyledScrollView
           className="mt-3"
@@ -72,35 +89,3 @@ export const WorkoutTemplatesSection = ({
     </View>
   );
 };
-
-// TODO(FE-185): Extract empty state markup to a re-usable component
-interface EmptyTemplatesProps {
-  onCreateTemplate: () => void;
-}
-
-function EmptyTemplates({ onCreateTemplate }: EmptyTemplatesProps) {
-  return (
-    <View className="mt-3 items-center py-4">
-      <View className="bg-card h-12 w-12 items-center justify-center rounded-lg">
-        <Icon icon={ClipboardListIcon} tone="mutedForeground" size="md" />
-      </View>
-
-      <Text variant="bodyMedium" className="mt-3 text-center">
-        No templates yet
-      </Text>
-      <Text variant="small" tone="muted" className="mt-1 text-center">
-        Save a routine to start faster next time.
-      </Text>
-
-      <Button
-        variant="secondary"
-        size="sm"
-        className="mt-3"
-        textClassName="text-primary text-sm"
-        onPress={onCreateTemplate}
-      >
-        Create template
-      </Button>
-    </View>
-  );
-}

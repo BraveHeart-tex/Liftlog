@@ -1,4 +1,5 @@
 import { Button } from '@/src/components/ui/button';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { RenameSheet } from '@/src/components/ui/rename-sheet';
@@ -246,11 +247,11 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
         </View>
 
         {workoutExerciseRows.length === 0 ? (
-          <View className="mt-3 items-center py-8">
-            <Text variant="small" tone="muted" className="text-center">
-              No exercises were logged in this workout.
-            </Text>
-          </View>
+          <EmptyState
+            layout="section"
+            title="No exercises were logged in this workout."
+            className="mt-3 py-8"
+          />
         ) : (
           workoutExerciseRows.map(workoutExercise => {
             const exercise = exerciseById.get(workoutExercise.exerciseId);

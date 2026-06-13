@@ -6,6 +6,7 @@ import {
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
 import { Button } from '@/src/components/ui/button';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { Input } from '@/src/components/ui/input';
 import { SearchInputIcon } from '@/src/components/ui/search-input-icon';
@@ -382,14 +383,12 @@ export function ExercisePickerSheet({
           );
         }}
         ListEmptyComponent={
-          <View className="border-border bg-card mt-3 items-center justify-center rounded-lg border border-dashed px-6 py-10">
-            <Text variant="h3" className="text-center">
-              {emptyTitle}
-            </Text>
-            <Text variant="small" tone="muted" className="mt-2 text-center">
-              {emptyDescription}
-            </Text>
-          </View>
+          <EmptyState
+            layout="section"
+            title={emptyTitle}
+            description={emptyDescription}
+            className="border-border bg-card mt-3 rounded-lg border border-dashed px-6 py-10"
+          />
         }
       />
     </BottomSheet>

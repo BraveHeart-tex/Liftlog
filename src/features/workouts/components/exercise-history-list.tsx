@@ -1,4 +1,5 @@
 import { StyledFlashList } from '@/src/components/styled/flash-list';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon, type IconTone } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import {
@@ -181,14 +182,12 @@ export function ExerciseHistoryList({
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
       ListEmptyComponent={
-        <View className="mt-6 items-center">
-          <Text variant="h3" className="text-center">
-            No history yet
-          </Text>
-          <Text variant="small" tone="muted" className="mt-2 text-center">
-            Complete sets to see your history here.
-          </Text>
-        </View>
+        <EmptyState
+          layout="section"
+          title="No history yet"
+          description="Complete sets to see your history here."
+          className="mt-6"
+        />
       }
     />
   );

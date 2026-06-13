@@ -1,4 +1,5 @@
 import { StyledFlatList } from '@/src/components/styled/flat-list';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { Text } from '@/src/components/ui/text';
 import { WorkoutLogCalendar } from '@/src/features/workout-log/components/workout-log-calendar';
 import { WorkoutLogRow } from '@/src/features/workout-log/components/workout-log-row';
@@ -96,14 +97,12 @@ export function WorkoutLogContent() {
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={listHeader}
       ListEmptyComponent={
-        <View className="border-border bg-card items-center justify-center rounded-lg border border-dashed px-6 py-10">
-          <Text variant="h3" className="text-center">
-            No workouts
-          </Text>
-          <Text variant="small" tone="muted" className="mt-2 text-center">
-            Completed sessions for this day will show here.
-          </Text>
-        </View>
+        <EmptyState
+          layout="section"
+          title="No workouts"
+          description="Completed sessions for this day will show here."
+          className="border-border bg-card rounded-lg border border-dashed px-6 py-10"
+        />
       }
       renderItem={renderWorkoutRow}
       contentContainerClassName="px-4 pt-4 pb-6"

@@ -1,4 +1,5 @@
 import { Button } from '@/src/components/ui/button';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
@@ -8,7 +9,6 @@ import { ActiveWorkoutEditHeader } from '@/src/features/workouts/components/acti
 import { ActiveWorkoutExerciseList } from '@/src/features/workouts/components/active-workout-exercise-list';
 import { ActiveWorkoutHeaderWithActions } from '@/src/features/workouts/components/active-workout-header-with-actions';
 import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/create-custom-exercise-sheet';
-import { EmptyExerciseState } from '@/src/features/workouts/components/empty-exercise-state';
 import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise-picker-sheet';
 import { RestTimerWidget } from '@/src/features/workouts/components/rest-timer-widget';
 import {
@@ -122,8 +122,14 @@ export function ActiveWorkoutContent({
         />
       ) : (
         <View className="flex-1 px-4 pb-6">
-          <EmptyExerciseState
-            onAddExercise={() => setIsExercisePickerOpen(true)}
+          <EmptyState
+            title="No exercises yet"
+            description="Add your first exercise to get started."
+            action={
+              <Button onPress={() => setIsExercisePickerOpen(true)}>
+                Add exercise
+              </Button>
+            }
           />
         </View>
       )}

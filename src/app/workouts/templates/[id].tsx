@@ -1,6 +1,7 @@
 import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
@@ -280,11 +281,11 @@ function WorkoutTemplateDetailLoaded({
           </View>
 
           {templateExerciseRows.length === 0 ? (
-            <View className="mt-3 items-center py-8">
-              <Text variant="small" tone="muted" className="text-center">
-                No exercises saved in this template.
-              </Text>
-            </View>
+            <EmptyState
+              layout="section"
+              title="No exercises saved in this template."
+              className="mt-3 py-8"
+            />
           ) : (
             <View className="mt-3">
               {templateExerciseRows.map((templateExercise, index) => {

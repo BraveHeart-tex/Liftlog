@@ -1,4 +1,5 @@
 import { Button } from '@/src/components/ui/button';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import {
@@ -8,9 +9,8 @@ import {
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/create-custom-exercise-sheet';
 import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise-picker-sheet';
-import { NewTemplateEmptyState } from '@/src/features/workouts/components/new-template-empty-state';
 import { NewTemplateExerciseList } from '@/src/features/workouts/components/new-template-exercise-list';
-import { PlusIcon } from 'lucide-react-native';
+import { ClipboardListIcon, PlusIcon } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { Keyboard, View } from 'react-native';
 
@@ -64,8 +64,23 @@ export function TemplateExerciseEditor({
 
       {exercises.length === 0 ? (
         <View className="px-4">
-          <NewTemplateEmptyState
-            onAddExercise={() => setIsExercisePickerOpen(true)}
+          <EmptyState
+            layout="section"
+            icon={ClipboardListIcon}
+            title="No exercises added"
+            description="Add exercises from your library to build this template."
+            className="py-8"
+            action={
+              <Button
+                variant="secondary"
+                size="sm"
+                textClassName="text-primary text-sm"
+                leftIcon={<Icon icon={PlusIcon} size="sm" tone="primary" />}
+                onPress={() => setIsExercisePickerOpen(true)}
+              >
+                Add exercise
+              </Button>
+            }
           />
         </View>
       ) : (

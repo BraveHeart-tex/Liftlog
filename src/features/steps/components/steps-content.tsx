@@ -1,6 +1,7 @@
 import { StyledFlatList } from '@/src/components/styled/flat-list';
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import { Button } from '@/src/components/ui/button';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Text } from '@/src/components/ui/text';
@@ -172,14 +173,12 @@ export function StepsContent() {
           </View>
         }
         ListEmptyComponent={
-          <View className="border-border bg-card items-center justify-center rounded-lg border border-dashed px-6 py-10">
-            <Text variant="h3" className="text-center">
-              No step history
-            </Text>
-            <Text variant="small" tone="muted" className="mt-2 text-center">
-              Connect Health Connect and sync steps to fill this in.
-            </Text>
-          </View>
+          <EmptyState
+            layout="section"
+            title="No step history"
+            description="Connect Health Connect and sync steps to fill this in."
+            className="border-border bg-card rounded-lg border border-dashed px-6 py-10"
+          />
         }
         ListFooterComponent={
           hasMoreStepHistory ? (

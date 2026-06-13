@@ -1,4 +1,5 @@
 import { Card, CardContent } from '@/src/components/ui/card';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
@@ -213,12 +214,12 @@ export default function ExerciseDetailScreen() {
           </Text>
 
           {personalRecordsSummary.length === 0 ? (
-            <View className="mt-4">
-              <Text variant="h3">No records yet</Text>
-              <Text variant="small" tone="muted" className="mt-2">
-                Complete sets for this exercise to build your records.
-              </Text>
-            </View>
+            <EmptyState
+              layout="section"
+              title="No records yet"
+              description="Complete sets for this exercise to build your records."
+              className="mt-4 py-0"
+            />
           ) : (
             <View className="mt-4">
               {personalRecordsSummary.map((record, index) => (
@@ -264,12 +265,12 @@ export default function ExerciseDetailScreen() {
           </Text>
 
           {topSetPerformances.length === 0 ? (
-            <View className="mt-4">
-              <Text variant="h3">No top sets yet</Text>
-              <Text variant="small" tone="muted" className="mt-2">
-                Complete a set to see your best performances.
-              </Text>
-            </View>
+            <EmptyState
+              layout="section"
+              title="No top sets yet"
+              description="Complete a set to see your best performances."
+              className="mt-4 py-0"
+            />
           ) : (
             <View className="mt-4">
               {topSetPerformances.map((performance, index) => (
