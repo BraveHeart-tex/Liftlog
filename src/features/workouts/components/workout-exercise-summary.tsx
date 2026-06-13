@@ -4,7 +4,7 @@ import type { TrackingType } from '@/src/features/progress/tracking';
 import { cn } from '@/src/lib/utils/cn';
 import { formatWeightForUnit, type WeightUnit } from '@/src/lib/utils/weight';
 import { View } from 'react-native';
-import { WorkoutSetSummary } from './workout-set-summary';
+import { WorkoutSetSummary } from '@/src/features/workouts/components/workout-set-summary';
 
 interface WorkoutExerciseSummaryProps {
   exerciseName: string;

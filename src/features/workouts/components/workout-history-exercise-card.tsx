@@ -2,7 +2,7 @@ import { Card, CardContent } from '@/src/components/ui/card';
 import type { Set } from '@/src/db';
 import type { TrackingType } from '@/src/features/progress/tracking';
 import type { WeightUnit } from '@/src/lib/utils/weight';
-import { WorkoutExerciseSummary } from './workout-exercise-summary';
+import { WorkoutExerciseSummary } from '@/src/features/workouts/components/workout-exercise-summary';
 
 interface WorkoutHistoryExerciseCardProps {
   exerciseName: string;

@@ -1,6 +1,6 @@
 import { useSettings } from '@/src/features/settings/hooks';
-import { useExerciseHistory } from './use-exercise-history';
-import { useActiveWorkoutExerciseDetail } from './use-active-workout-exercise-detail';
+import { useExerciseHistory } from '@/src/features/workouts/hooks/use-exercise-history';
+import { useActiveWorkoutExerciseDetail } from '@/src/features/workouts/hooks/use-active-workout-exercise-detail';
 
 export function useWorkoutExerciseHistoryScreen(
   workoutExerciseId: string | undefined

@@ -5,8 +5,8 @@ import DraggableFlatList, {
   type DragEndParams,
   type RenderItemParams
 } from 'react-native-draggable-flatlist';
-import { ActiveWorkoutExerciseEditRow } from './active-workout-exercise-edit-row';
-import type { WorkoutExerciseWithSets } from './types';
+import { ActiveWorkoutExerciseEditRow } from '@/src/features/workouts/components/active-workout-exercise-edit-row';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
 
 const draggableListContainerStyle = { flex: 1 };
 

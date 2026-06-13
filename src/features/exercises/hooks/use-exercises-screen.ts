@@ -5,7 +5,7 @@ import {
 } from '@/src/features/exercises/display';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { useEffect, useMemo, useState } from 'react';
-import { useExercises } from './use-exercises';
+import { useExercises } from '@/src/features/exercises/hooks/use-exercises';
 
 function matchesExerciseCategory(
   exercise: ExerciseListItem,

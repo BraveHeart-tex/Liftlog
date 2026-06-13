@@ -4,7 +4,7 @@ import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { getSetsForWorkoutExercisesQuery } from '@/src/features/workouts/repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { useMemo } from 'react';
-import type { WorkoutExerciseWithSets } from '../components/types';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
 
 interface UseActiveWorkoutExerciseListParams {
   workoutExercises: WorkoutExercise[];

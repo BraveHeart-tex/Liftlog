@@ -1,1 +1,1 @@
-export { useStepsScreen } from './use-steps-screen';
+export { useStepsScreen } from '@/src/features/steps/hooks/use-steps-screen';

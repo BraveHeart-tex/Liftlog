@@ -5,9 +5,9 @@ import {
 import type { Set } from '@/src/db/schema';
 import { useEffect, useRef } from 'react';
 import { Keyboard, Platform, ScrollView, View } from 'react-native';
-import { ProgressionSuggestion } from './progression-suggestion';
-import { SetForm } from './set-form';
-import type { WorkoutExerciseWithSets } from './types';
+import { ProgressionSuggestion } from '@/src/features/workouts/components/progression-suggestion';
+import { SetForm } from '@/src/features/workouts/components/set-form';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
 
 interface ExerciseTrackTabProps {
   item: WorkoutExerciseWithSets;

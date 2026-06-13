@@ -13,7 +13,10 @@ import {
   type ReadHealthDataHistoryPermission
 } from 'react-native-health-connect';
 import { Platform } from 'react-native';
-import { getRecentLocalDayRanges, getTodayDateKey } from './date';
+import {
+  getRecentLocalDayRanges,
+  getTodayDateKey
+} from '@/src/features/steps/date';
 
 export type HealthConnectAvailability =
   | 'available'

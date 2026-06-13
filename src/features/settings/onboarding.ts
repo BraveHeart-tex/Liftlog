@@ -1,5 +1,5 @@
 import type { DrizzleDb } from '@/src/db/client';
-import { getSetting, setSetting } from './repository';
+import { getSetting, setSetting } from '@/src/features/settings/repository';
 
 const ONBOARDING_KEY = 'onboarding.completed';
 const DISPLAY_NAME_KEY = 'settings.display_name';

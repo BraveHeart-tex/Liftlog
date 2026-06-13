@@ -4,8 +4,8 @@ import { router } from 'expo-router';
 import { ChevronLeftIcon } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Animated, Pressable, type GestureResponderEvent } from 'react-native';
-import { Button } from './button';
-import { Icon, type IconComponent } from './icon';
+import { Button } from '@/src/components/ui/button';
+import { Icon, type IconComponent } from '@/src/components/ui/icon';
 
 type BackButtonVariant = 'icon' | 'text';
 

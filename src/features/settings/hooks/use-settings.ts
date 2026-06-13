@@ -20,7 +20,7 @@ import {
   setStepsNotificationEnabled as setStepsNotificationEnabledRepo,
   setWeightUnit as setWeightUnitRepo,
   type WeightUnit
-} from '../repository';
+} from '@/src/features/settings/repository';
 
 export function useSettings() {
   const db = useDrizzle();

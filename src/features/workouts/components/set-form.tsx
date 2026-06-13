@@ -25,7 +25,7 @@ import {
   getHasSavedChanges,
   getInitialFieldValues,
   parseTrackingFieldValues
-} from './set-form-utils';
+} from '@/src/features/workouts/components/set-form-utils';
 
 type RowPhase = 'editing' | 'saving' | 'awaiting_sync' | 'error';
 

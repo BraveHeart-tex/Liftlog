@@ -5,8 +5,11 @@ import {
   setThemePreferenceSnapshot
 } from '@/src/features/settings/theme-preference-storage';
 import { useCallback } from 'react';
-import { persistThemePreference, type ThemePreference } from '../repository';
-import { useThemePreference } from './use-theme-preference';
+import {
+  persistThemePreference,
+  type ThemePreference
+} from '@/src/features/settings/repository';
+import { useThemePreference } from '@/src/features/settings/hooks/use-theme-preference';
 
 let pendingThemePreference: ThemePreference | null = null;
 let pendingPersistenceFrame: number | null = null;

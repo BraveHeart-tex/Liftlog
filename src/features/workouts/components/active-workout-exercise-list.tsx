@@ -2,8 +2,8 @@ import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import type { WorkoutExercise } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { useActiveWorkoutExerciseList } from '@/src/features/workouts/hooks';
-import { ActiveWorkoutExerciseCard } from './active-workout-exercise-card';
-import { ActiveWorkoutExerciseEditList } from './active-workout-exercise-edit-list';
+import { ActiveWorkoutExerciseCard } from '@/src/features/workouts/components/active-workout-exercise-card';
+import { ActiveWorkoutExerciseEditList } from '@/src/features/workouts/components/active-workout-exercise-edit-list';
 
 interface ActiveWorkoutExerciseListProps {
   workoutExercises: WorkoutExercise[];

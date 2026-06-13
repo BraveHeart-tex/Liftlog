@@ -6,7 +6,7 @@ import { iconSizes } from '@/src/theme/sizes';
 import { Link } from 'expo-router';
 import { ChevronRightIcon, TrendingUpIcon } from 'lucide-react-native';
 import { View } from 'react-native';
-import type { ProgressionSuggestionData } from './progression-suggestion-utils';
+import type { ProgressionSuggestionData } from '@/src/features/workouts/components/progression-suggestion-utils';
 
 interface ProgressionSuggestionProps {
   workoutExerciseId: string;

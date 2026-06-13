@@ -42,5 +42,6 @@
   },
   "[kotlin]": {
     "editor.defaultFormatter": "fwcd.kotlin"
-  }
+  },
+  "js/ts.preferences.importModuleSpecifier": "non-relative"
 }

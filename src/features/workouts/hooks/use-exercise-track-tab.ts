@@ -9,8 +9,8 @@ import { useSettings } from '@/src/features/settings/hooks';
 import { formatCompletedSets, getCompletedSets } from '@/src/lib/utils/set';
 import { convertWeightToKg } from '@/src/lib/utils/weight';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getProgressionSuggestion } from '../components/progression-suggestion-utils';
-import type { WorkoutExerciseWithSets } from '../components/types';
+import { getProgressionSuggestion } from '@/src/features/workouts/components/progression-suggestion-utils';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
 
 const PROGRESSION_HISTORY_LIMIT = 4;
 

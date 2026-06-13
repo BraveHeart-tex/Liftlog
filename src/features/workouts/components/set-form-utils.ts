@@ -9,7 +9,7 @@ import {
 } from '@/src/features/progress/tracking';
 import type { useSettings } from '@/src/features/settings/hooks';
 import { convertWeightToKg, formatWeightForUnit } from '@/src/lib/utils/weight';
-import { formatInputNumber } from './utils';
+import { formatInputNumber } from '@/src/features/workouts/components/utils';
 
 export function getFieldHeaderLabel(
   field: TrackingFieldDefinition,

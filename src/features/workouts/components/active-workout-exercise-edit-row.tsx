@@ -9,7 +9,7 @@ import { formatWeightForUnit } from '@/src/lib/utils/weight';
 import { iconSizes } from '@/src/theme/sizes';
 import { GripIcon, TrashIcon } from 'lucide-react-native';
 import { Alert, View } from 'react-native';
-import type { WorkoutExerciseWithSets } from './types';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
 
 interface ActiveWorkoutExerciseEditRowProps {
   item: WorkoutExerciseWithSets;

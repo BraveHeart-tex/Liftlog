@@ -4,8 +4,8 @@ import { usePressScale } from '@/src/lib/animations/use-press-scale';
 import { cn } from '@/src/lib/utils/cn';
 import { router } from 'expo-router';
 import { Animated, Pressable, View } from 'react-native';
-import type { WorkoutExerciseWithSets } from './types';
-import { WorkoutExerciseSummary } from './workout-exercise-summary';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
+import { WorkoutExerciseSummary } from '@/src/features/workouts/components/workout-exercise-summary';
 
 interface ActiveWorkoutExerciseCardProps {
   item: WorkoutExerciseWithSets;

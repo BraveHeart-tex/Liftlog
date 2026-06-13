@@ -6,7 +6,7 @@ import {
 } from '@/src/features/workouts/repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { useMemo } from 'react';
-import type { WorkoutExerciseWithSets } from '../components/types';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
 
 export function useActiveWorkoutExerciseDetail(
   workoutExerciseId: string | undefined

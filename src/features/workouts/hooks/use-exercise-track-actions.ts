@@ -16,7 +16,10 @@ import {
 } from '@/src/features/workouts/repository';
 import * as Haptics from 'expo-haptics';
 import { useCallback } from 'react';
-import type { SetValues, WorkoutExerciseWithSets } from '../components/types';
+import type {
+  SetValues,
+  WorkoutExerciseWithSets
+} from '@/src/features/workouts/components/types';
 
 type AddSetValues = SetValues & { order: Set['order'] };
 

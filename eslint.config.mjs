@@ -17,6 +17,7 @@ export default defineConfig([
       'modules/expo-step-counter/build/**',
       'modules/expo-step-counter/internal/**',
       'modules/expo-step-counter/package/**',
+      'src/db/migrations/**',
       'expo-env.d.ts',
       'nativewind-env.d.ts',
       'pnpm-lock.yaml',
@@ -53,6 +54,12 @@ export default defineConfig([
               importNames: ['SafeAreaView'],
               message:
                 'Use SafeAreaView from @/src/components/ui/safe-area-view to avoid jumpy React Navigation layouts.'
+            }
+          ],
+          patterns: [
+            {
+              regex: '^\\.',
+              message: 'Use an absolute import with the @/ alias instead.'
             }
           ]
         }

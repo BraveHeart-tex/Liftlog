@@ -26,7 +26,7 @@ import { useSettings } from '@/src/features/settings/hooks';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLiveStepCounter } from './use-live-step-counter';
+import { useLiveStepCounter } from '@/src/features/steps/hooks/use-live-step-counter';
 
 type SyncState = 'idle' | 'syncing';
 

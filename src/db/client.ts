@@ -1,6 +1,6 @@
 import { drizzle, type ExpoSQLiteDatabase } from 'drizzle-orm/expo-sqlite';
 import type { SQLiteDatabase, SQLiteOpenOptions } from 'expo-sqlite';
-import * as schema from './schema';
+import * as schema from '@/src/db/schema';
 
 export const databaseName = 'workout.db';
 

@@ -11,7 +11,7 @@ import {
   type ScrollViewProps
 } from 'react-native';
 import { useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
-import { SafeAreaView } from './safe-area-view';
+import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 
 interface ScreenProps {
   children: ReactNode;
