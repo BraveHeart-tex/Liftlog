@@ -1,23 +1,13 @@
 import type { DrizzleDb } from '@/src/db/client';
 import { appMeta } from '@/src/db/schema';
-import {
-  DEFAULT_THEME_PREFERENCE,
-  parseThemePreference,
-  persistStoredThemePreference,
-  setThemePreferenceSnapshot,
-  THEME_PREFERENCE_KEY,
-  type ThemePreference
-} from '@/src/features/settings/theme-preference-storage';
 import type { WeightUnit } from '@/src/lib/utils/weight';
 import { eq } from 'drizzle-orm';
 
 export type { WeightUnit };
-export type { ThemePreference };
 
 export const SETTINGS_KEYS = {
   weightUnit: 'settings.weight_unit',
   restTimerDuration: 'settings.rest_timer',
-  themePreference: THEME_PREFERENCE_KEY,
   healthConnectStepsEnabled: 'settings.health_connect_steps_enabled',
   stepsNotificationEnabled: 'settings.steps_notification_enabled',
   stepGoal: 'settings.step_goal',
@@ -27,7 +17,6 @@ export const SETTINGS_KEYS = {
 export const SETTINGS_DEFAULTS = {
   weightUnit: 'kg' as WeightUnit,
   restTimerDuration: 90,
-  themePreference: DEFAULT_THEME_PREFERENCE,
   healthConnectStepsEnabled: false,
   stepsNotificationEnabled: false,
   stepGoal: 10000
@@ -74,25 +63,6 @@ export function getRestTimerDuration(db: DrizzleDb): number {
 
 export function setRestTimerDuration(db: DrizzleDb, seconds: number): void {
   setSetting(db, SETTINGS_KEYS.restTimerDuration, String(seconds));
-}
-
-export function getThemePreference(db: DrizzleDb): ThemePreference {
-  const preference = parseThemePreference(
-    getSetting(db, SETTINGS_KEYS.themePreference)
-  );
-
-  setThemePreferenceSnapshot(preference);
-  persistStoredThemePreference(preference);
-
-  return preference;
-}
-
-export function persistThemePreference(
-  db: DrizzleDb,
-  preference: ThemePreference
-): void {
-  setSetting(db, SETTINGS_KEYS.themePreference, preference);
-  persistStoredThemePreference(preference);
 }
 
 export function parseBooleanSetting(value: string | undefined): boolean {

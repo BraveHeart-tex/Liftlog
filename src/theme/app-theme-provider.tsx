@@ -1,6 +1,10 @@
-import { useThemePreference } from '@/src/features/settings/hooks';
-import { toAppearanceColorScheme } from '@/src/features/settings/theme-preference-storage';
 import { cn } from '@/src/lib/utils/cn';
+import {
+  getThemePreference,
+  setThemePreference as persistThemePreference,
+  toAppearanceColorScheme,
+  type ThemePreference
+} from '@/src/theme/theme-preference';
 import {
   getTabBarTheme,
   getThemeColors,
@@ -17,9 +21,11 @@ import { StatusBar } from 'expo-status-bar';
 import { setBackgroundColorAsync } from 'expo-system-ui';
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
+  useState,
   type PropsWithChildren
 } from 'react';
 import {
@@ -32,6 +38,8 @@ import {
 interface AppThemeContextValue {
   colors: ThemeColors;
   colorScheme: AppColorScheme;
+  themePreference: ThemePreference;
+  setThemePreference: (preference: ThemePreference) => void;
 }
 
 const AppThemeContext = createContext<AppThemeContextValue | null>(null);
@@ -41,7 +49,7 @@ function resolveAppColorScheme(colorScheme: ColorSchemeName): AppColorScheme {
 }
 
 function resolveColorScheme(
-  preference: 'system' | AppColorScheme,
+  preference: ThemePreference,
   nativeColorScheme: ColorSchemeName
 ): AppColorScheme {
   if (preference !== 'system') {
@@ -71,16 +79,16 @@ function createNavigationTheme(colorScheme: AppColorScheme): Theme {
 }
 
 export function AppThemeProvider({ children }: PropsWithChildren) {
-  const themePreference = useThemePreference();
+  const [themePreference, setThemePreferenceState] =
+    useState(getThemePreference);
   const nativeColorScheme = useColorScheme();
-  const colorScheme = useMemo(
-    () => resolveColorScheme(themePreference, nativeColorScheme),
-    [nativeColorScheme, themePreference]
-  );
+  const colorScheme = resolveColorScheme(themePreference, nativeColorScheme);
 
-  useEffect(() => {
-    Appearance.setColorScheme(toAppearanceColorScheme(themePreference));
-  }, [themePreference]);
+  const setThemePreference = useCallback((preference: ThemePreference) => {
+    Appearance.setColorScheme(toAppearanceColorScheme(preference));
+    setThemePreferenceState(preference);
+    persistThemePreference(preference);
+  }, []);
 
   useEffect(() => {
     void setBackgroundColorAsync(getThemeColors(colorScheme).background);
@@ -89,9 +97,11 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
   const value = useMemo(
     () => ({
       colors: getThemeColors(colorScheme),
-      colorScheme
+      colorScheme,
+      themePreference,
+      setThemePreference
     }),
-    [colorScheme]
+    [colorScheme, setThemePreference, themePreference]
   );
 
   const navigationTheme = useMemo(

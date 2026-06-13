@@ -2,8 +2,8 @@ export type AppColorScheme = 'light' | 'dark';
 
 const colorSchemes = {
   light: {
-    background: '#F5F0EB',
-    foreground: '#1A1208',
+    background: '#F2EDE8',
+    foreground: '#1A1512',
     card: '#FFFFFF',
     primary: '#FF4D00',
     primaryForeground: '#FFFFFF',
@@ -11,24 +11,24 @@ const colorSchemes = {
     secondaryForeground: '#3A3330',
     accent: '#FF4D00',
     accentForeground: '#FFFFFF',
-    border: '#E8DDD3',
-    muted: '#E8DDD3',
-    mutedForeground: '#6B5B4E',
+    border: '#DDD8D2',
+    muted: '#EDE8E2',
+    mutedForeground: '#6B6460',
     info: '#0070C0'
   },
   dark: {
-    background: '#1C1C1E',
-    foreground: '#F5F5F5',
-    card: '#2C2C2E',
+    background: '#1A1917',
+    foreground: '#F0ECE8',
+    card: '#252422',
     primary: '#FF4D00',
     primaryForeground: '#FFFFFF',
-    secondary: '#3A3A3C',
+    secondary: '#3D3B38',
     secondaryForeground: '#C5BFB8',
     accent: '#FF4D00',
     accentForeground: '#FFFFFF',
-    border: '#3A3A3C',
-    muted: '#3A3A3C',
-    mutedForeground: '#7A7A7F',
+    border: '#3D3B38',
+    muted: '#3D3B38',
+    mutedForeground: '#8A8580',
     info: '#4DB8FF'
   }
 } as const;
