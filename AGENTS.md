@@ -1,106 +1,61 @@
 # AGENTS.md
 
-Before broad file discovery, honor ignore patterns in .codexignore.
+Honor `.codexignore` before broad file discovery.
 
 ## Stack
 
-- Expo / React Native
-- Expo Router
-- TypeScript
-- NativeWind
-- Drizzle ORM + Expo SQLite
+Expo · React Native · Expo Router · TypeScript · NativeWind · Drizzle ORM + Expo SQLite
 
-## Core Rules
+## Rules
 
-- Keep solutions simple.
-- Follow existing patterns before introducing abstractions.
+- Keep solutions simple. Follow existing patterns before adding abstractions.
 - Optimize for mobile UX and low-friction interactions.
-- Avoid unnecessary comments.
-- Do not add production dependencies without approval.
-- Avoid unrelated refactors.
-- Avoid web-only assumptions.
+- No unnecessary comments. No unapproved prod dependencies. No unrelated refactors.
+- No web-only assumptions.
 
-## Generated Files
+## Ignore (generated files)
 
-Do not inspect or modify generated files unless explicitly required.
+```
 
-Ignore by default:
-
-```txt
 src/db/migrations/**
-src/db/migrations/meta/**
-src/db/migrations/*.sql
-src/db/migrations/_journal.json
-src/db/migrations/migrations.js
-drizzle/**
-**/*.generated.*
+drizzle/** \*_/_.generated.\*
+
 ```
 
 ## TypeScript
 
-- Use TypeScript.
-- Prefer `interface` for object-shaped structures.
-- Prefer `type` for unions, utility types, inferred schema types, and mapped types.
+- `interface` for object shapes. `type` for unions, utilities, inferred schema types, mapped types.
 
 ## Styling
 
-- Use NativeWind `className`.
-- Use semantic theme tokens from `global.css`.
-- Do not hardcode colors or typography values unless unavoidable.
-- Use shared `cn` helper from `@/src/lib/utils/cn`.
-- Avoid inline styles except for animation, native-only props, or unavoidable layout edge cases.
+- NativeWind `className` with semantic tokens from `global.css`.
+- Use `cn` from `@/src/lib/utils/cn`. No hardcoded colors/typography.
+- No inline styles except animation, native-only props, or unavoidable layout edge cases.
 
 ## Components
 
-- Prefer shared UI primitives from `src/components/ui`.
-- Use styled wrappers from `src/components/styled` for third-party components with multiple style props.
-- Keep components small and simple.
-- Default to one React component per file. Extract additional components into separate files unless keeping them together is clearly necessary.
-- Default to one named helper function per file. Extract additional helpers into focused files unless they are trivial, used only once, and tightly coupled to the file's primary export.
-- Do not use "private" or non-exported status alone as a reason to colocate additional components or helpers.
-- Avoid deep abstraction layers.
+- Prefer UI primitives from `src/components/ui`.
+- Styled wrappers from `src/components/styled` for third-party components with multiple style props.
+- One component per file. One named helper per file. Extract when reused or non-trivial.
+- Don't colocate extras just because they're private. No deep abstraction layers.
 
 ## Layout
 
-- Prefer shared `Screen` primitive for screens.
-- Use local SafeAreaView wrapper instead of direct safe-area-context imports.
-- Use scroll/list wrappers for vertically overflowing content.
-- Avoid unnecessary `flex-1` usage on non-scroll stacks.
+- Use shared `Screen` primitive. Local `SafeAreaView` wrapper (no direct safe-area-context imports).
+- Scroll/list wrappers for overflowing content. Avoid unnecessary `flex-1` on non-scroll stacks.
 
 ## Data Access
 
-Required flow:
+Flow: `Screen → feature hook → repository → Drizzle`
 
-```txt
-Screen -> feature hook -> repository -> Drizzle
-```
+- No `useDrizzle` in route screens.
+- Repositories own query construction and DB invariants.
+- `useLiveWithFallback` for reactive reads.
 
-Rules:
+## Docs (read before implementing)
 
-- Do not call `useDrizzle` in route screens.
-- Repositories own query construction and database invariants.
-- Use `useLiveWithFallback` for reactive reads.
-
-## Task-Specific Docs
-
-Read relevant docs before implementation:
-
-- docs/project-overview.md
-- docs/engineering-principles.md
-- docs/styling.md
-- docs/theme-tokens.md
-- docs/layout.md
-- docs/data-access.md
-- docs/database.md
-- docs/components.md
-- docs/bottom-sheet.md
-- docs/ux-display.md
-- docs/project-structure.md
+`project-overview` · `engineering-principles` · `styling` · `theme-tokens` · `layout` · `data-access` · `database` · `components` · `bottom-sheet` · `ux-display` · `project-structure`
 
 ## Token Discipline
 
-- Read the minimum number of files necessary.
-- Use `rg` before opening files.
-- Avoid inspecting unrelated files.
-- Prefer surgical edits over broad rewrites.
-- Do not print full file contents unless requested.
+- `rg` before opening files. Read minimum files needed. Surgical edits only. No full file prints unless asked.
