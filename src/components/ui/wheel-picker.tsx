@@ -1,6 +1,7 @@
 import { Text } from '@/src/components/ui/text';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import WheelPickerBase, {
+  withVirtualized,
   type WheelPickerProps as BaseWheelPickerProps,
   type PickerItem,
   type RenderItem,
@@ -9,6 +10,8 @@ import WheelPickerBase, {
 import { styled } from 'nativewind';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+
+const VirtualizedWheelPicker = withVirtualized(WheelPickerBase);
 
 interface WheelPickerClassNameProps {
   className?: string;
@@ -75,7 +78,7 @@ const WheelPickerBridge = <ItemT extends PickerItem<any>>({
   }
 
   return (
-    <WheelPickerBase
+    <VirtualizedWheelPicker
       {...props}
       width={width}
       itemHeight={itemHeight}
@@ -93,9 +96,10 @@ const StyledWheelPickerBase = styled(WheelPickerBridge, {
   contentContainerClassName: 'contentContainerStyle'
 });
 
-export const WheelPicker = StyledWheelPickerBase as typeof WheelPickerBase &
-  (<ItemT extends PickerItem<any>>(
-    props: WheelPickerProps<ItemT>
-  ) => ReactNode);
+export const WheelPicker =
+  StyledWheelPickerBase as typeof VirtualizedWheelPicker &
+    (<ItemT extends PickerItem<any>>(
+      props: WheelPickerProps<ItemT>
+    ) => ReactNode);
 
 export type { PickerItem, RenderItem, RenderItemProps };
