@@ -11,7 +11,7 @@ import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/cr
 import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise-picker-sheet';
 import { NewTemplateExerciseList } from '@/src/features/workouts/components/new-template-exercise-list';
 import { ClipboardListIcon, PlusIcon } from 'lucide-react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Keyboard, View } from 'react-native';
 
 interface TemplateExerciseEditorProps {
@@ -30,6 +30,28 @@ export function TemplateExerciseEditor({
     useState(false);
   const [initialCustomExerciseName, setInitialCustomExerciseName] =
     useState('');
+  const selectedExerciseIds = useMemo(
+    () => exercises.map(exercise => exercise.id),
+    [exercises]
+  );
+  const openExercisePicker = useCallback(
+    () => setIsExercisePickerOpen(true),
+    []
+  );
+  const closeExercisePicker = useCallback(
+    () => setIsExercisePickerOpen(false),
+    []
+  );
+  const openCreateCustomExercise = useCallback((initialName?: string) => {
+    Keyboard.dismiss();
+    setInitialCustomExerciseName(initialName ?? '');
+    setIsExercisePickerOpen(false);
+    setIsCreateCustomExerciseOpen(true);
+  }, []);
+  const closeCreateCustomExercise = useCallback(
+    () => setIsCreateCustomExerciseOpen(false),
+    []
+  );
 
   const deleteExercise = useCallback(
     (exerciseId: ExerciseListItem['id']) => {
@@ -38,9 +60,22 @@ export function TemplateExerciseEditor({
     [exercises, onChange]
   );
 
-  const selectExercises = (selectedExercises: ExerciseListItem[]) => {
-    onChange([...exercises, ...selectedExercises]);
-  };
+  const selectExercises = useCallback(
+    (selectedExercises: ExerciseListItem[]) => {
+      onChange([...exercises, ...selectedExercises]);
+    },
+    [exercises, onChange]
+  );
+
+  const saveCustomExercise = useCallback(
+    (newExercise: Parameters<typeof createCustomExercise>[0]) => {
+      const createdExercise = createCustomExercise(newExercise);
+
+      onChange([...exercises, createdExercise]);
+      setIsCreateCustomExerciseOpen(false);
+    },
+    [createCustomExercise, exercises, onChange]
+  );
 
   return (
     <>
@@ -55,7 +90,7 @@ export function TemplateExerciseEditor({
             className="min-h-0 px-0 py-0"
             textClassName="text-primary text-sm"
             leftIcon={<Icon icon={PlusIcon} size="sm" tone="primary" />}
-            onPress={() => setIsExercisePickerOpen(true)}
+            onPress={openExercisePicker}
           >
             Add
           </Button>
@@ -76,7 +111,7 @@ export function TemplateExerciseEditor({
                 size="sm"
                 textClassName="text-primary text-sm"
                 leftIcon={<Icon icon={PlusIcon} size="sm" tone="primary" />}
-                onPress={() => setIsExercisePickerOpen(true)}
+                onPress={openExercisePicker}
               >
                 Add exercise
               </Button>
@@ -97,27 +132,17 @@ export function TemplateExerciseEditor({
         mode="multiple"
         isOpen={isExercisePickerOpen}
         exercises={availableExercises}
-        selectedExerciseIds={exercises.map(exercise => exercise.id)}
-        onClose={() => setIsExercisePickerOpen(false)}
+        selectedExerciseIds={selectedExerciseIds}
+        onClose={closeExercisePicker}
         onSelectExercises={selectExercises}
-        onCreateCustomExercise={initialName => {
-          Keyboard.dismiss();
-          setInitialCustomExerciseName(initialName ?? '');
-          setIsExercisePickerOpen(false);
-          setIsCreateCustomExerciseOpen(true);
-        }}
+        onCreateCustomExercise={openCreateCustomExercise}
       />
 
       <CreateCustomExerciseSheet
         isOpen={isCreateCustomExerciseOpen}
         initialName={initialCustomExerciseName}
-        onClose={() => setIsCreateCustomExerciseOpen(false)}
-        onSave={newExercise => {
-          const createdExercise = createCustomExercise(newExercise);
-
-          onChange([...exercises, createdExercise]);
-          setIsCreateCustomExerciseOpen(false);
-        }}
+        onClose={closeCreateCustomExercise}
+        onSave={saveCustomExercise}
       />
     </>
   );

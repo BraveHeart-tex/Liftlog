@@ -28,7 +28,7 @@ import {
   LayersIcon,
   RepeatIcon
 } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Alert, View } from 'react-native';
 
 export default function WorkoutDetailScreen() {
@@ -95,6 +95,14 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
     workoutExerciseRows,
     canRepeatWorkout
   });
+  const workoutExerciseRowsForTemplate = useMemo(
+    () =>
+      workoutExerciseRows.map(workoutExercise => ({
+        exerciseId: workoutExercise.exerciseId,
+        order: workoutExercise.order
+      })),
+    [workoutExerciseRows]
+  );
 
   const workoutMetrics = useMemo(() => {
     if (!workout?.startedAt) {
@@ -132,7 +140,17 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
     workout.startedAt
   ]);
 
-  const confirmDeleteWorkout = () => {
+  const openActions = useCallback(() => setIsActionSheetOpen(true), []);
+  const closeActions = useCallback(() => setIsActionSheetOpen(false), []);
+  const openTemplateSheet = useCallback(() => setIsTemplateSheetOpen(true), []);
+  const closeTemplateSheet = useCallback(
+    () => setIsTemplateSheetOpen(false),
+    []
+  );
+  const openRenameSheet = useCallback(() => setIsRenameSheetOpen(true), []);
+  const closeRenameSheet = useCallback(() => setIsRenameSheetOpen(false), []);
+
+  const confirmDeleteWorkout = useCallback(() => {
     Alert.alert(
       'Delete workout?',
       `${workoutName} and its logged sets will be permanently removed.`,
@@ -167,26 +185,29 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
         }
       ]
     );
-  };
+  }, [deleteWorkout, workout.id, workoutName]);
 
-  const handleRenameWorkout = (nextName: string) => {
-    try {
-      const updatedWorkout = renameWorkout({
-        workoutId: workout.id,
-        nextName
-      });
+  const handleRenameWorkout = useCallback(
+    (nextName: string) => {
+      try {
+        const updatedWorkout = renameWorkout({
+          workoutId: workout.id,
+          nextName
+        });
 
-      if (!updatedWorkout) {
+        if (!updatedWorkout) {
+          return 'Could not rename workout. Try again.';
+        }
+      } catch (error) {
+        console.error('Failed to rename workout', error);
+
         return 'Could not rename workout. Try again.';
       }
-    } catch (error) {
-      console.error('Failed to rename workout', error);
 
-      return 'Could not rename workout. Try again.';
-    }
-
-    return undefined;
-  };
+      return undefined;
+    },
+    [renameWorkout, workout.id]
+  );
 
   return (
     <Screen
@@ -208,7 +229,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
       <WorkoutDetailHeader
         name={workoutName}
         startedAt={workout.startedAt}
-        onOpenActions={() => setIsActionSheetOpen(true)}
+        onOpenActions={openActions}
       />
 
       <View className="mt-6 flex-row gap-3">
@@ -227,7 +248,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
           variant="secondary"
           className="w-full"
           disabled={workoutExerciseRows.length === 0}
-          onPress={() => setIsTemplateSheetOpen(true)}
+          onPress={openTemplateSheet}
           leftIcon={<Icon icon={BookmarkIcon} tone="secondaryForeground" />}
         >
           Save as template
@@ -274,17 +295,14 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
       <SaveWorkoutTemplateSheet
         isOpen={isTemplateSheetOpen}
         initialName={workoutName}
-        workoutExerciseRows={workoutExerciseRows.map(workoutExercise => ({
-          exerciseId: workoutExercise.exerciseId,
-          order: workoutExercise.order
-        }))}
-        onClose={() => setIsTemplateSheetOpen(false)}
+        workoutExerciseRows={workoutExerciseRowsForTemplate}
+        onClose={closeTemplateSheet}
       />
 
       <WorkoutDetailActionsSheet
         isOpen={isActionSheetOpen}
-        onClose={() => setIsActionSheetOpen(false)}
-        onRename={() => setIsRenameSheetOpen(true)}
+        onClose={closeActions}
+        onRename={openRenameSheet}
         onDelete={confirmDeleteWorkout}
       />
 
@@ -296,7 +314,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
         initialName={workoutName}
         requiredMessage="Workout name is required."
         fallbackErrorMessage="Could not rename workout. Try again."
-        onClose={() => setIsRenameSheetOpen(false)}
+        onClose={closeRenameSheet}
         onSubmit={handleRenameWorkout}
       />
     </Screen>

@@ -16,7 +16,7 @@ import {
 } from '@/src/features/steps/steps.constants';
 import { nativeFontSizes } from '@/src/theme/sizes';
 import { XIcon } from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Keyboard, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -33,6 +33,30 @@ export const StepGoalSheet = ({
   isOpen: boolean;
   onClose: () => void;
 }) => {
+  const handleClose = useCallback(() => {
+    Keyboard.dismiss();
+    onClose();
+  }, [onClose]);
+
+  return (
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={handleClose}
+      enableDynamicSizing
+      keyboardBehavior="interactive"
+    >
+      <StepGoalSheetContent isOpen={isOpen} onClose={handleClose} />
+    </BottomSheet>
+  );
+};
+
+const StepGoalSheetContent = memo(function StepGoalSheetContent({
+  isOpen,
+  onClose
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
   const insets = useSafeAreaInsets();
   const { stepGoal, setStepGoal } = useSettings();
   const [draftValue, setDraftValue] = useState('');
@@ -79,22 +103,15 @@ export const StepGoalSheet = ({
     }
 
     setStepGoal(draftGoal);
-    Keyboard.dismiss();
     onClose();
   };
 
   const handleClose = () => {
-    Keyboard.dismiss();
     onClose();
   };
 
   return (
-    <BottomSheet
-      isOpen={isOpen}
-      onClose={handleClose}
-      enableDynamicSizing
-      keyboardBehavior="interactive"
-    >
+    <>
       <BottomSheetHeader className="flex-row items-center justify-between">
         <BottomSheetTitle>Step goal</BottomSheetTitle>
         <Button
@@ -170,6 +187,6 @@ export const StepGoalSheet = ({
           Save goal
         </Button>
       </View>
-    </BottomSheet>
+    </>
   );
-};
+});

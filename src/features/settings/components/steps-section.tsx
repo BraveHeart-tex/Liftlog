@@ -13,7 +13,7 @@ import {
 
 import { iconSizes } from '@/src/theme/sizes';
 import { ChevronDown, ExternalLink } from 'lucide-react-native';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Alert, Platform, View } from 'react-native';
 
 export const StepsSection = () => {
@@ -26,6 +26,11 @@ export const StepsSection = () => {
     setStepsNotificationEnabled
   } = useSettings();
   const shouldShowStepsSettings = Platform.OS === 'android';
+  const openStepGoalSheet = useCallback(() => setIsStepGoalSheetOpen(true), []);
+  const closeStepGoalSheet = useCallback(
+    () => setIsStepGoalSheetOpen(false),
+    []
+  );
 
   const handleStepsNotificationChange = async (isEnabled: boolean) => {
     if (!isEnabled) {
@@ -87,7 +92,7 @@ export const StepsSection = () => {
                       />
                     }
                     textClassName="text-small"
-                    onPress={() => setIsStepGoalSheetOpen(true)}
+                    onPress={openStepGoalSheet}
                   >
                     {new Intl.NumberFormat().format(stepGoal)}
                   </Button>
@@ -127,9 +132,7 @@ export const StepsSection = () => {
       </View>
       <StepGoalSheet
         isOpen={isStepGoalSheetOpen}
-        onClose={() => {
-          setIsStepGoalSheetOpen(false);
-        }}
+        onClose={closeStepGoalSheet}
       />
     </>
   ) : null;

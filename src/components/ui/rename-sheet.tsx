@@ -8,7 +8,7 @@ import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { XIcon } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Keyboard, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -26,6 +26,46 @@ interface RenameSheetProps {
 }
 
 export function RenameSheet({
+  isOpen,
+  title,
+  description,
+  inputLabel,
+  initialName,
+  requiredMessage,
+  fallbackErrorMessage,
+  submitLabel = 'Save',
+  onClose,
+  onSubmit
+}: RenameSheetProps) {
+  const handleClose = useCallback(() => {
+    Keyboard.dismiss();
+    onClose();
+  }, [onClose]);
+
+  return (
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={handleClose}
+      enableDynamicSizing
+      keyboardBehavior="interactive"
+    >
+      <RenameSheetContent
+        isOpen={isOpen}
+        title={title}
+        description={description}
+        inputLabel={inputLabel}
+        initialName={initialName}
+        requiredMessage={requiredMessage}
+        fallbackErrorMessage={fallbackErrorMessage}
+        submitLabel={submitLabel}
+        onClose={handleClose}
+        onSubmit={onSubmit}
+      />
+    </BottomSheet>
+  );
+}
+
+const RenameSheetContent = memo(function RenameSheetContent({
   isOpen,
   title,
   description,
@@ -55,7 +95,6 @@ export function RenameSheet({
   }, [initialName, isOpen]);
 
   const handleClose = () => {
-    Keyboard.dismiss();
     isSavingRef.current = false;
     setName(initialName);
     setError(undefined);
@@ -109,12 +148,7 @@ export function RenameSheet({
   };
 
   return (
-    <BottomSheet
-      isOpen={isOpen}
-      onClose={handleClose}
-      enableDynamicSizing
-      keyboardBehavior="interactive"
-    >
+    <>
       <BottomSheetHeader className="flex-row items-center justify-between">
         <View className="flex-1 pr-4">
           <BottomSheetTitle>{title}</BottomSheetTitle>
@@ -170,6 +204,6 @@ export function RenameSheet({
           </Button>
         </View>
       </View>
-    </BottomSheet>
+    </>
   );
-}
+});

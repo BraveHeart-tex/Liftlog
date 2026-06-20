@@ -9,7 +9,14 @@ import { Button } from '@/src/components/ui/button';
 import type { NewExercise } from '@/src/db/schema';
 import { ExerciseMetadataForm } from '@/src/features/exercises/components/exercise-metadata-form';
 import { useCustomExerciseForm } from '@/src/features/exercises/hooks';
-import { useEffect, useRef, useState, type ComponentRef } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentRef
+} from 'react';
 import { Keyboard, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -28,50 +35,10 @@ export function CreateCustomExerciseSheet({
   onClose,
   onSave
 }: CreateCustomExerciseSheetProps) {
-  const insets = useSafeAreaInsets();
-  const scrollRef =
-    useRef<ComponentRef<typeof StyledBottomSheetScrollView>>(null);
-  const [errorScrollRequestId, setErrorScrollRequestId] = useState(0);
-  const {
-    name,
-    category,
-    trackingType,
-    selectedPrimaryMuscles,
-    selectedSecondaryMuscles,
-    nameError,
-    primaryMusclesError,
-    setName,
-    setCategory,
-    setTrackingType,
-    togglePrimaryMuscle,
-    toggleSecondaryMuscle,
-    submit,
-    reset
-  } = useCustomExerciseForm({ initialName });
-
-  useEffect(() => {
-    reset();
-    setErrorScrollRequestId(0);
-  }, [isOpen, reset]);
-
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     Keyboard.dismiss();
     onClose();
-  };
-
-  const handleSave = () => {
-    const newExercise = submit();
-
-    if (!newExercise) {
-      setErrorScrollRequestId(current => current + 1);
-
-      return;
-    }
-
-    Keyboard.dismiss();
-    onSave(newExercise);
-    reset();
-  };
+  }, [onClose]);
 
   return (
     <BottomSheet
@@ -80,55 +47,119 @@ export function CreateCustomExerciseSheet({
       snapPoints={SNAP_POINTS}
       androidKeyboardInputMode="adjustPan"
     >
-      <BottomSheetHeader>
-        <BottomSheetTitle>Create custom exercise</BottomSheetTitle>
-        <BottomSheetDescription>
-          Add it here and attach it to this workout right away.
-        </BottomSheetDescription>
-      </BottomSheetHeader>
-
-      <StyledBottomSheetScrollView
-        ref={scrollRef}
-        contentContainerClassName="px-4 pb-4 mt-2"
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator
-      >
-        <ExerciseMetadataForm
-          inputVariant="bottom-sheet"
-          name={name}
-          category={category}
-          trackingType={trackingType}
-          selectedPrimaryMuscles={selectedPrimaryMuscles}
-          selectedSecondaryMuscles={selectedSecondaryMuscles}
-          nameError={nameError}
-          primaryMusclesError={primaryMusclesError}
-          errorScrollRequestId={errorScrollRequestId}
-          onScrollToError={y =>
-            scrollRef.current?.scrollTo({ y, animated: true })
-          }
-          setName={setName}
-          setCategory={setCategory}
-          setTrackingType={setTrackingType}
-          togglePrimaryMuscle={togglePrimaryMuscle}
-          toggleSecondaryMuscle={toggleSecondaryMuscle}
-        />
-      </StyledBottomSheetScrollView>
-
-      <View
-        className="border-border border-t px-4 pt-4"
-        style={{ paddingBottom: insets.bottom + 12 }}
-      >
-        <View className="flex-row gap-3">
-          <View className="flex-1">
-            <Button variant="secondary" onPress={handleClose}>
-              Cancel
-            </Button>
-          </View>
-          <View className="flex-1">
-            <Button onPress={handleSave}>Save</Button>
-          </View>
-        </View>
-      </View>
+      <CreateCustomExerciseSheetContent
+        isOpen={isOpen}
+        initialName={initialName}
+        onClose={handleClose}
+        onSave={onSave}
+      />
     </BottomSheet>
   );
 }
+
+const CreateCustomExerciseSheetContent = memo(
+  function CreateCustomExerciseSheetContent({
+    isOpen,
+    initialName = '',
+    onClose,
+    onSave
+  }: CreateCustomExerciseSheetProps) {
+    const insets = useSafeAreaInsets();
+    const scrollRef =
+      useRef<ComponentRef<typeof StyledBottomSheetScrollView>>(null);
+    const [errorScrollRequestId, setErrorScrollRequestId] = useState(0);
+    const {
+      name,
+      category,
+      trackingType,
+      selectedPrimaryMuscles,
+      selectedSecondaryMuscles,
+      nameError,
+      primaryMusclesError,
+      setName,
+      setCategory,
+      setTrackingType,
+      togglePrimaryMuscle,
+      toggleSecondaryMuscle,
+      submit,
+      reset
+    } = useCustomExerciseForm({ initialName });
+
+    useEffect(() => {
+      reset();
+      setErrorScrollRequestId(0);
+    }, [isOpen, reset]);
+
+    const handleClose = () => {
+      onClose();
+    };
+
+    const handleSave = () => {
+      const newExercise = submit();
+
+      if (!newExercise) {
+        setErrorScrollRequestId(current => current + 1);
+
+        return;
+      }
+
+      Keyboard.dismiss();
+      onSave(newExercise);
+      reset();
+    };
+
+    return (
+      <>
+        <BottomSheetHeader>
+          <BottomSheetTitle>Create custom exercise</BottomSheetTitle>
+          <BottomSheetDescription>
+            Add it here and attach it to this workout right away.
+          </BottomSheetDescription>
+        </BottomSheetHeader>
+
+        <StyledBottomSheetScrollView
+          ref={scrollRef}
+          contentContainerClassName="px-4 pb-4 mt-2"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator
+        >
+          <ExerciseMetadataForm
+            inputVariant="bottom-sheet"
+            name={name}
+            category={category}
+            trackingType={trackingType}
+            selectedPrimaryMuscles={selectedPrimaryMuscles}
+            selectedSecondaryMuscles={selectedSecondaryMuscles}
+            nameError={nameError}
+            primaryMusclesError={primaryMusclesError}
+            errorScrollRequestId={errorScrollRequestId}
+            onScrollToError={y =>
+              scrollRef.current?.scrollTo({ y, animated: true })
+            }
+            setName={setName}
+            setCategory={setCategory}
+            setTrackingType={setTrackingType}
+            togglePrimaryMuscle={togglePrimaryMuscle}
+            toggleSecondaryMuscle={toggleSecondaryMuscle}
+          />
+        </StyledBottomSheetScrollView>
+
+        <View
+          className="border-border border-t px-4 pt-4"
+          style={{ paddingBottom: insets.bottom + 12 }}
+        >
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <Button variant="secondary" onPress={handleClose}>
+                Cancel
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button onPress={handleSave}>Save</Button>
+            </View>
+          </View>
+        </View>
+      </>
+    );
+  }
+);

@@ -20,7 +20,7 @@ import {
 } from '@/src/features/steps/display';
 import { useStepsScreen } from '@/src/features/steps/hooks';
 import { EllipsisVerticalIcon } from 'lucide-react-native';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 
 const RECENT_STEP_HISTORY_LIMIT = 7;
@@ -65,6 +65,8 @@ export function StepsContent() {
     liveStepCounterStatus,
     liveStepCounterError
   );
+  const openActionsSheet = useCallback(() => setIsActionsSheetOpen(true), []);
+  const closeActionsSheet = useCallback(() => setIsActionsSheetOpen(false), []);
 
   if (isLoading) {
     return <LoadingState label="Loading steps..." />;
@@ -123,7 +125,7 @@ export function StepsContent() {
                 variant="secondary"
                 size="icon"
                 accessibilityLabel="Open step actions"
-                onPress={() => setIsActionsSheetOpen(true)}
+                onPress={openActionsSheet}
               >
                 <Icon
                   icon={EllipsisVerticalIcon}
@@ -194,7 +196,7 @@ export function StepsContent() {
         availabilityLabel={availabilityLabel}
         isOpen={isActionsSheetOpen}
         isSyncing={isSyncing}
-        onClose={() => setIsActionsSheetOpen(false)}
+        onClose={closeActionsSheet}
         onManage={openHealthConnectSettings}
         onRefresh={refreshSteps}
       />

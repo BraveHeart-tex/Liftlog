@@ -1,4 +1,5 @@
 import { RenameSheet } from '@/src/components/ui/rename-sheet';
+import { useCallback } from 'react';
 
 interface RenameTemplateSheetProps {
   isOpen: boolean;
@@ -15,13 +16,16 @@ export function RenameTemplateSheet({
   onClose,
   onSubmit
 }: RenameTemplateSheetProps) {
-  const handleSubmit = (name: string) => {
-    if (!templateId || !onSubmit(templateId, name)) {
-      return 'Could not rename template. Try again.';
-    }
+  const handleSubmit = useCallback(
+    (name: string) => {
+      if (!templateId || !onSubmit(templateId, name)) {
+        return 'Could not rename template. Try again.';
+      }
 
-    return undefined;
-  };
+      return undefined;
+    },
+    [onSubmit, templateId]
+  );
 
   return (
     <RenameSheet

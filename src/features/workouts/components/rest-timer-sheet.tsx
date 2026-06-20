@@ -12,7 +12,7 @@ import { RestTimerRunningContent } from '@/src/features/workouts/components/rest
 import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer-store';
 import { cn } from '@/src/lib/utils/cn';
 import { XIcon } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 interface RestTimerSheetProps {
@@ -21,20 +21,8 @@ interface RestTimerSheetProps {
 }
 
 export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
-  const { restTimerDuration: defaultDuration } = useSettings();
-  const status = useRestTimerStore(state => state.status);
-  const syncDefaultDuration = useRestTimerStore(
-    state => state.syncDefaultDuration
-  );
-  const syncOnOpen = useRestTimerStore(state => state.syncOnOpen);
   const setSheetOpen = useRestTimerStore(state => state.setSheetOpen);
-  const wasOpenRef = useRef(false);
   const registeredOpenRef = useRef(false);
-  const [openToken, setOpenToken] = useState(0);
-
-  useEffect(() => {
-    syncDefaultDuration(defaultDuration);
-  }, [defaultDuration, syncDefaultDuration]);
 
   useEffect(() => {
     if (isOpen && !registeredOpenRef.current) {
@@ -58,6 +46,40 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
     [setSheetOpen]
   );
 
+  const handleClose = useCallback(() => {
+    onClose();
+  }, [onClose]);
+
+  return (
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={handleClose}
+      enableDynamicSizing
+      keyboardBehavior="interactive"
+      enableContentPanningGesture={false}
+    >
+      <RestTimerSheetContent isOpen={isOpen} onClose={handleClose} />
+    </BottomSheet>
+  );
+}
+
+const RestTimerSheetContent = memo(function RestTimerSheetContent({
+  isOpen,
+  onClose
+}: RestTimerSheetProps) {
+  const { restTimerDuration: defaultDuration } = useSettings();
+  const status = useRestTimerStore(state => state.status);
+  const syncDefaultDuration = useRestTimerStore(
+    state => state.syncDefaultDuration
+  );
+  const syncOnOpen = useRestTimerStore(state => state.syncOnOpen);
+  const wasOpenRef = useRef(false);
+  const [openToken, setOpenToken] = useState(0);
+
+  useEffect(() => {
+    syncDefaultDuration(defaultDuration);
+  }, [defaultDuration, syncDefaultDuration]);
+
   useEffect(() => {
     const didOpen = isOpen && !wasOpenRef.current;
 
@@ -71,21 +93,11 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
     syncOnOpen(defaultDuration);
   }, [defaultDuration, isOpen, syncOnOpen]);
 
-  const handleClose = () => {
-    onClose();
-  };
-
   return (
-    <BottomSheet
-      isOpen={isOpen}
-      onClose={handleClose}
-      enableDynamicSizing
-      keyboardBehavior="interactive"
-      enableContentPanningGesture={false}
-    >
+    <>
       <BottomSheetHeader className="flex-row items-center justify-between">
         <BottomSheetTitle>Rest Timer</BottomSheetTitle>
-        <Button variant="secondary" size="icon" onPress={handleClose}>
+        <Button variant="secondary" size="icon" onPress={onClose}>
           <Icon icon={XIcon} size="lg" tone="foreground" />
         </Button>
       </BottomSheetHeader>
@@ -110,6 +122,6 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
         {status === 'running' ? <RestTimerRunningContent /> : null}
         {status === 'paused' ? <RestTimerPausedContent /> : null}
       </View>
-    </BottomSheet>
+    </>
   );
-}
+});

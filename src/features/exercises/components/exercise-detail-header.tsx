@@ -5,7 +5,7 @@ import { RenameSheet } from '@/src/components/ui/rename-sheet';
 import { Text } from '@/src/components/ui/text';
 import { ExerciseDetailActionsSheet } from '@/src/features/exercises/components/exercise-detail-actions-sheet';
 import { EllipsisVerticalIcon } from 'lucide-react-native';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 
 interface ExerciseDetailHeaderProps {
@@ -29,6 +29,10 @@ export function ExerciseDetailHeader({
 }: ExerciseDetailHeaderProps) {
   const [isActionsOpen, setIsActionsOpen] = useState(false);
   const [isRenameSheetOpen, setIsRenameSheetOpen] = useState(false);
+  const openActions = useCallback(() => setIsActionsOpen(true), []);
+  const closeActions = useCallback(() => setIsActionsOpen(false), []);
+  const openRenameSheet = useCallback(() => setIsRenameSheetOpen(true), []);
+  const closeRenameSheet = useCallback(() => setIsRenameSheetOpen(false), []);
 
   return (
     <>
@@ -48,7 +52,7 @@ export function ExerciseDetailHeader({
             variant="ghost"
             size="icon"
             accessibilityLabel="Exercise actions"
-            onPress={() => setIsActionsOpen(true)}
+            onPress={openActions}
           >
             <Icon icon={EllipsisVerticalIcon} size="lg" tone="foreground" />
           </Button>
@@ -58,8 +62,8 @@ export function ExerciseDetailHeader({
       <ExerciseDetailActionsSheet
         isOpen={isActionsOpen}
         removeActionLabel={removeActionLabel}
-        onClose={() => setIsActionsOpen(false)}
-        onRename={() => setIsRenameSheetOpen(true)}
+        onClose={closeActions}
+        onRename={openRenameSheet}
         onEditDetails={onEditDetails}
         onRemove={onRemove}
       />
@@ -72,7 +76,7 @@ export function ExerciseDetailHeader({
         initialName={name}
         requiredMessage="Exercise name is required."
         fallbackErrorMessage="Could not rename exercise. Try again."
-        onClose={() => setIsRenameSheetOpen(false)}
+        onClose={closeRenameSheet}
         onSubmit={onRename}
       />
     </>

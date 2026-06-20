@@ -8,7 +8,7 @@ import { RestTimerTrigger } from '@/src/features/workouts/components/rest-timer-
 import { useActiveWorkoutExerciseDetail } from '@/src/features/workouts/hooks';
 import { getRouteParamId } from '@/src/lib/utils/route';
 import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { KeyboardAvoidingView, Platform, View } from 'react-native';
 
 export default function ActiveWorkoutExerciseScreen() {
@@ -18,6 +18,8 @@ export default function ActiveWorkoutExerciseScreen() {
   const workoutExerciseId = getRouteParamId(rawId);
 
   const [isRestTimerOpen, setIsRestTimerOpen] = useState(false);
+  const openRestTimer = useCallback(() => setIsRestTimerOpen(true), []);
+  const closeRestTimer = useCallback(() => setIsRestTimerOpen(false), []);
 
   const { item, isLoading } = useActiveWorkoutExerciseDetail(workoutExerciseId);
 
@@ -55,7 +57,7 @@ export default function ActiveWorkoutExerciseScreen() {
             <Text variant="h2" className="flex-1 text-center" numberOfLines={1}>
               {item.exercise?.name ?? 'Unknown exercise'}
             </Text>
-            <RestTimerTrigger onPress={() => setIsRestTimerOpen(true)} />
+            <RestTimerTrigger onPress={openRestTimer} />
           </View>
         </View>
         <KeyboardAvoidingView
@@ -66,10 +68,7 @@ export default function ActiveWorkoutExerciseScreen() {
           <ExerciseTrackSection item={item} />
         </KeyboardAvoidingView>
       </View>
-      <RestTimerSheet
-        isOpen={isRestTimerOpen}
-        onClose={() => setIsRestTimerOpen(false)}
-      />
+      <RestTimerSheet isOpen={isRestTimerOpen} onClose={closeRestTimer} />
     </Screen>
   );
 }

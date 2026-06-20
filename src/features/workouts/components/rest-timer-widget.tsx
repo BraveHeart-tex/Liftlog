@@ -7,7 +7,7 @@ import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer-sto
 import { cn } from '@/src/lib/utils/cn';
 import { formatTime } from '@/src/lib/utils/format-time';
 import { PauseIcon, TimerIcon } from 'lucide-react-native';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 
 const ADD_TIME_SECONDS = 30;
@@ -20,6 +20,11 @@ export function RestTimerWidget() {
   const cancelTimer = useRestTimerStore(state => state.cancel);
   const isPaused = status === 'paused';
   const timerLabel = formatTime(secondsRemaining, { padMinutes: true });
+  const openSheet = useCallback(() => setIsSheetOpen(true), []);
+  const closeSheet = useCallback(() => setIsSheetOpen(false), []);
+  const addThirtySeconds = useCallback(() => {
+    addTime(ADD_TIME_SECONDS);
+  }, [addTime]);
 
   return (
     <>
@@ -38,7 +43,7 @@ export function RestTimerWidget() {
                 isPaused ? 'paused' : 'remaining'
               }`}
               hapticFeedback="light"
-              onPress={() => setIsSheetOpen(true)}
+              onPress={openSheet}
             >
               <View
                 className={cn(
@@ -79,7 +84,7 @@ export function RestTimerWidget() {
               className="min-h-10 px-2.5 py-2"
               textClassName="text-small"
               accessibilityLabel="Add 30 seconds to rest timer"
-              onPress={() => addTime(ADD_TIME_SECONDS)}
+              onPress={addThirtySeconds}
             >
               +30s
             </Button>
@@ -97,10 +102,7 @@ export function RestTimerWidget() {
         </View>
       ) : null}
 
-      <RestTimerSheet
-        isOpen={isSheetOpen}
-        onClose={() => setIsSheetOpen(false)}
-      />
+      <RestTimerSheet isOpen={isSheetOpen} onClose={closeSheet} />
     </>
   );
 }

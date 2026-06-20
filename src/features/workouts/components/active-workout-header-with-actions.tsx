@@ -8,7 +8,7 @@ import {
   useWorkoutRename
 } from '@/src/features/workouts/hooks';
 import { router } from 'expo-router';
-import { Fragment, useState } from 'react';
+import { Fragment, useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
 interface ActiveWorkoutHeaderWithActionsProps {
@@ -35,15 +35,24 @@ export const ActiveWorkoutHeaderWithActions = ({
   const renameWorkout = useWorkoutRename();
   const deleteWorkout = useWorkoutDelete();
 
-  const openTemplateDialog = () => {
+  const openActions = useCallback(() => setIsActionSheetOpen(true), []);
+  const closeActions = useCallback(() => setIsActionSheetOpen(false), []);
+  const openRenameSheet = useCallback(() => setIsRenameSheetOpen(true), []);
+  const closeRenameSheet = useCallback(() => setIsRenameSheetOpen(false), []);
+  const closeTemplateSheet = useCallback(
+    () => setIsTemplateSheetOpen(false),
+    []
+  );
+
+  const openTemplateDialog = useCallback(() => {
     if (!canSaveTemplate || isTemplateSheetOpen) {
       return;
     }
 
     setIsTemplateSheetOpen(true);
-  };
+  }, [canSaveTemplate, isTemplateSheetOpen]);
 
-  const confirmDiscardWorkout = () => {
+  const confirmDiscardWorkout = useCallback(() => {
     Alert.alert(
       'Discard workout?',
       `"${workoutName}" and its logged exercises and sets will be permanently removed.`,
@@ -74,26 +83,29 @@ export const ActiveWorkoutHeaderWithActions = ({
         }
       ]
     );
-  };
+  }, [deleteWorkout, workoutId, workoutName]);
 
-  const handleRenameWorkout = (nextName: string) => {
-    try {
-      const updatedWorkout = renameWorkout({
-        workoutId,
-        nextName
-      });
+  const handleRenameWorkout = useCallback(
+    (nextName: string) => {
+      try {
+        const updatedWorkout = renameWorkout({
+          workoutId,
+          nextName
+        });
 
-      if (!updatedWorkout) {
+        if (!updatedWorkout) {
+          return 'Could not rename workout. Try again.';
+        }
+      } catch (error) {
+        console.error('Failed to rename workout', error);
+
         return 'Could not rename workout. Try again.';
       }
-    } catch (error) {
-      console.error('Failed to rename workout', error);
 
-      return 'Could not rename workout. Try again.';
-    }
-
-    return undefined;
-  };
+      return undefined;
+    },
+    [renameWorkout, workoutId]
+  );
 
   return (
     <Fragment>
@@ -102,14 +114,14 @@ export const ActiveWorkoutHeaderWithActions = ({
         workoutId={workoutId}
         duration={duration}
         canFinish={canFinish}
-        onOpenActions={() => setIsActionSheetOpen(true)}
+        onOpenActions={openActions}
       />
 
       <ActiveWorkoutActionsSheet
         isOpen={isActionSheetOpen}
         canSaveTemplate={canSaveTemplate}
-        onClose={() => setIsActionSheetOpen(false)}
-        onRename={() => setIsRenameSheetOpen(true)}
+        onClose={closeActions}
+        onRename={openRenameSheet}
         onSaveTemplate={openTemplateDialog}
         onDiscard={confirmDiscardWorkout}
       />
@@ -122,7 +134,7 @@ export const ActiveWorkoutHeaderWithActions = ({
         initialName={workoutName}
         requiredMessage="Workout name is required."
         fallbackErrorMessage="Could not rename workout. Try again."
-        onClose={() => setIsRenameSheetOpen(false)}
+        onClose={closeRenameSheet}
         onSubmit={handleRenameWorkout}
       />
 
@@ -130,7 +142,7 @@ export const ActiveWorkoutHeaderWithActions = ({
         isOpen={isTemplateSheetOpen}
         initialName={workoutName}
         workoutExerciseRows={workoutExerciseRows}
-        onClose={() => setIsTemplateSheetOpen(false)}
+        onClose={closeTemplateSheet}
       />
     </Fragment>
   );

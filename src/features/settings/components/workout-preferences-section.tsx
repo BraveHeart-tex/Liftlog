@@ -8,7 +8,7 @@ import { useSettings } from '@/src/features/settings/hooks';
 import type { WeightUnit } from '@/src/lib/utils/weight';
 import { iconSizes } from '@/src/theme/sizes';
 import { ChevronDown } from 'lucide-react-native';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { View } from 'react-native';
 
@@ -24,6 +24,8 @@ export const WorkoutPreferencesSection = () => {
   const [isTimerSheetOpen, setIsTimerSheetOpen] = useState(false);
   const { weightUnit, formattedRestTimerDuration, setWeightUnit } =
     useSettings();
+  const openTimerSheet = useCallback(() => setIsTimerSheetOpen(true), []);
+  const closeTimerSheet = useCallback(() => setIsTimerSheetOpen(false), []);
 
   return (
     <>
@@ -52,7 +54,7 @@ export const WorkoutPreferencesSection = () => {
               <View className="ml-4 flex-row items-center gap-2">
                 <Button
                   variant="secondary"
-                  onPress={() => setIsTimerSheetOpen(true)}
+                  onPress={openTimerSheet}
                   rightIcon={
                     <Icon
                       icon={ChevronDown}
@@ -71,9 +73,7 @@ export const WorkoutPreferencesSection = () => {
       </View>
       <RestTimerSettingSheet
         isOpen={isTimerSheetOpen}
-        onClose={() => {
-          setIsTimerSheetOpen(false);
-        }}
+        onClose={closeTimerSheet}
       />
     </>
   );

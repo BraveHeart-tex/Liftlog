@@ -17,7 +17,7 @@ import { getRouteParamId } from '@/src/lib/utils/route';
 import { usePreventRemove } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { DumbbellIcon, EllipsisVerticalIcon } from 'lucide-react-native';
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, View } from 'react-native';
 
 export default function WorkoutTemplateDetailScreen() {
@@ -79,7 +79,14 @@ function WorkoutTemplateDetailLoaded({
     template,
     templateExerciseRows,
     exerciseById,
-    orderedExercises
+    orderedExercises,
+    isLoadingExercises,
+    startWorkoutFromTemplate,
+    discardActiveWorkoutAndStartTemplate,
+    resumeWorkout,
+    renameTemplate,
+    saveTemplateExercises,
+    removeTemplate
   } = detail;
   const exerciseCount = templateExerciseRows.length;
   const hasExerciseChanges = useMemo(
@@ -91,6 +98,11 @@ function WorkoutTemplateDetailLoaded({
     [draftExercises, orderedExercises]
   );
   const canSaveExercises = hasExerciseChanges && !isSavingExercises;
+  const openActions = useCallback(() => setIsActionSheetOpen(true), []);
+  const closeActions = useCallback(() => setIsActionSheetOpen(false), []);
+  const openRenameSheet = useCallback(() => setIsRenameSheetOpen(true), []);
+  const closeRenameSheet = useCallback(() => setIsRenameSheetOpen(false), []);
+  const closeReplaceSheet = useCallback(() => setIsReplaceSheetOpen(false), []);
 
   const handleStartWorkout = () => {
     if (activeWorkout) {
@@ -99,14 +111,27 @@ function WorkoutTemplateDetailLoaded({
       return;
     }
 
-    detail.startWorkoutFromTemplate();
+    startWorkoutFromTemplate();
   };
 
-  const handleRenameTemplate = (nextTemplateId: string, name: string) =>
-    Boolean(detail.renameTemplate(nextTemplateId, name));
+  const handleRenameTemplate = useCallback(
+    (nextTemplateId: string, name: string) =>
+      Boolean(renameTemplate(nextTemplateId, name)),
+    [renameTemplate]
+  );
+
+  const resumeWorkoutFromReplaceSheet = useCallback(() => {
+    setIsReplaceSheetOpen(false);
+    resumeWorkout();
+  }, [resumeWorkout]);
+
+  const discardAndStartFromReplaceSheet = useCallback(() => {
+    setIsReplaceSheetOpen(false);
+    discardActiveWorkoutAndStartTemplate();
+  }, [discardActiveWorkoutAndStartTemplate]);
 
   const enterExerciseEditMode = () => {
-    if (detail.isLoadingExercises) {
+    if (isLoadingExercises) {
       return;
     }
 
@@ -145,7 +170,7 @@ function WorkoutTemplateDetailLoaded({
     setIsSavingExercises(true);
 
     try {
-      const updatedTemplate = detail.saveTemplateExercises(
+      const updatedTemplate = saveTemplateExercises(
         template.id,
         draftExercises
       );
@@ -166,7 +191,7 @@ function WorkoutTemplateDetailLoaded({
 
   usePreventRemove(isEditingExercises, confirmDiscardExerciseChanges);
 
-  const confirmDeleteTemplate = () => {
+  const confirmDeleteTemplate = useCallback(() => {
     Alert.alert(
       'Delete template?',
       `"${template.name}" will be removed from your saved templates.`,
@@ -176,7 +201,7 @@ function WorkoutTemplateDetailLoaded({
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            detail.removeTemplate(template.id);
+            removeTemplate(template.id);
 
             if (router.canGoBack()) {
               router.back();
@@ -187,7 +212,7 @@ function WorkoutTemplateDetailLoaded({
         }
       ]
     );
-  };
+  }, [removeTemplate, template.id, template.name]);
 
   return (
     <Screen
@@ -248,7 +273,7 @@ function WorkoutTemplateDetailLoaded({
             variant="ghost"
             size="icon"
             accessibilityLabel="Template actions"
-            onPress={() => setIsActionSheetOpen(true)}
+            onPress={openActions}
           >
             <Icon icon={EllipsisVerticalIcon} size="lg" tone="foreground" />
           </Button>
@@ -273,7 +298,7 @@ function WorkoutTemplateDetailLoaded({
               size="sm"
               className="min-h-0 px-0 py-0"
               textClassName="text-primary text-sm"
-              disabled={detail.isLoadingExercises}
+              disabled={isLoadingExercises}
               onPress={enterExerciseEditMode}
             >
               Edit
@@ -323,31 +348,25 @@ function WorkoutTemplateDetailLoaded({
         isOpen={isRenameSheetOpen}
         templateId={template.id}
         initialName={template.name}
-        onClose={() => setIsRenameSheetOpen(false)}
+        onClose={closeRenameSheet}
         onSubmit={handleRenameTemplate}
       />
 
       <WorkoutTemplateActionsSheet
         isOpen={isActionSheetOpen}
-        onClose={() => setIsActionSheetOpen(false)}
-        onRename={() => setIsRenameSheetOpen(true)}
+        onClose={closeActions}
+        onRename={openRenameSheet}
         onDelete={confirmDeleteTemplate}
       />
 
       {activeWorkout ? (
         <DiscardWorkoutSheet
           isOpen={isReplaceSheetOpen}
-          onClose={() => setIsReplaceSheetOpen(false)}
+          onClose={closeReplaceSheet}
           activeWorkoutName={activeWorkout.name}
           templateName={template.name}
-          onResume={() => {
-            setIsReplaceSheetOpen(false);
-            detail.resumeWorkout();
-          }}
-          onDiscardAndStart={() => {
-            setIsReplaceSheetOpen(false);
-            detail.discardActiveWorkoutAndStartTemplate();
-          }}
+          onResume={resumeWorkoutFromReplaceSheet}
+          onDiscardAndStart={discardAndStartFromReplaceSheet}
         />
       ) : null}
     </Screen>
