@@ -5,10 +5,10 @@ import {
   BottomSheetHeader,
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
+import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
 import { Button } from '@/src/components/ui/button';
 import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
-import { Input } from '@/src/components/ui/input';
 import { SearchInputIcon } from '@/src/components/ui/search-input-icon';
 import { Text } from '@/src/components/ui/text';
 import {
@@ -25,7 +25,15 @@ import {
 } from '@/src/features/workouts/components/exercise-picker-filters';
 import { ExercisePickerRow } from '@/src/features/workouts/components/exercise-picker-row';
 import { XIcon } from 'lucide-react-native';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react';
 import { Keyboard, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -53,6 +61,53 @@ type ExercisePickerSheetProps = ExercisePickerSheetCommonProps &
 const SNAP_POINTS = ['90%'];
 const RECENTLY_USED_SECTION_ID = 'section-recently-used';
 
+interface ExercisePickerSearchInputProps {
+  isOpen: boolean;
+  onChangeQuery: (query: string) => void;
+  onCommitQuery: (query: string) => void;
+}
+
+const ExercisePickerSearchInput = memo(function ExercisePickerSearchInput({
+  isOpen,
+  onChangeQuery,
+  onCommitQuery
+}: ExercisePickerSearchInputProps) {
+  const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
+
+  useEffect(() => {
+    onCommitQuery(deferredQuery);
+  }, [deferredQuery, onCommitQuery]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setQuery('');
+      onChangeQuery('');
+    }
+  }, [isOpen, onChangeQuery]);
+
+  const handleChangeText = useCallback(
+    (nextQuery: string) => {
+      setQuery(nextQuery);
+      onChangeQuery(nextQuery);
+    },
+    [onChangeQuery]
+  );
+
+  return (
+    <BottomSheetInput
+      value={query}
+      onChangeText={handleChangeText}
+      placeholder="Search exercises"
+      autoCapitalize="none"
+      autoCorrect={false}
+      returnKeyType="search"
+      leftIcon={<SearchInputIcon />}
+      containerClassName="py-0"
+    />
+  );
+});
+
 function exerciseMatchesFilter(
   exercise: ExerciseListItem,
   selectedFilter: ExercisePickerFilter,
@@ -73,7 +128,22 @@ function exerciseMatchesFilter(
   return exercise.category === selectedFilter;
 }
 
-export function ExercisePickerSheet({
+export function ExercisePickerSheet(props: ExercisePickerSheetProps) {
+  const { isOpen, onClose } = props;
+
+  return (
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      snapPoints={SNAP_POINTS}
+      activeOffsetY={[-12, 12]}
+    >
+      <ExercisePickerSheetContent {...props} />
+    </BottomSheet>
+  );
+}
+
+const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
   isOpen,
   exercises,
   recentExerciseIds = [],
@@ -83,7 +153,8 @@ export function ExercisePickerSheet({
   ...selectionProps
 }: ExercisePickerSheetProps) {
   const insets = useSafeAreaInsets();
-  const [query, setQuery] = useState('');
+  const latestQueryRef = useRef('');
+  const [committedQuery, setCommittedQuery] = useState('');
   const [selectedFilter, setSelectedFilter] =
     useState<ExercisePickerFilter>('all');
   const [pendingExercises, setPendingExercises] = useState<ExerciseListItem[]>(
@@ -96,16 +167,21 @@ export function ExercisePickerSheet({
 
   useEffect(() => {
     if (!isOpen) {
-      setQuery('');
+      latestQueryRef.current = '';
+      setCommittedQuery('');
       setSelectedFilter('all');
       setPendingExercises([]);
     }
   }, [isOpen]);
 
-  const trimmedQuery = query.trim();
+  const handleQueryChange = useCallback((nextQuery: string) => {
+    latestQueryRef.current = nextQuery;
+  }, []);
+
+  const trimmedQuery = committedQuery.trim();
 
   const filteredExercises = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedQuery = committedQuery.trim().toLowerCase();
     const selectedExerciseIdSet = new Set(selectedExerciseIds);
     const recentExerciseIdSet = new Set(recentExerciseIds);
     const recentExerciseOrderById = new Map(
@@ -130,15 +206,15 @@ export function ExercisePickerSheet({
         (recentExerciseOrderById.get(b.id) ?? 0)
     );
   }, [
+    committedQuery,
     exercises,
-    query,
     recentExerciseIds,
     selectedExerciseIds,
     selectedFilter
   ]);
 
   const hasHiddenSelectedMatches = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedQuery = committedQuery.trim().toLowerCase();
     const selectedExerciseIdSet = new Set(selectedExerciseIds);
     const recentExerciseIdSet = new Set(recentExerciseIds);
 
@@ -149,8 +225,8 @@ export function ExercisePickerSheet({
         matchesExerciseSearch(exercise, normalizedQuery)
     );
   }, [
+    committedQuery,
     exercises,
-    query,
     recentExerciseIds,
     selectedExerciseIds,
     selectedFilter
@@ -271,7 +347,7 @@ export function ExercisePickerSheet({
       selectionProps.onSelectExercises(pendingExercises);
     }
 
-    onCreateCustomExercise(trimmedQuery);
+    onCreateCustomExercise(latestQueryRef.current.trim());
   };
 
   const keyExtractor = useCallback(
@@ -281,30 +357,7 @@ export function ExercisePickerSheet({
   );
 
   return (
-    <BottomSheet
-      isOpen={isOpen}
-      onClose={onClose}
-      snapPoints={SNAP_POINTS}
-      activeOffsetY={[-12, 12]}
-      footer={
-        <View
-          style={{ paddingBottom: insets.bottom }}
-          className="border-border bg-card gap-2 border-t px-4 pt-3"
-        >
-          <Button variant="secondary" onPress={createCustomExercise}>
-            {createButtonLabel}
-          </Button>
-          {isMultiple && (
-            <Button
-              disabled={pendingExercises.length === 0}
-              onPress={addPendingExercises}
-            >
-              {addButtonLabel}
-            </Button>
-          )}
-        </View>
-      }
-    >
+    <>
       <BottomSheetHeader>
         <View className="flex w-full flex-row items-center justify-between">
           <View>
@@ -329,15 +382,10 @@ export function ExercisePickerSheet({
       </BottomSheetHeader>
 
       <View className="px-4 pb-3">
-        <Input
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search exercises"
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="search"
-          leftIcon={<SearchInputIcon />}
-          containerClassName="py-0"
+        <ExercisePickerSearchInput
+          isOpen={isOpen}
+          onChangeQuery={handleQueryChange}
+          onCommitQuery={setCommittedQuery}
         />
         <ExercisePickerFilters
           selectedFilter={selectedFilter}
@@ -352,7 +400,7 @@ export function ExercisePickerSheet({
       <StyledBottomSheetFlatList
         data={listData}
         keyExtractor={keyExtractor}
-        contentContainerClassName={isMultiple ? 'px-4 pb-48' : 'px-4 pb-32'}
+        contentContainerClassName="px-4 pb-4"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         onScrollBeginDrag={Keyboard.dismiss}
@@ -391,6 +439,23 @@ export function ExercisePickerSheet({
           />
         }
       />
-    </BottomSheet>
+
+      <View
+        style={{ paddingBottom: insets.bottom }}
+        className="border-border bg-card gap-2 border-t px-4 pt-3"
+      >
+        <Button variant="secondary" onPress={createCustomExercise}>
+          {createButtonLabel}
+        </Button>
+        {isMultiple && (
+          <Button
+            disabled={pendingExercises.length === 0}
+            onPress={addPendingExercises}
+          >
+            {addButtonLabel}
+          </Button>
+        )}
+      </View>
+    </>
   );
-}
+});
