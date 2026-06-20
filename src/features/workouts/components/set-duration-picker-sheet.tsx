@@ -50,14 +50,21 @@ export function SetDurationPickerSheet({
       enableDynamicSizing
       enableContentPanningGesture={false}
     >
-      <SetDurationPickerSheetContent
-        isOpen={isOpen}
-        valueMs={valueMs}
-        onClose={onClose}
-        onConfirm={onConfirm}
-      />
+      {({ isContentReady }) => (
+        <SetDurationPickerSheetContent
+          isOpen={isOpen}
+          valueMs={valueMs}
+          onClose={onClose}
+          onConfirm={onConfirm}
+          renderWheels={isContentReady}
+        />
+      )}
     </BottomSheet>
   );
+}
+
+interface SetDurationPickerSheetContentProps extends SetDurationPickerSheetProps {
+  renderWheels: boolean;
 }
 
 const SetDurationPickerSheetContent = memo(
@@ -65,8 +72,9 @@ const SetDurationPickerSheetContent = memo(
     isOpen,
     valueMs,
     onClose,
-    onConfirm
-  }: SetDurationPickerSheetProps) {
+    onConfirm,
+    renderWheels
+  }: SetDurationPickerSheetContentProps) {
     const insets = useSafeAreaInsets();
     const initialParts = getDurationMsParts(valueMs);
     const [hours, setHours] = useState(initialParts.hours);
@@ -106,24 +114,28 @@ const SetDurationPickerSheetContent = memo(
               data={hourItems}
               value={hours}
               onValueChange={setHours}
+              renderWhen={renderWheels}
             />
             <SetDurationWheel
               label="MIN"
               data={minuteItems}
               value={minutes}
               onValueChange={setMinutes}
+              renderWhen={renderWheels}
             />
             <SetDurationWheel
               label="SEC"
               data={secondItems}
               value={seconds}
               onValueChange={setSeconds}
+              renderWhen={renderWheels}
             />
             <SetDurationWheel
               label="CS"
               data={centisecondItems}
               value={centiseconds}
               onValueChange={setCentiseconds}
+              renderWhen={renderWheels}
             />
           </View>
         </View>

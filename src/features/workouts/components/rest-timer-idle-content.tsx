@@ -13,6 +13,7 @@ import { View } from 'react-native';
 interface RestTimerIdleContentProps {
   defaultDuration: number;
   openToken: number;
+  renderWheels: boolean;
 }
 
 const PICKER_ITEM_HEIGHT = 65;
@@ -34,7 +35,8 @@ function getDurationDraft(durationSeconds: number) {
 
 export function RestTimerIdleContent({
   defaultDuration,
-  openToken
+  openToken,
+  renderWheels
 }: RestTimerIdleContentProps) {
   const durationSeconds = useRestTimerStore(state => state.durationSeconds);
   const startTimer = useRestTimerStore(state => state.start);
@@ -84,6 +86,7 @@ export function RestTimerIdleContent({
               data={minuteItems}
               value={minutes}
               onValueChanged={onMinuteChange}
+              renderWhen={renderWheels}
               visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
               itemHeight={PICKER_ITEM_HEIGHT}
               width="100%"
@@ -119,6 +122,7 @@ export function RestTimerIdleContent({
               data={secondItems}
               value={seconds}
               onValueChanged={onSecondChange}
+              renderWhen={renderWheels}
               visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
               itemHeight={PICKER_ITEM_HEIGHT}
               width="100%"

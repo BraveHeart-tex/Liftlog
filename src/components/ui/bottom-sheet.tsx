@@ -19,10 +19,19 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
   type ReactNode
 } from 'react';
 import { Keyboard, Platform, View } from 'react-native';
 import type { PanGestureHandlerProps } from 'react-native-gesture-handler';
+
+interface BottomSheetRenderState {
+  isContentReady: boolean;
+}
+
+type BottomSheetChildren =
+  | ReactNode
+  | ((state: BottomSheetRenderState) => ReactNode);
 
 interface BottomSheetComponentProps {
   isOpen: boolean;
@@ -33,7 +42,7 @@ interface BottomSheetComponentProps {
   keyboardBehavior?: 'interactive' | 'extend' | 'fillParent';
   androidKeyboardInputMode?: 'adjustPan' | 'adjustResize';
   activeOffsetY?: PanGestureHandlerProps['activeOffsetY'];
-  children: ReactNode;
+  children: BottomSheetChildren;
   footer?: ReactNode;
   className?: string;
   enableContentPanningGesture?: boolean;
@@ -82,6 +91,7 @@ export function BottomSheet({
   enableContentPanningGesture
 }: BottomSheetComponentProps) {
   const sheetRef = useRef<BottomSheetModal>(null);
+  const [isContentReady, setIsContentReady] = useState(false);
   const { colors } = useAppTheme();
 
   const resolvedAndroidKeyboardInputMode =
@@ -101,9 +111,14 @@ export function BottomSheet({
   }, [enableDynamicSizing, snapPoints]);
 
   const handleDismiss = useCallback(() => {
+    setIsContentReady(false);
     Keyboard.dismiss();
     onClose();
   }, [onClose]);
+
+  const handleChange = useCallback((index: number) => {
+    setIsContentReady(index >= 0);
+  }, []);
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -135,8 +150,12 @@ export function BottomSheet({
       return;
     }
 
+    setIsContentReady(false);
     sheetRef.current?.dismiss();
   }, [isOpen]);
+
+  const renderedChildren =
+    typeof children === 'function' ? children({ isContentReady }) : children;
 
   return (
     <BottomSheetModal
@@ -154,16 +173,17 @@ export function BottomSheet({
       index={0}
       keyboardBehavior={keyboardBehavior}
       keyboardBlurBehavior={'restore'}
+      onChange={handleChange}
       onDismiss={handleDismiss}
       snapPoints={resolvedSnapPoints}
       enableContentPanningGesture={enableContentPanningGesture}
     >
       {enableDynamicSizing ? (
         <BottomSheetView style={undefined} className={className}>
-          {children}
+          {renderedChildren}
         </BottomSheetView>
       ) : (
-        children
+        renderedChildren
       )}
     </BottomSheetModal>
   );

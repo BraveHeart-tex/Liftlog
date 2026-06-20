@@ -58,15 +58,26 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
       keyboardBehavior="interactive"
       enableContentPanningGesture={false}
     >
-      <RestTimerSheetContent isOpen={isOpen} onClose={handleClose} />
+      {({ isContentReady }) => (
+        <RestTimerSheetContent
+          isOpen={isOpen}
+          onClose={handleClose}
+          renderWheels={isContentReady}
+        />
+      )}
     </BottomSheet>
   );
 }
 
+interface RestTimerSheetContentProps extends RestTimerSheetProps {
+  renderWheels: boolean;
+}
+
 const RestTimerSheetContent = memo(function RestTimerSheetContent({
   isOpen,
-  onClose
-}: RestTimerSheetProps) {
+  onClose,
+  renderWheels
+}: RestTimerSheetContentProps) {
   const { restTimerDuration: defaultDuration } = useSettings();
   const status = useRestTimerStore(state => state.status);
   const syncDefaultDuration = useRestTimerStore(
@@ -117,6 +128,7 @@ const RestTimerSheetContent = memo(function RestTimerSheetContent({
           <RestTimerIdleContent
             defaultDuration={defaultDuration}
             openToken={openToken}
+            renderWheels={status === 'idle' && renderWheels}
           />
         </View>
         {status === 'running' ? <RestTimerRunningContent /> : null}

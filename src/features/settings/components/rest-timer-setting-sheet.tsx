@@ -48,7 +48,13 @@ export const RestTimerSettingSheet = ({
       keyboardBehavior="extend"
       enableContentPanningGesture={false}
     >
-      <RestTimerSettingSheetContent isOpen={isOpen} onClose={handleClose} />
+      {({ isContentReady }) => (
+        <RestTimerSettingSheetContent
+          isOpen={isOpen}
+          onClose={handleClose}
+          renderWheels={isContentReady}
+        />
+      )}
     </BottomSheet>
   );
 };
@@ -56,10 +62,12 @@ export const RestTimerSettingSheet = ({
 const RestTimerSettingSheetContent = memo(
   function RestTimerSettingSheetContent({
     isOpen,
-    onClose
+    onClose,
+    renderWheels
   }: {
     isOpen: boolean;
     onClose: () => void;
+    renderWheels: boolean;
   }) {
     const { restTimerDuration, setRestTimerDuration } = useSettings();
     const [minutes, setMinutes] = useState(
@@ -128,6 +136,7 @@ const RestTimerSettingSheetContent = memo(
                 data={minuteItems}
                 value={minutes}
                 onValueChanged={onMinuteChange}
+                renderWhen={renderWheels}
                 visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
                 itemHeight={PICKER_ITEM_HEIGHT}
                 width="100%"
@@ -163,6 +172,7 @@ const RestTimerSettingSheetContent = memo(
                 data={secondItems}
                 value={seconds}
                 onValueChanged={onSecondChange}
+                renderWhen={renderWheels}
                 visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
                 itemHeight={PICKER_ITEM_HEIGHT}
                 width="100%"

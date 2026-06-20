@@ -12,6 +12,7 @@ interface SetDurationWheelProps {
   data: DurationWheelItem[];
   value: number;
   onValueChange: (value: number) => void;
+  renderWhen: boolean;
 }
 
 const PICKER_ITEM_HEIGHT = 58;
@@ -21,7 +22,8 @@ export function SetDurationWheel({
   label,
   data,
   value,
-  onValueChange
+  onValueChange,
+  renderWhen
 }: SetDurationWheelProps) {
   return (
     <View className="w-19 flex-row items-center justify-center">
@@ -30,6 +32,7 @@ export function SetDurationWheel({
           data={data}
           value={value}
           onValueChanged={({ item }) => onValueChange(item.value)}
+          renderWhen={renderWhen}
           visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
           itemHeight={PICKER_ITEM_HEIGHT}
           width="100%"
