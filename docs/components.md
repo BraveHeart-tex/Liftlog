@@ -41,6 +41,17 @@ Introduce only when duplication is meaningful, readability improves, reuse is pr
 
 ---
 
+## State Locality
+
+Keep state as close as possible to where it is used. Do not lift state into a parent unless the parent renders from it, coordinates sibling components with it, or must commit the final value.
+
+- Good parent state: visibility toggles, selected IDs used outside a child, saved values that affect the surrounding screen.
+- Good child state: text input drafts, search queries, filters, pending selections, transient loading/error state used only inside that child.
+- Prefer a focused child component, memo-wrapped when useful, over making a parent re-render for every keystroke or local interaction.
+- Pass final committed changes up through callbacks.
+
+---
+
 ## Ownership
 
 | Layer                        | Owns                                                  |

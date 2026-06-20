@@ -49,6 +49,38 @@ Avoid plain RN `TextInput` inside keyboard-sensitive sheets unless Android behav
 
 ---
 
+## State & Performance
+
+Keep sheet-only state inside the sheet subtree, not in the component that renders `<BottomSheet>`.
+
+Use a memoized content component when a sheet has internal draft state:
+
+```tsx
+export function ExercisePickerSheet({ isOpen, onClose }: Props) {
+  return (
+    <BottomSheet isOpen={isOpen} onClose={onClose} snapPoints={['90%']}>
+      <ExercisePickerSheetContent isOpen={isOpen} onClose={onClose} />
+    </BottomSheet>
+  );
+}
+
+const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
+  isOpen,
+  onClose
+}: Props) {
+  const [query, setQuery] = useState('');
+
+  return <BottomSheetInput value={query} onChangeText={setQuery} />;
+});
+```
+
+- Keep `isOpen` in the parent so it can control visibility.
+- Move search queries, filters, pending selections, form values, and save/loading state into the sheet content when only the sheet uses them.
+- Pass committed values out with callbacks such as `onSelectExercise`, `onSave`, or `onSubmit`.
+- Wrap callbacks passed from the parent with `useCallback` so memoized sheet content stays stable.
+
+---
+
 ## Lists
 
 `BottomSheetFlatList` must be a **direct child** of the sheet — no wrapping containers.
