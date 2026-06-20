@@ -3,6 +3,8 @@ import { Icon } from '@/src/components/ui/icon';
 import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
 import type { Set } from '@/src/db/schema';
+import { SetDurationField } from '@/src/features/workouts/components/set-duration-field';
+import { SetDurationPickerSheet } from '@/src/features/workouts/components/set-duration-picker-sheet';
 import {
   TRACKING_TYPE_DEFINITIONS,
   formatTrackingValue,
@@ -24,8 +26,10 @@ import {
   getFieldHeaderLabel,
   getHasSavedChanges,
   getInitialFieldValues,
+  parseDurationMsInput,
   parseTrackingFieldValues
 } from '@/src/features/workouts/components/set-form-utils';
+import { formatDurationMs } from '@/src/lib/utils/format-time';
 
 type RowPhase = 'editing' | 'saving' | 'awaiting_sync' | 'error';
 
@@ -51,6 +55,11 @@ interface PersistedEditState {
   phase: RowPhase;
   savedValues?: SetValues;
   values: Record<string, string>;
+}
+
+interface ActiveDurationPickerState {
+  rowKey: string;
+  field: TrackingFieldDefinition;
 }
 
 interface BaseRowView {
@@ -99,6 +108,8 @@ export function SetForm({
   const [pendingDeleteSetIds, setPendingDeleteSetIds] = useState<
     globalThis.Set<Set['id']>
   >(() => new Set());
+  const [activeDurationPicker, setActiveDurationPicker] =
+    useState<ActiveDurationPickerState | null>(null);
   const nextDraftIndexRef = useRef(0);
 
   const liveSetIds = useMemo(() => new Set(sets.map(set => set.id)), [sets]);
@@ -277,6 +288,16 @@ export function SetForm({
     visiblePersistedSets,
     weightUnit
   ]);
+
+  const activeDurationRow = activeDurationPicker
+    ? rows.find(row => row.key === activeDurationPicker.rowKey)
+    : undefined;
+  const activeDurationValueMs =
+    activeDurationRow && activeDurationPicker
+      ? (parseDurationMsInput(
+          activeDurationRow.fieldValues[activeDurationPicker.field.key] ?? ''
+        ) ?? 0)
+      : 0;
 
   const updateFieldValue = (
     row: SetFormRow,
@@ -524,6 +545,18 @@ export function SetForm({
     ]);
   };
 
+  const handleConfirmDuration = (durationMs: number) => {
+    if (!activeDurationPicker || !activeDurationRow) {
+      return;
+    }
+
+    updateFieldValue(
+      activeDurationRow,
+      activeDurationPicker.field,
+      formatDurationMs(durationMs)
+    );
+  };
+
   const hasRows = rows.length > 0;
 
   return (
@@ -564,31 +597,49 @@ export function SetForm({
                     </Text>
                   </View>
 
-                  {trackingDefinition.fields.map(field => (
-                    <Input
-                      key={field.key}
-                      value={row.fieldValues[field.key] ?? ''}
-                      onChangeText={value =>
-                        updateFieldValue(row, field, value)
-                      }
-                      keyboardType={field.keyboardType}
-                      placeholder="0"
-                      withContainerDefaults={false}
-                      editable={!row.isSaving}
-                      wrapperClassName="flex-1"
-                      containerClassName={cn(
-                        'bg-muted min-h-12 flex-row items-center rounded-lg border px-1',
-                        row.isCommitted
-                          ? 'border-success/40 bg-success/10'
-                          : isValid
-                            ? 'border-muted'
-                            : 'border-transparent'
-                      )}
-                      inputClassName="text-body-medium flex-1 px-2 py-2"
-                      textAlign="center"
-                      accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
-                    />
-                  ))}
+                  {trackingDefinition.fields.map(field =>
+                    field.key === 'durationMs' ? (
+                      <SetDurationField
+                        key={field.key}
+                        value={row.fieldValues[field.key] ?? ''}
+                        placeholder="0:00.00"
+                        disabled={row.isSaving}
+                        isCommitted={row.isCommitted}
+                        isValid={isValid}
+                        accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
+                        onPress={() =>
+                          setActiveDurationPicker({
+                            rowKey: row.key,
+                            field
+                          })
+                        }
+                      />
+                    ) : (
+                      <Input
+                        key={field.key}
+                        value={row.fieldValues[field.key] ?? ''}
+                        onChangeText={value =>
+                          updateFieldValue(row, field, value)
+                        }
+                        keyboardType={field.keyboardType}
+                        placeholder="0"
+                        withContainerDefaults={false}
+                        editable={!row.isSaving}
+                        wrapperClassName="flex-1"
+                        containerClassName={cn(
+                          'bg-muted min-h-12 flex-row items-center rounded-lg border px-1',
+                          row.isCommitted
+                            ? 'border-success/40 bg-success/10'
+                            : isValid
+                              ? 'border-muted'
+                              : 'border-transparent'
+                        )}
+                        inputClassName="text-body-medium flex-1 px-2 py-2"
+                        textAlign="center"
+                        accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
+                      />
+                    )
+                  )}
 
                   <Button
                     variant={isValid ? 'secondary' : 'ghost'}
@@ -683,6 +734,12 @@ export function SetForm({
           </Button>
         </View>
       )}
+      <SetDurationPickerSheet
+        isOpen={Boolean(activeDurationPicker)}
+        valueMs={activeDurationValueMs}
+        onClose={() => setActiveDurationPicker(null)}
+        onConfirm={handleConfirmDuration}
+      />
     </View>
   );
 }

@@ -34,6 +34,21 @@ interface UseExerciseTrackActionsParams {
   setEditingSetId: (setId: Set['id'] | null) => void;
 }
 
+function getSetStorageValues(values: SetValues) {
+  const durationSeconds =
+    values.durationMs === undefined
+      ? null
+      : Math.round(values.durationMs / 1000);
+
+  return {
+    weightKg: values.weightKg ?? null,
+    reps: values.reps ?? null,
+    distanceMeters: values.distanceMeters ?? null,
+    durationMs: values.durationMs ?? null,
+    durationSeconds
+  };
+}
+
 export function useExerciseTrackActions({
   item,
   editingSetId,
@@ -49,7 +64,8 @@ export function useExerciseTrackActions({
         weightKg: values.weightKg ?? null,
         reps: values.reps ?? null,
         distanceMeters: values.distanceMeters ?? null,
-        durationSeconds: values.durationSeconds ?? null
+        durationMs: values.durationMs ?? null,
+        durationSeconds: null
       });
 
       if (score === null) {
@@ -78,7 +94,8 @@ export function useExerciseTrackActions({
         weightKg: values.weightKg ?? null,
         reps: values.reps ?? null,
         distanceMeters: values.distanceMeters ?? null,
-        durationSeconds: values.durationSeconds ?? null
+        durationMs: values.durationMs ?? null,
+        durationSeconds: null
       });
 
       if (score === null) {
@@ -96,7 +113,7 @@ export function useExerciseTrackActions({
     ({ order, ...values }: AddSetValues) => {
       const newSet = createSet(db, {
         workoutExerciseId: item.workoutExercise.id,
-        ...values,
+        ...getSetStorageValues(values),
         order,
         status: 'completed',
         completedAt: Date.now()
@@ -118,11 +135,7 @@ export function useExerciseTrackActions({
   const updateExistingSet = useCallback(
     ({ setId, ...values }: SetValues & { setId: Set['id'] }) => {
       const updatedSet = updateSet(db, setId, {
-        weightKg: null,
-        reps: null,
-        distanceMeters: null,
-        durationSeconds: null,
-        ...values,
+        ...getSetStorageValues(values),
         status: 'completed',
         completedAt: Date.now()
       });

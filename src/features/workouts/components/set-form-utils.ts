@@ -1,7 +1,6 @@
 import type { Set } from '@/src/db/schema';
 import {
   TRACKING_TYPE_DEFINITIONS,
-  formatTrackingValue,
   getSetValues,
   type SetValues,
   type TrackingFieldDefinition,
@@ -10,6 +9,7 @@ import {
 import type { useSettings } from '@/src/features/settings/hooks';
 import { convertWeightToKg, formatWeightForUnit } from '@/src/lib/utils/weight';
 import { formatInputNumber } from '@/src/features/workouts/components/utils';
+import { formatDurationMs } from '@/src/lib/utils/format-time';
 
 export function getFieldHeaderLabel(
   field: TrackingFieldDefinition,
@@ -104,22 +104,8 @@ function parseFieldValue(
     return undefined;
   }
 
-  if (field.key === 'durationSeconds' && trimmedValue.includes(':')) {
-    const [minutesValue, secondsValue] = trimmedValue.split(':');
-    const minutes = Number(minutesValue);
-    const seconds = Number(secondsValue);
-
-    if (
-      !Number.isInteger(minutes) ||
-      !Number.isInteger(seconds) ||
-      minutes < 0 ||
-      seconds < 0 ||
-      seconds > 59
-    ) {
-      return undefined;
-    }
-
-    return minutes * 60 + seconds;
+  if (field.key === 'durationMs') {
+    return parseDurationMsInput(trimmedValue);
   }
 
   const parsedValue = Number(trimmedValue.replace(',', '.'));
@@ -135,20 +121,49 @@ function parseFieldValue(
   return field.integer ? Math.round(parsedValue) : parsedValue;
 }
 
+export function parseDurationMsInput(value: string) {
+  const normalizedValue = value.replace(',', '.');
+  const parts = normalizedValue.split(':');
+
+  if (parts.length > 3 || parts.some(part => part.length === 0)) {
+    return undefined;
+  }
+
+  const secondsValue = Number(parts.at(-1));
+
+  if (!Number.isFinite(secondsValue) || secondsValue < 0) {
+    return undefined;
+  }
+
+  const minutesValue = parts.length >= 2 ? Number(parts.at(-2)) : 0;
+  const hoursValue = parts.length === 3 ? Number(parts[0]) : 0;
+
+  if (
+    !Number.isInteger(minutesValue) ||
+    !Number.isInteger(hoursValue) ||
+    minutesValue < 0 ||
+    minutesValue > 59 ||
+    hoursValue < 0 ||
+    (parts.length > 1 && secondsValue >= 60)
+  ) {
+    return undefined;
+  }
+
+  const totalMs =
+    hoursValue * 3600000 +
+    minutesValue * 60000 +
+    Math.round(secondsValue * 1000);
+
+  return Math.round(totalMs / 10) * 10;
+}
+
 function formatFieldValue(
   field: TrackingFieldDefinition,
   value: number,
   weightUnit: ReturnType<typeof useSettings>['weightUnit']
 ) {
-  if (field.key === 'durationSeconds') {
-    return formatTrackingValue(
-      'reps_time',
-      {
-        reps: 1,
-        durationSeconds: Math.round(value)
-      },
-      weightUnit
-    ).replace('1 reps in ', '');
+  if (field.key === 'durationMs') {
+    return formatDurationMs(value);
   }
 
   if (field.key === 'weightKg') {

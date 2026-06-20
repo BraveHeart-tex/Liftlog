@@ -148,6 +148,7 @@ export const sets = sqliteTable(
     weightKg: real('weight_kg'),
     reps: integer('reps'),
     distanceMeters: real('distance_meters'),
+    durationMs: integer('duration_ms'),
     durationSeconds: integer('duration_seconds'),
     rpe: integer('rpe'),
     status: text('status').notNull().default('pending'),
@@ -179,6 +180,7 @@ export const personalRecords = sqliteTable(
     weightKg: real('weight_kg'),
     reps: integer('reps'),
     distanceMeters: real('distance_meters'),
+    durationMs: integer('duration_ms'),
     durationSeconds: integer('duration_seconds'),
     estimated1rm: real('estimated_1rm').notNull(),
     achievedAt: integer('achieved_at').notNull()

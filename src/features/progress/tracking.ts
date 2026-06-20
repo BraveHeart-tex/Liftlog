@@ -1,5 +1,5 @@
 import type { PersonalRecord, Set } from '@/src/db/schema';
-import { formatTime } from '@/src/lib/utils/format-time';
+import { formatDurationMs } from '@/src/lib/utils/format-time';
 import { formatWeightForUnit, type WeightUnit } from '@/src/lib/utils/weight';
 
 export const TRACKING_TYPES = [
@@ -16,7 +16,7 @@ export interface SetValues {
   weightKg?: number;
   reps?: number;
   distanceMeters?: number;
-  durationSeconds?: number;
+  durationMs?: number;
 }
 
 export interface TrackingFieldDefinition {
@@ -76,12 +76,12 @@ export const TRACKING_TYPE_DEFINITIONS: Record<
         minimum: 0
       },
       {
-        key: 'durationSeconds',
+        key: 'durationMs',
         label: 'Time',
-        unitLabel: 'min:sec',
+        unitLabel: 'time',
         keyboardType: 'number-pad',
-        step: () => 5,
-        minimum: 1,
+        step: () => 1000,
+        minimum: 10,
         integer: true
       }
     ]
@@ -115,12 +115,12 @@ export const TRACKING_TYPE_DEFINITIONS: Record<
         integer: true
       },
       {
-        key: 'durationSeconds',
+        key: 'durationMs',
         label: 'Time',
-        unitLabel: 'min:sec',
+        unitLabel: 'time',
         keyboardType: 'number-pad',
-        step: () => 5,
-        minimum: 1,
+        step: () => 1000,
+        minimum: 10,
         integer: true
       }
     ]
@@ -137,12 +137,12 @@ export const TRACKING_TYPE_DEFINITIONS: Record<
         minimum: 0
       },
       {
-        key: 'durationSeconds',
+        key: 'durationMs',
         label: 'Time',
-        unitLabel: 'min:sec',
+        unitLabel: 'time',
         keyboardType: 'number-pad',
-        step: () => 5,
-        minimum: 1,
+        step: () => 1000,
+        minimum: 10,
         integer: true
       }
     ]
@@ -185,9 +185,30 @@ function assertNonNegativeNumber(
   return isNonNegativeNumber(value) ? (value ?? null) : null;
 }
 
+function getDurationMs(
+  set: Pick<Set, 'durationMs' | 'durationSeconds'>
+): number | null {
+  if (isPositiveNumber(set.durationMs)) {
+    return set.durationMs ?? null;
+  }
+
+  if (isPositiveNumber(set.durationSeconds)) {
+    return (set.durationSeconds ?? 0) * 1000;
+  }
+
+  return null;
+}
+
+function getDurationSecondsFromMs(durationMs: number): number {
+  return Math.round(durationMs / 1000);
+}
+
 export function getSetScore(
   trackingType: TrackingType,
-  set: Pick<Set, 'weightKg' | 'reps' | 'distanceMeters' | 'durationSeconds'>
+  set: Pick<
+    Set,
+    'weightKg' | 'reps' | 'distanceMeters' | 'durationMs' | 'durationSeconds'
+  >
 ): number | null {
   switch (trackingType) {
     case 'weight_reps': {
@@ -202,13 +223,13 @@ export function getSetScore(
     }
     case 'distance_time': {
       const distanceMeters = assertPositiveNumber(set.distanceMeters);
-      const durationSeconds = assertPositiveNumber(set.durationSeconds);
+      const durationMs = getDurationMs(set);
 
-      if (distanceMeters === null || durationSeconds === null) {
+      if (distanceMeters === null || durationMs === null) {
         return null;
       }
 
-      return roundScore(distanceMeters / durationSeconds);
+      return roundScore(distanceMeters / (durationMs / 1000));
     }
     case 'reps': {
       const reps = assertPositiveNumber(set.reps);
@@ -217,23 +238,23 @@ export function getSetScore(
     }
     case 'reps_time': {
       const reps = assertPositiveNumber(set.reps);
-      const durationSeconds = assertPositiveNumber(set.durationSeconds);
+      const durationMs = getDurationMs(set);
 
-      if (reps === null || durationSeconds === null) {
+      if (reps === null || durationMs === null) {
         return null;
       }
 
-      return roundScore(reps / durationSeconds);
+      return roundScore(reps / (durationMs / 1000));
     }
     case 'weight_time': {
       const weightKg = assertPositiveNumber(set.weightKg);
-      const durationSeconds = assertPositiveNumber(set.durationSeconds);
+      const durationMs = getDurationMs(set);
 
-      if (weightKg === null || durationSeconds === null) {
+      if (weightKg === null || durationMs === null) {
         return null;
       }
 
-      return roundScore(weightKg / durationSeconds);
+      return roundScore(weightKg / (durationMs / 1000));
     }
   }
 }
@@ -247,7 +268,8 @@ export function hasValidTrackingValues(
       weightKg: values.weightKg ?? null,
       reps: values.reps ?? null,
       distanceMeters: values.distanceMeters ?? null,
-      durationSeconds: values.durationSeconds ?? null
+      durationMs: values.durationMs ?? null,
+      durationSeconds: null
     }) !== null
   );
 }
@@ -274,38 +296,43 @@ export function formatTrackingValue(
       ? undefined
       : `${formatNumber(set.distanceMeters)} m`;
   const duration =
-    set.durationSeconds === undefined
-      ? undefined
-      : formatTime(set.durationSeconds);
+    set.durationMs === undefined ? undefined : formatDurationMs(set.durationMs);
 
   switch (trackingType) {
     case 'weight_reps':
       return `${weight ?? '0 ' + weightUnit} x ${set.reps ?? 0}`;
     case 'distance_time':
-      return `${distance ?? '0 m'} in ${duration ?? '0:00'}`;
+      return `${distance ?? '0 m'} in ${duration ?? '0:00.00'}`;
     case 'reps':
       return reps ?? '0 reps';
     case 'reps_time':
-      return `${reps ?? '0 reps'} in ${duration ?? '0:00'}`;
+      return `${reps ?? '0 reps'} in ${duration ?? '0:00.00'}`;
     case 'weight_time':
-      return `${weight ?? '0 ' + weightUnit} for ${duration ?? '0:00'}`;
+      return `${weight ?? '0 ' + weightUnit} for ${duration ?? '0:00.00'}`;
   }
 }
 
 export function formatPersonalRecordValue(
   record: Pick<
     PersonalRecord,
-    'trackingType' | 'weightKg' | 'reps' | 'distanceMeters' | 'durationSeconds'
+    | 'trackingType'
+    | 'weightKg'
+    | 'reps'
+    | 'distanceMeters'
+    | 'durationMs'
+    | 'durationSeconds'
   >,
   weightUnit: WeightUnit
 ) {
+  const durationMs = getDurationMs(record);
+
   return formatTrackingValue(
     resolveTrackingType(record.trackingType),
     {
       weightKg: record.weightKg ?? undefined,
       reps: record.reps ?? undefined,
       distanceMeters: record.distanceMeters ?? undefined,
-      durationSeconds: record.durationSeconds ?? undefined
+      durationMs: durationMs ?? undefined
     },
     weightUnit
   );
@@ -331,11 +358,13 @@ export function formatScore(
 }
 
 export function getSetValues(set: Set): SetValues {
+  const durationMs = getDurationMs(set);
+
   return {
     weightKg: set.weightKg ?? undefined,
     reps: set.reps ?? undefined,
     distanceMeters: set.distanceMeters ?? undefined,
-    durationSeconds: set.durationSeconds ?? undefined
+    durationMs: durationMs ?? undefined
   };
 }
 
@@ -344,8 +373,11 @@ export function areSameTrackingValues(
   left: Set,
   right: Set
 ) {
+  const leftValues = getSetValues(left);
+  const rightValues = getSetValues(right);
+
   return TRACKING_TYPE_DEFINITIONS[trackingType].fields.every(
-    field => left[field.key] === right[field.key]
+    field => leftValues[field.key] === rightValues[field.key]
   );
 }
 
@@ -354,13 +386,17 @@ export function getPersonalRecordSnapshot(
   set: Set,
   score: number
 ) {
+  const durationMs = getDurationMs(set);
+
   return {
     trackingType,
     score,
     weightKg: set.weightKg,
     reps: set.reps,
     distanceMeters: set.distanceMeters,
-    durationSeconds: set.durationSeconds,
+    durationMs,
+    durationSeconds:
+      durationMs === null ? null : getDurationSecondsFromMs(durationMs),
     estimated1rm: trackingType === 'weight_reps' ? score : 0
   };
 }
