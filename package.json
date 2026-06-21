@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "android:clean": "pnpm run prebuild:clean && pnpm run android:device",
+    "android:release:single-arch": "scripts/build-android-release-single-arch.sh",
     "android:device": "EXPO_UNSTABLE_ATLAS=true expo run:android --device",
     "android": "expo run:android",
     "format": "pnpm run prettier:fix",
