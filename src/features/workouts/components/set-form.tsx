@@ -17,7 +17,7 @@ import { useSettings } from '@/src/features/settings/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { CheckIcon, PlusIcon, Trash2Icon } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { Alert, Keyboard, View } from 'react-native';
 import ReanimatedSwipeable, {
   type SwipeableMethods
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -557,6 +557,17 @@ export function SetForm({
     );
   };
 
+  const handleOpenDurationPicker = (
+    row: SetFormRow,
+    field: TrackingFieldDefinition
+  ) => {
+    Keyboard.dismiss();
+    setActiveDurationPicker({
+      rowKey: row.key,
+      field
+    });
+  };
+
   const hasRows = rows.length > 0;
 
   return (
@@ -607,12 +618,7 @@ export function SetForm({
                         isCommitted={row.isCommitted}
                         isValid={isValid}
                         accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
-                        onPress={() =>
-                          setActiveDurationPicker({
-                            rowKey: row.key,
-                            field
-                          })
-                        }
+                        onPress={() => handleOpenDurationPicker(row, field)}
                       />
                     ) : (
                       <Input
