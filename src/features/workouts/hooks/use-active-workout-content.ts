@@ -2,6 +2,7 @@ import { useDrizzle } from '@/src/components/database-provider';
 import type { Workout } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import {
+  getCompletedSetCountsForWorkoutsQuery,
   getRecentExerciseIdsQuery,
   getWorkoutExercisesQuery
 } from '@/src/features/workouts/repository';
@@ -23,6 +24,10 @@ export function useActiveWorkoutContent({
   const [isExercisePickerOpen, setIsExercisePickerOpen] = useState(false);
   const workoutExerciseResult = useLiveWithFallback(
     getWorkoutExercisesQuery(db, activeWorkout.id),
+    [db, activeWorkout.id]
+  );
+  const completedSetCountResult = useLiveWithFallback(
+    getCompletedSetCountsForWorkoutsQuery(db, [activeWorkout.id]),
     [db, activeWorkout.id]
   );
   const selectedExerciseIds = useMemo(
@@ -78,6 +83,7 @@ export function useActiveWorkoutContent({
     isExercisePickerOpen,
     setIsExercisePickerOpen,
     workoutExerciseRows: workoutExerciseResult.data,
+    completedSetCount: completedSetCountResult.data[0]?.setCount ?? 0,
     recentExerciseIds,
     isLoadingWorkoutExercises: !workoutExerciseResult.isLive,
     exerciseById

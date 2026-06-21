@@ -11,12 +11,16 @@ import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components
 
 interface ExerciseTrackTabProps {
   item: WorkoutExerciseWithSets;
+  historyBeforeStartedAt?: number;
+  mode?: 'active' | 'historical';
   onVerticalScrollStart?: () => void;
   onVerticalScrollEnd?: () => void;
 }
 
 export function ExerciseTrackSection({
   item,
+  historyBeforeStartedAt,
+  mode = 'active',
   onVerticalScrollStart,
   onVerticalScrollEnd
 }: ExerciseTrackTabProps) {
@@ -26,7 +30,7 @@ export function ExerciseTrackSection({
     historyPreview,
     latestHistorySets,
     refreshHistory
-  } = useExerciseTrackTab(item);
+  } = useExerciseTrackTab(item, historyBeforeStartedAt);
 
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -52,7 +56,10 @@ export function ExerciseTrackSection({
   } = useExerciseTrackActions({
     item,
     editingSetId: null,
-    setEditingSetId: () => undefined
+    setEditingSetId: () => undefined,
+    completedAt: historyBeforeStartedAt,
+    enableFeedback: mode === 'active',
+    rebuildProgressOnChange: mode === 'active'
   });
 
   const handleAddSet = async (

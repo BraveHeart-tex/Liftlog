@@ -2,6 +2,7 @@ import { useDrizzle } from '@/src/components/database-provider';
 import { getExerciseByIdQuery } from '@/src/features/exercises/repository';
 import {
   getSetsByWorkoutExerciseIdQuery,
+  getWorkoutByIdQuery,
   getWorkoutExerciseByIdQuery
 } from '@/src/features/workouts/repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
@@ -19,9 +20,14 @@ export function useActiveWorkoutExerciseDetail(
   );
   const workoutExercise = workoutExerciseResult.data[0];
   const exerciseId = workoutExercise?.exerciseId ?? null;
+  const workoutId = workoutExercise?.workoutId ?? null;
   const setResult = useLiveWithFallback(
     getSetsByWorkoutExerciseIdQuery(db, resolvedWorkoutExerciseId),
     [db, resolvedWorkoutExerciseId]
+  );
+  const workoutResult = useLiveWithFallback(
+    getWorkoutByIdQuery(db, workoutId ?? ''),
+    [db, workoutId]
   );
   const exerciseResult = useLiveWithFallback(
     getExerciseByIdQuery(db, exerciseId ?? ''),
@@ -42,10 +48,12 @@ export function useActiveWorkoutExerciseDetail(
 
   return {
     item,
+    workout: workoutResult.data[0],
     isLoading:
       Boolean(workoutExerciseId) &&
       (!workoutExerciseResult.isLive ||
         !setResult.isLive ||
+        Boolean(workoutId && !workoutResult.isLive) ||
         Boolean(exerciseId && !exerciseResult.isLive))
   };
 }

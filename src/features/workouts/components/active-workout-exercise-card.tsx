@@ -10,12 +10,14 @@ import { WorkoutExerciseSummary } from '@/src/features/workouts/components/worko
 interface ActiveWorkoutExerciseCardProps {
   item: WorkoutExerciseWithSets;
   className?: string;
+  mode?: 'active' | 'historical';
   onLongPress: () => void;
 }
 
 export function ActiveWorkoutExerciseCard({
   item,
   className,
+  mode = 'active',
   onLongPress
 }: ActiveWorkoutExerciseCardProps) {
   const { weightUnit } = useSettings();
@@ -34,7 +36,10 @@ export function ActiveWorkoutExerciseCard({
       <Pressable
         onPress={() =>
           router.push({
-            pathname: '/(tabs)/workout/exercise/[workoutExerciseId]',
+            pathname:
+              mode === 'historical'
+                ? '/workouts/backfill/exercise/[workoutExerciseId]'
+                : '/(tabs)/workout/exercise/[workoutExerciseId]',
             params: { workoutExerciseId: item.workoutExercise.id }
           })
         }

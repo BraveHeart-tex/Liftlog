@@ -10,6 +10,7 @@ import { ActiveWorkoutExerciseList } from '@/src/features/workouts/components/ac
 import { ActiveWorkoutHeaderWithActions } from '@/src/features/workouts/components/active-workout-header-with-actions';
 import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/create-custom-exercise-sheet';
 import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise-picker-sheet';
+import { HistoricalWorkoutHeader } from '@/src/features/workouts/components/historical-workout-header';
 import { RestTimerWidget } from '@/src/features/workouts/components/rest-timer-widget';
 import {
   useActiveWorkoutActions,
@@ -24,11 +25,17 @@ import { Alert, Keyboard, View } from 'react-native';
 interface ActiveWorkoutContentProps {
   activeWorkout: Workout;
   exerciseRows: ExerciseListItem[];
+  mode?: 'active' | 'historical';
+  onDiscardHistoricalWorkout?: (hasExercisesLogged: boolean) => void;
+  onSaveHistoricalWorkout?: () => void;
 }
 
 export function ActiveWorkoutContent({
   activeWorkout,
-  exerciseRows
+  exerciseRows,
+  mode = 'active',
+  onDiscardHistoricalWorkout,
+  onSaveHistoricalWorkout
 }: ActiveWorkoutContentProps) {
   const [isEditingExercises, setIsEditingExercises] = useState(false);
 
@@ -41,6 +48,7 @@ export function ActiveWorkoutContent({
     isExercisePickerOpen,
     setIsExercisePickerOpen,
     workoutExerciseRows,
+    completedSetCount,
     recentExerciseIds,
     isLoadingWorkoutExercises,
     exerciseById
@@ -57,6 +65,7 @@ export function ActiveWorkoutContent({
   const workoutName = activeWorkout.name;
   const hasExercisesLogged =
     !isLoadingWorkoutExercises && workoutExerciseRows.length > 0;
+  const canSaveHistoricalWorkout = completedSetCount > 0;
   const selectedWorkoutExerciseIds = useMemo(
     () =>
       workoutExerciseRows.map(workoutExercise => workoutExercise.exerciseId),
@@ -127,6 +136,14 @@ export function ActiveWorkoutContent({
           workoutName={workoutName}
           onDone={exitEditMode}
         />
+      ) : mode === 'historical' ? (
+        <HistoricalWorkoutHeader
+          workoutName={workoutName}
+          startedAt={activeWorkout.startedAt}
+          canSave={canSaveHistoricalWorkout}
+          onDiscard={() => onDiscardHistoricalWorkout?.(hasExercisesLogged)}
+          onSave={onSaveHistoricalWorkout ?? (() => undefined)}
+        />
       ) : (
         <ActiveWorkoutHeaderWithActions
           workoutName={workoutName}
@@ -144,7 +161,7 @@ export function ActiveWorkoutContent({
         />
       )}
 
-      {!isEditingExercises && <RestTimerWidget />}
+      {!isEditingExercises && mode === 'active' && <RestTimerWidget />}
 
       {isLoadingWorkoutExercises ? (
         <View className="flex-1 px-4">
@@ -154,6 +171,7 @@ export function ActiveWorkoutContent({
         <ActiveWorkoutExerciseList
           workoutExercises={workoutExerciseRows}
           exerciseById={exerciseById}
+          mode={mode}
           isEditing={isEditingExercises}
           onEnterEditMode={enterEditMode}
           onReorderExercises={handleReorderExercises}

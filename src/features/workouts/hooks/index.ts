@@ -6,6 +6,9 @@ export { useActiveWorkoutScreen } from '@/src/features/workouts/hooks/use-active
 export { useExerciseHistory } from '@/src/features/workouts/hooks/use-exercise-history';
 export { useExerciseTrackActions } from '@/src/features/workouts/hooks/use-exercise-track-actions';
 export { useExerciseTrackTab } from '@/src/features/workouts/hooks/use-exercise-track-tab';
+export { useHistoricalWorkoutDraftActions } from '@/src/features/workouts/hooks/use-historical-workout-draft-actions';
+export { useHistoricalWorkoutDraftScreen } from '@/src/features/workouts/hooks/use-historical-workout-draft-screen';
+export { useHistoricalWorkoutStart } from '@/src/features/workouts/hooks/use-historical-workout-start';
 export {
   useWorkoutCalendarMarks,
   useWorkoutRowsForDate

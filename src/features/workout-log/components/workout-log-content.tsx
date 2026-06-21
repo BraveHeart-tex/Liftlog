@@ -1,8 +1,11 @@
 import { StyledFlatList } from '@/src/components/styled/flat-list';
+import { Button } from '@/src/components/ui/button';
 import { EmptyState } from '@/src/components/ui/empty-state';
+import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { WorkoutLogCalendar } from '@/src/features/workout-log/components/workout-log-calendar';
 import { WorkoutLogRow } from '@/src/features/workout-log/components/workout-log-row';
+import { WorkoutLogStartSheet } from '@/src/features/workout-log/components/workout-log-start-sheet';
 import {
   useWorkoutCalendarMarks,
   useWorkoutRowsForDate
@@ -10,6 +13,7 @@ import {
 import type { CompletedWorkoutLogRow } from '@/src/features/workouts/repository';
 import { toLocalDateKey } from '@/src/lib/utils/date';
 import { router } from 'expo-router';
+import { PlusIcon } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
@@ -30,10 +34,13 @@ export function WorkoutLogContent() {
   const [selectedDateKey, setSelectedDateKey] = useState(
     toLocalDateKey(Date.now())
   );
+  const [isStartSheetOpen, setIsStartSheetOpen] = useState(false);
   const { workoutCountByDateKey } = useWorkoutCalendarMarks(
     WORKOUT_LOG_PAST_MONTH_RANGE
   );
   const { workoutRows } = useWorkoutRowsForDate(selectedDateKey);
+  const openStartSheet = useCallback(() => setIsStartSheetOpen(true), []);
+  const closeStartSheet = useCallback(() => setIsStartSheetOpen(false), []);
 
   const renderWorkoutRow = useCallback(
     ({ item }: { item: CompletedWorkoutLogRow }) => (
@@ -82,30 +89,51 @@ export function WorkoutLogContent() {
             }`}
           </Text>
         </View>
+
+        <Button
+          className="mt-4 w-full"
+          leftIcon={<Icon icon={PlusIcon} tone="primaryForeground" />}
+          onPress={openStartSheet}
+        >
+          Log workout
+        </Button>
       </View>
     ),
-    [selectedDateKey, workoutCountByDateKey, workoutRows.length]
+    [openStartSheet, selectedDateKey, workoutCountByDateKey, workoutRows.length]
   );
 
   return (
-    <StyledFlatList
-      data={workoutRows}
-      className="flex-1"
-      directionalLockEnabled
-      keyExtractor={item => item.workout.id}
-      keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}
-      ListHeaderComponent={listHeader}
-      ListEmptyComponent={
-        <EmptyState
-          layout="section"
-          title="No workouts"
-          description="Completed sessions for this day will show here."
-          className="border-border bg-card rounded-lg border border-dashed px-6 py-10"
-        />
-      }
-      renderItem={renderWorkoutRow}
-      contentContainerClassName="px-4 pt-4 pb-6"
-    />
+    <>
+      <StyledFlatList
+        data={workoutRows}
+        className="flex-1"
+        directionalLockEnabled
+        keyExtractor={item => item.workout.id}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={
+          <EmptyState
+            layout="section"
+            title="No workouts"
+            description="Completed sessions for this day will show here."
+            className="border-border bg-card rounded-lg border border-dashed px-6 py-10"
+            action={
+              <Button variant="secondary" size="sm" onPress={openStartSheet}>
+                Log workout
+              </Button>
+            }
+          />
+        }
+        renderItem={renderWorkoutRow}
+        contentContainerClassName="px-4 pt-4 pb-6"
+      />
+
+      <WorkoutLogStartSheet
+        dateKey={selectedDateKey}
+        isOpen={isStartSheetOpen}
+        onClose={closeStartSheet}
+      />
+    </>
   );
 }

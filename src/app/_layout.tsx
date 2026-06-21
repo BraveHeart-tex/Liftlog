@@ -30,6 +30,8 @@ function RootNavigator() {
       <Stack.Screen name="settings" />
       <Stack.Screen name="exercises/new" />
       <Stack.Screen name="workouts/[id]" />
+      <Stack.Screen name="workouts/backfill/[id]" />
+      <Stack.Screen name="workouts/backfill/exercise/[workoutExerciseId]" />
       <Stack.Screen name="workouts/templates/new" />
     </Stack>
   );

@@ -16,7 +16,10 @@ import {
   type WorkoutTemplateExercise
 } from '@/src/db/schema';
 import { toLocalDateKey } from '@/src/lib/utils/date';
-import { resolveTemplateName } from '@/src/lib/utils/workout';
+import {
+  formatWorkoutName,
+  resolveTemplateName
+} from '@/src/lib/utils/workout';
 import {
   and,
   asc,
@@ -33,6 +36,10 @@ import {
   sql
 } from 'drizzle-orm';
 
+export const HISTORICAL_WORKOUT_DRAFT_STATUS = 'historical_draft';
+const HISTORICAL_WORKOUT_DRAFT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const HISTORICAL_SET_INTERVAL_MS = 60_000;
+
 function withWorkoutDateKey(data: NewWorkout): NewWorkout {
   const startedAt = data.startedAt ?? Date.now();
 
@@ -41,6 +48,12 @@ function withWorkoutDateKey(data: NewWorkout): NewWorkout {
     startedAt,
     dateKey: data.dateKey ?? toLocalDateKey(startedAt)
   };
+}
+
+function getLocalNoonTimestamp(dateKey: string): number {
+  const [year, month, day] = dateKey.split('-').map(Number);
+
+  return new Date(year, month - 1, day, 12, 0, 0, 0).getTime();
 }
 
 function getDateRange(dateKey: string): { endAt: number; startAt: number } {
@@ -64,6 +77,11 @@ export interface WorkoutCalendarDateRange {
 export interface CompletedWorkoutLogRow {
   workout: Workout;
   setCount: number;
+}
+
+export interface SavedHistoricalWorkoutDraft {
+  workout: Workout;
+  affectedExerciseIds: WorkoutExercise['exerciseId'][];
 }
 
 function getWorkoutRecordById(
@@ -243,6 +261,21 @@ export function getActiveWorkoutQuery(db: DrizzleDb) {
     .orderBy(desc(workouts.startedAt));
 }
 
+export function getHistoricalWorkoutDraftQuery(
+  db: DrizzleDb,
+  id: Workout['id']
+) {
+  return db
+    .select()
+    .from(workouts)
+    .where(
+      and(
+        eq(workouts.id, id),
+        eq(workouts.status, HISTORICAL_WORKOUT_DRAFT_STATUS)
+      )
+    );
+}
+
 export function getActiveWorkoutSummaryQuery(db: DrizzleDb) {
   return db
     .select({
@@ -403,6 +436,103 @@ export function createWorkout(db: DrizzleDb, data: NewWorkout): Workout {
   return db.insert(workouts).values(withWorkoutDateKey(data)).returning().get();
 }
 
+export function cleanupStaleHistoricalWorkoutDrafts(db: DrizzleDb): void {
+  db.delete(workouts)
+    .where(
+      and(
+        eq(workouts.status, HISTORICAL_WORKOUT_DRAFT_STATUS),
+        lte(
+          workouts.completedAt,
+          Date.now() - HISTORICAL_WORKOUT_DRAFT_MAX_AGE_MS
+        )
+      )
+    )
+    .run();
+}
+
+export function createHistoricalWorkoutDraft(
+  db: DrizzleDb,
+  dateKey: Workout['dateKey']
+): Workout {
+  cleanupStaleHistoricalWorkoutDrafts(db);
+
+  const startedAt = getLocalNoonTimestamp(dateKey);
+
+  return db
+    .insert(workouts)
+    .values({
+      name: formatWorkoutName(startedAt),
+      status: HISTORICAL_WORKOUT_DRAFT_STATUS,
+      startedAt,
+      dateKey,
+      completedAt: Date.now()
+    })
+    .returning()
+    .get();
+}
+
+export function createHistoricalWorkoutDraftFromTemplate(
+  db: DrizzleDb,
+  {
+    dateKey,
+    templateId
+  }: {
+    dateKey: Workout['dateKey'];
+    templateId: WorkoutTemplate['id'];
+  }
+): Workout | undefined {
+  cleanupStaleHistoricalWorkoutDrafts(db);
+
+  let createdWorkout: Workout | undefined;
+
+  db.transaction(tx => {
+    const template = getWorkoutTemplateRecordById(tx, templateId);
+
+    if (!template) {
+      return;
+    }
+
+    const templateExerciseRows = tx
+      .select()
+      .from(workoutTemplateExercises)
+      .where(eq(workoutTemplateExercises.templateId, templateId))
+      .orderBy(asc(workoutTemplateExercises.order))
+      .all();
+    const startedAt = getLocalNoonTimestamp(dateKey);
+
+    createdWorkout = tx
+      .insert(workouts)
+      .values({
+        name: template.name,
+        status: HISTORICAL_WORKOUT_DRAFT_STATUS,
+        startedAt,
+        dateKey,
+        completedAt: Date.now()
+      })
+      .returning()
+      .get();
+
+    const createdWorkoutRow = createdWorkout;
+
+    if (!createdWorkoutRow || templateExerciseRows.length === 0) {
+      return;
+    }
+
+    tx.insert(workoutExercises)
+      .values(
+        templateExerciseRows.map(templateExercise => ({
+          workoutId: createdWorkoutRow.id,
+          exerciseId: templateExercise.exerciseId,
+          order: templateExercise.order,
+          notes: null
+        }))
+      )
+      .run();
+  });
+
+  return createdWorkout;
+}
+
 export function updateWorkoutName(
   db: DrizzleDb,
   id: Workout['id'],
@@ -506,6 +636,85 @@ export function completeWorkout(db: DrizzleDb, id: Workout['id']): void {
     })
     .where(eq(workouts.id, id))
     .run();
+}
+
+export function saveHistoricalWorkoutDraft(
+  db: DrizzleDb,
+  id: Workout['id']
+): SavedHistoricalWorkoutDraft | undefined {
+  let savedWorkout: Workout | undefined;
+  let affectedExerciseIds: WorkoutExercise['exerciseId'][] = [];
+
+  db.transaction(tx => {
+    const existingWorkout = tx
+      .select()
+      .from(workouts)
+      .where(
+        and(
+          eq(workouts.id, id),
+          eq(workouts.status, HISTORICAL_WORKOUT_DRAFT_STATUS)
+        )
+      )
+      .get();
+
+    if (!existingWorkout) {
+      return;
+    }
+
+    const completedSetRows = tx
+      .select({
+        setId: sets.id,
+        exerciseId: workoutExercises.exerciseId
+      })
+      .from(sets)
+      .innerJoin(
+        workoutExercises,
+        eq(sets.workoutExerciseId, workoutExercises.id)
+      )
+      .where(
+        and(eq(workoutExercises.workoutId, id), eq(sets.status, 'completed'))
+      )
+      .orderBy(asc(workoutExercises.order), asc(sets.order))
+      .all();
+
+    if (completedSetRows.length === 0) {
+      return;
+    }
+
+    completedSetRows.forEach((row, index) => {
+      tx.update(sets)
+        .set({
+          completedAt:
+            existingWorkout.startedAt + (index + 1) * HISTORICAL_SET_INTERVAL_MS
+        })
+        .where(eq(sets.id, row.setId))
+        .run();
+    });
+
+    savedWorkout = tx
+      .update(workouts)
+      .set({
+        status: 'completed',
+        dateKey: existingWorkout.dateKey,
+        completedAt: null
+      })
+      .where(eq(workouts.id, id))
+      .returning()
+      .get();
+
+    affectedExerciseIds = Array.from(
+      new Set(completedSetRows.map(row => row.exerciseId))
+    );
+  });
+
+  if (!savedWorkout) {
+    return undefined;
+  }
+
+  return {
+    workout: savedWorkout,
+    affectedExerciseIds
+  };
 }
 
 export function createWorkoutExercise(

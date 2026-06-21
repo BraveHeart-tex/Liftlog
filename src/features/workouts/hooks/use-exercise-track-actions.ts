@@ -32,6 +32,9 @@ interface UseExerciseTrackActionsParams {
   item: WorkoutExerciseWithSets;
   editingSetId: Set['id'] | null;
   setEditingSetId: (setId: Set['id'] | null) => void;
+  completedAt?: number;
+  enableFeedback?: boolean;
+  rebuildProgressOnChange?: boolean;
 }
 
 function getSetStorageValues(values: SetValues) {
@@ -52,7 +55,10 @@ function getSetStorageValues(values: SetValues) {
 export function useExerciseTrackActions({
   item,
   editingSetId,
-  setEditingSetId
+  setEditingSetId,
+  completedAt,
+  enableFeedback = true,
+  rebuildProgressOnChange = true
 }: UseExerciseTrackActionsParams) {
   const db = useDrizzle();
   const exerciseId = item.workoutExercise.exerciseId;
@@ -116,10 +122,18 @@ export function useExerciseTrackActions({
         ...getSetStorageValues(values),
         order,
         status: 'completed',
-        completedAt: Date.now()
+        completedAt: completedAt ?? Date.now()
       });
 
+      if (!rebuildProgressOnChange) {
+        return newSet;
+      }
+
       const isPR = checkAndCreatePRForNewSet(newSet.id, values);
+
+      if (!enableFeedback) {
+        return newSet;
+      }
 
       if (isPR) {
         notificationAsync(NotificationFeedbackType.Success);
@@ -129,7 +143,14 @@ export function useExerciseTrackActions({
 
       return newSet;
     },
-    [checkAndCreatePRForNewSet, db, item.workoutExercise.id]
+    [
+      checkAndCreatePRForNewSet,
+      completedAt,
+      db,
+      enableFeedback,
+      item.workoutExercise.id,
+      rebuildProgressOnChange
+    ]
   );
 
   const updateExistingSet = useCallback(
@@ -137,9 +158,22 @@ export function useExerciseTrackActions({
       const updatedSet = updateSet(db, setId, {
         ...getSetStorageValues(values),
         status: 'completed',
-        completedAt: Date.now()
+        completedAt: completedAt ?? Date.now()
       });
+
+      if (!rebuildProgressOnChange) {
+        setEditingSetId(null);
+
+        return updatedSet;
+      }
+
       const isPR = checkAndCreatePR(setId, values);
+
+      if (!enableFeedback) {
+        setEditingSetId(null);
+
+        return updatedSet;
+      }
 
       if (isPR) {
         notificationAsync(NotificationFeedbackType.Success);
@@ -151,19 +185,29 @@ export function useExerciseTrackActions({
 
       return updatedSet;
     },
-    [checkAndCreatePR, db, setEditingSetId]
+    [
+      checkAndCreatePR,
+      completedAt,
+      db,
+      enableFeedback,
+      rebuildProgressOnChange,
+      setEditingSetId
+    ]
   );
 
   const deleteExistingSet = useCallback(
     (setId: Set['id']) => {
       deleteSet(db, setId);
-      rebuildPersonalRecordsForExercise(db, exerciseId);
+
+      if (rebuildProgressOnChange) {
+        rebuildPersonalRecordsForExercise(db, exerciseId);
+      }
 
       if (setId === editingSetId) {
         setEditingSetId(null);
       }
     },
-    [db, editingSetId, exerciseId, setEditingSetId]
+    [db, editingSetId, exerciseId, rebuildProgressOnChange, setEditingSetId]
   );
 
   return {

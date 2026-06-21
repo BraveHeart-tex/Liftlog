@@ -8,6 +8,7 @@ import { ActiveWorkoutExerciseEditList } from '@/src/features/workouts/component
 interface ActiveWorkoutExerciseListProps {
   workoutExercises: WorkoutExercise[];
   exerciseById: Map<ExerciseListItem['id'], ExerciseListItem>;
+  mode?: 'active' | 'historical';
   onEnterEditMode: () => void;
   onReorderExercises: (
     orderedWorkoutExerciseIds: WorkoutExercise['id'][]
@@ -18,6 +19,7 @@ interface ActiveWorkoutExerciseListProps {
 export function ActiveWorkoutExerciseList({
   workoutExercises,
   exerciseById,
+  mode = 'active',
   onEnterEditMode,
   onReorderExercises,
   isEditing
@@ -47,6 +49,7 @@ export function ActiveWorkoutExerciseList({
         <ActiveWorkoutExerciseCard
           key={workoutExercise.workoutExercise.id}
           item={workoutExercise}
+          mode={mode}
           className="mt-4"
           onLongPress={onEnterEditMode}
         />

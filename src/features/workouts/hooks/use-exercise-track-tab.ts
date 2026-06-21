@@ -21,7 +21,10 @@ const weightStepByUnit = {
 
 type ExerciseHistory = ReturnType<typeof buildExerciseHistory>;
 
-export function useExerciseTrackTab(item: WorkoutExerciseWithSets) {
+export function useExerciseTrackTab(
+  item: WorkoutExerciseWithSets,
+  historyBeforeStartedAt?: number
+) {
   const db = useDrizzle();
   const { weightUnit } = useSettings();
   const exerciseId = item.workoutExercise.exerciseId;
@@ -45,7 +48,8 @@ export function useExerciseTrackTab(item: WorkoutExerciseWithSets) {
       const workoutRows = getRecentExerciseHistoryWorkouts(
         db,
         exerciseId,
-        PROGRESSION_HISTORY_LIMIT
+        PROGRESSION_HISTORY_LIMIT,
+        historyBeforeStartedAt
       );
       const workoutIds = workoutRows.map(row => row.workout.id);
       const setRows = getExerciseHistorySets(db, exerciseId, workoutIds);
@@ -70,7 +74,7 @@ export function useExerciseTrackTab(item: WorkoutExerciseWithSets) {
 
       console.error('Failed to load exercise track history', error);
     }
-  }, [db, exerciseId]);
+  }, [db, exerciseId, historyBeforeStartedAt]);
 
   useEffect(() => {
     isMountedRef.current = true;

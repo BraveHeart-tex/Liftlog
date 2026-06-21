@@ -11,7 +11,7 @@ import {
   type Set,
   type Workout
 } from '@/src/db/schema';
-import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, lt } from 'drizzle-orm';
 import {
   computeEstimated1RM,
   getPersonalRecordSnapshot,
@@ -59,7 +59,8 @@ export function getExerciseHistoryWorkoutsQuery(
 export function getRecentExerciseHistoryWorkoutsQuery(
   db: DrizzleDb,
   exerciseId: Exercise['id'],
-  limit: number
+  limit: number,
+  beforeStartedAt?: Workout['startedAt']
 ) {
   return db
     .selectDistinct({ workout: workouts })
@@ -68,7 +69,8 @@ export function getRecentExerciseHistoryWorkoutsQuery(
     .where(
       and(
         eq(workouts.status, 'completed'),
-        eq(workoutExercises.exerciseId, exerciseId)
+        eq(workoutExercises.exerciseId, exerciseId),
+        beforeStartedAt ? lt(workouts.startedAt, beforeStartedAt) : undefined
       )
     )
     .orderBy(desc(workouts.startedAt))
@@ -78,9 +80,15 @@ export function getRecentExerciseHistoryWorkoutsQuery(
 export function getRecentExerciseHistoryWorkouts(
   db: DrizzleDb,
   exerciseId: Exercise['id'],
-  limit: number
+  limit: number,
+  beforeStartedAt?: Workout['startedAt']
 ) {
-  return getRecentExerciseHistoryWorkoutsQuery(db, exerciseId, limit).all();
+  return getRecentExerciseHistoryWorkoutsQuery(
+    db,
+    exerciseId,
+    limit,
+    beforeStartedAt
+  ).all();
 }
 
 export function getExerciseHistorySetsQuery(
