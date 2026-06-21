@@ -15,7 +15,7 @@ import {
 } from '@/src/features/progress/tracking';
 import { useSettings } from '@/src/features/settings/hooks';
 import { cn } from '@/src/lib/utils/cn';
-import { CheckIcon, PlusIcon, Trash2Icon } from 'lucide-react-native';
+import { CheckIcon, CopyIcon, PlusIcon, Trash2Icon } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Keyboard, View, type LayoutChangeEvent } from 'react-native';
 import ReanimatedSwipeable, {
@@ -115,9 +115,13 @@ export function SetForm({
   const [pendingDeleteSetIds, setPendingDeleteSetIds] = useState<
     globalThis.Set<Set['id']>
   >(() => new Set());
+  const [pendingCopyRowKeys, setPendingCopyRowKeys] = useState<
+    globalThis.Set<string>
+  >(() => new Set());
   const [activeDurationPicker, setActiveDurationPicker] =
     useState<ActiveDurationPickerState | null>(null);
   const nextDraftIndexRef = useRef(0);
+  const pendingCopyRef = useRef(false);
 
   const liveSetIds = useMemo(() => new Set(sets.map(set => set.id)), [sets]);
   const setById = useMemo(
@@ -305,6 +309,7 @@ export function SetForm({
           activeDurationRow.fieldValues[activeDurationPicker.field.key] ?? ''
         ) ?? 0)
       : 0;
+  const hasPendingCopy = pendingCopyRowKeys.size > 0;
 
   const updateFieldValue = (
     row: SetFormRow,
@@ -349,6 +354,9 @@ export function SetForm({
       };
     });
   };
+
+  const getNextSetOrder = () =>
+    rows.reduce((nextOrder, row) => Math.max(nextOrder, row.order + 1), 0);
 
   const handleCommitRow = async (row: SetFormRow) => {
     if (row.isSaving || !row.validatedValues) {
@@ -460,6 +468,48 @@ export function SetForm({
     }
   };
 
+  const handleCopyRow = async (row: SetFormRow) => {
+    if (
+      row.isSaving ||
+      hasPendingCopy ||
+      pendingCopyRef.current ||
+      !row.validatedValues
+    ) {
+      return;
+    }
+
+    pendingCopyRef.current = true;
+    setPendingCopyRowKeys(currentKeys => {
+      const nextKeys = new Set(currentKeys);
+
+      nextKeys.add(row.key);
+
+      return nextKeys;
+    });
+
+    try {
+      await Promise.resolve(
+        onAddSet({ ...row.validatedValues, order: getNextSetOrder() })
+      );
+    } catch (error) {
+      console.error('Failed to copy set', error);
+      Alert.alert('Could not copy set', 'Please try again.');
+    } finally {
+      pendingCopyRef.current = false;
+      setPendingCopyRowKeys(currentKeys => {
+        if (!currentKeys.has(row.key)) {
+          return currentKeys;
+        }
+
+        const nextKeys = new Set(currentKeys);
+
+        nextKeys.delete(row.key);
+
+        return nextKeys;
+      });
+    }
+  };
+
   const handleDeletePersistedRow = (row: PersistedSetFormRow) => {
     if (row.isSaving) {
       return;
@@ -519,14 +569,33 @@ export function SetForm({
     });
   };
 
-  const renderDeleteAction = (
+  const renderRowActions = (
     setNumber: number,
+    onCopy: () => void,
     onDelete: () => void,
+    isCopyDisabled: boolean,
     _progress: unknown,
     _translation: unknown,
     swipeable: SwipeableMethods
   ) => (
-    <View className="h-full justify-center pl-2">
+    <View className="h-full flex-row items-center gap-2 pl-2">
+      <Button
+        variant="secondary"
+        size="icon"
+        disabled={isCopyDisabled}
+        accessibilityLabel={`Copy set ${setNumber}`}
+        className="border-primary/30 bg-primary/10 h-16 w-16 rounded-lg"
+        onPress={() => {
+          swipeable.close();
+          onCopy();
+        }}
+      >
+        <Icon
+          icon={CopyIcon}
+          tone={isCopyDisabled ? 'mutedForeground' : 'primary'}
+          size="md"
+        />
+      </Button>
       <Button
         variant="destructive"
         size="icon"
@@ -597,6 +666,7 @@ export function SetForm({
           <View className="gap-2">
             {rows.map(row => {
               const isValid = Boolean(row.validatedValues);
+              const isCopyDisabled = !isValid || row.isSaving || hasPendingCopy;
               const rowContent = (
                 <View className="bg-card min-h-16 flex-row items-center gap-2 rounded-lg px-3 py-2">
                   <View className="w-8 items-center">
@@ -693,6 +763,10 @@ export function SetForm({
                 handleDeleteDraftRow(row);
               };
 
+              const handleCopy = () => {
+                void handleCopyRow(row);
+              };
+
               return (
                 <View
                   key={row.key}
@@ -704,9 +778,11 @@ export function SetForm({
                     overshootRight={false}
                     containerStyle={{ borderRadius: 8, overflow: 'hidden' }}
                     renderRightActions={(progress, translation, swipeable) =>
-                      renderDeleteAction(
+                      renderRowActions(
                         row.setNumber,
+                        handleCopy,
                         handleDelete,
+                        isCopyDisabled,
                         progress,
                         translation,
                         swipeable
@@ -731,7 +807,7 @@ export function SetForm({
 
           {sets.length > 0 ? (
             <Text variant="caption" tone="muted" className="mt-3 text-center">
-              Swipe left on a row to delete it.
+              Swipe left on a row to copy or delete it.
             </Text>
           ) : null}
         </>
