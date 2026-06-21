@@ -17,7 +17,7 @@ import { useSettings } from '@/src/features/settings/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { CheckIcon, PlusIcon, Trash2Icon } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard, View } from 'react-native';
+import { Alert, Keyboard, View, type LayoutChangeEvent } from 'react-native';
 import ReanimatedSwipeable, {
   type SwipeableMethods
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -37,6 +37,11 @@ interface SetFormProps {
   trackingType: TrackingType;
   sets: Set[];
   previousSets: Set[];
+  onRowFocus?: (rowKey: string) => void;
+  onRowLayout?: (
+    rowKey: string,
+    layout: LayoutChangeEvent['nativeEvent']['layout']
+  ) => void;
   onAddSet: (data: SetValues & { order: Set['order'] }) => Set | Promise<Set>;
   onUpdateSet: (
     data: SetValues & { setId: Set['id'] }
@@ -92,6 +97,8 @@ export function SetForm({
   trackingType,
   sets,
   previousSets,
+  onRowFocus,
+  onRowLayout,
   onAddSet,
   onUpdateSet,
   onDeleteSet
@@ -631,6 +638,7 @@ export function SetForm({
                         placeholder="0"
                         withContainerDefaults={false}
                         editable={!row.isSaving}
+                        onFocus={() => onRowFocus?.(row.key)}
                         wrapperClassName="flex-1"
                         containerClassName={cn(
                           'bg-muted min-h-12 flex-row items-center rounded-lg border px-1',
@@ -686,22 +694,28 @@ export function SetForm({
               };
 
               return (
-                <ReanimatedSwipeable
+                <View
                   key={row.key}
-                  overshootRight={false}
-                  containerStyle={{ borderRadius: 8, overflow: 'hidden' }}
-                  renderRightActions={(progress, translation, swipeable) =>
-                    renderDeleteAction(
-                      row.setNumber,
-                      handleDelete,
-                      progress,
-                      translation,
-                      swipeable
-                    )
+                  onLayout={event =>
+                    onRowLayout?.(row.key, event.nativeEvent.layout)
                   }
                 >
-                  {rowContent}
-                </ReanimatedSwipeable>
+                  <ReanimatedSwipeable
+                    overshootRight={false}
+                    containerStyle={{ borderRadius: 8, overflow: 'hidden' }}
+                    renderRightActions={(progress, translation, swipeable) =>
+                      renderDeleteAction(
+                        row.setNumber,
+                        handleDelete,
+                        progress,
+                        translation,
+                        swipeable
+                      )
+                    }
+                  >
+                    {rowContent}
+                  </ReanimatedSwipeable>
+                </View>
               );
             })}
           </View>

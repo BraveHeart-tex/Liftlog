@@ -3,8 +3,15 @@ import {
   useExerciseTrackTab
 } from '@/src/features/workouts/hooks';
 import type { Set } from '@/src/db/schema';
-import { useEffect, useRef } from 'react';
-import { Keyboard, Platform, ScrollView, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Keyboard,
+  Platform,
+  ScrollView,
+  View,
+  type KeyboardEvent,
+  type LayoutRectangle
+} from 'react-native';
 import { ProgressionSuggestion } from '@/src/features/workouts/components/progression-suggestion';
 import { SetForm } from '@/src/features/workouts/components/set-form';
 import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
@@ -33,6 +40,9 @@ export function ExerciseTrackSection({
   } = useExerciseTrackTab(item, historyBeforeStartedAt);
 
   const scrollViewRef = useRef<ScrollView>(null);
+  const focusedRowKeyRef = useRef<string | null>(null);
+  const rowLayoutsRef = useRef(new Map<string, LayoutRectangle>());
+  const [keyboardInset, setKeyboardInset] = useState(0);
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -40,14 +50,68 @@ export function ExerciseTrackSection({
     }, 100);
   };
 
+  const scrollToFocusedRow = useCallback(() => {
+    const focusedRowKey = focusedRowKeyRef.current;
+
+    if (!focusedRowKey) {
+      return;
+    }
+
+    const rowLayout = rowLayoutsRef.current.get(focusedRowKey);
+
+    if (!rowLayout) {
+      return;
+    }
+
+    scrollViewRef.current?.scrollTo({
+      animated: true,
+      y: Math.max(0, rowLayout.y - 12)
+    });
+  }, []);
+
+  const scheduleScrollToFocusedRow = useCallback(() => {
+    setTimeout(scrollToFocusedRow, 100);
+  }, [scrollToFocusedRow]);
+
   useEffect(() => {
+    const handleKeyboardShow = (event: KeyboardEvent) => {
+      setKeyboardInset(event.endCoordinates.height);
+      scheduleScrollToFocusedRow();
+    };
+
+    const handleKeyboardHide = () => {
+      setKeyboardInset(0);
+    };
+
     const show = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      scrollToBottom
+      handleKeyboardShow
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      handleKeyboardHide
     );
 
-    return () => show.remove();
-  }, []);
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, [scheduleScrollToFocusedRow]);
+
+  const handleRowFocus = useCallback(
+    (rowKey: string) => {
+      focusedRowKeyRef.current = rowKey;
+      scheduleScrollToFocusedRow();
+    },
+    [scheduleScrollToFocusedRow]
+  );
+
+  const handleRowLayout = useCallback(
+    (rowKey: string, layout: LayoutRectangle) => {
+      rowLayoutsRef.current.set(rowKey, layout);
+    },
+    []
+  );
 
   const {
     addSet: _handleAddSet,
@@ -104,7 +168,7 @@ export function ExerciseTrackSection({
         nestedScrollEnabled={true}
         directionalLockEnabled={true}
         scrollIndicatorInsets={{ right: 1 }}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: keyboardInset + 32 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         onScrollBeginDrag={onVerticalScrollStart}
@@ -115,6 +179,8 @@ export function ExerciseTrackSection({
           trackingType={trackingType}
           sets={item.sets}
           previousSets={latestHistorySets}
+          onRowFocus={handleRowFocus}
+          onRowLayout={handleRowLayout}
           onAddSet={handleAddSet}
           onUpdateSet={handleUpdateSet}
           onDeleteSet={handleDeleteSet}

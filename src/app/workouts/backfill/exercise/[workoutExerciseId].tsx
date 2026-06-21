@@ -18,7 +18,7 @@ export default function HistoricalWorkoutExerciseScreen() {
     useActiveWorkoutExerciseDetail(workoutExerciseId);
 
   const keyboardAvoidingBehavior =
-    Platform.OS === 'ios' ? ('padding' as const) : undefined;
+    Platform.OS === 'ios' ? ('padding' as const) : ('height' as const);
 
   if (workoutExerciseId && isLoading) {
     return (
