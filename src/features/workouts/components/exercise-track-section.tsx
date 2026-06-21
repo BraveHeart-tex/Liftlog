@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { ProgressionSuggestion } from '@/src/features/workouts/components/progression-suggestion';
 import { SetForm } from '@/src/features/workouts/components/set-form';
+import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task';
 import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
 
 interface ExerciseTrackTabProps {
@@ -41,14 +42,37 @@ export function ExerciseTrackSection({
 
   const scrollViewRef = useRef<ScrollView>(null);
   const focusedRowKeyRef = useRef<string | null>(null);
+  const pendingAnimationFramesRef = useRef(new Set<number>());
+  const pendingIdleTasksRef = useRef(new Set<() => void>());
   const rowLayoutsRef = useRef(new Map<string, LayoutRectangle>());
   const [keyboardInset, setKeyboardInset] = useState(0);
 
-  const scrollToBottom = () => {
-    setTimeout(() => {
+  const scrollToBottom = useCallback(() => {
+    const animationFrame = requestAnimationFrame(() => {
+      pendingAnimationFramesRef.current.delete(animationFrame);
       scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-  };
+    });
+
+    pendingAnimationFramesRef.current.add(animationFrame);
+  }, []);
+
+  const schedulePostMutationWork = useCallback(
+    ({ shouldScroll }: { shouldScroll: boolean }) => {
+      let cancelIdleTask: () => void = () => undefined;
+
+      cancelIdleTask = scheduleIdleTask(() => {
+        pendingIdleTasksRef.current.delete(cancelIdleTask);
+        void refreshHistory();
+
+        if (shouldScroll) {
+          scrollToBottom();
+        }
+      });
+
+      pendingIdleTasksRef.current.add(cancelIdleTask);
+    },
+    [refreshHistory, scrollToBottom]
+  );
 
   const scrollToFocusedRow = useCallback(() => {
     const focusedRowKey = focusedRowKeyRef.current;
@@ -72,6 +96,25 @@ export function ExerciseTrackSection({
   const scheduleScrollToFocusedRow = useCallback(() => {
     setTimeout(scrollToFocusedRow, 100);
   }, [scrollToFocusedRow]);
+
+  useEffect(() => {
+    const pendingAnimationFrames = pendingAnimationFramesRef.current;
+    const pendingIdleTasks = pendingIdleTasksRef.current;
+
+    return () => {
+      for (const cancelIdleTask of pendingIdleTasks) {
+        cancelIdleTask();
+      }
+
+      pendingIdleTasks.clear();
+
+      for (const animationFrame of pendingAnimationFrames) {
+        cancelAnimationFrame(animationFrame);
+      }
+
+      pendingAnimationFrames.clear();
+    };
+  }, []);
 
   useEffect(() => {
     const handleKeyboardShow = (event: KeyboardEvent) => {
@@ -131,8 +174,7 @@ export function ExerciseTrackSection({
   ): Promise<Set> => {
     const createdSet = await Promise.resolve(_handleAddSet(data));
 
-    scrollToBottom();
-    await refreshHistory();
+    schedulePostMutationWork({ shouldScroll: true });
 
     return createdSet;
   };
@@ -142,8 +184,7 @@ export function ExerciseTrackSection({
   ): Promise<Set | undefined> => {
     const updatedSet = await Promise.resolve(_handleUpdateSet(data));
 
-    scrollToBottom();
-    await refreshHistory();
+    schedulePostMutationWork({ shouldScroll: true });
 
     return updatedSet;
   };
@@ -152,7 +193,7 @@ export function ExerciseTrackSection({
     setId: Parameters<typeof _handleDeleteSet>[0]
   ) => {
     await Promise.resolve(_handleDeleteSet(setId));
-    await refreshHistory();
+    schedulePostMutationWork({ shouldScroll: false });
   };
 
   return (

@@ -20,6 +20,7 @@ import {
   impactAsync,
   notificationAsync
 } from 'expo-haptics';
+import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task';
 import { useCallback } from 'react';
 import type {
   SetValues,
@@ -63,6 +64,21 @@ export function useExerciseTrackActions({
   const db = useDrizzle();
   const exerciseId = item.workoutExercise.exerciseId;
   const trackingType = resolveTrackingType(item.exercise?.trackingType);
+
+  const triggerFeedback = useCallback(
+    (isPR: boolean) => {
+      if (!enableFeedback) {
+        return;
+      }
+
+      if (isPR) {
+        void notificationAsync(NotificationFeedbackType.Success);
+      } else {
+        void impactAsync(ImpactFeedbackStyle.Light);
+      }
+    },
+    [enableFeedback]
+  );
 
   const checkAndCreatePR = useCallback(
     (setId: Set['id'], values: SetValues): boolean => {
@@ -129,17 +145,15 @@ export function useExerciseTrackActions({
         return newSet;
       }
 
-      const isPR = checkAndCreatePRForNewSet(newSet.id, values);
+      scheduleIdleTask(() => {
+        try {
+          const isPR = checkAndCreatePRForNewSet(newSet.id, values);
 
-      if (!enableFeedback) {
-        return newSet;
-      }
-
-      if (isPR) {
-        notificationAsync(NotificationFeedbackType.Success);
-      } else {
-        impactAsync(ImpactFeedbackStyle.Light);
-      }
+          triggerFeedback(isPR);
+        } catch (error) {
+          console.error('Failed to update personal records for new set', error);
+        }
+      });
 
       return newSet;
     },
@@ -147,9 +161,9 @@ export function useExerciseTrackActions({
       checkAndCreatePRForNewSet,
       completedAt,
       db,
-      enableFeedback,
       item.workoutExercise.id,
-      rebuildProgressOnChange
+      rebuildProgressOnChange,
+      triggerFeedback
     ]
   );
 
@@ -167,20 +181,15 @@ export function useExerciseTrackActions({
         return updatedSet;
       }
 
-      const isPR = checkAndCreatePR(setId, values);
+      scheduleIdleTask(() => {
+        try {
+          const isPR = checkAndCreatePR(setId, values);
 
-      if (!enableFeedback) {
-        setEditingSetId(null);
-
-        return updatedSet;
-      }
-
-      if (isPR) {
-        notificationAsync(NotificationFeedbackType.Success);
-      } else {
-        impactAsync(ImpactFeedbackStyle.Light);
-      }
-
+          triggerFeedback(isPR);
+        } catch (error) {
+          console.error('Failed to update personal records for set', error);
+        }
+      });
       setEditingSetId(null);
 
       return updatedSet;
@@ -189,9 +198,9 @@ export function useExerciseTrackActions({
       checkAndCreatePR,
       completedAt,
       db,
-      enableFeedback,
       rebuildProgressOnChange,
-      setEditingSetId
+      setEditingSetId,
+      triggerFeedback
     ]
   );
 
@@ -200,7 +209,16 @@ export function useExerciseTrackActions({
       deleteSet(db, setId);
 
       if (rebuildProgressOnChange) {
-        rebuildPersonalRecordsForExercise(db, exerciseId);
+        scheduleIdleTask(() => {
+          try {
+            rebuildPersonalRecordsForExercise(db, exerciseId);
+          } catch (error) {
+            console.error(
+              'Failed to update personal records after deleting set',
+              error
+            );
+          }
+        });
       }
 
       if (setId === editingSetId) {
