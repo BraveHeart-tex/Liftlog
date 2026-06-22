@@ -1,6 +1,7 @@
 import type { AnySQLiteSelect } from 'drizzle-orm/sqlite-core';
 import { addDatabaseChangeListener } from 'expo-sqlite';
 import { useEffect, useMemo, useState, type DependencyList } from 'react';
+import { InteractionManager } from 'react-native';
 
 type LiveRowsQuery = Pick<AnySQLiteSelect, '_' | 'then'> &
   PromiseLike<unknown[]> & {
@@ -22,17 +23,49 @@ type UseLiveWithFallbackResult<Rows extends unknown[]> = {
   isLive: boolean;
 };
 
+interface UseLiveWithFallbackOptions<Rows extends unknown[]> {
+  enabled?: boolean;
+  fallbackData?: Rows;
+  initialData?: Rows;
+  deferInitialRead?: boolean;
+  waitForInteractions?: boolean;
+}
+
 export function useLiveWithFallback<Query extends LiveRowsQuery>(
   query: Query,
-  deps: DependencyList
+  deps: DependencyList,
+  options?: UseLiveWithFallbackOptions<QueryRows<Query>>
 ): UseLiveWithFallbackResult<QueryRows<Query>> {
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const initialRows = useMemo(() => query.all() as QueryRows<Query>, deps);
+  const {
+    enabled = true,
+    fallbackData,
+    initialData,
+    deferInitialRead = false,
+    waitForInteractions = false
+  } = options ?? {};
+  const fallbackRows = (fallbackData ?? initialData ?? []) as QueryRows<Query>;
+
+  const initialRows = useMemo(() => {
+    if (!enabled || deferInitialRead) {
+      return fallbackRows;
+    }
+
+    return query.all() as QueryRows<Query>;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
   const [liveRows, setLiveRows] = useState<QueryRows<Query>>(initialRows);
   const [updatedAt, setUpdatedAt] = useState<Date>();
   const [error, setError] = useState<Error>();
 
   useEffect(() => {
+    if (!enabled) {
+      setLiveRows(fallbackRows);
+      setUpdatedAt(undefined);
+      setError(undefined);
+
+      return;
+    }
+
     const getUsedTables = (
       query as LiveRowsQuery & {
         getUsedTables?: () => string[];
@@ -78,7 +111,13 @@ export function useLiveWithFallback<Query extends LiveRowsQuery>(
       );
     };
 
-    runQuery();
+    const scheduledInitialRun = waitForInteractions
+      ? InteractionManager.runAfterInteractions(runQuery)
+      : undefined;
+
+    if (!waitForInteractions) {
+      runQuery();
+    }
 
     const listener = addDatabaseChangeListener(({ tableName }) => {
       if (watchedTableNames.has(tableName)) {
@@ -88,17 +127,18 @@ export function useLiveWithFallback<Query extends LiveRowsQuery>(
 
     return () => {
       isCurrent = false;
+      scheduledInitialRun?.cancel();
       listener.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
-  const isLive = Boolean(updatedAt);
+  const isLive = enabled && Boolean(updatedAt);
 
   return {
     data: isLive ? liveRows : initialRows,
-    updatedAt,
-    error,
+    updatedAt: enabled ? updatedAt : undefined,
+    error: enabled ? error : undefined,
     isLive
   };
 }

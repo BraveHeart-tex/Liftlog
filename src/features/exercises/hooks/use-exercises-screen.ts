@@ -3,8 +3,10 @@ import {
   buildAlphabetizedExerciseListItems,
   matchesExerciseSearch
 } from '@/src/features/exercises/display';
-import { useExercises } from '@/src/features/exercises/hooks/use-exercises';
-import type { ExerciseListItem } from '@/src/features/exercises/repository';
+import {
+  getExercisesQuery,
+  type ExerciseListItem
+} from '@/src/features/exercises/repository';
 import type { ExercisePickerFilter } from '@/src/features/workouts/components/exercise-picker-filters';
 import { getRecentExerciseIdsQuery } from '@/src/features/workouts/repository';
 import { RECENT_EXERCISES_LIMIT } from '@/src/features/workouts/workout.constants';
@@ -34,10 +36,22 @@ export function useExercisesScreen() {
   const [selectedFilter, setSelectedFilter] =
     useState<ExercisePickerFilter>('all');
 
-  const exercises = useExercises();
+  const exercisesResult = useLiveWithFallback(getExercisesQuery(db), [db], {
+    initialData: [],
+    deferInitialRead: true,
+    waitForInteractions: true
+  });
+  const exercises = exercisesResult.data;
+  const shouldLoadRecentExercises = selectedFilter === 'recent';
   const recentExerciseResult = useLiveWithFallback(
     getRecentExerciseIdsQuery(db, [], RECENT_EXERCISES_LIMIT),
-    [db]
+    [db, shouldLoadRecentExercises],
+    {
+      enabled: shouldLoadRecentExercises,
+      fallbackData: [],
+      deferInitialRead: true,
+      waitForInteractions: true
+    }
   );
   const recentExerciseIdSet = useMemo(
     () =>
@@ -77,6 +91,12 @@ export function useExercisesScreen() {
     () => buildAlphabetizedExerciseListItems(filteredExercises),
     [filteredExercises]
   );
+  const exerciseLoadError = exercisesResult.error ?? recentExerciseResult.error;
+  const isLoadingExercises = !exercisesResult.isLive && !exercisesResult.error;
+  const isLoadingRecentExercises =
+    shouldLoadRecentExercises &&
+    !recentExerciseResult.isLive &&
+    !recentExerciseResult.error;
 
   return {
     query,
@@ -86,6 +106,9 @@ export function useExercisesScreen() {
     exercises,
     filteredExercises,
     exerciseListItems,
-    hasCustomExercise
+    hasCustomExercise,
+    exerciseLoadError,
+    isLoadingExercises,
+    isLoadingRecentExercises
   };
 }

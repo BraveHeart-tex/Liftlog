@@ -2,6 +2,7 @@ import { StyledFlatList } from '@/src/components/styled/flat-list';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Input } from '@/src/components/ui/input';
+import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { SearchInputIcon } from '@/src/components/ui/search-input-icon';
 import { Text } from '@/src/components/ui/text';
@@ -13,7 +14,7 @@ import { iconSizes } from '@/src/theme/sizes';
 import { router } from 'expo-router';
 import { PlusIcon, SearchXIcon } from 'lucide-react-native';
 import { useCallback } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 
 export default function ExercisesScreen() {
   const {
@@ -23,14 +24,22 @@ export default function ExercisesScreen() {
     setSelectedFilter,
     filteredExercises,
     exerciseListItems,
-    hasCustomExercise
+    hasCustomExercise,
+    exerciseLoadError,
+    isLoadingExercises,
+    isLoadingRecentExercises
   } = useExercisesScreen();
 
+  const isLoadingList = isLoadingExercises || isLoadingRecentExercises;
   const trimmedQuery = query.trim();
   const hasActiveSearchOrFilter =
     trimmedQuery.length > 0 || selectedFilter !== 'all';
-  const emptyDescription =
-    trimmedQuery.length > 0
+  const emptyTitle = exerciseLoadError
+    ? 'Could not load exercises'
+    : 'No exercises found';
+  const emptyDescription = exerciseLoadError
+    ? 'Something went wrong while loading your exercise library. Try again in a moment.'
+    : trimmedQuery.length > 0
       ? `We couldn't find anything matching "${trimmedQuery}". Try adjusting your search or add it yourself.`
       : selectedFilter !== 'all'
         ? "We couldn't find anything in this category. Try a different filter or add it yourself."
@@ -107,8 +116,12 @@ export default function ExercisesScreen() {
         keyExtractor={keyExtractor}
         className="flex-1"
         contentContainerClassName="px-4 pb-6"
+        initialNumToRender={16}
         keyboardShouldPersistTaps="handled"
+        maxToRenderPerBatch={12}
+        removeClippedSubviews={Platform.OS === 'android'}
         showsVerticalScrollIndicator={false}
+        windowSize={7}
         ListHeaderComponent={
           <View>
             <ExercisePickerFilters
@@ -128,58 +141,62 @@ export default function ExercisesScreen() {
         }
         renderItem={renderItem}
         ListEmptyComponent={
-          <View className="items-center px-2 pt-16 pb-10">
-            <View className="border-border/60 bg-card h-28 w-28 items-center justify-center rounded-full border">
-              <View className="bg-muted h-20 w-20 items-center justify-center rounded-full">
-                <Icon icon={SearchXIcon} size={28} tone="mutedForeground" />
+          isLoadingList ? (
+            <LoadingState label="Loading exercises..." className="min-h-80" />
+          ) : (
+            <View className="items-center px-2 pt-16 pb-10">
+              <View className="border-border/60 bg-card h-28 w-28 items-center justify-center rounded-full border">
+                <View className="bg-muted h-20 w-20 items-center justify-center rounded-full">
+                  <Icon icon={SearchXIcon} size={28} tone="mutedForeground" />
+                </View>
               </View>
-            </View>
 
-            <Text variant="h2" className="mt-8 text-center">
-              No exercises found
-            </Text>
-            <Text
-              variant="body"
-              tone="muted"
-              className="mt-4 max-w-80 text-center"
-            >
-              {emptyDescription}
-            </Text>
-
-            <View className="mt-10 w-full gap-4">
-              <Button
-                size="md"
-                className="w-full"
-                onPress={() => {
-                  router.push('/exercises/new');
-                  setQuery('');
-                  setSelectedFilter('all');
-                }}
-                leftIcon={
-                  <Icon
-                    icon={PlusIcon}
-                    size={iconSizes.md}
-                    tone="primaryForeground"
-                  />
-                }
+              <Text variant="h2" className="mt-8 text-center">
+                {emptyTitle}
+              </Text>
+              <Text
+                variant="body"
+                tone="muted"
+                className="mt-4 max-w-80 text-center"
               >
-                Create Custom Exercise
-              </Button>
+                {emptyDescription}
+              </Text>
 
-              {hasActiveSearchOrFilter ? (
+              <View className="mt-10 w-full gap-4">
                 <Button
-                  variant="ghost"
+                  size="md"
                   className="w-full"
                   onPress={() => {
+                    router.push('/exercises/new');
                     setQuery('');
                     setSelectedFilter('all');
                   }}
+                  leftIcon={
+                    <Icon
+                      icon={PlusIcon}
+                      size={iconSizes.md}
+                      tone="primaryForeground"
+                    />
+                  }
                 >
-                  Clear Search
+                  Create Custom Exercise
                 </Button>
-              ) : null}
+
+                {hasActiveSearchOrFilter ? (
+                  <Button
+                    variant="ghost"
+                    className="w-full"
+                    onPress={() => {
+                      setQuery('');
+                      setSelectedFilter('all');
+                    }}
+                  >
+                    Clear Search
+                  </Button>
+                ) : null}
+              </View>
             </View>
-          </View>
+          )
         }
       />
     </Screen>
