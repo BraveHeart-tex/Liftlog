@@ -30,27 +30,20 @@ export function buildAlphabetizedExerciseListItems(
   const items: ExerciseListDataItem[] = [];
   let currentLetter = '';
 
-  [...exercises]
-    .sort((a, b) =>
-      a.name.trim().localeCompare(b.name.trim(), 'en-US', {
-        sensitivity: 'base',
-        numeric: true
-      })
-    )
-    .forEach(exercise => {
-      const letter = exercise.name.trim().charAt(0).toUpperCase() || '#';
+  exercises.forEach(exercise => {
+    const letter = exercise.name.trim().charAt(0).toUpperCase() || '#';
 
-      if (letter !== currentLetter) {
-        currentLetter = letter;
-        items.push({
-          type: 'section-header',
-          id: `section-${letter}`,
-          title: letter
-        });
-      }
+    if (letter !== currentLetter) {
+      currentLetter = letter;
+      items.push({
+        type: 'section-header',
+        id: `section-${letter}`,
+        title: letter
+      });
+    }
 
-      items.push({ type: 'exercise', exercise });
-    });
+    items.push({ type: 'exercise', exercise });
+  });
 
   return items;
 }

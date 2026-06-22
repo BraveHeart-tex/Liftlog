@@ -7,7 +7,7 @@ import {
   type NewExercise
 } from '@/src/db/schema';
 import { rebuildPersonalRecordsForExercise } from '@/src/features/progress/repository';
-import { and, asc, eq, inArray, ne, sql } from 'drizzle-orm';
+import { and, eq, inArray, ne, sql } from 'drizzle-orm';
 import type { InferColumnsDataTypes } from 'drizzle-orm/column';
 
 const exerciseListFields = {
@@ -47,7 +47,7 @@ export function getExercisesQuery(db: DrizzleDb) {
     .select(exerciseListFields)
     .from(exercises)
     .where(eq(exercises.isArchived, 0))
-    .orderBy(asc(exercises.name));
+    .orderBy(sql`${exercises.name} collate nocase`);
 }
 
 export function getExercisesByIdsQuery(db: DrizzleDb, ids: Exercise['id'][]) {
