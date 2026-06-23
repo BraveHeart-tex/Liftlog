@@ -68,7 +68,8 @@ export default function ExerciseDetailScreen() {
     secondaryMuscles,
     weightUnit,
     trackingType,
-    isLoading
+    isLoading,
+    isStatsLoading
   } = useExerciseDetail(exerciseId);
   const {
     hasCustomExerciseNameConflict,
@@ -205,6 +206,7 @@ export default function ExerciseDetailScreen() {
         points={progressPoints}
         weightUnit={weightUnit}
         trackingType={trackingType}
+        isLoading={isStatsLoading}
       />
 
       <Card className="mt-4">
@@ -213,7 +215,13 @@ export default function ExerciseDetailScreen() {
             Personal records
           </Text>
 
-          {personalRecordsSummary.length === 0 ? (
+          {isStatsLoading ? (
+            <LoadingState
+              label="Loading records..."
+              size="small"
+              className="min-h-24 py-4"
+            />
+          ) : personalRecordsSummary.length === 0 ? (
             <EmptyState
               layout="section"
               title="No records yet"
@@ -264,7 +272,13 @@ export default function ExerciseDetailScreen() {
             Top set performance
           </Text>
 
-          {topSetPerformances.length === 0 ? (
+          {isStatsLoading ? (
+            <LoadingState
+              label="Loading top sets..."
+              size="small"
+              className="min-h-24 py-4"
+            />
+          ) : topSetPerformances.length === 0 ? (
             <EmptyState
               layout="section"
               title="No top sets yet"

@@ -2,8 +2,8 @@ import { useDrizzle } from '@/src/components/database-provider';
 import type { Set } from '@/src/db/schema';
 import {
   getExerciseByIdQuery,
-  getExerciseTemplateUsageRowsQuery,
-  getExerciseUsageRowsQuery
+  getExerciseTemplateUsageCountQuery,
+  getExerciseUsageCountQuery
 } from '@/src/features/exercises/repository';
 import {
   buildExerciseHistory,
@@ -168,10 +168,8 @@ function buildTopSetPerformances(
 
 function buildPersonalRecordSummary(
   history: CompletedHistoryEntry[],
-  trackingType: TrackingType,
-  weightUnit: ReturnType<typeof useSettings>['weightUnit']
+  topSets: ExerciseTopSetPerformance[]
 ) {
-  const topSets = buildTopSetPerformances(history, trackingType, weightUnit);
   const bestSet = topSets[0];
 
   if (!bestSet) {
@@ -231,15 +229,19 @@ export function useExerciseDetail(exerciseId: string | undefined) {
   );
   const exercise = exerciseResult.data[0];
   const trackingType = resolveTrackingType(exercise?.trackingType);
+  const hasExercise = Boolean(exercise);
+  const isCustomExercise = exercise?.isCustom === 1;
 
   const exerciseUsageResult = useLiveWithFallback(
-    getExerciseUsageRowsQuery(db, resolvedExerciseId),
-    [db, resolvedExerciseId]
+    getExerciseUsageCountQuery(db, resolvedExerciseId),
+    [db, resolvedExerciseId, isCustomExercise],
+    { enabled: isCustomExercise }
   );
 
   const templateUsageResult = useLiveWithFallback(
-    getExerciseTemplateUsageRowsQuery(db, resolvedExerciseId),
-    [db, resolvedExerciseId]
+    getExerciseTemplateUsageCountQuery(db, resolvedExerciseId),
+    [db, resolvedExerciseId, isCustomExercise],
+    { enabled: isCustomExercise }
   );
 
   const workoutResult = useLiveWithFallback(
@@ -248,7 +250,12 @@ export function useExerciseDetail(exerciseId: string | undefined) {
       resolvedExerciseId,
       EXERCISE_HISTORY_LIMIT
     ),
-    [db, resolvedExerciseId]
+    [db, resolvedExerciseId, hasExercise],
+    {
+      deferInitialRead: true,
+      enabled: hasExercise,
+      waitForInteractions: true
+    }
   );
 
   const workoutRows = workoutResult.data;
@@ -261,7 +268,12 @@ export function useExerciseDetail(exerciseId: string | undefined) {
 
   const setResult = useLiveWithFallback(
     getExerciseHistorySetsQuery(db, resolvedExerciseId, workoutIds),
-    [db, resolvedExerciseId, workoutIdKey]
+    [db, resolvedExerciseId, workoutIdKey],
+    {
+      deferInitialRead: true,
+      enabled: hasExercise && workoutIds.length > 0,
+      waitForInteractions: true
+    }
   );
 
   const fullHistory = useMemo(
@@ -289,14 +301,14 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     [fullHistory, trackingType, weightUnit]
   );
 
-  const personalRecordsSummary = useMemo(
-    () => buildPersonalRecordSummary(fullHistory, trackingType, weightUnit),
-    [fullHistory, trackingType, weightUnit]
-  );
-
   const topSetPerformances = useMemo(
     () => buildTopSetPerformances(fullHistory, trackingType, weightUnit),
     [fullHistory, trackingType, weightUnit]
+  );
+
+  const personalRecordsSummary = useMemo(
+    () => buildPersonalRecordSummary(fullHistory, topSetPerformances),
+    [fullHistory, topSetPerformances]
   );
 
   const primaryMuscles = useMemo(
@@ -322,9 +334,10 @@ export function useExerciseDetail(exerciseId: string | undefined) {
   return {
     exercise,
     exerciseUsageCount:
-      exerciseUsageResult.data.length + templateUsageResult.data.length,
-    workoutUsageCount: exerciseUsageResult.data.length,
-    templateUsageCount: templateUsageResult.data.length,
+      (exerciseUsageResult.data[0]?.count ?? 0) +
+      (templateUsageResult.data[0]?.count ?? 0),
+    workoutUsageCount: exerciseUsageResult.data[0]?.count ?? 0,
+    templateUsageCount: templateUsageResult.data[0]?.count ?? 0,
     history,
     progressPoints,
     personalRecordsSummary,
@@ -335,6 +348,9 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     completedSetSummary,
     weightUnit,
     trackingType,
-    isLoading: Boolean(exerciseId) && !exerciseResult.isLive
+    isLoading: Boolean(exerciseId) && !exercise && !exerciseResult.isLive,
+    isStatsLoading:
+      hasExercise &&
+      (!workoutResult.isLive || (workoutIds.length > 0 && !setResult.isLive))
   };
 }

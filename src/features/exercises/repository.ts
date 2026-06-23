@@ -7,7 +7,7 @@ import {
   type NewExercise
 } from '@/src/db/schema';
 import { rebuildPersonalRecordsForExercise } from '@/src/features/progress/repository';
-import { and, eq, inArray, ne, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, ne, sql } from 'drizzle-orm';
 import type { InferColumnsDataTypes } from 'drizzle-orm/column';
 
 const exerciseListFields = {
@@ -175,22 +175,22 @@ function deleteExercise(db: DrizzleDb, id: Exercise['id']): void {
   db.delete(exercises).where(eq(exercises.id, id)).run();
 }
 
-export function getExerciseUsageRowsQuery(
+export function getExerciseUsageCountQuery(
   db: DrizzleDb,
   exerciseId: Exercise['id']
 ) {
   return db
-    .select({ id: workoutExercises.id })
+    .select({ count: count(workoutExercises.id) })
     .from(workoutExercises)
     .where(eq(workoutExercises.exerciseId, exerciseId));
 }
 
-export function getExerciseTemplateUsageRowsQuery(
+export function getExerciseTemplateUsageCountQuery(
   db: DrizzleDb,
   exerciseId: Exercise['id']
 ) {
   return db
-    .select({ id: workoutTemplateExercises.id })
+    .select({ count: count(workoutTemplateExercises.id) })
     .from(workoutTemplateExercises)
     .where(eq(workoutTemplateExercises.exerciseId, exerciseId));
 }
@@ -200,8 +200,8 @@ function getExerciseUsageCount(
   exerciseId: Exercise['id']
 ): number {
   return (
-    getExerciseUsageRowsQuery(db, exerciseId).all().length +
-    getExerciseTemplateUsageRowsQuery(db, exerciseId).all().length
+    (getExerciseUsageCountQuery(db, exerciseId).get()?.count ?? 0) +
+    (getExerciseTemplateUsageCountQuery(db, exerciseId).get()?.count ?? 0)
   );
 }
 
