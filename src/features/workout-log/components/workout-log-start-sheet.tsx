@@ -34,7 +34,7 @@ export function WorkoutLogStartSheet({
 }: WorkoutLogStartSheetProps) {
   const insets = useSafeAreaInsets();
   const { templates, startBlankWorkout, startWorkoutFromTemplate, isLoading } =
-    useHistoricalWorkoutStart(dateKey);
+    useHistoricalWorkoutStart(dateKey, { enabled: isOpen });
   const selectedDateLabel = formatWorkoutDate(
     getDateKeyTimestamp(dateKey),
     'full'
@@ -62,7 +62,6 @@ export function WorkoutLogStartSheet({
       <BottomSheetContent className="gap-4">
         <Button
           className="w-full"
-          disabled={isLoading}
           leftIcon={<Icon icon={PlusIcon} tone="primaryForeground" />}
           onPress={handleStartBlank}
         >
@@ -74,7 +73,11 @@ export function WorkoutLogStartSheet({
             Templates
           </Text>
 
-          {templates.length === 0 ? (
+          {isLoading ? (
+            <Text variant="small" tone="muted" className="mt-3">
+              Loading templates...
+            </Text>
+          ) : templates.length === 0 ? (
             <Text variant="small" tone="muted" className="mt-3">
               Saved templates will show here.
             </Text>

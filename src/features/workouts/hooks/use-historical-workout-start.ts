@@ -18,11 +18,21 @@ import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { router } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 
-export function useHistoricalWorkoutStart(dateKey: string) {
+interface UseHistoricalWorkoutStartOptions {
+  enabled?: boolean;
+}
+
+export function useHistoricalWorkoutStart(
+  dateKey: string,
+  options?: UseHistoricalWorkoutStartOptions
+) {
+  const { enabled = true } = options ?? {};
   const db = useDrizzle();
-  const templateResult = useLiveWithFallback(getWorkoutTemplatesQuery(db), [
-    db
-  ]);
+  const templateResult = useLiveWithFallback(
+    getWorkoutTemplatesQuery(db),
+    [db, enabled],
+    { enabled }
+  );
 
   const templateIds = useMemo(
     () => templateResult.data.map(template => template.id),
@@ -32,7 +42,8 @@ export function useHistoricalWorkoutStart(dateKey: string) {
 
   const templateExerciseResult = useLiveWithFallback(
     getWorkoutTemplateExercisesForTemplatesQuery(db, templateIds),
-    [db, templateIdKey]
+    [db, templateIdKey, enabled],
+    { enabled }
   );
 
   const exerciseIds = useMemo(
@@ -50,7 +61,8 @@ export function useHistoricalWorkoutStart(dateKey: string) {
 
   const exerciseResult = useLiveWithFallback(
     getExercisesByIdsQuery(db, exerciseIds),
-    [db, exerciseIdKey]
+    [db, exerciseIdKey, enabled],
+    { enabled }
   );
 
   const exerciseById = useMemo(
@@ -124,8 +136,9 @@ export function useHistoricalWorkoutStart(dateKey: string) {
     startBlankWorkout,
     startWorkoutFromTemplate,
     isLoading:
-      !templateResult.isLive ||
-      !templateExerciseResult.isLive ||
-      !exerciseResult.isLive
+      enabled &&
+      (!templateResult.isLive ||
+        !templateExerciseResult.isLive ||
+        !exerciseResult.isLive)
   };
 }
