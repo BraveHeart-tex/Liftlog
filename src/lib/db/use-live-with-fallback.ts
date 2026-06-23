@@ -1,7 +1,8 @@
 import type { AnySQLiteSelect } from 'drizzle-orm/sqlite-core';
 import { addDatabaseChangeListener } from 'expo-sqlite';
 import { useEffect, useMemo, useState, type DependencyList } from 'react';
-import { InteractionManager } from 'react-native';
+
+import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task';
 
 type LiveRowsQuery = Pick<AnySQLiteSelect, '_' | 'then'> &
   PromiseLike<unknown[]> & {
@@ -111,8 +112,8 @@ export function useLiveWithFallback<Query extends LiveRowsQuery>(
       );
     };
 
-    const scheduledInitialRun = waitForInteractions
-      ? InteractionManager.runAfterInteractions(runQuery)
+    const cancelScheduledInitialRun = waitForInteractions
+      ? scheduleIdleTask(runQuery)
       : undefined;
 
     if (!waitForInteractions) {
@@ -127,7 +128,7 @@ export function useLiveWithFallback<Query extends LiveRowsQuery>(
 
     return () => {
       isCurrent = false;
-      scheduledInitialRun?.cancel();
+      cancelScheduledInitialRun?.();
       listener.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -12,6 +12,7 @@ Expo · React Native · Expo Router · TypeScript · NativeWind · Drizzle ORM +
 - Optimize for mobile UX and low-friction interactions.
 - No unnecessary comments. No unapproved prod dependencies. No unrelated refactors.
 - No web-only assumptions.
+- Use `scheduleIdleTask` from `src/lib/utils/schedule-idle-task` instead of deprecated `InteractionManager.runAfterInteractions`.
 
 ## Ignore (generated files)
 
