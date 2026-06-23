@@ -1,5 +1,5 @@
 import { Text } from '@/src/components/ui/text';
-import type { WorkoutStartTemplateItem } from '@/src/features/workouts/hooks/use-workout-start';
+import type { WorkoutStartTemplateItem } from '@/src/features/workouts/hooks/use-workout-templates';
 import { usePressScale } from '@/src/lib/animations/use-press-scale';
 import { cn } from '@/src/lib/utils/cn';
 import { Animated, Pressable, View } from 'react-native';

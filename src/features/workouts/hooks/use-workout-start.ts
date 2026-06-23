@@ -1,96 +1,24 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import type { WorkoutTemplate, WorkoutTemplateExercise } from '@/src/db/schema';
-import {
-  getExercisesByIdsQuery,
-  type ExerciseListItem
-} from '@/src/features/exercises/repository';
+import type { WorkoutTemplate } from '@/src/db/schema';
 import {
   createWorkout,
   createWorkoutFromTemplate,
   deleteWorkoutTemplate,
   getActiveWorkoutSummaryQuery,
-  getRecentWorkoutsQuery,
-  getWorkoutTemplateExercisesForTemplatesQuery,
-  getWorkoutTemplatesQuery,
   updateWorkoutTemplateName
 } from '@/src/features/workouts/repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { formatWorkoutName } from '@/src/lib/utils/workout';
 import { router, type Href } from 'expo-router';
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 
 const activeWorkoutRoute: Href = '/(tabs)/workout/active';
-const RECENT_WORKOUT_LIMIT = 3;
-
-export interface WorkoutStartTemplateItem {
-  template: WorkoutTemplate;
-  exerciseRows: WorkoutTemplateExercise[];
-  exerciseCount: number;
-  exerciseSummary: string;
-}
-
-export function buildTemplateSummary(
-  exerciseRows: WorkoutTemplateExercise[],
-  exerciseById: Map<ExerciseListItem['id'], ExerciseListItem>
-): string {
-  const exerciseNames = exerciseRows
-    .map(exercise => exerciseById.get(exercise.exerciseId)?.name)
-    .filter((name): name is string => Boolean(name));
-
-  if (exerciseNames.length === 0) {
-    return 'No exercises';
-  }
-
-  if (exerciseNames.length <= 2) {
-    return exerciseNames.join(' • ');
-  }
-
-  return `${exerciseNames.slice(0, 2).join(' • ')} +${exerciseNames.length - 2} more`;
-}
 
 export function useWorkoutStart() {
   const db = useDrizzle();
   const activeWorkoutResult = useLiveWithFallback(
     getActiveWorkoutSummaryQuery(db),
     [db]
-  );
-  const recentWorkoutResult = useLiveWithFallback(
-    getRecentWorkoutsQuery(db, RECENT_WORKOUT_LIMIT),
-    [db]
-  );
-  const templateResult = useLiveWithFallback(getWorkoutTemplatesQuery(db), [
-    db
-  ]);
-
-  const templateIds = useMemo(
-    () => templateResult.data.map(template => template.id),
-    [templateResult.data]
-  );
-
-  const templateIdKey = useMemo(() => templateIds.join(','), [templateIds]);
-
-  const templateExerciseResult = useLiveWithFallback(
-    getWorkoutTemplateExercisesForTemplatesQuery(db, templateIds),
-    [db, templateIdKey]
-  );
-
-  const exerciseIds = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          templateExerciseResult.data.map(
-            templateExercise => templateExercise.exerciseId
-          )
-        )
-      ),
-    [templateExerciseResult.data]
-  );
-
-  const exerciseIdKey = useMemo(() => exerciseIds.join(','), [exerciseIds]);
-
-  const exerciseResult = useLiveWithFallback(
-    getExercisesByIdsQuery(db, exerciseIds),
-    [db, exerciseIdKey]
   );
 
   const activeWorkoutSummary = activeWorkoutResult.data[0];
@@ -101,44 +29,6 @@ export function useWorkoutStart() {
         completedSetCount: activeWorkoutSummary.completedSetCount
       }
     : undefined;
-  const exerciseById = useMemo(
-    () =>
-      new Map<ExerciseListItem['id'], ExerciseListItem>(
-        exerciseResult.data.map(exercise => [exercise.id, exercise])
-      ),
-    [exerciseResult.data]
-  );
-
-  const templateExercisesByTemplateId = useMemo(() => {
-    const nextMap = new Map<WorkoutTemplate['id'], WorkoutTemplateExercise[]>();
-
-    for (const templateExercise of templateExerciseResult.data) {
-      const existingRows = nextMap.get(templateExercise.templateId) ?? [];
-
-      nextMap.set(templateExercise.templateId, [
-        ...existingRows,
-        templateExercise
-      ]);
-    }
-
-    return nextMap;
-  }, [templateExerciseResult.data]);
-
-  const templates = useMemo(
-    () =>
-      templateResult.data.map(template => {
-        const exerciseRows =
-          templateExercisesByTemplateId.get(template.id) ?? [];
-
-        return {
-          template,
-          exerciseRows,
-          exerciseCount: exerciseRows.length,
-          exerciseSummary: buildTemplateSummary(exerciseRows, exerciseById)
-        };
-      }),
-    [exerciseById, templateExercisesByTemplateId, templateResult.data]
-  );
 
   const startWorkout = useCallback(() => {
     createWorkout(db, {
@@ -195,8 +85,6 @@ export function useWorkoutStart() {
 
   return {
     activeWorkout,
-    recentWorkouts: recentWorkoutResult.data,
-    templates,
     startWorkout,
     resumeWorkout,
     startWorkoutFromTemplate,

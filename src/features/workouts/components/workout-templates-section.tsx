@@ -4,20 +4,15 @@ import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { WorkoutTemplateCard } from '@/src/features/workouts/components/workout-template-card';
-import type { WorkoutStartTemplateItem } from '@/src/features/workouts/hooks/use-workout-start';
+import { useWorkoutTemplates } from '@/src/features/workouts/hooks';
 import { iconSizes } from '@/src/theme/sizes';
 import { useRouter } from 'expo-router';
 import { ClipboardListIcon, PlusIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
-interface WorkoutTemplatesSectionProps {
-  templates: WorkoutStartTemplateItem[];
-}
-
-export const WorkoutTemplatesSection = ({
-  templates
-}: WorkoutTemplatesSectionProps) => {
+export const WorkoutTemplatesSection = () => {
   const router = useRouter();
+  const { templates } = useWorkoutTemplates();
 
   const handleTemplatePress = (templateId: string) => {
     router.push({

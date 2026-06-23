@@ -11,13 +11,7 @@ import { SettingsIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
 export default function WorkoutStartScreen() {
-  const {
-    activeWorkout,
-    recentWorkouts,
-    templates,
-    startWorkout,
-    resumeWorkout
-  } = useWorkoutStart();
+  const { activeWorkout, startWorkout, resumeWorkout } = useWorkoutStart();
 
   return (
     <Screen scroll keyboardShouldPersistTaps="handled">
@@ -49,8 +43,8 @@ export default function WorkoutStartScreen() {
         </View>
       )}
 
-      <WorkoutTemplatesSection templates={templates} />
-      <RecentWorkoutsSection recentWorkouts={recentWorkouts} />
+      <WorkoutTemplatesSection />
+      <RecentWorkoutsSection />
     </Screen>
   );
 }

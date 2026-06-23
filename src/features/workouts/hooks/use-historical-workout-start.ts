@@ -1,22 +1,12 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import type { WorkoutTemplate, WorkoutTemplateExercise } from '@/src/db/schema';
-import {
-  getExercisesByIdsQuery,
-  type ExerciseListItem
-} from '@/src/features/exercises/repository';
+import type { WorkoutTemplate } from '@/src/db/schema';
 import {
   createHistoricalWorkoutDraft,
-  createHistoricalWorkoutDraftFromTemplate,
-  getWorkoutTemplateExercisesForTemplatesQuery,
-  getWorkoutTemplatesQuery
+  createHistoricalWorkoutDraftFromTemplate
 } from '@/src/features/workouts/repository';
-import {
-  buildTemplateSummary,
-  type WorkoutStartTemplateItem
-} from '@/src/features/workouts/hooks/use-workout-start';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
+import { useWorkoutTemplates } from '@/src/features/workouts/hooks/use-workout-templates';
 import { router } from 'expo-router';
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 
 interface UseHistoricalWorkoutStartOptions {
   enabled?: boolean;
@@ -28,81 +18,7 @@ export function useHistoricalWorkoutStart(
 ) {
   const { enabled = true } = options ?? {};
   const db = useDrizzle();
-  const templateResult = useLiveWithFallback(
-    getWorkoutTemplatesQuery(db),
-    [db, enabled],
-    { enabled }
-  );
-
-  const templateIds = useMemo(
-    () => templateResult.data.map(template => template.id),
-    [templateResult.data]
-  );
-  const templateIdKey = useMemo(() => templateIds.join(','), [templateIds]);
-
-  const templateExerciseResult = useLiveWithFallback(
-    getWorkoutTemplateExercisesForTemplatesQuery(db, templateIds),
-    [db, templateIdKey, enabled],
-    { enabled }
-  );
-
-  const exerciseIds = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          templateExerciseResult.data.map(
-            templateExercise => templateExercise.exerciseId
-          )
-        )
-      ),
-    [templateExerciseResult.data]
-  );
-  const exerciseIdKey = useMemo(() => exerciseIds.join(','), [exerciseIds]);
-
-  const exerciseResult = useLiveWithFallback(
-    getExercisesByIdsQuery(db, exerciseIds),
-    [db, exerciseIdKey, enabled],
-    { enabled }
-  );
-
-  const exerciseById = useMemo(
-    () =>
-      new Map<ExerciseListItem['id'], ExerciseListItem>(
-        exerciseResult.data.map(exercise => [exercise.id, exercise])
-      ),
-    [exerciseResult.data]
-  );
-
-  const templateExercisesByTemplateId = useMemo(() => {
-    const nextMap = new Map<WorkoutTemplate['id'], WorkoutTemplateExercise[]>();
-
-    for (const templateExercise of templateExerciseResult.data) {
-      const existingRows = nextMap.get(templateExercise.templateId) ?? [];
-
-      nextMap.set(templateExercise.templateId, [
-        ...existingRows,
-        templateExercise
-      ]);
-    }
-
-    return nextMap;
-  }, [templateExerciseResult.data]);
-
-  const templates = useMemo<WorkoutStartTemplateItem[]>(
-    () =>
-      templateResult.data.map(template => {
-        const exerciseRows =
-          templateExercisesByTemplateId.get(template.id) ?? [];
-
-        return {
-          template,
-          exerciseRows,
-          exerciseCount: exerciseRows.length,
-          exerciseSummary: buildTemplateSummary(exerciseRows, exerciseById)
-        };
-      }),
-    [exerciseById, templateExercisesByTemplateId, templateResult.data]
-  );
+  const { templates, isLoading } = useWorkoutTemplates({ enabled });
 
   const openDraft = useCallback((workoutId: string) => {
     router.push({
@@ -135,10 +51,6 @@ export function useHistoricalWorkoutStart(
     templates,
     startBlankWorkout,
     startWorkoutFromTemplate,
-    isLoading:
-      enabled &&
-      (!templateResult.isLive ||
-        !templateExerciseResult.isLive ||
-        !exerciseResult.isLive)
+    isLoading
   };
 }

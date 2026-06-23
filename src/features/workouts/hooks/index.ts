@@ -22,5 +22,7 @@ export { useWorkoutDelete } from '@/src/features/workouts/hooks/use-workout-dele
 export { useWorkoutExerciseHistoryScreen } from '@/src/features/workouts/hooks/use-workout-exercise-history-screen';
 export { useWorkoutRename } from '@/src/features/workouts/hooks/use-workout-rename';
 export { useWorkoutHistoryDetail } from '@/src/features/workouts/hooks/use-workout-history-detail';
+export { useRecentWorkouts } from '@/src/features/workouts/hooks/use-recent-workouts';
 export { useWorkoutStart } from '@/src/features/workouts/hooks/use-workout-start';
 export { useWorkoutTemplateDetail } from '@/src/features/workouts/hooks/use-workout-template-detail';
+export { useWorkoutTemplates } from '@/src/features/workouts/hooks/use-workout-templates';

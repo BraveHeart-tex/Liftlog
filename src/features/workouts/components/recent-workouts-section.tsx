@@ -1,22 +1,17 @@
 import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
-import type { Workout } from '@/src/db';
 import { RecentWorkoutCard } from '@/src/features/workouts/components/recent-workout-card';
+import { useRecentWorkouts } from '@/src/features/workouts/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { iconSizes } from '@/src/theme/sizes';
 import { Link, useRouter } from 'expo-router';
 import { ChevronRightIcon, DumbbellIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
-interface RecentWorkoutsSectionProps {
-  recentWorkouts: Workout[];
-}
-
-export const RecentWorkoutsSection = ({
-  recentWorkouts
-}: RecentWorkoutsSectionProps) => {
+export const RecentWorkoutsSection = () => {
   const router = useRouter();
+  const { recentWorkouts } = useRecentWorkouts();
 
   return (
     <View className="mt-8">
