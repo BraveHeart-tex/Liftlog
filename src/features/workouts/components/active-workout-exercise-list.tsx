@@ -1,6 +1,7 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import type { WorkoutExercise } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
+import { useSettings } from '@/src/features/settings/hooks';
 import { useActiveWorkoutExerciseList } from '@/src/features/workouts/hooks';
 import { ActiveWorkoutExerciseCard } from '@/src/features/workouts/components/active-workout-exercise-card';
 import { ActiveWorkoutExerciseEditList } from '@/src/features/workouts/components/active-workout-exercise-edit-list';
@@ -24,6 +25,7 @@ export function ActiveWorkoutExerciseList({
   onReorderExercises,
   isEditing
 }: ActiveWorkoutExerciseListProps) {
+  const { weightUnit } = useSettings();
   const workoutExercisesWithSets = useActiveWorkoutExerciseList({
     workoutExercises,
     exerciseById
@@ -50,6 +52,7 @@ export function ActiveWorkoutExerciseList({
           key={workoutExercise.workoutExercise.id}
           item={workoutExercise}
           mode={mode}
+          weightUnit={weightUnit}
           className="mt-4"
           onLongPress={onEnterEditMode}
         />

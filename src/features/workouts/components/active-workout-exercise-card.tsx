@@ -1,7 +1,7 @@
 import { resolveTrackingType } from '@/src/features/progress/tracking';
-import { useSettings } from '@/src/features/settings/hooks';
 import { usePressScale } from '@/src/lib/animations/use-press-scale';
 import { cn } from '@/src/lib/utils/cn';
+import type { WeightUnit } from '@/src/lib/utils/weight';
 import { router } from 'expo-router';
 import { Animated, Pressable, View } from 'react-native';
 import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
@@ -11,6 +11,7 @@ interface ActiveWorkoutExerciseCardProps {
   item: WorkoutExerciseWithSets;
   className?: string;
   mode?: 'active' | 'historical';
+  weightUnit: WeightUnit;
   onLongPress: () => void;
 }
 
@@ -18,9 +19,9 @@ export function ActiveWorkoutExerciseCard({
   item,
   className,
   mode = 'active',
+  weightUnit,
   onLongPress
 }: ActiveWorkoutExerciseCardProps) {
-  const { weightUnit } = useSettings();
   const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();
 
   const completedSets = item.sets.filter(set => set.status === 'completed');

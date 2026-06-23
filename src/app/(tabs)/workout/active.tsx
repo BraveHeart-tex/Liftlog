@@ -7,7 +7,7 @@ import { useActiveWorkoutScreen } from '@/src/features/workouts/hooks';
 import { router } from 'expo-router';
 
 export default function ActiveWorkoutScreen() {
-  const { activeWorkout, exerciseRows, isLoading } = useActiveWorkoutScreen();
+  const { activeWorkout, isLoading } = useActiveWorkoutScreen();
 
   if (isLoading) {
     return (
@@ -32,10 +32,5 @@ export default function ActiveWorkoutScreen() {
     );
   }
 
-  return (
-    <ActiveWorkoutContent
-      activeWorkout={activeWorkout}
-      exerciseRows={exerciseRows}
-    />
-  );
+  return <ActiveWorkoutContent activeWorkout={activeWorkout} />;
 }

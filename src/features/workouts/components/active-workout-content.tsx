@@ -7,9 +7,9 @@ import type { Workout, WorkoutExercise } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/repository';
 import { ActiveWorkoutEditHeader } from '@/src/features/workouts/components/active-workout-edit-header';
 import { ActiveWorkoutExerciseList } from '@/src/features/workouts/components/active-workout-exercise-list';
+import { ActiveWorkoutExercisePickerSheet } from '@/src/features/workouts/components/active-workout-exercise-picker-sheet';
 import { ActiveWorkoutHeaderWithActions } from '@/src/features/workouts/components/active-workout-header-with-actions';
 import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/create-custom-exercise-sheet';
-import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise-picker-sheet';
 import { HistoricalWorkoutHeader } from '@/src/features/workouts/components/historical-workout-header';
 import { RestTimerWidget } from '@/src/features/workouts/components/rest-timer-widget';
 import {
@@ -23,7 +23,7 @@ import { Alert, Keyboard, View } from 'react-native';
 
 interface ActiveWorkoutContentProps {
   activeWorkout: Workout;
-  exerciseRows: ExerciseListItem[];
+  exerciseRows?: ExerciseListItem[];
   mode?: 'active' | 'historical';
   onDiscardHistoricalWorkout?: (hasExercisesLogged: boolean) => void;
   onSaveHistoricalWorkout?: () => void;
@@ -47,7 +47,6 @@ export function ActiveWorkoutContent({
     setIsExercisePickerOpen,
     workoutExerciseRows,
     completedSetCount,
-    recentExerciseIds,
     isLoadingWorkoutExercises,
     exerciseById
   } = useActiveWorkoutContentData({ activeWorkout, exerciseRows });
@@ -197,10 +196,9 @@ export function ActiveWorkoutContent({
           </View>
         )}
 
-      <ExercisePickerSheet
+      <ActiveWorkoutExercisePickerSheet
         isOpen={isExercisePickerOpen}
-        exercises={exerciseRows}
-        recentExerciseIds={recentExerciseIds}
+        exerciseRows={exerciseRows}
         selectedExerciseIds={selectedWorkoutExerciseIds}
         onClose={closeExercisePicker}
         onSelectExercise={selectExercise}

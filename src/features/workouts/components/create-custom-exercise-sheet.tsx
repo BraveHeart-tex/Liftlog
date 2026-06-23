@@ -47,12 +47,16 @@ export function CreateCustomExerciseSheet({
       snapPoints={SNAP_POINTS}
       androidKeyboardInputMode="adjustPan"
     >
-      <CreateCustomExerciseSheetContent
-        isOpen={isOpen}
-        initialName={initialName}
-        onClose={handleClose}
-        onSave={onSave}
-      />
+      {({ isContentReady }) =>
+        isOpen || isContentReady ? (
+          <CreateCustomExerciseSheetContent
+            isOpen={isOpen}
+            initialName={initialName}
+            onClose={handleClose}
+            onSave={onSave}
+          />
+        ) : null
+      }
     </BottomSheet>
   );
 }

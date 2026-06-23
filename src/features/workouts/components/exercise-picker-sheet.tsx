@@ -9,6 +9,7 @@ import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
 import { Button } from '@/src/components/ui/button';
 import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
+import { LoadingState } from '@/src/components/ui/loading-state';
 import { SearchInputIcon } from '@/src/components/ui/search-input-icon';
 import { Text } from '@/src/components/ui/text';
 import {
@@ -40,8 +41,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 interface ExercisePickerSheetCommonProps {
   isOpen: boolean;
   exercises: ExerciseListItem[];
+  isLoading?: boolean;
   recentExerciseIds?: ExerciseListItem['id'][];
   selectedExerciseIds: ExerciseListItem['id'][];
+  onContentReadyChange?: (isReady: boolean) => void;
   onClose: () => void;
   onCreateCustomExercise: (initialName?: string) => void;
 }
@@ -138,16 +141,45 @@ export function ExercisePickerSheet(props: ExercisePickerSheetProps) {
       snapPoints={SNAP_POINTS}
       activeOffsetY={[-12, 12]}
     >
-      <ExercisePickerSheetContent {...props} />
+      {({ isContentReady }) => (
+        <ExercisePickerSheetBody
+          isContentReady={isContentReady}
+          sheetProps={props}
+        />
+      )}
     </BottomSheet>
   );
+}
+
+interface ExercisePickerSheetBodyProps {
+  isContentReady: boolean;
+  sheetProps: ExercisePickerSheetProps;
+}
+
+function ExercisePickerSheetBody({
+  isContentReady,
+  sheetProps
+}: ExercisePickerSheetBodyProps) {
+  const { isOpen, onContentReadyChange } = sheetProps;
+
+  useEffect(() => {
+    onContentReadyChange?.(isContentReady);
+  }, [isContentReady, onContentReadyChange]);
+
+  if (!isOpen) {
+    return null;
+  }
+
+  return <ExercisePickerSheetContent {...sheetProps} />;
 }
 
 const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
   isOpen,
   exercises,
+  isLoading = false,
   recentExerciseIds = [],
   selectedExerciseIds,
+  onContentReadyChange: _onContentReadyChange,
   onClose,
   onCreateCustomExercise,
   ...selectionProps
@@ -397,48 +429,54 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
         />
       </View>
 
-      <StyledBottomSheetFlatList
-        data={listData}
-        keyExtractor={keyExtractor}
-        contentContainerClassName="px-4 pb-4"
-        keyboardDismissMode="on-drag"
-        keyboardShouldPersistTaps="handled"
-        onScrollBeginDrag={Keyboard.dismiss}
-        onTouchStart={Keyboard.dismiss}
-        renderItem={({ item }: { item: ExerciseListDataItem }) => {
-          if (item.type === 'section-header') {
-            return (
-              <View className="pt-5 pb-1">
-                <Text
-                  variant="small"
-                  tone="muted"
-                  className="font-semibold tracking-widest uppercase"
-                >
-                  {item.title}
-                </Text>
-              </View>
-            );
-          }
+      {isLoading ? (
+        <View className="flex-1 px-4">
+          <LoadingState label="Loading exercises..." />
+        </View>
+      ) : (
+        <StyledBottomSheetFlatList
+          data={listData}
+          keyExtractor={keyExtractor}
+          contentContainerClassName="px-4 pb-4"
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+          onScrollBeginDrag={Keyboard.dismiss}
+          onTouchStart={Keyboard.dismiss}
+          renderItem={({ item }: { item: ExerciseListDataItem }) => {
+            if (item.type === 'section-header') {
+              return (
+                <View className="pt-5 pb-1">
+                  <Text
+                    variant="small"
+                    tone="muted"
+                    className="font-semibold tracking-widest uppercase"
+                  >
+                    {item.title}
+                  </Text>
+                </View>
+              );
+            }
 
-          return (
-            <ExercisePickerRow
-              exercise={item.exercise}
-              isSelected={pendingExercises.some(
-                exercise => exercise.id === item.exercise.id
-              )}
-              onPress={selectExercise}
+            return (
+              <ExercisePickerRow
+                exercise={item.exercise}
+                isSelected={pendingExercises.some(
+                  exercise => exercise.id === item.exercise.id
+                )}
+                onPress={selectExercise}
+              />
+            );
+          }}
+          ListEmptyComponent={
+            <EmptyState
+              layout="section"
+              title={emptyTitle}
+              description={emptyDescription}
+              className="border-border bg-card mt-3 rounded-lg border border-dashed px-6 py-10"
             />
-          );
-        }}
-        ListEmptyComponent={
-          <EmptyState
-            layout="section"
-            title={emptyTitle}
-            description={emptyDescription}
-            className="border-border bg-card mt-3 rounded-lg border border-dashed px-6 py-10"
-          />
-        }
-      />
+          }
+        />
+      )}
 
       <View
         style={{ paddingBottom: insets.bottom }}

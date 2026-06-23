@@ -2,6 +2,7 @@ export { useActiveWorkoutActions } from '@/src/features/workouts/hooks/use-activ
 export { useActiveWorkoutContent } from '@/src/features/workouts/hooks/use-active-workout-content';
 export { useActiveWorkoutExerciseDetail } from '@/src/features/workouts/hooks/use-active-workout-exercise-detail';
 export { useActiveWorkoutExerciseList } from '@/src/features/workouts/hooks/use-active-workout-exercise-list';
+export { useActiveWorkoutExercisePicker } from '@/src/features/workouts/hooks/use-active-workout-exercise-picker';
 export { useActiveWorkoutScreen } from '@/src/features/workouts/hooks/use-active-workout-screen';
 export { useExerciseHistory } from '@/src/features/workouts/hooks/use-exercise-history';
 export { useExerciseTrackActions } from '@/src/features/workouts/hooks/use-exercise-track-actions';
