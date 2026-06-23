@@ -2,6 +2,7 @@ import { RenameSheet } from '@/src/components/ui/rename-sheet';
 import type { Workout, WorkoutExercise } from '@/src/db';
 import { ActiveWorkoutActionsSheet } from '@/src/features/workouts/components/active-workout-actions-sheet';
 import { ActiveWorkoutHeader } from '@/src/features/workouts/components/active-workout-header';
+import { ActiveWorkoutHeaderDuration } from '@/src/features/workouts/components/active-workout-header-duration';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
 import {
   useWorkoutDelete,
@@ -14,7 +15,7 @@ import { Alert } from 'react-native';
 interface ActiveWorkoutHeaderWithActionsProps {
   workoutName: string;
   workoutId: Workout['id'];
-  duration: string;
+  startedAt: Workout['startedAt'];
   canFinish: boolean;
   canSaveTemplate: boolean;
   workoutExerciseRows: Pick<WorkoutExercise, 'exerciseId' | 'order'>[];
@@ -23,7 +24,7 @@ interface ActiveWorkoutHeaderWithActionsProps {
 export const ActiveWorkoutHeaderWithActions = ({
   workoutName,
   workoutId,
-  duration,
+  startedAt,
   canFinish,
   canSaveTemplate,
   workoutExerciseRows
@@ -112,7 +113,7 @@ export const ActiveWorkoutHeaderWithActions = ({
       <ActiveWorkoutHeader
         workoutName={workoutName}
         workoutId={workoutId}
-        duration={duration}
+        duration={<ActiveWorkoutHeaderDuration startedAt={startedAt} />}
         canFinish={canFinish}
         onOpenActions={openActions}
       />

@@ -8,7 +8,7 @@ import {
 } from '@/src/features/workouts/repository';
 import { RECENT_EXERCISES_LIMIT } from '@/src/features/workouts/workout.constants';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 interface UseActiveWorkoutContentParams {
   activeWorkout: Workout;
@@ -20,7 +20,6 @@ export function useActiveWorkoutContent({
   exerciseRows
 }: UseActiveWorkoutContentParams) {
   const db = useDrizzle();
-  const [now, setNow] = useState(() => Date.now());
   const [isExercisePickerOpen, setIsExercisePickerOpen] = useState(false);
   const workoutExerciseResult = useLiveWithFallback(
     getWorkoutExercisesQuery(db, activeWorkout.id),
@@ -66,20 +65,7 @@ export function useActiveWorkoutContent({
     [exerciseRows]
   );
 
-  useEffect(() => {
-    setNow(Date.now());
-
-    const intervalId = setInterval(() => {
-      setNow(Date.now());
-    }, 30000);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [activeWorkout]);
-
   return {
-    now,
     isExercisePickerOpen,
     setIsExercisePickerOpen,
     workoutExerciseRows: workoutExerciseResult.data,

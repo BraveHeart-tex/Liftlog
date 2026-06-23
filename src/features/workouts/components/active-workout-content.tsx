@@ -17,7 +17,6 @@ import {
   useActiveWorkoutContent as useActiveWorkoutContentData,
   useReorderWorkoutExercises
 } from '@/src/features/workouts/hooks';
-import { formatDuration } from '@/src/lib/utils/date';
 import { PlusIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Keyboard, View } from 'react-native';
@@ -44,7 +43,6 @@ export function ActiveWorkoutContent({
   const [initialCustomExerciseName, setInitialCustomExerciseName] =
     useState('');
   const {
-    now,
     isExercisePickerOpen,
     setIsExercisePickerOpen,
     workoutExerciseRows,
@@ -148,10 +146,7 @@ export function ActiveWorkoutContent({
         <ActiveWorkoutHeaderWithActions
           workoutName={workoutName}
           workoutId={activeWorkout.id}
-          duration={formatDuration({
-            startedAt: activeWorkout.startedAt,
-            completedAt: now
-          })}
+          startedAt={activeWorkout.startedAt}
           canFinish={hasExercisesLogged}
           canSaveTemplate={hasExercisesLogged}
           workoutExerciseRows={workoutExerciseRows.map(workoutExercise => ({

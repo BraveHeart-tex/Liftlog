@@ -5,12 +5,13 @@ import { Text } from '@/src/components/ui/text';
 import type { Workout } from '@/src/db';
 import { useFinishWorkout } from '@/src/features/workouts/hooks/use-finish-workout';
 import { EllipsisVerticalIcon } from 'lucide-react-native';
+import type { ReactNode } from 'react';
 import { Alert, View } from 'react-native';
 
 interface ActiveWorkoutHeaderProps {
   workoutName: string;
   workoutId: Workout['id'];
-  duration: string;
+  duration: ReactNode;
   canFinish: boolean;
   onOpenActions: () => void;
 }
@@ -48,9 +49,7 @@ export function ActiveWorkoutHeader({
         <Text variant="h2" numberOfLines={1}>
           {workoutName}
         </Text>
-        <Text variant="caption" tone="muted">
-          {duration}
-        </Text>
+        {duration}
       </View>
 
       <Button
