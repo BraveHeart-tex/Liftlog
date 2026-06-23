@@ -1,6 +1,6 @@
 import type { NewExercise } from '@/src/db/schema';
 import type { ExerciseCategory } from '@/src/features/exercises/constants';
-import { useExercises } from '@/src/features/exercises/hooks/use-exercises';
+import { useExerciseActions } from '@/src/features/exercises/hooks/use-exercise-actions';
 import type { TrackingType } from '@/src/features/progress/tracking';
 import { useCallback, useState } from 'react';
 
@@ -31,7 +31,7 @@ const DEFAULT_TRACKING_TYPE: TrackingType = 'weight_reps';
 export function useCustomExerciseForm({
   initialName = ''
 }: UseCustomExerciseFormParams = {}): UseCustomExerciseFormResult {
-  const exercises = useExercises();
+  const { hasCustomExerciseNameConflict } = useExerciseActions();
   const [name, setName] = useState(initialName);
   const [category, setCategory] = useState<ExerciseCategory>(DEFAULT_CATEGORY);
   const [trackingType, setTrackingType] = useState<TrackingType>(
@@ -44,12 +44,9 @@ export function useCustomExerciseForm({
     string[]
   >([]);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  const [hasDuplicateName, setHasDuplicateName] = useState(false);
 
   const trimmedName = name.trim();
-  const normalizedName = trimmedName.toLowerCase();
-  const hasDuplicateName = exercises.some(
-    exercise => exercise.name.trim().toLowerCase() === normalizedName
-  );
 
   const nameError =
     attemptedSubmit && trimmedName.length === 0
@@ -61,6 +58,11 @@ export function useCustomExerciseForm({
     attemptedSubmit && selectedPrimaryMuscles.length === 0
       ? 'Select at least one primary muscle'
       : undefined;
+
+  const updateName = useCallback((nextName: string) => {
+    setName(nextName);
+    setHasDuplicateName(false);
+  }, []);
 
   const togglePrimaryMuscle = useCallback((muscle: string) => {
     setSelectedPrimaryMuscles(current => {
@@ -93,10 +95,16 @@ export function useCustomExerciseForm({
   const submit = useCallback((): NewExercise | null => {
     setAttemptedSubmit(true);
 
+    const hasNameConflict =
+      trimmedName.length > 0 &&
+      hasCustomExerciseNameConflict(undefined, trimmedName);
+
+    setHasDuplicateName(hasNameConflict);
+
     if (
       trimmedName.length === 0 ||
       selectedPrimaryMuscles.length === 0 ||
-      hasDuplicateName
+      hasNameConflict
     ) {
       return null;
     }
@@ -112,7 +120,7 @@ export function useCustomExerciseForm({
     };
   }, [
     category,
-    hasDuplicateName,
+    hasCustomExerciseNameConflict,
     selectedPrimaryMuscles,
     selectedSecondaryMuscles,
     trackingType,
@@ -126,6 +134,7 @@ export function useCustomExerciseForm({
     setSelectedPrimaryMuscles([]);
     setSelectedSecondaryMuscles([]);
     setAttemptedSubmit(false);
+    setHasDuplicateName(false);
   }, [initialName]);
 
   return {
@@ -136,7 +145,7 @@ export function useCustomExerciseForm({
     selectedSecondaryMuscles,
     nameError,
     primaryMusclesError,
-    setName,
+    setName: updateName,
     setCategory,
     setTrackingType,
     togglePrimaryMuscle,

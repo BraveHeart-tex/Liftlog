@@ -16,7 +16,7 @@ export function useExerciseActions() {
   };
 
   const hasCustomExerciseNameConflict = (
-    id: Exercise['id'],
+    id: Exercise['id'] | undefined,
     name: Exercise['name']
   ) => {
     return hasExerciseNameConflict(db, id, name);

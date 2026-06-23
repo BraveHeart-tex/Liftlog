@@ -13,7 +13,7 @@ import {
   type TrackingType
 } from '@/src/features/progress/tracking';
 import { toTitleCase } from '@/src/lib/utils/string';
-import { useEffect, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Keyboard, View, type LayoutChangeEvent } from 'react-native';
 
 interface ExerciseMetadataFormProps {
@@ -81,7 +81,7 @@ interface MuscleSelectorSectionProps {
   onToggleMuscle: (muscle: string) => void;
 }
 
-function MuscleSelectorSection({
+const MuscleSelectorSection = memo(function MuscleSelectorSection({
   title,
   hint,
   muscles,
@@ -90,6 +90,11 @@ function MuscleSelectorSection({
   onLayout,
   onToggleMuscle
 }: MuscleSelectorSectionProps) {
+  const selectedMuscleSet = useMemo(
+    () => new Set(selectedMuscles),
+    [selectedMuscles]
+  );
+
   return (
     <View className="mt-6" onLayout={onLayout}>
       <Text variant="small">{title}</Text>
@@ -99,7 +104,7 @@ function MuscleSelectorSection({
 
       <View className="mt-3 flex-row flex-wrap gap-2">
         {muscles.map(muscle => {
-          const isSelected = selectedMuscles.includes(muscle);
+          const isSelected = selectedMuscleSet.has(muscle);
 
           return (
             <ChoiceChip
@@ -120,7 +125,7 @@ function MuscleSelectorSection({
       ) : null}
     </View>
   );
-}
+});
 
 type ErrorTarget = 'name' | 'primaryMuscles' | 'secondaryMuscles';
 
@@ -157,13 +162,27 @@ export function ExerciseMetadataForm({
     secondaryMuscles: 0
   });
 
-  const recordSectionLayout =
-    (target: ErrorTarget) => (event: LayoutChangeEvent) => {
-      sectionYByTarget.current[target] = event.nativeEvent.layout.y;
-    };
-  const setNameInputRef = (input: FocusableInput | null | undefined) => {
-    nameInputRef.current = input ?? null;
-  };
+  const recordNameSectionLayout = useCallback((event: LayoutChangeEvent) => {
+    sectionYByTarget.current.name = event.nativeEvent.layout.y;
+  }, []);
+  const recordPrimaryMusclesSectionLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      sectionYByTarget.current.primaryMuscles = event.nativeEvent.layout.y;
+    },
+    []
+  );
+  const recordSecondaryMusclesSectionLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      sectionYByTarget.current.secondaryMuscles = event.nativeEvent.layout.y;
+    },
+    []
+  );
+  const setNameInputRef = useCallback(
+    (input: FocusableInput | null | undefined) => {
+      nameInputRef.current = input ?? null;
+    },
+    []
+  );
 
   useEffect(() => {
     if (
@@ -212,7 +231,7 @@ export function ExerciseMetadataForm({
   return (
     <View>
       {shouldShowNameField ? (
-        <View onLayout={recordSectionLayout('name')}>
+        <View onLayout={recordNameSectionLayout}>
           {inputVariant === 'bottom-sheet' ? (
             <BottomSheetInput
               ref={setNameInputRef}
@@ -283,7 +302,7 @@ export function ExerciseMetadataForm({
         muscles={MUSCLE_OPTIONS}
         selectedMuscles={selectedPrimaryMuscles}
         error={primaryMusclesError}
-        onLayout={recordSectionLayout('primaryMuscles')}
+        onLayout={recordPrimaryMusclesSectionLayout}
         onToggleMuscle={togglePrimaryMuscle}
       />
 
@@ -293,7 +312,7 @@ export function ExerciseMetadataForm({
         muscles={MUSCLE_OPTIONS}
         selectedMuscles={selectedSecondaryMuscles}
         error={secondaryMusclesError}
-        onLayout={recordSectionLayout('secondaryMuscles')}
+        onLayout={recordSecondaryMusclesSectionLayout}
         onToggleMuscle={toggleSecondaryMuscle}
       />
     </View>

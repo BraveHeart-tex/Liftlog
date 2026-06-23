@@ -66,10 +66,10 @@ export function getExercisesByIdsQuery(db: DrizzleDb, ids: Exercise['id'][]) {
 
 export function hasExerciseNameConflict(
   db: DrizzleDb,
-  id: Exercise['id'],
+  id: Exercise['id'] | undefined,
   name: Exercise['name']
 ): boolean {
-  const normalizedName = name.trim().toLocaleLowerCase();
+  const normalizedName = name.trim().toLowerCase();
 
   if (normalizedName.length === 0) {
     return false;
@@ -81,7 +81,7 @@ export function hasExerciseNameConflict(
     .where(
       and(
         eq(exercises.isArchived, 0),
-        ne(exercises.id, id),
+        ...(id ? [ne(exercises.id, id)] : []),
         sql`lower(trim(${exercises.name})) = ${normalizedName}`
       )
     )
