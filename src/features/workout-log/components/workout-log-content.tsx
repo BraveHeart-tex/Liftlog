@@ -17,7 +17,7 @@ import { PlusIcon } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
-const WORKOUT_LOG_PAST_MONTH_RANGE = 24;
+const WORKOUT_LOG_PAST_MONTH_RANGE = 12;
 
 function formatSelectedDate(dateKey: string): string {
   const [year, month, day] = dateKey.split('-').map(Number);
