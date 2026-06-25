@@ -50,9 +50,10 @@ export function Screen({
 }: ScreenProps) {
   const insets = useSafeAreaInsets();
   const [androidKeyboardOffset, setAndroidKeyboardOffset] = useState(0);
+  const hasFooter = Boolean(footer);
 
   useEffect(() => {
-    if (Platform.OS !== 'android' || !footer) {
+    if (Platform.OS !== 'android' || !hasFooter) {
       return;
     }
 
@@ -79,7 +80,7 @@ export function Screen({
       showSubscription.remove();
       hideSubscription.remove();
     };
-  }, [footer, insets.bottom]);
+  }, [hasFooter, insets.bottom]);
 
   const sharedContentClassName = cn(
     !scroll && withPadding && 'px-4 py-6',
@@ -88,7 +89,7 @@ export function Screen({
 
   const scrollContentClassName = cn(
     'flex-grow',
-    withPadding && (footer ? 'px-4 pt-6 pb-6' : 'px-4 py-6'),
+    withPadding && (hasFooter ? 'px-4 pt-6 pb-6' : 'px-4 py-6'),
     sharedContentClassName
   );
 

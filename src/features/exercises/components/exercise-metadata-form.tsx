@@ -12,8 +12,9 @@ import {
   TRACKING_TYPES,
   type TrackingType
 } from '@/src/features/progress/tracking';
+import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task';
 import { toTitleCase } from '@/src/lib/utils/string';
-import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Keyboard, View, type LayoutChangeEvent } from 'react-native';
 
 interface ExerciseMetadataFormProps {
@@ -154,6 +155,10 @@ export function ExerciseMetadataForm({
   toggleSecondaryMuscle
 }: ExerciseMetadataFormProps) {
   const shouldShowNameField = typeof name === 'string' && Boolean(setName);
+  const shouldShowSecondaryMusclesImmediately =
+    selectedSecondaryMuscles.length > 0 || Boolean(secondaryMusclesError);
+  const [shouldRenderSecondaryMuscles, setShouldRenderSecondaryMuscles] =
+    useState(shouldShowSecondaryMusclesImmediately);
   const nameInputRef = useRef<FocusableInput | null>(null);
   const lastHandledErrorScrollRequestId = useRef<number | undefined>(undefined);
   const sectionYByTarget = useRef<Record<ErrorTarget, number>>({
@@ -185,6 +190,22 @@ export function ExerciseMetadataForm({
   );
 
   useEffect(() => {
+    if (shouldRenderSecondaryMuscles) {
+      return;
+    }
+
+    if (shouldShowSecondaryMusclesImmediately) {
+      setShouldRenderSecondaryMuscles(true);
+
+      return;
+    }
+
+    return scheduleIdleTask(() => {
+      setShouldRenderSecondaryMuscles(true);
+    });
+  }, [shouldRenderSecondaryMuscles, shouldShowSecondaryMusclesImmediately]);
+
+  useEffect(() => {
     if (
       errorScrollRequestId === undefined ||
       errorScrollRequestId === lastHandledErrorScrollRequestId.current
@@ -201,6 +222,13 @@ export function ExerciseMetadataForm({
           : undefined;
 
     if (!firstErrorTarget) {
+      return;
+    }
+
+    if (
+      firstErrorTarget === 'secondaryMuscles' &&
+      !shouldRenderSecondaryMuscles
+    ) {
       return;
     }
 
@@ -225,7 +253,8 @@ export function ExerciseMetadataForm({
     nameError,
     onScrollToError,
     primaryMusclesError,
-    secondaryMusclesError
+    secondaryMusclesError,
+    shouldRenderSecondaryMuscles
   ]);
 
   return (
@@ -306,15 +335,17 @@ export function ExerciseMetadataForm({
         onToggleMuscle={togglePrimaryMuscle}
       />
 
-      <MuscleSelectorSection
-        title="Secondary muscles"
-        hint="Optional. Selecting a muscle here removes it from primary."
-        muscles={MUSCLE_OPTIONS}
-        selectedMuscles={selectedSecondaryMuscles}
-        error={secondaryMusclesError}
-        onLayout={recordSecondaryMusclesSectionLayout}
-        onToggleMuscle={toggleSecondaryMuscle}
-      />
+      {shouldRenderSecondaryMuscles ? (
+        <MuscleSelectorSection
+          title="Secondary muscles"
+          hint="Optional. Selecting a muscle here removes it from primary."
+          muscles={MUSCLE_OPTIONS}
+          selectedMuscles={selectedSecondaryMuscles}
+          error={secondaryMusclesError}
+          onLayout={recordSecondaryMusclesSectionLayout}
+          onToggleMuscle={toggleSecondaryMuscle}
+        />
+      ) : null}
     </View>
   );
 }
