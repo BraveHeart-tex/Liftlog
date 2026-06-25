@@ -28,7 +28,7 @@ const choiceChipVariantConfig = cva(
   }
 );
 
-export type ChoiceChipVariants = VariantProps<typeof choiceChipVariantConfig>;
+type ChoiceChipVariants = VariantProps<typeof choiceChipVariantConfig>;
 
 export const choiceChipVariants = (variants: ChoiceChipVariants = {}) =>
   cn(choiceChipVariantConfig(variants));

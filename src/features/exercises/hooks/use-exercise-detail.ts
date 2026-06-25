@@ -1,5 +1,10 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { Set } from '@/src/db/schema';
+import type {
+  ExercisePersonalRecordSummaryItem,
+  ExerciseProgressPoint,
+  ExerciseTopSetPerformance
+} from '@/src/features/exercises/exercise.types';
 import {
   getExerciseByIdQuery,
   getExerciseTemplateUsageCountQuery,
@@ -53,29 +58,6 @@ interface CompletedHistoryEntry {
   bestSetId: Set['id'] | undefined;
 }
 
-export interface ExerciseProgressPoint {
-  workoutId: string;
-  date: number;
-  value: number;
-  valueLabel: string;
-}
-
-export interface ExercisePersonalRecordSummaryItem {
-  id: 'best-set' | 'most-sets';
-  label: string;
-  value: string;
-  count?: number;
-  achievedAt: number;
-  isNewRecord: boolean;
-}
-
-export interface ExerciseTopSetPerformance {
-  id: Set['id'];
-  value: string;
-  scoreLabel: string;
-  achievedAt: number;
-}
-
 function getSetAchievedAt(set: Set, workoutStartedAt: number) {
   return set.completedAt ?? workoutStartedAt;
 }
@@ -91,7 +73,7 @@ function buildProgressPoints(
   history: CompletedHistoryEntry[],
   trackingType: TrackingType,
   weightUnit: ReturnType<typeof useSettings>['weightUnit']
-) {
+): ExerciseProgressPoint[] {
   return [...history].reverse().flatMap(entry => {
     const bestSet = entry.sets.reduce<{ set: Set; score: number } | null>(
       (best, set) => {

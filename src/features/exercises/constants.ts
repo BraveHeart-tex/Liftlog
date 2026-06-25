@@ -36,6 +36,4 @@ export const CATEGORY_FILTERS = [
 
 type BaseCategoryFilter = (typeof CATEGORY_FILTERS)[number]['value'];
 
-export type CategoryFilter = BaseCategoryFilter | 'custom';
-
 export type ExerciseCategory = Exclude<BaseCategoryFilter, 'all'>;

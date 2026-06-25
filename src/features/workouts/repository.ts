@@ -29,10 +29,8 @@ import {
   eq,
   gte,
   inArray,
-  lt,
   lte,
   notInArray,
-  or,
   sql
 } from 'drizzle-orm';
 
@@ -79,7 +77,7 @@ export interface CompletedWorkoutLogRow {
   setCount: number;
 }
 
-export interface SavedHistoricalWorkoutDraft {
+interface SavedHistoricalWorkoutDraft {
   workout: Workout;
   affectedExerciseIds: WorkoutExercise['exerciseId'][];
 }
@@ -106,25 +104,6 @@ function getWorkoutTemplateRecordById(
     .get();
 }
 
-export function getWorkoutsQuery(db: DrizzleDb) {
-  return db
-    .select()
-    .from(workouts)
-    .where(eq(workouts.status, 'completed'))
-    .orderBy(desc(workouts.startedAt));
-}
-
-export function getCompletedWorkoutDateRowsQuery(db: DrizzleDb) {
-  return db
-    .select({
-      id: workouts.id,
-      startedAt: workouts.startedAt
-    })
-    .from(workouts)
-    .where(eq(workouts.status, 'completed'))
-    .orderBy(desc(workouts.startedAt));
-}
-
 export function getCompletedWorkoutCountRowsQuery(
   db: DrizzleDb,
   dateRange: WorkoutCalendarDateRange
@@ -144,31 +123,6 @@ export function getCompletedWorkoutCountRowsQuery(
     )
     .groupBy(workouts.dateKey)
     .orderBy(desc(workouts.dateKey));
-}
-
-export function getCompletedWorkoutsForDateKeyQuery(
-  db: DrizzleDb,
-  dateKey: Workout['dateKey']
-) {
-  const { endAt, startAt } = getDateRange(dateKey);
-
-  return db
-    .select()
-    .from(workouts)
-    .where(
-      and(
-        eq(workouts.status, 'completed'),
-        or(
-          eq(workouts.dateKey, dateKey),
-          and(
-            eq(workouts.dateKey, ''),
-            gte(workouts.startedAt, startAt),
-            lt(workouts.startedAt, endAt)
-          )
-        )
-      )
-    )
-    .orderBy(desc(workouts.completedAt), desc(workouts.startedAt));
 }
 
 export function getCompletedWorkoutLogRowsForDateKeyQuery(
@@ -297,19 +251,8 @@ export function getActiveWorkoutSummaryQuery(db: DrizzleDb) {
     .orderBy(desc(workouts.startedAt));
 }
 
-export function getActiveWorkout(db: DrizzleDb): Workout | undefined {
-  return getActiveWorkoutQuery(db).get();
-}
-
 export function getWorkoutByIdQuery(db: DrizzleDb, id: Workout['id']) {
   return db.select().from(workouts).where(eq(workouts.id, id));
-}
-
-export function getWorkoutById(
-  db: DrizzleDb,
-  id: Workout['id']
-): Workout | undefined {
-  return getWorkoutRecordById(db, id);
 }
 
 export function getWorkoutExercisesQuery(
@@ -323,33 +266,11 @@ export function getWorkoutExercisesQuery(
     .orderBy(asc(workoutExercises.order));
 }
 
-export function getWorkoutExercisesForWorkoutsQuery(
-  db: DrizzleDb,
-  workoutIds: Workout['id'][]
-) {
-  if (workoutIds.length === 0) {
-    return getWorkoutExercisesQuery(db, '');
-  }
-
-  return db
-    .select()
-    .from(workoutExercises)
-    .where(inArray(workoutExercises.workoutId, workoutIds))
-    .orderBy(asc(workoutExercises.order));
-}
-
 export function getWorkoutExerciseByIdQuery(
   db: DrizzleDb,
   id: WorkoutExercise['id']
 ) {
   return db.select().from(workoutExercises).where(eq(workoutExercises.id, id));
-}
-
-export function getWorkoutExerciseById(
-  db: DrizzleDb,
-  id: WorkoutExercise['id']
-): WorkoutExercise | undefined {
-  return getWorkoutExerciseByIdQuery(db, id).get();
 }
 
 export function getWorkoutTemplatesQuery(db: DrizzleDb) {
@@ -367,13 +288,6 @@ export function getWorkoutTemplateByIdQuery(
   id: WorkoutTemplate['id']
 ) {
   return db.select().from(workoutTemplates).where(eq(workoutTemplates.id, id));
-}
-
-export function getWorkoutTemplateById(
-  db: DrizzleDb,
-  id: WorkoutTemplate['id']
-): WorkoutTemplate | undefined {
-  return getWorkoutTemplateRecordById(db, id);
 }
 
 export function getWorkoutTemplateExercisesQuery(
@@ -436,7 +350,7 @@ export function createWorkout(db: DrizzleDb, data: NewWorkout): Workout {
   return db.insert(workouts).values(withWorkoutDateKey(data)).returning().get();
 }
 
-export function cleanupStaleHistoricalWorkoutDrafts(db: DrizzleDb): void {
+function cleanupStaleHistoricalWorkoutDrafts(db: DrizzleDb): void {
   db.delete(workouts)
     .where(
       and(

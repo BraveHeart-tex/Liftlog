@@ -35,7 +35,7 @@ interface TrackingTypeDefinition {
   scoreLabel: string;
 }
 
-const trackingTypeSet = new Set<string>(TRACKING_TYPES);
+const trackingTypeSet = new Set<TrackingType>(TRACKING_TYPES);
 
 export const TRACKING_TYPE_DEFINITIONS: Record<
   TrackingType,
@@ -149,12 +149,12 @@ export const TRACKING_TYPE_DEFINITIONS: Record<
   }
 };
 
-export function isTrackingType(value: string): value is TrackingType {
-  return trackingTypeSet.has(value);
-}
-
-export function resolveTrackingType(value: string | null | undefined) {
-  return value && isTrackingType(value) ? value : 'weight_reps';
+export function resolveTrackingType(
+  value: string | null | undefined
+): TrackingType {
+  return value && trackingTypeSet.has(value as TrackingType)
+    ? (value as TrackingType)
+    : 'weight_reps';
 }
 
 export function computeEstimated1RM(weightKg: number, reps: number): number {
@@ -257,21 +257,6 @@ export function getSetScore(
       return roundScore(weightKg / (durationMs / 1000));
     }
   }
-}
-
-export function hasValidTrackingValues(
-  trackingType: TrackingType,
-  values: SetValues
-) {
-  return (
-    getSetScore(trackingType, {
-      weightKg: values.weightKg ?? null,
-      reps: values.reps ?? null,
-      distanceMeters: values.distanceMeters ?? null,
-      durationMs: values.durationMs ?? null,
-      durationSeconds: null
-    }) !== null
-  );
 }
 
 function formatNumber(value: number, maximumFractionDigits = 1) {

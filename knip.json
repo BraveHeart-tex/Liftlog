@@ -2,9 +2,7 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "tags": ["-lintignore"],
   "ignoreDependencies": [
-    "@react-navigation/bottom-tabs",
     "@react-navigation/elements",
-    "@babel/core",
     "babel-plugin-inline-import",
     "babel-preset-expo",
     "expo-blur",
@@ -13,26 +11,6 @@
   "ignore": [
     "babel.config.js",
     "plugins/with-step-activity-permissions.js",
-    "src/components/ui/badge.tsx",
-    "src/components/ui/dialog.tsx",
-    "src/components/ui/empty-state.tsx"
-  ],
-  "ignoreIssues": {
-    "src/components/ui/bottom-sheet-input.tsx": ["types"],
-    "src/components/ui/bottom-sheet.tsx": ["exports"],
-    "src/components/ui/card.tsx": ["exports"],
-    "src/components/ui/snackbar.tsx": ["exports"],
-    "src/features/exercises/hooks/index.ts": ["exports", "types"],
-    "src/features/exercises/hooks/use-exercise-detail.ts": ["types"],
-    "src/features/exercises/repository.ts": ["exports", "types"],
-    "src/features/progress/tracking.ts": ["exports"],
-    "src/features/workouts/components/progression-suggestion-utils.ts": [
-      "types"
-    ],
-    "src/features/workouts/repository.ts": ["exports"],
-    "src/lib/utils/set.ts": ["exports"],
-    "modules/expo-step-counter/build/**": ["duplicates"],
-    "modules/expo-step-counter/src/index.ts": ["duplicates"],
-    "src/lib/utils/workout.ts": ["exports"]
-  }
+    "modules/expo-step-counter/build/**"
+  ]
 }

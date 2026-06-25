@@ -22,7 +22,7 @@ export interface WorkoutStartTemplateItem {
   exerciseSummary: string;
 }
 
-export function buildTemplateSummary(
+function buildTemplateSummary(
   exerciseRows: WorkoutTemplateExercise[],
   exerciseById: Map<ExerciseListItem['id'], ExerciseListItem>
 ): string {

@@ -24,7 +24,7 @@ const exerciseListFields = {
 
 export type ExerciseListItem = InferColumnsDataTypes<typeof exerciseListFields>;
 
-export interface CustomExerciseDetailsUpdate {
+interface CustomExerciseDetailsUpdate {
   category: Exercise['category'];
   trackingType: Exercise['trackingType'];
   primaryMuscles: string[];
@@ -89,14 +89,6 @@ export function hasExerciseNameConflict(
     .get();
 
   return Boolean(existingExercise);
-}
-
-export function getExerciseById(
-  db: DrizzleDb,
-  id: Exercise['id']
-): Exercise | null {
-  // Archived exercises remain addressable by id for edit/archive workflows.
-  return getExerciseByIdQuery(db, id).get() ?? null;
 }
 
 export function createExercise(db: DrizzleDb, data: NewExercise): Exercise {

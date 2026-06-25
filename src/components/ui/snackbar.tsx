@@ -29,7 +29,7 @@ interface SnackbarState {
 
 let nextSnackbarId = 1;
 
-export const useSnackbarStore = create<SnackbarState>(set => ({
+const useSnackbarStore = create<SnackbarState>(set => ({
   message: null,
   showSnackbar: options => {
     set({

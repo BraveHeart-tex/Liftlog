@@ -4,7 +4,7 @@ import { computeEstimated1RM } from '@/src/features/progress/repository';
 const MIN_REPEAT_SET_COUNT = 2;
 const MIN_REPS_TO_PROGRESS = 5;
 
-export interface ProgressionHistoryEntry {
+interface ProgressionHistoryEntry {
   workout: Workout;
   sets: Set[];
 }

@@ -21,7 +21,7 @@ interface WheelPickerClassNameProps {
   renderWhen?: boolean;
 }
 
-export type WheelPickerProps<ItemT extends PickerItem<any>> =
+type WheelPickerProps<ItemT extends PickerItem<any>> =
   BaseWheelPickerProps<ItemT> & WheelPickerClassNameProps;
 
 const defaultRenderItem = <ItemT extends PickerItem<any>>({
@@ -101,5 +101,3 @@ export const WheelPicker =
     (<ItemT extends PickerItem<any>>(
       props: WheelPickerProps<ItemT>
     ) => ReactNode);
-
-export type { PickerItem, RenderItem, RenderItemProps };

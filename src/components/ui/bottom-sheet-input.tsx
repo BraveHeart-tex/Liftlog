@@ -2,10 +2,10 @@ import { StyledBottomSheetTextInput } from '@/src/components/styled/bottom-sheet
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn';
 import {
-  type ComponentRef,
   forwardRef,
   useState,
   type ComponentPropsWithoutRef,
+  type ComponentRef,
   type ReactNode
 } from 'react';
 import { View, type TextInput } from 'react-native';
@@ -14,7 +14,7 @@ type NativeTextInputProps = ComponentPropsWithoutRef<typeof TextInput>;
 
 type BottomSheetTextInputRef = ComponentRef<typeof StyledBottomSheetTextInput>;
 
-export type BottomSheetInputProps = NativeTextInputProps & {
+type BottomSheetInputProps = NativeTextInputProps & {
   label?: string;
   hint?: string;
   error?: string;

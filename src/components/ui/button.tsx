@@ -30,7 +30,7 @@ const buttonVariantConfig = cva(
   }
 );
 
-export type ButtonVariants = VariantProps<typeof buttonVariantConfig>;
+type ButtonVariants = VariantProps<typeof buttonVariantConfig>;
 
 export const buttonVariants = (variants: ButtonVariants = {}) =>
   cn(buttonVariantConfig(variants));

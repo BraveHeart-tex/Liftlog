@@ -1,6 +1,6 @@
+import { cva, type VariantProps } from 'class-variance-authority';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
-import { cva, type VariantProps } from 'class-variance-authority';
 
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn';
@@ -24,14 +24,14 @@ const badgeVariantConfig = cva(
   }
 );
 
-export type BadgeVariants = VariantProps<typeof badgeVariantConfig>;
+type BadgeVariants = VariantProps<typeof badgeVariantConfig>;
 
 export const badgeVariants = (variants: BadgeVariants = {}) =>
   cn(badgeVariantConfig(variants));
 
 type BadgeVariant = NonNullable<BadgeVariants['variant']>;
 
-export interface BadgeProps {
+interface BadgeProps {
   variant?: BadgeVariant;
   children: ReactNode;
   className?: string;

@@ -1,5 +1,5 @@
 import { Text } from '@/src/components/ui/text';
-import type { ExerciseProgressPoint } from '@/src/features/exercises/hooks/use-exercise-detail';
+import type { ExerciseProgressPoint } from '@/src/features/exercises/exercise.types';
 import {
   TRACKING_TYPE_DEFINITIONS,
   formatScore,

@@ -2,7 +2,7 @@ interface FormatTimeOptions {
   padMinutes?: boolean;
 }
 
-export interface DurationMsParts {
+interface DurationMsParts {
   hours: number;
   minutes: number;
   seconds: number;

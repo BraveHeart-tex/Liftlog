@@ -11,13 +11,13 @@ export const STEP_GOAL_CONSISTENCY_DAY_COUNT = 7;
 
 export type StepAverageComparisonTone = 'success' | 'danger' | 'muted';
 
-export interface StepAverageComparison {
+interface StepAverageComparison {
   detail: string;
   percentLabel: string;
   tone: StepAverageComparisonTone;
 }
 
-export interface StepGoalConsistencyDay {
+interface StepGoalConsistencyDay {
   dateLabel: string;
   dateKey: string;
   hit: boolean;
@@ -33,14 +33,6 @@ export function formatSteps(steps: number): string {
   }).format(steps);
 }
 
-export function formatCompactSteps(steps: number): string {
-  if (steps >= 1000) {
-    return `${Math.round(steps / 1000)}k`;
-  }
-
-  return String(Math.round(steps));
-}
-
 export function formatStepWeekday(timestamp: number): string {
   return new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(
     new Date(timestamp)
@@ -54,7 +46,7 @@ export function formatStepMonthDay(timestamp: number): string {
   }).format(new Date(timestamp));
 }
 
-export function formatStepWeekdayInitial(timestamp: number): string {
+function formatStepWeekdayInitial(timestamp: number): string {
   return new Intl.DateTimeFormat(undefined, { weekday: 'short' })
     .format(new Date(timestamp))
     .slice(0, 1);
