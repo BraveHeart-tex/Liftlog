@@ -41,7 +41,8 @@ export function useWorkoutCalendarMarks(pastMonthRange: number) {
 
   const workoutCountResult = useLiveWithFallback(
     getCompletedWorkoutCountRowsQuery(db, dateRange),
-    [db, dateRange]
+    [db, dateRange],
+    { deferInitialRead: true, waitForInteractions: true }
   );
 
   const workoutCountByDateKey = useMemo(
@@ -64,11 +65,13 @@ export function useWorkoutRowsForDate(selectedDateKey: string) {
 
   const workoutResult = useLiveWithFallback(
     getCompletedWorkoutLogRowsForDateKeyQuery(db, selectedDateKey),
-    [db, selectedDateKey]
+    [db, selectedDateKey],
+    { deferInitialRead: true, waitForInteractions: true }
   );
 
   return {
     workoutRows: workoutResult.data,
+    isLive: workoutResult.isLive,
     error: workoutResult.error
   };
 }

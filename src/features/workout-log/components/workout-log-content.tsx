@@ -38,7 +38,8 @@ export function WorkoutLogContent() {
   const { workoutCountByDateKey } = useWorkoutCalendarMarks(
     WORKOUT_LOG_PAST_MONTH_RANGE
   );
-  const { workoutRows } = useWorkoutRowsForDate(selectedDateKey);
+  const { workoutRows, isLive: areWorkoutRowsLive } =
+    useWorkoutRowsForDate(selectedDateKey);
   const openStartSheet = useCallback(() => setIsStartSheetOpen(true), []);
   const closeStartSheet = useCallback(() => setIsStartSheetOpen(false), []);
 
@@ -113,17 +114,19 @@ export function WorkoutLogContent() {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={
-          <EmptyState
-            layout="section"
-            title="No workouts"
-            description="Completed sessions for this day will show here."
-            className="border-border bg-card rounded-lg border border-dashed px-6 py-10"
-            action={
-              <Button variant="secondary" size="sm" onPress={openStartSheet}>
-                Log workout
-              </Button>
-            }
-          />
+          areWorkoutRowsLive ? (
+            <EmptyState
+              layout="section"
+              title="No workouts"
+              description="Completed sessions for this day will show here."
+              className="border-border bg-card rounded-lg border border-dashed px-6 py-10"
+              action={
+                <Button variant="secondary" size="sm" onPress={openStartSheet}>
+                  Log workout
+                </Button>
+              }
+            />
+          ) : null
         }
         renderItem={renderWorkoutRow}
         contentContainerClassName="px-4 pt-4 pb-6"
