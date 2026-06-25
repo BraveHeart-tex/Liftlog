@@ -1,5 +1,10 @@
 import type { DrizzleDb } from '@/src/db/client';
 import { appMeta } from '@/src/db/schema';
+import {
+  MAX_STEP_GOAL,
+  MIN_STEP_GOAL
+} from '@/src/features/steps/steps.constants';
+import { isValidStepGoal } from '@/src/features/steps/steps.validation';
 import type { WeightUnit } from '@/src/lib/utils/weight';
 import { eq } from 'drizzle-orm';
 
@@ -54,7 +59,7 @@ export function getRestTimerDuration(db: DrizzleDb): number {
     return SETTINGS_DEFAULTS.restTimerDuration;
   }
 
-  const parsed = parseInt(value, 10);
+  const parsed = Number(value);
 
   return Number.isFinite(parsed) && parsed >= 10
     ? parsed
@@ -76,9 +81,7 @@ export function parseStepGoal(value: string | undefined): number {
 
   const parsed = parseInt(value, 10);
 
-  return Number.isFinite(parsed) && parsed >= 1000
-    ? parsed
-    : SETTINGS_DEFAULTS.stepGoal;
+  return isValidStepGoal(parsed) ? parsed : SETTINGS_DEFAULTS.stepGoal;
 }
 
 export function getHealthConnectStepsEnabled(db: DrizzleDb): boolean {
@@ -112,5 +115,11 @@ export function getStepGoal(db: DrizzleDb): number {
 }
 
 export function setStepGoal(db: DrizzleDb, goal: number): void {
+  if (!isValidStepGoal(goal)) {
+    throw new RangeError(
+      `Step goal must be between ${MIN_STEP_GOAL} and ${MAX_STEP_GOAL}.`
+    );
+  }
+
   setSetting(db, SETTINGS_KEYS.stepGoal, String(goal));
 }

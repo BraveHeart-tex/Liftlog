@@ -11,9 +11,11 @@ import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { useSettings } from '@/src/features/settings/hooks';
 import {
+  MAX_STEP_GOAL,
   MIN_STEP_GOAL,
   STEP_GOAL_PRESETS
 } from '@/src/features/steps/steps.constants';
+import { isValidStepGoal } from '@/src/features/steps/steps.validation';
 import { nativeFontSizes } from '@/src/theme/sizes';
 import { XIcon } from 'lucide-react-native';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
@@ -83,11 +85,13 @@ const StepGoalSheetContent = memo(function StepGoalSheetContent({
     draftGoal === undefined ? '' : formatStepGoal(draftGoal);
 
   const errorMessage =
-    draftGoal === undefined || draftGoal >= MIN_STEP_GOAL
+    draftGoal === undefined || isValidStepGoal(draftGoal)
       ? undefined
-      : `Use at least ${formatStepGoal(MIN_STEP_GOAL)} steps.`;
+      : draftGoal < MIN_STEP_GOAL
+        ? `Use at least ${formatStepGoal(MIN_STEP_GOAL)} steps.`
+        : `Use no more than ${formatStepGoal(MAX_STEP_GOAL)} steps.`;
 
-  const canSave = draftGoal !== undefined && draftGoal >= MIN_STEP_GOAL;
+  const canSave = draftGoal !== undefined && isValidStepGoal(draftGoal);
 
   const handleGoalChange = (value: string) => {
     setDraftValue(value.replace(/\D/g, ''));
