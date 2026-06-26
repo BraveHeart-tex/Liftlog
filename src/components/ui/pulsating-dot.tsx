@@ -23,7 +23,7 @@ export const PulsatingDot = () => {
       -1,
       false
     );
-  }, []);
+  }, [opacity, scale]);
 
   const ringStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],

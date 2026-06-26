@@ -66,6 +66,10 @@ export default function OnboardingScreen() {
                   onPress={() => {
                     setWeightUnitPreference(unit);
                   }}
+                  accessibilityRole="button"
+                  accessibilityState={{
+                    selected: weightUnitPreference === unit
+                  }}
                   className={cn(
                     weightUnitPreference === unit
                       ? 'bg-primary border-primary'

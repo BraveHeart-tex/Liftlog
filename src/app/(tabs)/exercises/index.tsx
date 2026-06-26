@@ -93,6 +93,7 @@ export default function ExercisesScreen() {
           <Button
             variant="secondary"
             size="sm"
+            accessibilityLabel="Create exercise"
             onPress={() => router.push('/exercises/new')}
           >
             <Icon icon={PlusIcon} tone="secondaryForeground" />

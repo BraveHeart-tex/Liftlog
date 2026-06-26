@@ -54,17 +54,6 @@ function getLocalNoonTimestamp(dateKey: string): number {
   return new Date(year, month - 1, day, 12, 0, 0, 0).getTime();
 }
 
-function getDateRange(dateKey: string): { endAt: number; startAt: number } {
-  const [year, month, day] = dateKey.split('-').map(Number);
-  const startDate = new Date(year, month - 1, day);
-  const endDate = new Date(year, month - 1, day + 1);
-
-  return {
-    startAt: startDate.getTime(),
-    endAt: endDate.getTime()
-  };
-}
-
 export interface WorkoutCalendarDateRange {
   endAt: number;
   endDateKey: string;
