@@ -70,6 +70,7 @@ export function RestTimerWidget() {
                 </Text>
                 <Text
                   variant="h3"
+                  className="tabular-nums"
                   numberOfLines={1}
                   style={{ fontVariant: ['tabular-nums'] }}
                 >
@@ -82,7 +83,7 @@ export function RestTimerWidget() {
               variant="secondary"
               size="sm"
               className="min-h-10 px-2.5 py-2"
-              textClassName="text-small"
+              textClassName="text-small tabular-nums"
               accessibilityLabel="Add 30 seconds to rest timer"
               onPress={addThirtySeconds}
             >
