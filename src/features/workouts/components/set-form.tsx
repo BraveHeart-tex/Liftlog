@@ -358,8 +358,12 @@ export function SetForm({
   const getNextSetOrder = () =>
     rows.reduce((nextOrder, row) => Math.max(nextOrder, row.order + 1), 0);
 
-  const handleCommitRow = async (row: SetFormRow) => {
-    if (row.isSaving || !row.validatedValues) {
+  const commitRowValues = async (
+    row: SetFormRow,
+    validatedValues: SetValues,
+    fieldValues: Record<string, string>
+  ) => {
+    if (row.isSaving) {
       return;
     }
 
@@ -375,14 +379,14 @@ export function SetForm({
         [row.set.id]: {
           baselineValues,
           phase: 'saving',
-          savedValues: row.validatedValues,
-          values: row.fieldValues
+          savedValues: validatedValues,
+          values: fieldValues
         }
       }));
 
       try {
         const updatedSet = await Promise.resolve(
-          onUpdateSet({ setId: row.set.id, ...row.validatedValues })
+          onUpdateSet({ setId: row.set.id, ...validatedValues })
         );
 
         setPersistedEditsBySetId(currentEdits => {
@@ -405,7 +409,7 @@ export function SetForm({
             [row.set.id]: {
               ...existingEdit,
               phase: 'awaiting_sync',
-              savedValues: row.validatedValues
+              savedValues: validatedValues
             }
           };
         });
@@ -442,7 +446,7 @@ export function SetForm({
 
     try {
       const createdSet = await Promise.resolve(
-        onAddSet({ ...row.validatedValues, order: row.order })
+        onAddSet({ ...validatedValues, order: row.order })
       );
 
       setDraftRows(currentRows =>
@@ -466,6 +470,14 @@ export function SetForm({
         )
       );
     }
+  };
+
+  const handleCommitRow = async (row: SetFormRow) => {
+    if (!row.validatedValues) {
+      return;
+    }
+
+    await commitRowValues(row, row.validatedValues, row.fieldValues);
   };
 
   const handleCopyRow = async (row: SetFormRow) => {
@@ -626,11 +638,34 @@ export function SetForm({
       return;
     }
 
+    const formattedDuration = formatDurationMs(durationMs);
+    const nextFieldValues = {
+      ...activeDurationRow.fieldValues,
+      [activeDurationPicker.field.key]: formattedDuration
+    };
+    const nextValidatedValues = parseTrackingFieldValues(
+      nextFieldValues,
+      trackingDefinition.fields,
+      weightUnit
+    );
+    const canAutoCommitDuration =
+      !activeDurationRow.isSaving &&
+      (activeDurationRow.kind === 'draft' ||
+        activeDurationRow.set.status !== 'completed');
+
     updateFieldValue(
       activeDurationRow,
       activeDurationPicker.field,
-      formatDurationMs(durationMs)
+      formattedDuration
     );
+
+    if (canAutoCommitDuration && nextValidatedValues) {
+      void commitRowValues(
+        activeDurationRow,
+        nextValidatedValues,
+        nextFieldValues
+      );
+    }
   };
 
   const handleOpenDurationPicker = (
