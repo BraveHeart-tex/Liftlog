@@ -32,7 +32,7 @@ const buttonVariantConfig = cva(
 
 type ButtonVariants = VariantProps<typeof buttonVariantConfig>;
 
-export const buttonVariants = (variants: ButtonVariants = {}) =>
+const buttonVariants = (variants: ButtonVariants = {}) =>
   cn(buttonVariantConfig(variants));
 
 type ButtonVariant = NonNullable<ButtonVariants['variant']>;

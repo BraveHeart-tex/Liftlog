@@ -5,9 +5,11 @@
     "@react-navigation/elements",
     "babel-plugin-inline-import",
     "babel-preset-expo",
+    "expo-atlas",
     "expo-blur",
     "expo-updates"
   ],
+  "ignoreBinaries": ["scripts/build-android-release-single-arch.sh"],
   "ignore": [
     "babel.config.js",
     "plugins/with-step-activity-permissions.js",

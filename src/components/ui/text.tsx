@@ -38,7 +38,7 @@ const textVariantConfig = cva('', {
 
 type TextVariants = VariantProps<typeof textVariantConfig>;
 
-export const textVariants = (variants: TextVariants = {}) =>
+const textVariants = (variants: TextVariants = {}) =>
   cn(textVariantConfig(variants));
 
 type TextVariant = NonNullable<TextVariants['variant']>;

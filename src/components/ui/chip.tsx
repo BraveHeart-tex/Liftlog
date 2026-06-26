@@ -30,7 +30,7 @@ const choiceChipVariantConfig = cva(
 
 type ChoiceChipVariants = VariantProps<typeof choiceChipVariantConfig>;
 
-export const choiceChipVariants = (variants: ChoiceChipVariants = {}) =>
+const choiceChipVariants = (variants: ChoiceChipVariants = {}) =>
   cn(choiceChipVariantConfig(variants));
 
 type ChipShape = NonNullable<ChoiceChipVariants['shape']>;

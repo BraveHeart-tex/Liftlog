@@ -103,5 +103,3 @@ export const StepCounter: StepCounterApi = {
     return ExpoStepCounter?.addListener('onStepCounterError', listener) ?? NOOP_SUBSCRIPTION;
   },
 };
-
-export default StepCounter;
