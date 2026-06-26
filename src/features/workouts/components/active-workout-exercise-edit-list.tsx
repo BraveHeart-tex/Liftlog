@@ -1,12 +1,12 @@
 import type { WorkoutExercise } from '@/src/db/schema';
+import { ActiveWorkoutExerciseEditRow } from '@/src/features/workouts/components/active-workout-exercise-edit-row';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import DraggableFlatList, {
   type DragEndParams,
   type RenderItemParams
 } from 'react-native-draggable-flatlist';
-import { ActiveWorkoutExerciseEditRow } from '@/src/features/workouts/components/active-workout-exercise-edit-row';
-import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
 
 const draggableListContainerStyle = { flex: 1 };
 
@@ -27,7 +27,6 @@ export const ActiveWorkoutExerciseEditList = memo(
     const rowIds = rows.map(r => r.workoutExercise.id).join(',');
     const shouldShowDragHandle = rows.length > 1;
 
-    // TODO: Check the need for this while implementing delete exercise logic
     useEffect(() => {
       // Only fires when exercises are added/removed, not on order changes
       // (memo blocks re-renders for order-only changes)
