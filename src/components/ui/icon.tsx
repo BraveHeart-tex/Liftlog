@@ -1,4 +1,5 @@
 import { iconSizes, type IconSize } from '@/src/theme/sizes';
+import type { ComponentType } from 'react';
 import type { LucideIcon, LucideProps } from 'lucide-react-native';
 import { styled } from 'nativewind';
 
@@ -10,6 +11,22 @@ type StyledIconComponent = LucideIcon & {
   className?: string;
 };
 
+type NativeWindIconStyle = {
+  color?: string;
+  width?: number;
+  height?: number;
+  strokeWidth?: number;
+  fill?: string;
+  stroke?: string;
+};
+
+type NativeWindStylableIcon = ComponentType<
+  LucideProps & {
+    className?: string;
+    style: NativeWindIconStyle;
+  }
+>;
+
 const styledIconCache = new WeakMap<IconComponent, StyledIconComponent>();
 
 function createStyledIcon(Icon: IconComponent): StyledIconComponent {
@@ -19,19 +36,21 @@ function createStyledIcon(Icon: IconComponent): StyledIconComponent {
     return CachedIcon;
   }
 
-  const StyledIcon = styled(Icon as any, {
-    className: {
-      target: 'style',
-      nativeStyleToProp: {
-        color: 'color',
-        width: 'size',
-        height: 'size',
-        strokeWidth: 'strokeWidth',
-        fill: 'fill',
-        stroke: 'stroke'
+  const StyledIcon =
+    // HARDEN-OK: nativewind styled() returns any in this version.
+    styled(Icon as NativeWindStylableIcon, {
+      className: {
+        target: 'style',
+        nativeStyleMapping: {
+          color: 'color',
+          width: 'size',
+          height: 'size',
+          strokeWidth: 'strokeWidth',
+          fill: 'fill',
+          stroke: 'stroke'
+        }
       }
-    }
-  }) as StyledIconComponent;
+    }) as StyledIconComponent;
 
   styledIconCache.set(Icon, StyledIcon);
 

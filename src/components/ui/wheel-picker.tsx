@@ -4,7 +4,6 @@ import WheelPickerBase, {
   withVirtualized,
   type WheelPickerProps as BaseWheelPickerProps,
   type PickerItem,
-  type RenderItem,
   type RenderItemProps
 } from '@quidone/react-native-wheel-picker';
 import { styled } from 'nativewind';
@@ -21,10 +20,12 @@ interface WheelPickerClassNameProps {
   renderWhen?: boolean;
 }
 
-type WheelPickerProps<ItemT extends PickerItem<any>> =
+type WheelPickerItem = PickerItem<unknown>;
+
+type WheelPickerProps<ItemT extends WheelPickerItem> =
   BaseWheelPickerProps<ItemT> & WheelPickerClassNameProps;
 
-const defaultRenderItem = <ItemT extends PickerItem<any>>({
+const defaultRenderItem = <ItemT extends WheelPickerItem>({
   item,
   itemTextStyle
 }: RenderItemProps<ItemT>) => {
@@ -52,7 +53,7 @@ const getPickerHeight = (itemHeight: number, visibleItemCount: number) => {
   }).reduce((height, faceHeight) => height + faceHeight, itemHeight);
 };
 
-const WheelPickerBridge = <ItemT extends PickerItem<any>>({
+const WheelPickerBridge = <ItemT extends WheelPickerItem>({
   renderItem,
   renderWhen = true,
   width = 'auto',
@@ -84,7 +85,7 @@ const WheelPickerBridge = <ItemT extends PickerItem<any>>({
       itemHeight={itemHeight}
       visibleItemCount={visibleItemCount}
       style={style}
-      renderItem={renderItem ?? (defaultRenderItem as RenderItem<ItemT>)}
+      renderItem={renderItem ?? defaultRenderItem}
     />
   );
 };
@@ -97,7 +98,8 @@ const StyledWheelPickerBase = styled(WheelPickerBridge, {
 });
 
 export const WheelPicker =
+  // HARDEN-OK: nativewind styled() erases this generic wrapper signature.
   StyledWheelPickerBase as typeof VirtualizedWheelPicker &
-    (<ItemT extends PickerItem<any>>(
+    (<ItemT extends WheelPickerItem>(
       props: WheelPickerProps<ItemT>
     ) => ReactNode);
