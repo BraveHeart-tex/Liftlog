@@ -25,7 +25,7 @@ interface ActiveWorkoutContentProps {
   activeWorkout: Workout;
   exerciseRows?: ExerciseListItem[];
   mode?: 'active' | 'historical';
-  onDiscardHistoricalWorkout?: (hasExercisesLogged: boolean) => void;
+  onDiscardHistoricalWorkout?: (hasWorkoutExercises: boolean) => void;
   onSaveHistoricalWorkout?: () => void;
 }
 
@@ -60,8 +60,9 @@ export function ActiveWorkoutContent({
   const reorderWorkoutExercises = useReorderWorkoutExercises(activeWorkout.id);
 
   const workoutName = activeWorkout.name;
-  const hasExercisesLogged =
+  const hasWorkoutExercises =
     !isLoadingWorkoutExercises && workoutExerciseRows.length > 0;
+  const canFinishWorkout = completedSetCount > 0;
   const canSaveHistoricalWorkout = completedSetCount > 0;
   const selectedWorkoutExerciseIds = useMemo(
     () =>
@@ -138,7 +139,7 @@ export function ActiveWorkoutContent({
           workoutName={workoutName}
           startedAt={activeWorkout.startedAt}
           canSave={canSaveHistoricalWorkout}
-          onDiscard={() => onDiscardHistoricalWorkout?.(hasExercisesLogged)}
+          onDiscard={() => onDiscardHistoricalWorkout?.(hasWorkoutExercises)}
           onSave={onSaveHistoricalWorkout ?? (() => undefined)}
         />
       ) : (
@@ -146,8 +147,8 @@ export function ActiveWorkoutContent({
           workoutName={workoutName}
           workoutId={activeWorkout.id}
           startedAt={activeWorkout.startedAt}
-          canFinish={hasExercisesLogged}
-          canSaveTemplate={hasExercisesLogged}
+          canFinish={canFinishWorkout}
+          canSaveTemplate={hasWorkoutExercises}
           workoutExerciseRows={workoutExerciseRows.map(workoutExercise => ({
             exerciseId: workoutExercise.exerciseId,
             order: workoutExercise.order
