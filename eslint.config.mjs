@@ -54,6 +54,12 @@ export default defineConfig([
               importNames: ['SafeAreaView'],
               message:
                 'Use SafeAreaView from @/src/components/ui/safe-area-view to avoid jumpy React Navigation layouts.'
+            },
+            {
+              name: 'react-native',
+              importNames: ['InteractionManager'],
+              message:
+                'InteractionManager is deprecated. Use scheduleIdleTask instead.'
             }
           ],
           patterns: [
