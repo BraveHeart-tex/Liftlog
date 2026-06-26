@@ -761,6 +761,57 @@ export function createWorkoutTemplate(
   return createdTemplate;
 }
 
+export function repeatWorkout(
+  db: DrizzleDb,
+  {
+    sourceWorkout,
+    sourceWorkoutExercises
+  }: {
+    sourceWorkout: Pick<Workout, 'name'>;
+    sourceWorkoutExercises: Pick<WorkoutExercise, 'exerciseId' | 'order'>[];
+  }
+): Workout {
+  let createdWorkout: Workout | undefined;
+
+  db.transaction(tx => {
+    const startedAt = Date.now();
+
+    createdWorkout = tx
+      .insert(workouts)
+      .values({
+        name: sourceWorkout.name,
+        status: 'in_progress',
+        startedAt,
+        dateKey: toLocalDateKey(startedAt)
+      })
+      .returning()
+      .get();
+
+    const createdWorkoutRow = createdWorkout;
+
+    if (!createdWorkoutRow || sourceWorkoutExercises.length === 0) {
+      return;
+    }
+
+    tx.insert(workoutExercises)
+      .values(
+        sourceWorkoutExercises.map(workoutExercise => ({
+          workoutId: createdWorkoutRow.id,
+          exerciseId: workoutExercise.exerciseId,
+          order: workoutExercise.order,
+          notes: null
+        }))
+      )
+      .run();
+  });
+
+  if (!createdWorkout) {
+    throw new Error('Failed to repeat workout.');
+  }
+
+  return createdWorkout;
+}
+
 export function createWorkoutFromTemplate(
   db: DrizzleDb,
   {
