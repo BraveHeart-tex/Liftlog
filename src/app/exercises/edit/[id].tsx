@@ -128,6 +128,12 @@ export default function EditExerciseScreen() {
         return;
       }
 
+      if (router.canGoBack()) {
+        router.back();
+
+        return;
+      }
+
       router.replace({
         pathname: '/exercises/[id]',
         params: { id: updatedExercise.id }
