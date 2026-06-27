@@ -57,6 +57,16 @@ export function RestTimerHost() {
     }
   }, [player]);
 
+  const stopCompletionSound = useCallback(async () => {
+    try {
+      player.pause();
+      await player.seekTo(0);
+      await setIsAudioActiveAsync(false);
+    } catch (error) {
+      console.error('Failed to stop rest timer completion sound', error);
+    }
+  }, [player]);
+
   useEffect(() => {
     setAudioModeAsync({
       playsInSilentMode: true,
@@ -84,11 +94,15 @@ export function RestTimerHost() {
     const subscription = AppState.addEventListener('change', nextState => {
       if (nextState === 'active') {
         tick();
+
+        return;
       }
+
+      void stopCompletionSound();
     });
 
     return () => subscription.remove();
-  }, [tick]);
+  }, [stopCompletionSound, tick]);
 
   useEffect(() => {
     if (completionCount <= lastHandledCompletionCountRef.current) {
@@ -105,9 +119,12 @@ export function RestTimerHost() {
 
     showSnackbar({
       message: 'Rest time is up',
-      actionLabel: 'Dismiss'
+      actionLabel: 'Dismiss',
+      onAction: () => {
+        void stopCompletionSound();
+      }
     });
-  }, [completionCount, isSheetOpen, playCompletionSound]);
+  }, [completionCount, isSheetOpen, playCompletionSound, stopCompletionSound]);
 
   return null;
 }
