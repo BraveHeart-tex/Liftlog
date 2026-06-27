@@ -17,6 +17,7 @@ import {
   useActiveWorkoutContent as useActiveWorkoutContentData,
   useReorderWorkoutExercises
 } from '@/src/features/workouts/hooks';
+import { triggerWorkoutEditModeHaptics } from '@/src/features/workouts/workout-haptics';
 import { PlusIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Keyboard, View } from 'react-native';
@@ -70,7 +71,17 @@ export function ActiveWorkoutContent({
     [workoutExerciseRows]
   );
 
-  const enterEditMode = useCallback(() => setIsEditingExercises(true), []);
+  const enterEditMode = useCallback(() => {
+    if (isEditingExercises) {
+      return;
+    }
+
+    if (mode === 'active') {
+      triggerWorkoutEditModeHaptics();
+    }
+
+    setIsEditingExercises(true);
+  }, [isEditingExercises, mode]);
   const exitEditMode = useCallback(() => setIsEditingExercises(false), []);
   const openExercisePicker = useCallback(
     () => setIsExercisePickerOpen(true),

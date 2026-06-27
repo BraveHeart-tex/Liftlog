@@ -12,13 +12,14 @@ import { RenameTemplateSheet } from '@/src/features/workouts/components/rename-t
 import { TemplateExerciseEditor } from '@/src/features/workouts/components/template-exercise-editor';
 import { WorkoutTemplateActionsSheet } from '@/src/features/workouts/components/workout-template-actions-sheet';
 import { useWorkoutTemplateDetail } from '@/src/features/workouts/hooks';
+import { triggerWorkoutEditModeHaptics } from '@/src/features/workouts/workout-haptics';
 import { cn } from '@/src/lib/utils/cn';
 import { getRouteParamId } from '@/src/lib/utils/route';
 import { usePreventRemove } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { DumbbellIcon, EllipsisVerticalIcon } from 'lucide-react-native';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { Alert, Pressable, View } from 'react-native';
 
 export default function WorkoutTemplateDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
@@ -130,13 +131,21 @@ function WorkoutTemplateDetailLoaded({
     discardActiveWorkoutAndStartTemplate();
   }, [discardActiveWorkoutAndStartTemplate]);
 
-  const enterExerciseEditMode = () => {
-    if (isLoadingExercises) {
+  const enterExerciseEditMode = (shouldTriggerHaptics = false) => {
+    if (isLoadingExercises || isEditingExercises) {
       return;
+    }
+
+    if (shouldTriggerHaptics) {
+      triggerWorkoutEditModeHaptics();
     }
 
     setDraftExercises(orderedExercises);
     setIsEditingExercises(true);
+  };
+
+  const enterExerciseEditModeFromLongPress = () => {
+    enterExerciseEditMode(true);
   };
 
   const exitExerciseEditMode = () => {
@@ -299,7 +308,7 @@ function WorkoutTemplateDetailLoaded({
               className="min-h-0 px-0 py-0"
               textClassName="text-primary text-sm"
               disabled={isLoadingExercises}
-              onPress={enterExerciseEditMode}
+              onPress={() => enterExerciseEditMode()}
             >
               Edit
             </Button>
@@ -317,26 +326,28 @@ function WorkoutTemplateDetailLoaded({
                 const exercise = exerciseById.get(templateExercise.exerciseId);
 
                 return (
-                  <Card
+                  <Pressable
                     key={templateExercise.id}
-                    className={cn(index > 0 && 'mt-3')}
+                    onLongPress={enterExerciseEditModeFromLongPress}
                   >
-                    <CardContent className="flex-row items-center gap-3">
-                      <View className="bg-muted h-9 w-9 items-center justify-center rounded-lg">
-                        <Text variant="caption" tone="muted">
-                          {index + 1}
-                        </Text>
-                      </View>
-                      <View className="flex-1">
-                        <Text variant="bodyMedium">
-                          {exercise?.name ?? 'Unknown exercise'}
-                        </Text>
-                        <Text variant="caption" tone="muted" className="mt-1">
-                          {exercise?.category ?? 'Exercise'}
-                        </Text>
-                      </View>
-                    </CardContent>
-                  </Card>
+                    <Card className={cn(index > 0 && 'mt-3')}>
+                      <CardContent className="flex-row items-center gap-3">
+                        <View className="bg-muted h-9 w-9 items-center justify-center rounded-lg">
+                          <Text variant="caption" tone="muted">
+                            {index + 1}
+                          </Text>
+                        </View>
+                        <View className="flex-1">
+                          <Text variant="bodyMedium">
+                            {exercise?.name ?? 'Unknown exercise'}
+                          </Text>
+                          <Text variant="caption" tone="muted" className="mt-1">
+                            {exercise?.category ?? 'Exercise'}
+                          </Text>
+                        </View>
+                      </CardContent>
+                    </Card>
+                  </Pressable>
                 );
               })}
             </View>
