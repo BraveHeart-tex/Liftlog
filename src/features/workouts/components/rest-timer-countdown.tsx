@@ -41,7 +41,7 @@ export function RestTimerCountdown({
   secondsRemaining,
   activeDuration
 }: RestTimerCountdownProps) {
-  const { colors } = useAppTheme();
+  const { colors, colorScheme } = useAppTheme();
   const progress = getSafeProgress(secondsRemaining, activeDuration);
   const progressEnd = useSharedValue(progress);
   const ringColor = status === 'paused' ? colors.accent : colors.info;
@@ -109,6 +109,7 @@ export function RestTimerCountdown({
             <Path
               path={progressPath}
               color={ringColor}
+              opacity={colorScheme === 'light' ? 0.5 : 1}
               style="stroke"
               strokeWidth={STROKE_WIDTH}
               strokeCap="round"
