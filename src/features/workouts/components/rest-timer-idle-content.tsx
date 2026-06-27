@@ -6,7 +6,10 @@ import {
   useRestTimerStore
 } from '@/src/features/workouts/stores/rest-timer-store';
 import { getTimerParts } from '@/src/lib/utils/date';
-import type { OnValueChanged } from '@quidone/react-native-wheel-picker';
+import type {
+  OnValueChanged,
+  OnValueChanging
+} from '@quidone/react-native-wheel-picker';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
@@ -44,6 +47,8 @@ export function RestTimerIdleContent({
   const [durationDraft] = useState(() => getDurationDraft(durationSeconds));
   const [minutes, setMinutes] = useState(durationDraft.minutes);
   const [seconds, setSeconds] = useState(durationDraft.seconds);
+  const minutesRef = useRef(durationDraft.minutes);
+  const secondsRef = useRef(durationDraft.seconds);
   const totalSeconds = minutes * 60 + seconds;
   const canStart = totalSeconds >= MIN_REST_TIMER_SECONDS;
 
@@ -55,26 +60,42 @@ export function RestTimerIdleContent({
     lastOpenTokenRef.current = openToken;
     const nextDraft = getDurationDraft(defaultDuration);
 
+    minutesRef.current = nextDraft.minutes;
+    secondsRef.current = nextDraft.seconds;
     setMinutes(nextDraft.minutes);
     setSeconds(nextDraft.seconds);
   }, [defaultDuration, openToken]);
 
+  const onMinuteChanging: OnValueChanging<(typeof minuteItems)[number]> =
+    useCallback(({ item }) => {
+      minutesRef.current = item.value;
+    }, []);
+
   const onMinuteChange: OnValueChanged<(typeof minuteItems)[number]> =
     useCallback(({ item }) => {
+      minutesRef.current = item.value;
       setMinutes(item.value);
+    }, []);
+
+  const onSecondChanging: OnValueChanging<(typeof secondItems)[number]> =
+    useCallback(({ item }) => {
+      secondsRef.current = item.value;
     }, []);
 
   const onSecondChange: OnValueChanged<(typeof secondItems)[number]> =
     useCallback(({ item }) => {
+      secondsRef.current = item.value;
       setSeconds(item.value);
     }, []);
 
   const handleStart = () => {
-    if (!canStart) {
+    const selectedTotalSeconds = minutesRef.current * 60 + secondsRef.current;
+
+    if (selectedTotalSeconds < MIN_REST_TIMER_SECONDS) {
       return;
     }
 
-    startTimer(totalSeconds);
+    startTimer(selectedTotalSeconds);
   };
 
   return (
@@ -85,6 +106,7 @@ export function RestTimerIdleContent({
             <WheelPicker
               data={minuteItems}
               value={minutes}
+              onValueChanging={onMinuteChanging}
               onValueChanged={onMinuteChange}
               renderWhen={renderWheels}
               visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
@@ -121,6 +143,7 @@ export function RestTimerIdleContent({
             <WheelPicker
               data={secondItems}
               value={seconds}
+              onValueChanging={onSecondChanging}
               onValueChanged={onSecondChange}
               renderWhen={renderWheels}
               visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}

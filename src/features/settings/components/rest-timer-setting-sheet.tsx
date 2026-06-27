@@ -9,10 +9,13 @@ import { Text } from '@/src/components/ui/text';
 import { WheelPicker } from '@/src/components/ui/wheel-picker';
 import { useSettings } from '@/src/features/settings/hooks';
 import { getTimerParts } from '@/src/lib/utils/date';
-import type { OnValueChanged } from '@quidone/react-native-wheel-picker';
+import type {
+  OnValueChanged,
+  OnValueChanging
+} from '@quidone/react-native-wheel-picker';
 
 import { XIcon } from 'lucide-react-native';
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 const PICKER_ITEM_HEIGHT = 65;
@@ -76,6 +79,8 @@ const RestTimerSettingSheetContent = memo(
     const [seconds, setSeconds] = useState(
       () => getTimerParts(restTimerDuration).seconds
     );
+    const minutesRef = useRef(getTimerParts(restTimerDuration).minutes);
+    const secondsRef = useRef(getTimerParts(restTimerDuration).seconds);
 
     useEffect(() => {
       if (!isOpen) {
@@ -84,6 +89,8 @@ const RestTimerSettingSheetContent = memo(
 
       const nextTimer = getTimerParts(restTimerDuration);
 
+      minutesRef.current = nextTimer.minutes;
+      secondsRef.current = nextTimer.seconds;
       setMinutes(nextTimer.minutes);
       setSeconds(nextTimer.seconds);
     }, [isOpen, restTimerDuration]);
@@ -92,11 +99,13 @@ const RestTimerSettingSheetContent = memo(
     const canSave = totalSeconds >= MIN_REST_TIMER_SECONDS;
 
     const handleSave = () => {
-      if (!canSave) {
+      const selectedTotalSeconds = minutesRef.current * 60 + secondsRef.current;
+
+      if (selectedTotalSeconds < MIN_REST_TIMER_SECONDS) {
         return;
       }
 
-      setRestTimerDuration(totalSeconds);
+      setRestTimerDuration(selectedTotalSeconds);
       onClose();
     };
 
@@ -104,13 +113,25 @@ const RestTimerSettingSheetContent = memo(
       onClose();
     };
 
+    const onMinuteChanging: OnValueChanging<(typeof minuteItems)[number]> =
+      useCallback(({ item }) => {
+        minutesRef.current = item.value;
+      }, []);
+
     const onMinuteChange: OnValueChanged<(typeof minuteItems)[number]> =
       useCallback(({ item }) => {
+        minutesRef.current = item.value;
         setMinutes(item.value);
+      }, []);
+
+    const onSecondChanging: OnValueChanging<(typeof secondItems)[number]> =
+      useCallback(({ item }) => {
+        secondsRef.current = item.value;
       }, []);
 
     const onSecondChange: OnValueChanged<(typeof secondItems)[number]> =
       useCallback(({ item }) => {
+        secondsRef.current = item.value;
         setSeconds(item.value);
       }, []);
 
@@ -135,6 +156,7 @@ const RestTimerSettingSheetContent = memo(
               <WheelPicker
                 data={minuteItems}
                 value={minutes}
+                onValueChanging={onMinuteChanging}
                 onValueChanged={onMinuteChange}
                 renderWhen={renderWheels}
                 visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
@@ -171,6 +193,7 @@ const RestTimerSettingSheetContent = memo(
               <WheelPicker
                 data={secondItems}
                 value={seconds}
+                onValueChanging={onSecondChanging}
                 onValueChanged={onSecondChange}
                 renderWhen={renderWheels}
                 visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}

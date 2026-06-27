@@ -10,7 +10,7 @@ import {
   formatDurationMs,
   getDurationMsParts
 } from '@/src/lib/utils/format-time';
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -81,6 +81,10 @@ const SetDurationPickerSheetContent = memo(
     const [minutes, setMinutes] = useState(initialParts.minutes);
     const [seconds, setSeconds] = useState(initialParts.seconds);
     const [centiseconds, setCentiseconds] = useState(initialParts.centiseconds);
+    const hoursRef = useRef(initialParts.hours);
+    const minutesRef = useRef(initialParts.minutes);
+    const secondsRef = useRef(initialParts.seconds);
+    const centisecondsRef = useRef(initialParts.centiseconds);
     const totalMs =
       hours * 3600000 + minutes * 60000 + seconds * 1000 + centiseconds * 10;
     const canConfirm = totalMs >= 10;
@@ -92,11 +96,66 @@ const SetDurationPickerSheetContent = memo(
 
       const nextParts = getDurationMsParts(valueMs);
 
+      hoursRef.current = nextParts.hours;
+      minutesRef.current = nextParts.minutes;
+      secondsRef.current = nextParts.seconds;
+      centisecondsRef.current = nextParts.centiseconds;
       setHours(nextParts.hours);
       setMinutes(nextParts.minutes);
       setSeconds(nextParts.seconds);
       setCentiseconds(nextParts.centiseconds);
     }, [isOpen, valueMs]);
+
+    const handleHoursChanging = (value: number) => {
+      hoursRef.current = value;
+    };
+
+    const handleHoursChange = (value: number) => {
+      hoursRef.current = value;
+      setHours(value);
+    };
+
+    const handleMinutesChanging = (value: number) => {
+      minutesRef.current = value;
+    };
+
+    const handleMinutesChange = (value: number) => {
+      minutesRef.current = value;
+      setMinutes(value);
+    };
+
+    const handleSecondsChanging = (value: number) => {
+      secondsRef.current = value;
+    };
+
+    const handleSecondsChange = (value: number) => {
+      secondsRef.current = value;
+      setSeconds(value);
+    };
+
+    const handleCentisecondsChanging = (value: number) => {
+      centisecondsRef.current = value;
+    };
+
+    const handleCentisecondsChange = (value: number) => {
+      centisecondsRef.current = value;
+      setCentiseconds(value);
+    };
+
+    const handleConfirm = () => {
+      const selectedTotalMs =
+        hoursRef.current * 3600000 +
+        minutesRef.current * 60000 +
+        secondsRef.current * 1000 +
+        centisecondsRef.current * 10;
+
+      if (selectedTotalMs < 10) {
+        return;
+      }
+
+      onConfirm(selectedTotalMs);
+      onClose();
+    };
 
     return (
       <>
@@ -113,28 +172,32 @@ const SetDurationPickerSheetContent = memo(
               label="HR"
               data={hourItems}
               value={hours}
-              onValueChange={setHours}
+              onValueChanging={handleHoursChanging}
+              onValueChange={handleHoursChange}
               renderWhen={renderWheels}
             />
             <SetDurationWheel
               label="MIN"
               data={minuteItems}
               value={minutes}
-              onValueChange={setMinutes}
+              onValueChanging={handleMinutesChanging}
+              onValueChange={handleMinutesChange}
               renderWhen={renderWheels}
             />
             <SetDurationWheel
               label="SEC"
               data={secondItems}
               value={seconds}
-              onValueChange={setSeconds}
+              onValueChanging={handleSecondsChanging}
+              onValueChange={handleSecondsChange}
               renderWhen={renderWheels}
             />
             <SetDurationWheel
               label="CS"
               data={centisecondItems}
               value={centiseconds}
-              onValueChange={setCentiseconds}
+              onValueChanging={handleCentisecondsChanging}
+              onValueChange={handleCentisecondsChange}
               renderWhen={renderWheels}
             />
           </View>
@@ -153,10 +216,7 @@ const SetDurationPickerSheetContent = memo(
             <Button
               className="w-full"
               disabled={!canConfirm}
-              onPress={() => {
-                onConfirm(totalMs);
-                onClose();
-              }}
+              onPress={handleConfirm}
             >
               Done
             </Button>
