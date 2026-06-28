@@ -4,7 +4,12 @@ import { cn } from '@/src/lib/utils/cn';
 import { appFonts } from '@/src/theme/fonts';
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { ReactNode } from 'react';
-import { View, type GestureResponderEvent, type TextStyle } from 'react-native';
+import {
+  View,
+  type GestureResponderEvent,
+  type StyleProp,
+  type TextStyle
+} from 'react-native';
 
 const buttonVariantConfig = cva(
   'flex-row items-center justify-center rounded-lg border',
@@ -49,6 +54,7 @@ interface ButtonProps {
   rightIcon?: ReactNode;
   className?: string;
   textClassName?: string;
+  textStyle?: StyleProp<TextStyle>;
   children: ReactNode;
   onPress?: (event: GestureResponderEvent) => void;
   onPressIn?: (event: GestureResponderEvent) => void;
@@ -95,6 +101,7 @@ export function Button({
   rightIcon,
   className,
   textClassName,
+  textStyle,
   children,
   onPress,
   onPressIn,
@@ -122,7 +129,7 @@ export function Button({
         <Text
           tone="inherit"
           className={cn(buttonTextVariants({ variant }), textClassName)}
-          style={buttonTextStyle}
+          style={[buttonTextStyle, textStyle]}
         >
           Loading...
         </Text>
@@ -136,7 +143,7 @@ export function Button({
                 buttonTextVariants({ variant, icon: isIconButton }),
                 textClassName
               )}
-              style={buttonTextStyle}
+              style={[buttonTextStyle, textStyle]}
             >
               {label}
             </Text>

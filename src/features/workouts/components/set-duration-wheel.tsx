@@ -59,7 +59,8 @@ export function SetDurationWheel({
           itemHeight={PICKER_ITEM_HEIGHT}
           width="100%"
           overlayItemClassName="rounded-lg border border-border bg-secondary/40"
-          itemTextClassName="text-2xl font-semibold tabular-nums"
+          itemTextClassName="text-2xl font-semibold"
+          itemTextStyle={{ fontVariant: ['tabular-nums'] }}
         />
       </View>
       <View pointerEvents="none" className="ml-1 justify-center">

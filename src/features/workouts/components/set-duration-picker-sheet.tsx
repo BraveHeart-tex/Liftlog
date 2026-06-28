@@ -161,7 +161,12 @@ const SetDurationPickerSheetContent = memo(
       <>
         <BottomSheetHeader className="items-center">
           <BottomSheetTitle>Set time</BottomSheetTitle>
-          <Text variant="small" tone="muted" className="mt-1 tabular-nums">
+          <Text
+            variant="small"
+            tone="muted"
+            className="mt-1"
+            style={{ fontVariant: ['tabular-nums'] }}
+          >
             {formatDurationMs(totalMs)}
           </Text>
         </BottomSheetHeader>

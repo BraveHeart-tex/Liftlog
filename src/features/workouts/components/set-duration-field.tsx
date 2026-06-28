@@ -41,8 +41,9 @@ export function SetDurationField({
         <Text
           variant="bodyMedium"
           tone={value ? 'default' : 'muted'}
-          className="px-2 py-2 text-center tabular-nums"
+          className="px-2 py-2 text-center"
           numberOfLines={1}
+          style={{ fontVariant: ['tabular-nums'] }}
         >
           {value || placeholder}
         </Text>

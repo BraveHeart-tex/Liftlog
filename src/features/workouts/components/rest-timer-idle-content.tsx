@@ -113,7 +113,8 @@ export function RestTimerIdleContent({
               itemHeight={PICKER_ITEM_HEIGHT}
               width="100%"
               overlayItemClassName="rounded-xl border border-border bg-secondary/40"
-              itemTextClassName="text-4xl font-semibold tabular-nums"
+              itemTextClassName="text-4xl font-semibold"
+              itemTextStyle={{ fontVariant: ['tabular-nums'] }}
             />
             <View
               pointerEvents="none"
@@ -150,7 +151,8 @@ export function RestTimerIdleContent({
               itemHeight={PICKER_ITEM_HEIGHT}
               width="100%"
               overlayItemClassName="rounded-xl border border-border bg-secondary/40"
-              itemTextClassName="text-4xl font-semibold tabular-nums"
+              itemTextClassName="text-4xl font-semibold"
+              itemTextStyle={{ fontVariant: ['tabular-nums'] }}
             />
             <View
               pointerEvents="none"
