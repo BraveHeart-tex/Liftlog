@@ -84,7 +84,8 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
     totalVolume,
     totalCompletedSets,
     weightUnit,
-    canRepeatWorkout
+    canRepeatWorkout,
+    hasSavedTemplate
   } = detail;
   const renameWorkout = useWorkoutRename();
   const workoutName = workout.name;
@@ -243,17 +244,18 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
         ))}
       </View>
 
-      <View className="mt-6">
-        <Button
-          variant="secondary"
-          className="w-full"
-          disabled={workoutExerciseRows.length === 0}
-          onPress={openTemplateSheet}
-          leftIcon={<Icon as={BookmarkIcon} tone="secondaryForeground" />}
-        >
-          Save as template
-        </Button>
-      </View>
+      {workoutExerciseRows.length > 0 && !hasSavedTemplate && (
+        <View className="mt-6">
+          <Button
+            variant="secondary"
+            className="w-full"
+            onPress={openTemplateSheet}
+            leftIcon={<Icon as={BookmarkIcon} tone="secondaryForeground" />}
+          >
+            Save as template
+          </Button>
+        </View>
+      )}
 
       <View className="mt-6">
         <View className="flex-row items-center justify-between">
@@ -295,6 +297,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
       <SaveWorkoutTemplateSheet
         isOpen={isTemplateSheetOpen}
         initialName={workoutName}
+        sourceWorkoutId={workout.id}
         workoutExerciseRows={workoutExerciseRowsForTemplate}
         onClose={closeTemplateSheet}
       />

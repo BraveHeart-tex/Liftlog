@@ -1,0 +1,2 @@
+ALTER TABLE `workout_templates` ADD `source_workout_id` text REFERENCES workouts(id);--> statement-breakpoint
+CREATE INDEX `workout_templates_source_workout_id_idx` ON `workout_templates` (`source_workout_id`);

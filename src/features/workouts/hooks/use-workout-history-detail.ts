@@ -9,7 +9,8 @@ import {
   getActiveWorkoutQuery,
   getSetsForWorkoutExercisesQuery,
   getWorkoutByIdQuery,
-  getWorkoutExercisesQuery
+  getWorkoutExercisesQuery,
+  getWorkoutTemplateBySourceWorkoutIdQuery
 } from '@/src/features/workouts/repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
 import { useMemo } from 'react';
@@ -35,6 +36,12 @@ export function useWorkoutHistoryDetail(workoutId: string | undefined) {
     [db, resolvedWorkoutId]
   );
   const workoutExerciseRows = workoutExerciseResult.data;
+
+  const savedTemplateResult = useLiveWithFallback(
+    getWorkoutTemplateBySourceWorkoutIdQuery(db, resolvedWorkoutId),
+    [db, resolvedWorkoutId]
+  );
+  const hasSavedTemplate = savedTemplateResult.data.length > 0;
 
   const workoutExerciseIds = useMemo(
     () => workoutExerciseRows.map(workoutExercise => workoutExercise.id),
@@ -123,6 +130,7 @@ export function useWorkoutHistoryDetail(workoutId: string | undefined) {
     totalCompletedSets,
     weightUnit,
     isLoading: Boolean(workoutId) && !workoutResult.isLive,
-    canRepeatWorkout
+    canRepeatWorkout,
+    hasSavedTemplate
   };
 }

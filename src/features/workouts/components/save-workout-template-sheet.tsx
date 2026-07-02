@@ -7,7 +7,7 @@ import {
 import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
-import type { WorkoutExercise } from '@/src/db/schema';
+import type { Workout, WorkoutExercise } from '@/src/db/schema';
 import { useSaveWorkoutTemplate } from '@/src/features/workouts/hooks';
 import { XIcon } from 'lucide-react-native';
 import {
@@ -24,6 +24,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 interface SaveWorkoutTemplateSheetProps {
   isOpen: boolean;
   initialName: string;
+  sourceWorkoutId?: Workout['id'];
   workoutExerciseRows: Pick<WorkoutExercise, 'exerciseId' | 'order'>[];
   onClose: () => void;
 }
@@ -33,6 +34,7 @@ type BottomSheetInputRef = ComponentRef<typeof BottomSheetInput>;
 export function SaveWorkoutTemplateSheet({
   isOpen,
   initialName,
+  sourceWorkoutId,
   workoutExerciseRows,
   onClose
 }: SaveWorkoutTemplateSheetProps) {
@@ -51,6 +53,7 @@ export function SaveWorkoutTemplateSheet({
       <SaveWorkoutTemplateSheetContent
         isOpen={isOpen}
         initialName={initialName}
+        sourceWorkoutId={sourceWorkoutId}
         workoutExerciseRows={workoutExerciseRows}
         onClose={handleClose}
       />
@@ -62,6 +65,7 @@ const SaveWorkoutTemplateSheetContent = memo(
   function SaveWorkoutTemplateSheetContent({
     isOpen,
     initialName,
+    sourceWorkoutId,
     workoutExerciseRows,
     onClose
   }: SaveWorkoutTemplateSheetProps) {
@@ -100,7 +104,7 @@ const SaveWorkoutTemplateSheetContent = memo(
       setTemplateError(undefined);
 
       try {
-        saveWorkoutTemplate(templateName, workoutExerciseRows);
+        saveWorkoutTemplate(templateName, workoutExerciseRows, sourceWorkoutId);
       } catch {
         setTemplateError('Could not save template. Try again.');
         isSavingTemplateRef.current = false;

@@ -279,6 +279,17 @@ export function getWorkoutTemplateByIdQuery(
   return db.select().from(workoutTemplates).where(eq(workoutTemplates.id, id));
 }
 
+export function getWorkoutTemplateBySourceWorkoutIdQuery(
+  db: DrizzleDb,
+  sourceWorkoutId: Workout['id']
+) {
+  return db
+    .select()
+    .from(workoutTemplates)
+    .where(eq(workoutTemplates.sourceWorkoutId, sourceWorkoutId))
+    .limit(1);
+}
+
 export function getWorkoutTemplateExercisesQuery(
   db: DrizzleDb,
   templateId: WorkoutTemplate['id']
@@ -456,7 +467,14 @@ export function deleteWorkout(db: DrizzleDb, id: Workout['id']): boolean {
     return false;
   }
 
-  db.delete(workouts).where(eq(workouts.id, id)).run();
+  db.transaction(tx => {
+    tx.update(workoutTemplates)
+      .set({ sourceWorkoutId: null })
+      .where(eq(workoutTemplates.sourceWorkoutId, id))
+      .run();
+
+    tx.delete(workouts).where(eq(workouts.id, id)).run();
+  });
 
   return true;
 }
@@ -715,10 +733,12 @@ export function createWorkoutTemplate(
   db: DrizzleDb,
   {
     name,
-    exerciseRows
+    exerciseRows,
+    sourceWorkoutId
   }: {
     name: string;
     exerciseRows: Pick<WorkoutTemplateExercise, 'exerciseId' | 'order'>[];
+    sourceWorkoutId?: Workout['id'];
   }
 ): WorkoutTemplate {
   const now = Date.now();
@@ -731,6 +751,7 @@ export function createWorkoutTemplate(
       .insert(workoutTemplates)
       .values({
         name: resolveTemplateName(name),
+        sourceWorkoutId,
         createdAt: now,
         updatedAt: now
       })

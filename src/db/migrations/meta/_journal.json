@@ -43,6 +43,13 @@
       "when": 1781987214380,
       "tag": "0005_loose_squirrel_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1783017960115,
+      "tag": "0006_flimsy_wolfpack",
+      "breakpoints": true
     }
   ]
 }

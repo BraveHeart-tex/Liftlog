@@ -96,6 +96,9 @@ export const workoutTemplates = sqliteTable(
       .primaryKey()
       .$defaultFn(() => generateUuid()),
     name: text('name').notNull(),
+    sourceWorkoutId: text('source_workout_id').references(() => workouts.id, {
+      onDelete: 'set null'
+    }),
     createdAt: integer('created_at')
       .notNull()
       .$defaultFn(() => Date.now()),
@@ -104,6 +107,7 @@ export const workoutTemplates = sqliteTable(
       .$defaultFn(() => Date.now())
   },
   table => [
+    index('workout_templates_source_workout_id_idx').on(table.sourceWorkoutId),
     index('workout_templates_updated_at_idx').on(table.updatedAt),
     index('workout_templates_name_idx').on(table.name)
   ]
