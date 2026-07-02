@@ -1,4 +1,5 @@
 import { Text } from '@/src/components/ui/text';
+import { cn } from '@/src/lib/utils/cn';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import WheelPickerBase, {
   withVirtualized,
@@ -25,13 +26,16 @@ type WheelPickerItem = PickerItem<unknown>;
 type WheelPickerProps<ItemT extends WheelPickerItem> =
   BaseWheelPickerProps<ItemT> & WheelPickerClassNameProps;
 
-const defaultRenderItem = <ItemT extends WheelPickerItem>({
-  item,
-  itemTextStyle
-}: RenderItemProps<ItemT>) => {
+const defaultRenderItem = <ItemT extends WheelPickerItem>(
+  { item, itemTextStyle }: RenderItemProps<ItemT>,
+  itemTextClassName?: string
+) => {
   return (
     <View className="flex-1 items-center justify-center">
-      <Text className="text-foreground text-center" style={itemTextStyle}>
+      <Text
+        className={cn('text-foreground text-center', itemTextClassName)}
+        style={itemTextStyle}
+      >
         {item.label ?? String(item.value)}
       </Text>
     </View>
@@ -60,6 +64,7 @@ const WheelPickerBridge = <ItemT extends WheelPickerItem>({
   itemHeight = 48,
   visibleItemCount = 5,
   style,
+  itemTextClassName,
   ...props
 }: WheelPickerProps<ItemT>) => {
   const { colors } = useAppTheme();
@@ -85,14 +90,16 @@ const WheelPickerBridge = <ItemT extends WheelPickerItem>({
       itemHeight={itemHeight}
       visibleItemCount={visibleItemCount}
       style={style}
-      renderItem={renderItem ?? defaultRenderItem}
+      renderItem={
+        renderItem ??
+        (itemProps => defaultRenderItem(itemProps, itemTextClassName))
+      }
     />
   );
 };
 
 const StyledWheelPickerBase = styled(WheelPickerBridge, {
   className: 'style',
-  itemTextClassName: 'itemTextStyle',
   overlayItemClassName: 'overlayItemStyle',
   contentContainerClassName: 'contentContainerStyle'
 });
