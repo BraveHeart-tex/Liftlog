@@ -23,7 +23,7 @@
     "ts-check": "tsc --noEmit true --project ./tsconfig.json"
   },
   "dependencies": {
-    "@expo-google-fonts/dm-sans": "0.4.2",
+    "@expo-google-fonts/inter": "^0.4.2",
     "@gorhom/bottom-sheet": "5.2.8",
     "@quidone/react-native-wheel-picker": "^1.7.0",
     "@react-navigation/bottom-tabs": "^7.4.0",
