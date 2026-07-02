@@ -62,7 +62,7 @@ export function ActiveWorkoutActionsSheet({
           className="min-h-14 flex-row items-center justify-center gap-3 rounded-lg px-3 py-3"
           onPress={handleRename}
         >
-          <Icon icon={PencilIcon} size="lg" tone="foreground" />
+          <Icon as={PencilIcon} size="lg" tone="foreground" />
           <Text variant="bodyMedium" className="text-center">
             Rename workout
           </Text>
@@ -74,7 +74,7 @@ export function ActiveWorkoutActionsSheet({
           className="min-h-14 flex-row items-center justify-center gap-3 rounded-lg px-3 py-3"
           onPress={handleSaveTemplate}
         >
-          <Icon icon={BookmarkIcon} size="lg" tone="foreground" />
+          <Icon as={BookmarkIcon} size="lg" tone="foreground" />
           <Text variant="bodyMedium" className="text-center">
             Save as template
           </Text>
@@ -87,7 +87,7 @@ export function ActiveWorkoutActionsSheet({
           className="min-h-14 flex-row items-center justify-center gap-3 rounded-lg px-3 py-3"
           onPress={handleDiscard}
         >
-          <Icon icon={Trash2Icon} size="lg" tone="danger" />
+          <Icon as={Trash2Icon} size="lg" tone="danger" />
           <Text variant="bodyMedium" tone="danger" className="text-center">
             Discard workout
           </Text>

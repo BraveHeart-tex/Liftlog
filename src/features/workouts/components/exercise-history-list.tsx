@@ -7,6 +7,7 @@ import {
   formatScore,
   type TrackingType
 } from '@/src/features/progress/tracking';
+import { WorkoutSetSummary } from '@/src/features/workouts/components/workout-set-summary';
 import type { useExerciseHistory } from '@/src/features/workouts/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import type { WeightUnit } from '@/src/lib/utils/weight';
@@ -17,7 +18,6 @@ import {
   TrendingUpIcon
 } from 'lucide-react-native';
 import { View } from 'react-native';
-import { WorkoutSetSummary } from '@/src/features/workouts/components/workout-set-summary';
 
 function formatWorkoutDate(timestamp: number) {
   return new Intl.DateTimeFormat(undefined, {
@@ -92,7 +92,7 @@ function ExerciseHistoryWidgets({
       <View className="flex-row gap-3">
         <View className="border-border bg-card min-w-0 flex-1 rounded-lg border px-3 py-3">
           <View className="flex-row items-center gap-2">
-            <Icon icon={StarIcon} tone="warning" size="md" />
+            <Icon as={StarIcon} tone="warning" size="md" />
             <View className="min-w-0 flex-1">
               <Text variant="bodyMedium" numberOfLines={1}>
                 {latestPersonalRecord
@@ -108,7 +108,7 @@ function ExerciseHistoryWidgets({
 
         <View className="border-border bg-card min-w-0 flex-1 rounded-lg border px-3 py-3">
           <View className="flex-row items-center gap-2">
-            <Icon icon={ProgressionIcon} tone={progressionTone} size="md" />
+            <Icon as={ProgressionIcon} tone={progressionTone} size="md" />
             <View className="min-w-0 flex-1">
               <Text
                 variant="bodyMedium"

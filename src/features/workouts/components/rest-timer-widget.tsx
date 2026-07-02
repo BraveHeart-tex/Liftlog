@@ -52,7 +52,7 @@ export function RestTimerWidget() {
                 )}
               >
                 <Icon
-                  icon={isPaused ? PauseIcon : TimerIcon}
+                  as={isPaused ? PauseIcon : TimerIcon}
                   size="lg"
                   tone={isPaused ? 'accent' : 'info'}
                 />

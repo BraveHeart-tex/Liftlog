@@ -33,7 +33,7 @@ export function ThemeOptionCard({
         onPressIn={onPressIn}
         onPressOut={onPressOut}
       >
-        <Icon icon={icon} tone={isSelected ? 'primary' : 'mutedForeground'} />
+        <Icon as={icon} tone={isSelected ? 'primary' : 'mutedForeground'} />
         <Text
           variant="small"
           className={isSelected ? 'text-primary' : 'text-muted-foreground'}

@@ -146,7 +146,7 @@ const RestTimerSettingSheetContent = memo(
             accessibilityLabel="Close rest timer sheet"
             className="px-0"
           >
-            <Icon icon={XIcon} size="lg" tone="foreground" />
+            <Icon as={XIcon} size="lg" tone="foreground" />
           </Button>
         </BottomSheetHeader>
 

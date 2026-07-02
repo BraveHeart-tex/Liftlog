@@ -35,10 +35,10 @@ export function EmptyState({
       {icon ? (
         isSection ? (
           <View className="bg-card h-12 w-12 items-center justify-center rounded-lg">
-            <Icon icon={icon} tone="mutedForeground" size="md" />
+            <Icon as={icon} tone="mutedForeground" size="md" />
           </View>
         ) : (
-          <Icon icon={icon} tone="mutedForeground" size="empty" />
+          <Icon as={icon} tone="mutedForeground" size="empty" />
         )
       ) : null}
       <Text

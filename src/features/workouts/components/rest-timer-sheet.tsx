@@ -109,7 +109,7 @@ const RestTimerSheetContent = memo(function RestTimerSheetContent({
       <BottomSheetHeader className="flex-row items-center justify-between">
         <BottomSheetTitle>Rest Timer</BottomSheetTitle>
         <Button variant="secondary" size="icon" onPress={onClose}>
-          <Icon icon={XIcon} size="lg" tone="foreground" />
+          <Icon as={XIcon} size="lg" tone="foreground" />
         </Button>
       </BottomSheetHeader>
 

@@ -39,7 +39,7 @@ export function NewTemplateExerciseRow({
         accessibilityLabel={`Delete ${exercise.name}`}
         onPress={onDelete}
       >
-        <Icon icon={TrashIcon} size={iconSizes.sm} tone="danger" />
+        <Icon as={TrashIcon} size={iconSizes.sm} tone="danger" />
       </Button>
 
       <View className="flex-1">
@@ -59,7 +59,7 @@ export function NewTemplateExerciseRow({
           accessibilityLabel={`Reorder ${exercise.name}`}
           onPressIn={onDrag}
         >
-          <Icon icon={GripIcon} size={iconSizes.sm} tone="mutedForeground" />
+          <Icon as={GripIcon} size={iconSizes.sm} tone="mutedForeground" />
         </Button>
       )}
     </View>

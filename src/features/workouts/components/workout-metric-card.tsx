@@ -18,7 +18,7 @@ export const WorkoutMetricCard = ({
     <Card className="flex-1" key={label}>
       <CardContent className="gap-1">
         <View className="flex-row items-center gap-2">
-          <Icon icon={icon} size="xs" tone="primary" />
+          <Icon as={icon} size="xs" tone="primary" />
           <Text variant="caption" tone="muted">
             {label}
           </Text>

@@ -3,13 +3,13 @@ import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { resolveTrackingType } from '@/src/features/progress/tracking';
 import { useSettings } from '@/src/features/settings/hooks';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
 import { useRemoveWorkoutExercise } from '@/src/features/workouts/hooks';
 import { cn } from '@/src/lib/utils/cn';
 import { formatWeightForUnit } from '@/src/lib/utils/weight';
 import { iconSizes } from '@/src/theme/sizes';
 import { GripIcon, TrashIcon } from 'lucide-react-native';
 import { Alert, View } from 'react-native';
-import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
 
 interface ActiveWorkoutExerciseEditRowProps {
   item: WorkoutExerciseWithSets;
@@ -82,7 +82,7 @@ export function ActiveWorkoutExerciseEditRow({
       )}
     >
       <Button variant="ghost" size="icon" onPress={handleRemoveExercise}>
-        <Icon icon={TrashIcon} size={iconSizes.sm} tone="danger" />
+        <Icon as={TrashIcon} size={iconSizes.sm} tone="danger" />
       </Button>
 
       <View className="flex-1">
@@ -102,7 +102,7 @@ export function ActiveWorkoutExerciseEditRow({
           accessibilityLabel="Drag exercise"
           onPressIn={onDrag}
         >
-          <Icon icon={GripIcon} size={iconSizes.sm} tone="mutedForeground" />
+          <Icon as={GripIcon} size={iconSizes.sm} tone="mutedForeground" />
         </Button>
       )}
     </View>

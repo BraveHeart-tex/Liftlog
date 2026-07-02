@@ -96,7 +96,7 @@ export default function ExercisesScreen() {
             accessibilityLabel="Create exercise"
             onPress={() => router.push('/exercises/new')}
           >
-            <Icon icon={PlusIcon} tone="secondaryForeground" />
+            <Icon as={PlusIcon} tone="secondaryForeground" />
           </Button>
         </View>
 
@@ -148,7 +148,7 @@ export default function ExercisesScreen() {
             <View className="items-center px-2 pt-16 pb-10">
               <View className="border-border/60 bg-card h-28 w-28 items-center justify-center rounded-full border">
                 <View className="bg-muted h-20 w-20 items-center justify-center rounded-full">
-                  <Icon icon={SearchXIcon} size={28} tone="mutedForeground" />
+                  <Icon as={SearchXIcon} size={28} tone="mutedForeground" />
                 </View>
               </View>
 
@@ -174,7 +174,7 @@ export default function ExercisesScreen() {
                   }}
                   leftIcon={
                     <Icon
-                      icon={PlusIcon}
+                      as={PlusIcon}
                       size={iconSizes.md}
                       tone="primaryForeground"
                     />

@@ -160,7 +160,7 @@ const RenameSheetContent = memo(function RenameSheetContent({
           onPress={handleClose}
           accessibilityLabel="Close rename sheet"
         >
-          <Icon icon={XIcon} size="lg" tone="foreground" />
+          <Icon as={XIcon} size="lg" tone="foreground" />
         </Button>
       </BottomSheetHeader>
 

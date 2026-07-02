@@ -57,7 +57,7 @@ export const WorkoutPreferencesSection = () => {
                   onPress={openTimerSheet}
                   rightIcon={
                     <Icon
-                      icon={ChevronDown}
+                      as={ChevronDown}
                       size={iconSizes.sm}
                       tone="secondaryForeground"
                     />

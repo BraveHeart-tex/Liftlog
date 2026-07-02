@@ -1,7 +1,7 @@
 import { iconSizes, type IconSize } from '@/src/theme/sizes';
-import type { ComponentType } from 'react';
 import type { LucideIcon, LucideProps } from 'lucide-react-native';
 import { styled } from 'nativewind';
+import type { ComponentType } from 'react';
 
 export type IconComponent = LucideIcon & {
   defaultProps?: Partial<LucideProps>;
@@ -61,7 +61,7 @@ type AppIconProps = Omit<
   LucideProps,
   'className' | 'color' | 'ref' | 'size'
 > & {
-  icon: IconComponent;
+  as: IconComponent;
   size?: IconSize | number;
   tone?: IconTone;
 };
@@ -102,13 +102,13 @@ function getIconSize(size: IconSize | number) {
 }
 
 export function Icon({
-  icon,
+  as,
   size = iconSizes.md,
   tone = 'foreground',
   strokeWidth = 2,
   ...props
 }: AppIconProps) {
-  const StyledIcon = createStyledIcon(icon);
+  const StyledIcon = createStyledIcon(as);
 
   return (
     <StyledIcon

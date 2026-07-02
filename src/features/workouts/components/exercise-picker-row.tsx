@@ -36,7 +36,7 @@ export const ExercisePickerRow = ({
           )}
         >
           <Icon
-            icon={isSelected ? CheckIcon : PlusIcon}
+            as={isSelected ? CheckIcon : PlusIcon}
             size="sm"
             tone={isSelected ? 'primaryForeground' : 'secondaryForeground'}
           />

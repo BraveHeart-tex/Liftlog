@@ -57,7 +57,7 @@ export function RestTimerRunningContent() {
             onPress={handlePause}
             leftIcon={
               <Icon
-                icon={PauseIcon}
+                as={PauseIcon}
                 tone="secondaryForeground"
                 size={iconSizes.md}
               />

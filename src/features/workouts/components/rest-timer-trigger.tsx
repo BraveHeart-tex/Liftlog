@@ -31,7 +31,7 @@ export function RestTimerTrigger({ onPress }: RestTimerTriggerProps) {
         className="h-10 w-10"
         onPress={onPress}
       >
-        <Icon icon={TimerIcon} size="lg" tone="foreground" />
+        <Icon as={TimerIcon} size="lg" tone="foreground" />
       </Button>
     );
   }
@@ -50,7 +50,7 @@ export function RestTimerTrigger({ onPress }: RestTimerTriggerProps) {
     >
       <View className="flex-row items-center gap-1.5">
         <Icon
-          icon={isRestTimerPaused ? PauseIcon : TimerIcon}
+          as={isRestTimerPaused ? PauseIcon : TimerIcon}
           size="md"
           tone={isRestTimerPaused ? 'accent' : 'info'}
         />

@@ -240,7 +240,7 @@ function WorkoutTemplateDetailLoaded({
         ) : (
           <Button
             className="w-full"
-            leftIcon={<Icon icon={DumbbellIcon} tone="primaryForeground" />}
+            leftIcon={<Icon as={DumbbellIcon} tone="primaryForeground" />}
             onPress={handleStartWorkout}
           >
             Start workout
@@ -284,7 +284,7 @@ function WorkoutTemplateDetailLoaded({
             accessibilityLabel="Template actions"
             onPress={openActions}
           >
-            <Icon icon={EllipsisVerticalIcon} size="lg" tone="foreground" />
+            <Icon as={EllipsisVerticalIcon} size="lg" tone="foreground" />
           </Button>
         )}
       </View>

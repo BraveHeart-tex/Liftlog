@@ -123,7 +123,7 @@ const SaveWorkoutTemplateSheetContent = memo(
             </BottomSheetDescription>
           </View>
           <Button variant="secondary" size="icon" onPress={handleClose}>
-            <Icon icon={XIcon} size="lg" tone="foreground" />
+            <Icon as={XIcon} size="lg" tone="foreground" />
           </Button>
         </BottomSheetHeader>
 

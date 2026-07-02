@@ -128,7 +128,7 @@ export function StepsContent() {
                 onPress={openActionsSheet}
               >
                 <Icon
-                  icon={EllipsisVerticalIcon}
+                  as={EllipsisVerticalIcon}
                   size="md"
                   tone="secondaryForeground"
                 />

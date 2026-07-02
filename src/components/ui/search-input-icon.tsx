@@ -5,5 +5,5 @@ import type { ComponentProps } from 'react';
 export const SearchInputIcon = (
   props: Partial<Omit<ComponentProps<typeof Icon>, 'icon'>>
 ) => {
-  return <Icon icon={SearchIcon} tone="mutedForeground" size="sm" {...props} />;
+  return <Icon as={SearchIcon} tone="mutedForeground" size="sm" {...props} />;
 };

@@ -64,7 +64,7 @@ export function ExerciseDetailActionsSheet({
           className="min-h-14 flex-row items-center justify-center gap-3 rounded-lg px-3 py-3"
           onPress={handleRename}
         >
-          <Icon icon={PencilIcon} size="lg" tone="foreground" />
+          <Icon as={PencilIcon} size="lg" tone="foreground" />
           <Text variant="bodyMedium" className="text-center">
             Rename
           </Text>
@@ -77,7 +77,7 @@ export function ExerciseDetailActionsSheet({
           className="min-h-14 flex-row items-center justify-center gap-3 rounded-lg px-3 py-3"
           onPress={handleEditDetails}
         >
-          <Icon icon={SlidersHorizontalIcon} size="lg" tone="foreground" />
+          <Icon as={SlidersHorizontalIcon} size="lg" tone="foreground" />
           <Text variant="bodyMedium" className="text-center">
             Edit details
           </Text>
@@ -90,7 +90,7 @@ export function ExerciseDetailActionsSheet({
           className="min-h-14 flex-row items-center justify-center gap-3 rounded-lg px-3 py-3"
           onPress={handleRemove}
         >
-          <Icon icon={RemoveIcon} size="lg" tone="danger" />
+          <Icon as={RemoveIcon} size="lg" tone="danger" />
           <Text variant="bodyMedium" tone="danger" className="text-center">
             {removeActionLabel}
           </Text>

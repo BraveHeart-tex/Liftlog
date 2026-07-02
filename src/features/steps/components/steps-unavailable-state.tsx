@@ -26,7 +26,7 @@ export function StepsUnavailableState({
     <View className="flex-1 justify-center pt-16 pb-16">
       <View className="items-center">
         <View className="bg-card h-40 w-40 items-center justify-center rounded-full">
-          <Icon icon={HeartIcon} size={56} tone="mutedForeground" />
+          <Icon as={HeartIcon} size={56} tone="mutedForeground" />
         </View>
 
         <Text variant="h1" className="mt-7 text-center">

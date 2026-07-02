@@ -3,8 +3,6 @@ import { Icon } from '@/src/components/ui/icon';
 import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
 import type { Set } from '@/src/db/schema';
-import { SetDurationField } from '@/src/features/workouts/components/set-duration-field';
-import { SetDurationPickerSheet } from '@/src/features/workouts/components/set-duration-picker-sheet';
 import {
   TRACKING_TYPE_DEFINITIONS,
   formatTrackingValue,
@@ -14,13 +12,8 @@ import {
   type TrackingType
 } from '@/src/features/progress/tracking';
 import { useSettings } from '@/src/features/settings/hooks';
-import { cn } from '@/src/lib/utils/cn';
-import { CheckIcon, CopyIcon, PlusIcon, Trash2Icon } from 'lucide-react-native';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard, View, type LayoutChangeEvent } from 'react-native';
-import ReanimatedSwipeable, {
-  type SwipeableMethods
-} from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { SetDurationField } from '@/src/features/workouts/components/set-duration-field';
+import { SetDurationPickerSheet } from '@/src/features/workouts/components/set-duration-picker-sheet';
 import {
   areSetValuesEqual,
   getFieldHeaderLabel,
@@ -29,7 +22,14 @@ import {
   parseDurationMsInput,
   parseTrackingFieldValues
 } from '@/src/features/workouts/components/set-form-utils';
+import { cn } from '@/src/lib/utils/cn';
 import { formatDurationMs } from '@/src/lib/utils/format-time';
+import { CheckIcon, CopyIcon, PlusIcon, Trash2Icon } from 'lucide-react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Keyboard, View, type LayoutChangeEvent } from 'react-native';
+import ReanimatedSwipeable, {
+  type SwipeableMethods
+} from 'react-native-gesture-handler/ReanimatedSwipeable';
 
 type RowPhase = 'editing' | 'saving' | 'awaiting_sync' | 'error';
 
@@ -603,7 +603,7 @@ export function SetForm({
         }}
       >
         <Icon
-          icon={CopyIcon}
+          as={CopyIcon}
           tone={isCopyDisabled ? 'mutedForeground' : 'primary'}
           size="md"
         />
@@ -618,7 +618,7 @@ export function SetForm({
           onDelete();
         }}
       >
-        <Icon icon={Trash2Icon} tone="danger" size="md" />
+        <Icon as={Trash2Icon} tone="danger" size="md" />
       </Button>
     </View>
   );
@@ -694,7 +694,7 @@ export function SetForm({
               </HeaderCell>
             ))}
             <View className="w-12 items-center">
-              <Icon icon={CheckIcon} tone="mutedForeground" size="sm" />
+              <Icon as={CheckIcon} tone="mutedForeground" size="sm" />
             </View>
           </View>
 
@@ -774,7 +774,7 @@ export function SetForm({
                     onPress={() => void handleCommitRow(row)}
                   >
                     <Icon
-                      icon={CheckIcon}
+                      as={CheckIcon}
                       tone={
                         row.isCommitted
                           ? 'success'
@@ -834,7 +834,7 @@ export function SetForm({
           <Button
             onPress={handleAddDraftRow}
             className="mt-4 bg-transparent"
-            leftIcon={<Icon icon={PlusIcon} tone="foreground" size="sm" />}
+            leftIcon={<Icon as={PlusIcon} tone="foreground" size="sm" />}
             variant="secondary"
           >
             <Text variant="bodyMedium">Add Set</Text>
@@ -856,9 +856,7 @@ export function SetForm({
           </Text>
           <Button
             className="mt-6 border-solid"
-            leftIcon={
-              <Icon icon={PlusIcon} tone="primaryForeground" size="sm" />
-            }
+            leftIcon={<Icon as={PlusIcon} tone="primaryForeground" size="sm" />}
             onPress={handleAddDraftRow}
           >
             Add Set

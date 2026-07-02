@@ -25,11 +25,7 @@ export const RecentWorkoutsSection = () => {
               <Text tone="primary" variant="small">
                 View all
               </Text>
-              <Icon
-                icon={ChevronRightIcon}
-                tone="primary"
-                size={iconSizes.xs}
-              />
+              <Icon as={ChevronRightIcon} tone="primary" size={iconSizes.xs} />
             </View>
           </Link>
         )}

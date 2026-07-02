@@ -125,7 +125,7 @@ const StepGoalSheetContent = memo(function StepGoalSheetContent({
           accessibilityLabel="Close step goal sheet"
           className="px-0"
         >
-          <Icon icon={XIcon} size="lg" tone="foreground" />
+          <Icon as={XIcon} size="lg" tone="foreground" />
         </Button>
       </BottomSheetHeader>
 

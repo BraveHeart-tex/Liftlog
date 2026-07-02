@@ -408,7 +408,7 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
             onPress={onClose}
             accessibilityLabel="Close exercise picker sheet"
           >
-            <Icon icon={XIcon} size="lg" tone="foreground" />
+            <Icon as={XIcon} size="lg" tone="foreground" />
           </Button>
         </View>
       </BottomSheetHeader>

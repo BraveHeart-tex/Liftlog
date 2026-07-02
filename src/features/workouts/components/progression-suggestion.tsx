@@ -1,12 +1,12 @@
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { useSettings } from '@/src/features/settings/hooks';
+import type { ProgressionSuggestionData } from '@/src/features/workouts/components/progression-suggestion-utils';
 import { formatWeightForUnit } from '@/src/lib/utils/weight';
 import { iconSizes } from '@/src/theme/sizes';
 import { Link } from 'expo-router';
 import { ChevronRightIcon, TrendingUpIcon } from 'lucide-react-native';
 import { View } from 'react-native';
-import type { ProgressionSuggestionData } from '@/src/features/workouts/components/progression-suggestion-utils';
 
 interface ProgressionSuggestionProps {
   workoutExerciseId: string;
@@ -40,7 +40,7 @@ export function ProgressionSuggestion({
     <View className="border-border bg-card mb-5 rounded-lg border px-3 py-2">
       <View className="flex-row items-center gap-2">
         <View className="bg-primary/10 h-8 w-8 items-center justify-center rounded-lg">
-          <Icon icon={TrendingUpIcon} tone="primary" size="sm" />
+          <Icon as={TrendingUpIcon} tone="primary" size="sm" />
         </View>
 
         <View className="min-w-0 flex-1">
@@ -64,7 +64,7 @@ export function ProgressionSuggestion({
             <Text tone="primary" variant="small">
               History
             </Text>
-            <Icon icon={ChevronRightIcon} tone="primary" size={iconSizes.sm} />
+            <Icon as={ChevronRightIcon} tone="primary" size={iconSizes.sm} />
           </View>
         </Link>
       </View>

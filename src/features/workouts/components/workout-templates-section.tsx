@@ -37,9 +37,7 @@ export const WorkoutTemplatesSection = () => {
             size="sm"
             className="min-h-0 px-0 py-0"
             textClassName="text-primary text-sm"
-            leftIcon={
-              <Icon icon={PlusIcon} tone="primary" size={iconSizes.xs} />
-            }
+            leftIcon={<Icon as={PlusIcon} tone="primary" size={iconSizes.xs} />}
             onPress={handleCreateTemplatePress}
           >
             New

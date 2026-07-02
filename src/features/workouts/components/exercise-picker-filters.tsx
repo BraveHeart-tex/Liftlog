@@ -89,7 +89,7 @@ export function ExercisePickerFilters({
           leftIcon={
             filter.icon ? (
               <Icon
-                icon={filter.icon}
+                as={filter.icon}
                 size="sm"
                 tone={isSelected ? 'primaryForeground' : 'mutedForeground'}
               />

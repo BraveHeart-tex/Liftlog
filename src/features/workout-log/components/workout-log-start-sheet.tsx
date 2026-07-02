@@ -62,7 +62,7 @@ export function WorkoutLogStartSheet({
       <BottomSheetContent className="gap-4">
         <Button
           className="w-full"
-          leftIcon={<Icon icon={PlusIcon} tone="primaryForeground" />}
+          leftIcon={<Icon as={PlusIcon} tone="primaryForeground" />}
           onPress={handleStartBlank}
         >
           Start blank
@@ -102,7 +102,7 @@ export function WorkoutLogStartSheet({
                       {item.exerciseSummary}
                     </Text>
                   </View>
-                  <Icon icon={ChevronRightIcon} tone="mutedForeground" />
+                  <Icon as={ChevronRightIcon} tone="mutedForeground" />
                 </PressableSurface>
               ))}
             </View>

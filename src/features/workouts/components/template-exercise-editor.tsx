@@ -89,7 +89,7 @@ export function TemplateExerciseEditor({
             size="sm"
             className="min-h-0 px-0 py-0"
             textClassName="text-primary text-sm"
-            leftIcon={<Icon icon={PlusIcon} size="sm" tone="primary" />}
+            leftIcon={<Icon as={PlusIcon} size="sm" tone="primary" />}
             onPress={openExercisePicker}
           >
             Add
@@ -110,7 +110,7 @@ export function TemplateExerciseEditor({
                 variant="secondary"
                 size="sm"
                 textClassName="text-primary text-sm"
-                leftIcon={<Icon icon={PlusIcon} size="sm" tone="primary" />}
+                leftIcon={<Icon as={PlusIcon} size="sm" tone="primary" />}
                 onPress={openExercisePicker}
               >
                 Add exercise
