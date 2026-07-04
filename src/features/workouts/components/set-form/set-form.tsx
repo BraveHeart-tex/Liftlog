@@ -11,7 +11,6 @@ import { useSettings } from '@/src/features/settings/hooks';
 import { SetDurationPickerSheet } from '@/src/features/workouts/components/set-duration-picker-sheet';
 import { SetFormEmptyState } from '@/src/features/workouts/components/set-form/set-form-empty-state';
 import type { SetFormFieldColors } from '@/src/features/workouts/components/set-form/set-form-field-surface';
-import { SetFormHeader } from '@/src/features/workouts/components/set-form/set-form-header';
 import { SetFormRow } from '@/src/features/workouts/components/set-form/set-form-row';
 import { useSetFormController } from '@/src/features/workouts/components/set-form/use-set-form-controller';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
@@ -96,11 +95,6 @@ export function SetForm({
     <View className="flex-1">
       {hasRows ? (
         <>
-          <SetFormHeader
-            fields={trackingDefinition.fields}
-            weightUnit={weightUnit}
-          />
-
           <View className="gap-2">
             {controller.rows.map(row => (
               <SetFormRow

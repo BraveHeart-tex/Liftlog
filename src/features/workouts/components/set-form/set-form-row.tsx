@@ -18,6 +18,7 @@ import {
 } from '@/src/features/workouts/components/set-form/set-form-field-surface';
 import { SetFormRowActions } from '@/src/features/workouts/components/set-form/set-form-row-actions';
 import type { SetFormRow as SetFormRowModel } from '@/src/features/workouts/components/set-form/set-form-types';
+import { getFieldHeaderLabel } from '@/src/features/workouts/components/set-form/set-form-utils';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
 import { CheckIcon } from 'lucide-react-native';
 import { View, type LayoutChangeEvent } from 'react-native';
@@ -76,6 +77,13 @@ export function SetFormRow({
   const isValid = Boolean(row.validatedValues);
   const fieldTone = getRowFieldTone(row, isValid);
   const isCopyDisabled = !isValid || row.isSaving || hasPendingCopy;
+  const previousValue = row.previousSet
+    ? formatTrackingValue(
+        trackingType,
+        getSetValues(row.previousSet),
+        weightUnit
+      )
+    : '-';
 
   return (
     <Animated.View
@@ -101,95 +109,189 @@ export function SetFormRow({
           />
         )}
       >
-        <View className="bg-card min-h-16 flex-row items-center gap-2 rounded-lg px-3 py-2">
-          <View className="w-8 items-center">
-            <Text variant="bodyMedium">{row.setNumber}</Text>
-          </View>
-
-          <View className="min-w-0 flex-[1.45]">
-            <Text variant="small" tone="muted" numberOfLines={1}>
-              {row.previousSet
-                ? formatTrackingValue(
-                    trackingType,
-                    getSetValues(row.previousSet),
-                    weightUnit
-                  )
-                : '-'}
-            </Text>
-          </View>
-
-          {trackingFields.map(field =>
-            field.key === 'durationMs' ? (
-              <SetFormFieldSurface
-                key={field.key}
-                tone={fieldTone}
-                colors={fieldColors}
-                className="flex-1"
-              >
-                <SetDurationField
-                  value={row.fieldValues[field.key] ?? ''}
-                  placeholder="0:00.00"
-                  disabled={row.isSaving}
-                  isCommitted={row.isCommitted}
-                  isValid={isValid}
-                  surfaceClassName="border-transparent bg-transparent"
-                  accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
-                  onPress={() => onOpenDurationPicker(row, field)}
-                />
-              </SetFormFieldSurface>
-            ) : (
-              <SetFormFieldSurface
-                key={field.key}
-                tone={fieldTone}
-                colors={fieldColors}
-                className="flex-1"
-              >
-                <Input
-                  value={row.fieldValues[field.key] ?? ''}
-                  onChangeText={value => onFieldChange(row, field, value)}
-                  keyboardType={field.keyboardType}
-                  placeholder="0"
-                  withContainerDefaults={false}
-                  editable={!row.isSaving}
-                  onFocus={() => onRowFocus?.(row.key)}
-                  containerClassName="min-h-12 flex-row items-center rounded-lg px-1"
-                  inputClassName="text-body-medium flex-1 px-2 py-2"
-                  textAlign="center"
-                  accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
-                />
-              </SetFormFieldSurface>
-            )
-          )}
-
-          <SetFormSaveSurface
-            tone={fieldTone}
-            isCommitted={row.isCommitted}
-            colors={fieldColors}
-          >
-            <Button
-              variant={isValid ? 'secondary' : 'ghost'}
-              size="icon"
-              disabled={!isValid || row.isSaving}
-              accessibilityLabel={`Save set ${row.setNumber}`}
-              className="h-12 w-12 border-transparent bg-transparent"
-              onPress={() => void onCommit(row)}
-            >
-              <Icon
-                as={CheckIcon}
-                tone={
-                  row.isCommitted
-                    ? 'success'
-                    : isValid
-                      ? 'primary'
-                      : 'mutedForeground'
-                }
-                size="md"
-              />
-            </Button>
-          </SetFormSaveSurface>
-        </View>
+        <SetFormRowContent
+          row={row}
+          trackingFields={trackingFields}
+          weightUnit={weightUnit}
+          previousValue={previousValue}
+          fieldTone={fieldTone}
+          fieldColors={fieldColors}
+          isValid={isValid}
+          onFieldChange={onFieldChange}
+          onCommit={onCommit}
+          onOpenDurationPicker={onOpenDurationPicker}
+          onRowFocus={onRowFocus}
+        />
       </ReanimatedSwipeable>
     </Animated.View>
+  );
+}
+
+function SetFormRowContent({
+  row,
+  trackingFields,
+  weightUnit,
+  previousValue,
+  fieldTone,
+  fieldColors,
+  isValid,
+  onFieldChange,
+  onCommit,
+  onOpenDurationPicker,
+  onRowFocus
+}: {
+  row: SetFormRowModel;
+  trackingFields: TrackingFieldDefinition[];
+  weightUnit: ReturnType<typeof useSettings>['weightUnit'];
+  previousValue: string;
+  fieldTone: SetFormFieldTone;
+  fieldColors: SetFormFieldColors;
+  isValid: boolean;
+  onFieldChange: SetFormRowProps['onFieldChange'];
+  onCommit: SetFormRowProps['onCommit'];
+  onOpenDurationPicker: SetFormRowProps['onOpenDurationPicker'];
+  onRowFocus: SetFormRowProps['onRowFocus'];
+}) {
+  return (
+    <View className="bg-card gap-3 rounded-lg px-3 py-3">
+      <View className="flex-row items-start gap-2">
+        <View className="w-8 items-center">
+          <Text variant="bodyMedium">{row.setNumber}</Text>
+        </View>
+        <Text variant="small" tone="muted" className="min-w-0 flex-1">
+          Previous · {previousValue}
+        </Text>
+      </View>
+
+      <View className="flex-row items-end gap-2">
+        {trackingFields.map(field => (
+          <View key={field.key} className="min-w-0 flex-1 gap-1">
+            <Text variant="overline" tone="muted">
+              {getFieldHeaderLabel(field, weightUnit)}
+            </Text>
+            <SetFormEditableField
+              row={row}
+              field={field}
+              fieldTone={fieldTone}
+              fieldColors={fieldColors}
+              isValid={isValid}
+              className="min-w-0"
+              onFieldChange={onFieldChange}
+              onOpenDurationPicker={onOpenDurationPicker}
+              onRowFocus={onRowFocus}
+            />
+          </View>
+        ))}
+
+        <SetFormSaveButton
+          row={row}
+          fieldTone={fieldTone}
+          fieldColors={fieldColors}
+          isValid={isValid}
+          onCommit={onCommit}
+        />
+      </View>
+    </View>
+  );
+}
+
+function SetFormEditableField({
+  row,
+  field,
+  fieldTone,
+  fieldColors,
+  isValid,
+  className,
+  onFieldChange,
+  onOpenDurationPicker,
+  onRowFocus
+}: {
+  row: SetFormRowModel;
+  field: TrackingFieldDefinition;
+  fieldTone: SetFormFieldTone;
+  fieldColors: SetFormFieldColors;
+  isValid: boolean;
+  className?: string;
+  onFieldChange: SetFormRowProps['onFieldChange'];
+  onOpenDurationPicker: SetFormRowProps['onOpenDurationPicker'];
+  onRowFocus: SetFormRowProps['onRowFocus'];
+}) {
+  return (
+    <SetFormFieldSurface
+      tone={fieldTone}
+      colors={fieldColors}
+      className={className}
+    >
+      {field.key === 'durationMs' ? (
+        <SetDurationField
+          value={row.fieldValues[field.key] ?? ''}
+          placeholder="0:00.00"
+          disabled={row.isSaving}
+          isCommitted={row.isCommitted}
+          isValid={isValid}
+          surfaceClassName="border-transparent bg-transparent"
+          accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
+          onPress={() => onOpenDurationPicker(row, field)}
+        />
+      ) : (
+        <Input
+          value={row.fieldValues[field.key] ?? ''}
+          onChangeText={value => onFieldChange(row, field, value)}
+          keyboardType={field.keyboardType}
+          placeholder="0"
+          withContainerDefaults={false}
+          editable={!row.isSaving}
+          onFocus={() => onRowFocus?.(row.key)}
+          containerClassName="min-h-12 flex-row items-center rounded-lg px-1"
+          inputClassName="text-body-medium min-w-0 flex-1 px-2 py-2"
+          textAlign="center"
+          accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
+        />
+      )}
+    </SetFormFieldSurface>
+  );
+}
+
+function SetFormSaveButton({
+  row,
+  fieldTone,
+  fieldColors,
+  isValid,
+  onCommit
+}: {
+  row: SetFormRowModel;
+  fieldTone: SetFormFieldTone;
+  fieldColors: SetFormFieldColors;
+  isValid: boolean;
+  onCommit: SetFormRowProps['onCommit'];
+}) {
+  return (
+    <SetFormSaveSurface
+      tone={fieldTone}
+      isCommitted={row.isCommitted}
+      colors={fieldColors}
+    >
+      <Button
+        variant={isValid ? 'secondary' : 'ghost'}
+        size="icon"
+        disabled={!isValid || row.isSaving}
+        accessibilityLabel={`Save set ${row.setNumber}`}
+        className="h-12 w-12 border-transparent bg-transparent"
+        onPress={() => void onCommit(row)}
+      >
+        <Icon
+          as={CheckIcon}
+          tone={
+            row.isCommitted
+              ? 'success'
+              : isValid
+                ? 'primary'
+                : 'mutedForeground'
+          }
+          size="md"
+        />
+      </Button>
+    </SetFormSaveSurface>
   );
 }
 

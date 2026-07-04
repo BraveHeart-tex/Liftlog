@@ -24,7 +24,7 @@ export function SetDurationField({
   onPress
 }: SetDurationFieldProps) {
   return (
-    <View className="flex-1">
+    <View className="min-w-0 flex-1">
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
@@ -44,8 +44,10 @@ export function SetDurationField({
         <Text
           variant="bodyMedium"
           tone={value ? 'default' : 'muted'}
-          className="px-2 py-2 text-center"
+          className="min-w-0 px-2 py-2 text-center"
           numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
           style={{ fontVariant: ['tabular-nums'] }}
         >
           {value || placeholder}
