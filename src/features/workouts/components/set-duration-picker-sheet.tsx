@@ -200,6 +200,7 @@ const SetDurationPickerSheetContent = memo(
         {mode === 'stopwatch' ? (
           <StopwatchContent
             isOpen={isOpen}
+            defaultValueMs={valueMs}
             onClose={onClose}
             onConfirm={onConfirm}
           />

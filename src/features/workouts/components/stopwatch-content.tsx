@@ -14,12 +14,14 @@ type StopwatchStatus = 'idle' | 'running' | 'paused';
 
 interface StopwatchContentProps {
   isOpen: boolean;
+  defaultValueMs?: number;
   onClose: () => void;
   onConfirm: (valueMs: number) => void;
 }
 
 export function StopwatchContent({
   isOpen,
+  defaultValueMs = 0,
   onClose,
   onConfirm
 }: StopwatchContentProps) {
@@ -50,6 +52,7 @@ export function StopwatchContent({
   const canReset = elapsedMs > 0;
   const canSave = elapsedMs >= 10;
   const formattedElapsedTime = formatDurationMs(elapsedMs);
+  const formattedDefaultTime = formatDurationMs(defaultValueMs);
   const primaryActionLabel = isRunning ? 'Tap to pause' : 'Tap to start';
   const accessibilityStatus =
     status === 'running' ? 'Running' : status === 'paused' ? 'Paused' : 'Idle';
@@ -147,6 +150,14 @@ export function StopwatchContent({
             style={{ fontVariant: ['tabular-nums'] }}
           >
             {formattedElapsedTime}
+          </Text>
+          <Text
+            variant="small"
+            tone="muted"
+            className="text-center"
+            style={{ fontVariant: ['tabular-nums'] }}
+          >
+            Current {formattedDefaultTime}
           </Text>
           <Text
             variant="bodyMedium"
