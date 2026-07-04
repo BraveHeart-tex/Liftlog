@@ -1,15 +1,11 @@
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
+import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn';
 import { formatDurationMs } from '@/src/lib/utils/format-time';
 import { useAudioPlayer } from 'expo-audio';
-import {
-  PauseIcon,
-  PlayIcon,
-  RotateCcwIcon,
-  SaveIcon
-} from 'lucide-react-native';
+import { RotateCcwIcon, SaveIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -53,6 +49,10 @@ export function StopwatchContent({
   const isRunning = status === 'running';
   const canReset = elapsedMs > 0;
   const canSave = elapsedMs >= 10;
+  const formattedElapsedTime = formatDurationMs(elapsedMs);
+  const primaryActionLabel = isRunning ? 'Tap to pause' : 'Tap to start';
+  const accessibilityStatus =
+    status === 'running' ? 'Running' : status === 'paused' ? 'Paused' : 'Idle';
 
   const playSound = async (
     player: typeof startSoundPlayer,
@@ -104,6 +104,16 @@ export function StopwatchContent({
     setStatus('paused');
   };
 
+  const handlePrimaryPress = () => {
+    if (isRunning) {
+      handlePause();
+
+      return;
+    }
+
+    handleStart();
+  };
+
   const handleSave = () => {
     if (!canSave) {
       return;
@@ -116,47 +126,42 @@ export function StopwatchContent({
 
   return (
     <>
-      <View className="items-center px-4 pt-2">
-        <Text
-          variant="h1"
-          className="text-center text-[56px] leading-[64px]"
-          style={{ fontVariant: ['tabular-nums'] }}
+      <View className="px-4 pt-2">
+        <PressableSurface
+          accessibilityRole="button"
+          accessibilityLabel={`${isRunning ? 'Pause' : 'Start'} stopwatch, ${formattedElapsedTime} elapsed`}
+          accessibilityValue={{ text: accessibilityStatus }}
+          className={cn(
+            'min-h-52 w-full items-center justify-center gap-5 rounded-2xl border-2 px-5 py-9',
+            isRunning
+              ? 'border-accent/50 bg-accent/10'
+              : 'border-primary/40 bg-primary/10'
+          )}
+          pressedClassName={isRunning ? 'bg-accent/15' : 'bg-primary/15'}
+          pressedScale={0.98}
+          onPress={handlePrimaryPress}
         >
-          {formatDurationMs(elapsedMs)}
-        </Text>
-      </View>
-
-      <View className="items-center px-4 pt-7">
-        <Button
-          className="h-32 w-32 rounded-full"
-          variant={isRunning ? 'secondary' : 'primary'}
-          accessibilityLabel={isRunning ? 'Pause stopwatch' : 'Start stopwatch'}
-          onPress={isRunning ? handlePause : handleStart}
-        >
-          <View className="items-center justify-center gap-2">
-            <Icon
-              as={isRunning ? PauseIcon : PlayIcon}
-              tone={isRunning ? 'secondaryForeground' : 'primaryForeground'}
-              size={32}
-            />
-            <Text
-              variant="bodyMedium"
-              tone="inherit"
-              className={cn(
-                'font-semibold uppercase',
-                isRunning
-                  ? 'text-secondary-foreground'
-                  : 'text-primary-foreground'
-              )}
-            >
-              {isRunning ? 'Pause' : 'Start'}
-            </Text>
-          </View>
-        </Button>
+          <Text
+            variant="h1"
+            className="text-center text-[56px] leading-[64px]"
+            style={{ fontVariant: ['tabular-nums'] }}
+          >
+            {formattedElapsedTime}
+          </Text>
+          <Text
+            variant="bodyMedium"
+            className={cn(
+              'text-center font-semibold uppercase',
+              isRunning ? 'text-accent' : 'text-primary'
+            )}
+          >
+            {primaryActionLabel}
+          </Text>
+        </PressableSurface>
       </View>
 
       <View
-        className="flex-row gap-3 px-4 pt-8"
+        className="flex-row gap-3 px-4 pt-6"
         style={{ paddingBottom: insets.bottom + 16 }}
       >
         <View className="flex-1">
