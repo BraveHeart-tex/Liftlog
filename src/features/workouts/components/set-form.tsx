@@ -66,6 +66,7 @@ interface SetFormProps {
   trackingType: TrackingType;
   sets: Set[];
   previousSets: Set[];
+  enableStopwatch?: boolean;
   onRowFocus?: (rowKey: string) => void;
   onRowLayout?: (
     rowKey: string,
@@ -126,6 +127,7 @@ export function SetForm({
   trackingType,
   sets,
   previousSets,
+  enableStopwatch = false,
   onRowFocus,
   onRowLayout,
   onAddSet,
@@ -937,6 +939,7 @@ export function SetForm({
       <SetDurationPickerSheet
         isOpen={Boolean(activeDurationPicker)}
         valueMs={activeDurationValueMs}
+        enableStopwatch={enableStopwatch}
         onClose={() => setActiveDurationPicker(null)}
         onConfirm={handleConfirmDuration}
       />

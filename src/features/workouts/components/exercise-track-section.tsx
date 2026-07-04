@@ -220,6 +220,7 @@ export function ExerciseTrackSection({
           trackingType={trackingType}
           sets={item.sets}
           previousSets={latestHistorySets}
+          enableStopwatch={mode === 'active'}
           onRowFocus={handleRowFocus}
           onRowLayout={handleRowLayout}
           onAddSet={handleAddSet}

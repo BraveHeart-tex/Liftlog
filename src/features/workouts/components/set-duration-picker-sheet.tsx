@@ -5,21 +5,26 @@ import {
 } from '@/src/components/ui/bottom-sheet';
 import { Button } from '@/src/components/ui/button';
 import { Text } from '@/src/components/ui/text';
+import { StopwatchContent } from '@/src/features/workouts/components/stopwatch-content';
 import { SetDurationWheel } from '@/src/features/workouts/components/set-duration-wheel';
+import { cn } from '@/src/lib/utils/cn';
 import {
   formatDurationMs,
   getDurationMsParts
 } from '@/src/lib/utils/format-time';
 import { memo, useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface SetDurationPickerSheetProps {
   isOpen: boolean;
   valueMs: number;
+  enableStopwatch?: boolean;
   onClose: () => void;
   onConfirm: (valueMs: number) => void;
 }
+
+type DurationInputMode = 'stopwatch' | 'manual';
 
 const hourItems = Array.from({ length: 24 }, (_, value) => ({
   label: String(value),
@@ -40,6 +45,7 @@ const centisecondItems = Array.from({ length: 100 }, (_, value) => ({
 export function SetDurationPickerSheet({
   isOpen,
   valueMs,
+  enableStopwatch = false,
   onClose,
   onConfirm
 }: SetDurationPickerSheetProps) {
@@ -54,6 +60,7 @@ export function SetDurationPickerSheet({
         <SetDurationPickerSheetContent
           isOpen={isOpen}
           valueMs={valueMs}
+          enableStopwatch={enableStopwatch}
           onClose={onClose}
           onConfirm={onConfirm}
           renderWheels={isContentReady}
@@ -71,12 +78,17 @@ const SetDurationPickerSheetContent = memo(
   function SetDurationPickerSheetContent({
     isOpen,
     valueMs,
+    enableStopwatch = false,
     onClose,
     onConfirm,
     renderWheels
   }: SetDurationPickerSheetContentProps) {
     const insets = useSafeAreaInsets();
+    const canUseStopwatch = enableStopwatch;
     const initialParts = getDurationMsParts(valueMs);
+    const [mode, setMode] = useState<DurationInputMode>(
+      canUseStopwatch ? 'stopwatch' : 'manual'
+    );
     const [hours, setHours] = useState(initialParts.hours);
     const [minutes, setMinutes] = useState(initialParts.minutes);
     const [seconds, setSeconds] = useState(initialParts.seconds);
@@ -88,6 +100,14 @@ const SetDurationPickerSheetContent = memo(
     const totalMs =
       hours * 3600000 + minutes * 60000 + seconds * 1000 + centiseconds * 10;
     const canConfirm = totalMs >= 10;
+
+    useEffect(() => {
+      if (!isOpen) {
+        return;
+      }
+
+      setMode(canUseStopwatch ? 'stopwatch' : 'manual');
+    }, [canUseStopwatch, isOpen]);
 
     useEffect(() => {
       if (!isOpen) {
@@ -161,73 +181,145 @@ const SetDurationPickerSheetContent = memo(
       <>
         <BottomSheetHeader className="items-center">
           <BottomSheetTitle>Set time</BottomSheetTitle>
-          <Text
-            variant="small"
-            tone="muted"
-            className="mt-1"
-            style={{ fontVariant: ['tabular-nums'] }}
-          >
-            {formatDurationMs(totalMs)}
-          </Text>
+          {mode === 'manual' ? (
+            <Text
+              variant="small"
+              tone="muted"
+              className="mt-1"
+              style={{ fontVariant: ['tabular-nums'] }}
+            >
+              {formatDurationMs(totalMs)}
+            </Text>
+          ) : null}
         </BottomSheetHeader>
 
-        <View className="px-4">
-          <View className="flex-row items-center justify-center gap-1">
-            <SetDurationWheel
-              label="HR"
-              data={hourItems}
-              value={hours}
-              onValueChanging={handleHoursChanging}
-              onValueChange={handleHoursChange}
-              renderWhen={renderWheels}
-            />
-            <SetDurationWheel
-              label="MIN"
-              data={minuteItems}
-              value={minutes}
-              onValueChanging={handleMinutesChanging}
-              onValueChange={handleMinutesChange}
-              renderWhen={renderWheels}
-            />
-            <SetDurationWheel
-              label="SEC"
-              data={secondItems}
-              value={seconds}
-              onValueChanging={handleSecondsChanging}
-              onValueChange={handleSecondsChange}
-              renderWhen={renderWheels}
-            />
-            <SetDurationWheel
-              label="CS"
-              data={centisecondItems}
-              value={centiseconds}
-              onValueChanging={handleCentisecondsChanging}
-              onValueChange={handleCentisecondsChange}
-              renderWhen={renderWheels}
-            />
-          </View>
-        </View>
+        {canUseStopwatch ? (
+          <DurationModeTabs mode={mode} onChange={setMode} />
+        ) : null}
 
-        <View
-          className="flex-row gap-3 px-4 pt-6"
-          style={{ paddingBottom: insets.bottom + 16 }}
-        >
-          <View className="flex-1">
-            <Button variant="secondary" className="w-full" onPress={onClose}>
-              Cancel
-            </Button>
-          </View>
-          <View className="flex-1">
-            <Button
-              className="w-full"
-              disabled={!canConfirm}
-              onPress={handleConfirm}
+        {mode === 'stopwatch' ? (
+          <StopwatchContent
+            isOpen={isOpen}
+            onClose={onClose}
+            onConfirm={onConfirm}
+          />
+        ) : (
+          <>
+            <View className="px-4">
+              <View className="flex-row items-center justify-center gap-1">
+                <SetDurationWheel
+                  label="HR"
+                  data={hourItems}
+                  value={hours}
+                  onValueChanging={handleHoursChanging}
+                  onValueChange={handleHoursChange}
+                  renderWhen={renderWheels}
+                />
+                <SetDurationWheel
+                  label="MIN"
+                  data={minuteItems}
+                  value={minutes}
+                  onValueChanging={handleMinutesChanging}
+                  onValueChange={handleMinutesChange}
+                  renderWhen={renderWheels}
+                />
+                <SetDurationWheel
+                  label="SEC"
+                  data={secondItems}
+                  value={seconds}
+                  onValueChanging={handleSecondsChanging}
+                  onValueChange={handleSecondsChange}
+                  renderWhen={renderWheels}
+                />
+                <SetDurationWheel
+                  label="CS"
+                  data={centisecondItems}
+                  value={centiseconds}
+                  onValueChanging={handleCentisecondsChanging}
+                  onValueChange={handleCentisecondsChange}
+                  renderWhen={renderWheels}
+                />
+              </View>
+            </View>
+
+            <View
+              className="flex-row gap-3 px-4 pt-6"
+              style={{ paddingBottom: insets.bottom + 16 }}
             >
-              Done
-            </Button>
-          </View>
-        </View>
+              <View className="flex-1">
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  onPress={onClose}
+                >
+                  Cancel
+                </Button>
+              </View>
+              <View className="flex-1">
+                <Button
+                  className="w-full"
+                  disabled={!canConfirm}
+                  onPress={handleConfirm}
+                >
+                  Done
+                </Button>
+              </View>
+            </View>
+          </>
+        )}
       </>
     );
   }
 );
+
+interface DurationModeTabsProps {
+  mode: DurationInputMode;
+  onChange: (mode: DurationInputMode) => void;
+}
+
+function DurationModeTabs({ mode, onChange }: DurationModeTabsProps) {
+  return (
+    <View className="px-4 pb-5">
+      <View className="bg-muted flex-row rounded-lg p-1">
+        <DurationModeTab
+          label="Stopwatch"
+          selected={mode === 'stopwatch'}
+          onPress={() => onChange('stopwatch')}
+        />
+        <DurationModeTab
+          label="Manual"
+          selected={mode === 'manual'}
+          onPress={() => onChange('manual')}
+        />
+      </View>
+    </View>
+  );
+}
+
+interface DurationModeTabProps {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}
+
+function DurationModeTab({ label, selected, onPress }: DurationModeTabProps) {
+  return (
+    <Pressable
+      accessibilityRole="tab"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      className={cn(
+        'min-h-10 flex-1 items-center justify-center rounded-md px-3',
+        selected && 'bg-card'
+      )}
+    >
+      <Text
+        variant="bodyMedium"
+        tone={selected ? 'default' : 'muted'}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
