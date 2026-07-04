@@ -64,9 +64,9 @@ export function WorkoutLogCalendar({
     () => getCalendarMonths(todayKey, pastMonthRange),
     [pastMonthRange, todayKey]
   );
-  const selectedMonthIndex = useMemo(
-    () => getMonthIndexForDate(calendarMonths, selectedDateKey),
-    [calendarMonths, selectedDateKey]
+  const currentMonthIndex = useMemo(
+    () => getMonthIndexForDate(calendarMonths, todayKey),
+    [calendarMonths, todayKey]
   );
   const workoutMarksByMonth = useMemo(
     () => getWorkoutMarksByMonth(workoutCountByDateKey),
@@ -152,7 +152,7 @@ export function WorkoutLogCalendar({
           getItemLayout={getMonthItemLayout}
           horizontal
           initialNumToRender={3}
-          initialScrollIndex={selectedMonthIndex}
+          initialScrollIndex={currentMonthIndex}
           keyExtractor={keyExtractor}
           maxToRenderPerBatch={3}
           nestedScrollEnabled

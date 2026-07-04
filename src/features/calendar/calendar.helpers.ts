@@ -74,7 +74,7 @@ export function getCalendarMonths(
   currentMonth.setDate(1);
 
   return Array.from({ length: pastMonthRange + 1 }, (_, index) => {
-    const monthDate = addMonths(currentMonth, -index);
+    const monthDate = addMonths(currentMonth, index - pastMonthRange);
 
     return {
       dateKey: getMonthDateKey(monthDate),
