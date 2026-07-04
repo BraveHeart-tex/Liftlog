@@ -126,21 +126,21 @@ export function StopwatchContent({
         </Text>
       </View>
 
-      <View className="items-center px-4 pt-8">
+      <View className="items-center px-4 pt-7">
         <Button
-          className="h-24 w-24 rounded-full"
+          className="h-32 w-32 rounded-full"
           variant={isRunning ? 'secondary' : 'primary'}
           accessibilityLabel={isRunning ? 'Pause stopwatch' : 'Start stopwatch'}
           onPress={isRunning ? handlePause : handleStart}
         >
-          <View className="items-center justify-center gap-1">
+          <View className="items-center justify-center gap-2">
             <Icon
               as={isRunning ? PauseIcon : PlayIcon}
               tone={isRunning ? 'secondaryForeground' : 'primaryForeground'}
-              size="lg"
+              size={32}
             />
             <Text
-              variant="caption"
+              variant="bodyMedium"
               tone="inherit"
               className={cn(
                 'font-semibold uppercase',
@@ -181,11 +181,7 @@ export function StopwatchContent({
             className="w-full"
             disabled={!canSave}
             leftIcon={
-              <Icon
-                as={SaveIcon}
-                tone={canSave ? 'primaryForeground' : 'mutedForeground'}
-                size="sm"
-              />
+              <Icon as={SaveIcon} tone={'primaryForeground'} size="sm" />
             }
             onPress={handleSave}
           >
