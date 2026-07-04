@@ -87,7 +87,7 @@ export function SetFormRow({
 
   return (
     <Animated.View
-      entering={rowEntering}
+      entering={row.animateOnMount ? rowEntering : undefined}
       exiting={rowExiting}
       layout={rowLayout}
       onLayout={event => onRowLayout?.(row.key, event.nativeEvent.layout)}

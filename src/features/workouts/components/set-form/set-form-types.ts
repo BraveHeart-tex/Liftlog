@@ -25,6 +25,7 @@ export interface ActiveDurationPickerState {
 }
 
 interface BaseRowView {
+  animateOnMount: boolean;
   fieldValues: Record<string, string>;
   isCommitted: boolean;
   isSaving: boolean;
