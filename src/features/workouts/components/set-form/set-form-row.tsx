@@ -1,0 +1,209 @@
+import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
+import { Input } from '@/src/components/ui/input';
+import { Text } from '@/src/components/ui/text';
+import {
+  formatTrackingValue,
+  getSetValues,
+  type TrackingFieldDefinition,
+  type TrackingType
+} from '@/src/features/progress/tracking';
+import type { useSettings } from '@/src/features/settings/hooks';
+import { SetDurationField } from '@/src/features/workouts/components/set-duration-field';
+import {
+  SetFormFieldSurface,
+  SetFormSaveSurface,
+  type SetFormFieldColors,
+  type SetFormFieldTone
+} from '@/src/features/workouts/components/set-form/set-form-field-surface';
+import { SetFormRowActions } from '@/src/features/workouts/components/set-form/set-form-row-actions';
+import type { SetFormRow as SetFormRowModel } from '@/src/features/workouts/components/set-form/set-form-types';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
+import { CheckIcon } from 'lucide-react-native';
+import { View, type LayoutChangeEvent } from 'react-native';
+import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Animated, {
+  FadeInDown,
+  FadeOut,
+  LinearTransition
+} from 'react-native-reanimated';
+
+const rowEntering = FadeInDown.duration(MOTION_DURATION_MS.standard);
+const rowExiting = FadeOut.duration(MOTION_DURATION_MS.exit);
+const rowLayout = LinearTransition.duration(MOTION_DURATION_MS.standard);
+
+interface SetFormRowProps {
+  row: SetFormRowModel;
+  trackingType: TrackingType;
+  trackingFields: TrackingFieldDefinition[];
+  weightUnit: ReturnType<typeof useSettings>['weightUnit'];
+  fieldColors: SetFormFieldColors;
+  hasPendingCopy: boolean;
+  onFieldChange: (
+    row: SetFormRowModel,
+    field: TrackingFieldDefinition,
+    value: string
+  ) => void;
+  onCommit: (row: SetFormRowModel) => Promise<void>;
+  onCopy: (row: SetFormRowModel) => Promise<void>;
+  onDelete: (row: SetFormRowModel) => void;
+  onOpenDurationPicker: (
+    row: SetFormRowModel,
+    field: TrackingFieldDefinition
+  ) => void;
+  onRowFocus?: (rowKey: string) => void;
+  onRowLayout?: (
+    rowKey: string,
+    layout: LayoutChangeEvent['nativeEvent']['layout']
+  ) => void;
+}
+
+export function SetFormRow({
+  row,
+  trackingType,
+  trackingFields,
+  weightUnit,
+  fieldColors,
+  hasPendingCopy,
+  onFieldChange,
+  onCommit,
+  onCopy,
+  onDelete,
+  onOpenDurationPicker,
+  onRowFocus,
+  onRowLayout
+}: SetFormRowProps) {
+  const isValid = Boolean(row.validatedValues);
+  const fieldTone = getRowFieldTone(row, isValid);
+  const isCopyDisabled = !isValid || row.isSaving || hasPendingCopy;
+
+  return (
+    <Animated.View
+      entering={rowEntering}
+      exiting={rowExiting}
+      layout={rowLayout}
+      onLayout={event => onRowLayout?.(row.key, event.nativeEvent.layout)}
+    >
+      <ReanimatedSwipeable
+        overshootRight={false}
+        containerStyle={{ borderRadius: 8, overflow: 'hidden' }}
+        renderRightActions={(_progress, _translation, swipeable) => (
+          <SetFormRowActions
+            setNumber={row.setNumber}
+            isCopyDisabled={isCopyDisabled}
+            swipeable={swipeable}
+            onCopy={() => {
+              void onCopy(row);
+            }}
+            onDelete={() => {
+              onDelete(row);
+            }}
+          />
+        )}
+      >
+        <View className="bg-card min-h-16 flex-row items-center gap-2 rounded-lg px-3 py-2">
+          <View className="w-8 items-center">
+            <Text variant="bodyMedium">{row.setNumber}</Text>
+          </View>
+
+          <View className="min-w-0 flex-[1.45]">
+            <Text variant="small" tone="muted" numberOfLines={1}>
+              {row.previousSet
+                ? formatTrackingValue(
+                    trackingType,
+                    getSetValues(row.previousSet),
+                    weightUnit
+                  )
+                : '-'}
+            </Text>
+          </View>
+
+          {trackingFields.map(field =>
+            field.key === 'durationMs' ? (
+              <SetFormFieldSurface
+                key={field.key}
+                tone={fieldTone}
+                colors={fieldColors}
+                className="flex-1"
+              >
+                <SetDurationField
+                  value={row.fieldValues[field.key] ?? ''}
+                  placeholder="0:00.00"
+                  disabled={row.isSaving}
+                  isCommitted={row.isCommitted}
+                  isValid={isValid}
+                  surfaceClassName="border-transparent bg-transparent"
+                  accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
+                  onPress={() => onOpenDurationPicker(row, field)}
+                />
+              </SetFormFieldSurface>
+            ) : (
+              <SetFormFieldSurface
+                key={field.key}
+                tone={fieldTone}
+                colors={fieldColors}
+                className="flex-1"
+              >
+                <Input
+                  value={row.fieldValues[field.key] ?? ''}
+                  onChangeText={value => onFieldChange(row, field, value)}
+                  keyboardType={field.keyboardType}
+                  placeholder="0"
+                  withContainerDefaults={false}
+                  editable={!row.isSaving}
+                  onFocus={() => onRowFocus?.(row.key)}
+                  containerClassName="min-h-12 flex-row items-center rounded-lg px-1"
+                  inputClassName="text-body-medium flex-1 px-2 py-2"
+                  textAlign="center"
+                  accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
+                />
+              </SetFormFieldSurface>
+            )
+          )}
+
+          <SetFormSaveSurface
+            tone={fieldTone}
+            isCommitted={row.isCommitted}
+            colors={fieldColors}
+          >
+            <Button
+              variant={isValid ? 'secondary' : 'ghost'}
+              size="icon"
+              disabled={!isValid || row.isSaving}
+              accessibilityLabel={`Save set ${row.setNumber}`}
+              className="h-12 w-12 border-transparent bg-transparent"
+              onPress={() => void onCommit(row)}
+            >
+              <Icon
+                as={CheckIcon}
+                tone={
+                  row.isCommitted
+                    ? 'success'
+                    : isValid
+                      ? 'primary'
+                      : 'mutedForeground'
+                }
+                size="md"
+              />
+            </Button>
+          </SetFormSaveSurface>
+        </View>
+      </ReanimatedSwipeable>
+    </Animated.View>
+  );
+}
+
+function getRowFieldTone(
+  row: SetFormRowModel,
+  isValid: boolean
+): SetFormFieldTone {
+  if (row.phase === 'error') {
+    return 'error';
+  }
+
+  if (row.isCommitted) {
+    return 'committed';
+  }
+
+  return isValid ? 'valid' : 'neutral';
+}

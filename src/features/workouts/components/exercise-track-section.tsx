@@ -13,7 +13,7 @@ import {
   type LayoutRectangle
 } from 'react-native';
 import { ProgressionSuggestion } from '@/src/features/workouts/components/progression-suggestion';
-import { SetForm } from '@/src/features/workouts/components/set-form';
+import { SetForm } from '@/src/features/workouts/components/set-form/set-form';
 import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task';
 import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
 
