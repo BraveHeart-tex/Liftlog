@@ -57,7 +57,7 @@ export function WorkoutLogCalendar({
   const { colors } = useAppTheme();
   const [calendarWidth, setCalendarWidth] = useState<number | null>(null);
 
-  const { primary, primaryForeground } = colors;
+  const { foreground, primary, primaryForeground } = colors;
   const todayKey = toLocalDateKey(Date.now());
 
   const calendarMonths = useMemo(
@@ -100,6 +100,7 @@ export function WorkoutLogCalendar({
         days={item.days}
         handleDayPress={handleDayPress}
         monthKey={item.monthKey}
+        foregroundColor={foreground}
         primaryColor={primary}
         primaryForegroundColor={primaryForeground}
         selectedDateKey={
@@ -117,6 +118,7 @@ export function WorkoutLogCalendar({
       calendarWidth,
       dayCellWidth,
       handleDayPress,
+      foreground,
       primary,
       primaryForeground,
       selectedDateKey,

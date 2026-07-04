@@ -8,6 +8,7 @@ interface SetDurationFieldProps {
   disabled: boolean;
   isCommitted: boolean;
   isValid: boolean;
+  surfaceClassName?: string;
   accessibilityLabel: string;
   onPress: () => void;
 }
@@ -18,6 +19,7 @@ export function SetDurationField({
   disabled,
   isCommitted,
   isValid,
+  surfaceClassName,
   accessibilityLabel,
   onPress
 }: SetDurationFieldProps) {
@@ -35,6 +37,7 @@ export function SetDurationField({
             : isValid
               ? 'border-muted'
               : 'border-transparent',
+          surfaceClassName,
           disabled && 'opacity-60'
         )}
       >

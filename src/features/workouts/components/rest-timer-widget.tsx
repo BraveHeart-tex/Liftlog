@@ -4,13 +4,26 @@ import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
 import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sheet';
 import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer-store';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
 import { cn } from '@/src/lib/utils/cn';
 import { formatTime } from '@/src/lib/utils/format-time';
 import { PauseIcon, TimerIcon } from 'lucide-react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  FadeInDown,
+  FadeOutUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming
+} from 'react-native-reanimated';
 
 const ADD_TIME_SECONDS = 30;
+const widgetEntering = FadeInDown.duration(MOTION_DURATION_MS.standard);
+const widgetExiting = FadeOutUp.duration(MOTION_DURATION_MS.exit);
 
 export function RestTimerWidget() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -19,6 +32,7 @@ export function RestTimerWidget() {
   const addTime = useRestTimerStore(state => state.addTime);
   const cancelTimer = useRestTimerStore(state => state.cancel);
   const isPaused = status === 'paused';
+  const pulseScale = useSharedValue(1);
   const timerLabel = formatTime(secondsRemaining, { padMinutes: true });
   const openSheet = useCallback(() => setIsSheetOpen(true), []);
   const closeSheet = useCallback(() => setIsSheetOpen(false), []);
@@ -26,15 +40,48 @@ export function RestTimerWidget() {
     addTime(ADD_TIME_SECONDS);
   }, [addTime]);
 
+  useEffect(() => {
+    if (status !== 'running') {
+      cancelAnimation(pulseScale);
+      pulseScale.value = withTiming(1, {
+        duration: MOTION_DURATION_MS.exit
+      });
+
+      return;
+    }
+
+    pulseScale.value = withRepeat(
+      withSequence(
+        withTiming(1.015, { duration: 900 }),
+        withTiming(1, { duration: 900 })
+      ),
+      -1,
+      true
+    );
+
+    return () => {
+      cancelAnimation(pulseScale);
+    };
+  }, [pulseScale, status]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }]
+  }));
+
   return (
     <>
       {status !== 'idle' ? (
-        <View className="px-4 pt-2 pb-3">
-          <View
+        <Animated.View
+          className="px-4 pt-2 pb-3"
+          entering={widgetEntering}
+          exiting={widgetExiting}
+        >
+          <Animated.View
             className={cn(
               'border-info/30 bg-info/10 flex-row items-center gap-2 rounded-lg border p-2',
               isPaused && 'border-accent/30 bg-accent/10'
             )}
+            style={pulseStyle}
           >
             <PressableSurface
               containerClassName="min-w-0 flex-1"
@@ -99,8 +146,8 @@ export function RestTimerWidget() {
             >
               Skip
             </Button>
-          </View>
-        </View>
+          </Animated.View>
+        </Animated.View>
       ) : null}
 
       <RestTimerSheet isOpen={isSheetOpen} onClose={closeSheet} />

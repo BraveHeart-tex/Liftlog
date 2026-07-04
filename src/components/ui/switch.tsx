@@ -1,4 +1,5 @@
 import { useAppTheme } from '@/src/theme/app-theme-provider';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
 import { cn } from '@/src/lib/utils/cn';
 import { useEffect } from 'react';
 import { Pressable, type ViewStyle } from 'react-native';
@@ -36,7 +37,9 @@ export function Switch({
   };
 
   useEffect(() => {
-    checkedProgress.value = withTiming(checked ? 1 : 0, { duration: 180 });
+    checkedProgress.value = withTiming(checked ? 1 : 0, {
+      duration: MOTION_DURATION_MS.standard
+    });
   }, [checked, checkedProgress]);
 
   const trackStyle = useAnimatedStyle(
@@ -62,11 +65,15 @@ export function Switch({
   };
 
   const handlePressIn = () => {
-    pressProgress.value = withTiming(1, { duration: 100 });
+    pressProgress.value = withTiming(1, {
+      duration: MOTION_DURATION_MS.pressIn
+    });
   };
 
   const handlePressOut = () => {
-    pressProgress.value = withTiming(0, { duration: 120 });
+    pressProgress.value = withTiming(0, {
+      duration: MOTION_DURATION_MS.pressOut
+    });
   };
 
   return (

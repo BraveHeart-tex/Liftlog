@@ -11,15 +11,23 @@ import type {
   CalendarDateMark,
   CalendarDay
 } from '@/src/features/calendar/calendar.types';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
 import { cn } from '@/src/lib/utils/cn';
-import { memo, useMemo } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import { Pressable, View } from 'react-native';
+import Animated, {
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming
+} from 'react-native-reanimated';
 
 interface MonthCalendarProps {
   dayCellWidth: number;
   days: CalendarDay[];
   handleDayPress: (dateKey: string) => void;
   monthKey: string;
+  foregroundColor: string;
   primaryColor: string;
   primaryForegroundColor: string;
   selectedDateKey: string;
@@ -31,6 +39,113 @@ interface MonthCalendarProps {
 
 const DAY_CELL_HEIGHT = 40;
 const DAY_BUTTON_SIZE = 34;
+const AnimatedText = Animated.createAnimatedComponent(Text);
+
+interface CalendarDayButtonProps {
+  day: CalendarDay;
+  isDisabled: boolean;
+  isSelected: boolean;
+  isToday: boolean;
+  mark: ReturnType<typeof getMarkedDatesForMonth>[string] | undefined;
+  foregroundColor: string;
+  primaryColor: string;
+  primaryForegroundColor: string;
+  onPress: (dateKey: string) => void;
+}
+
+function CalendarDayButton({
+  day,
+  isDisabled,
+  isSelected,
+  isToday,
+  mark,
+  foregroundColor,
+  primaryColor,
+  primaryForegroundColor,
+  onPress
+}: CalendarDayButtonProps) {
+  const selectedProgress = useSharedValue(isSelected ? 1 : 0);
+  const baseTextColor = isToday ? primaryColor : foregroundColor;
+
+  useEffect(() => {
+    selectedProgress.value = withTiming(isSelected ? 1 : 0, {
+      duration: MOTION_DURATION_MS.standard
+    });
+  }, [isSelected, selectedProgress]);
+
+  const selectionStyle = useAnimatedStyle(() => ({
+    opacity: selectedProgress.value,
+    transform: [{ scale: 0.86 + selectedProgress.value * 0.14 }]
+  }));
+
+  const textStyle = useAnimatedStyle(
+    () => ({
+      color: interpolateColor(
+        selectedProgress.value,
+        [0, 1],
+        [baseTextColor, primaryForegroundColor]
+      )
+    }),
+    [baseTextColor, primaryForegroundColor]
+  );
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{
+        disabled: isDisabled,
+        selected: isSelected
+      }}
+      className="items-center justify-center overflow-hidden rounded-full"
+      disabled={isDisabled}
+      onPress={() => onPress(day.dateKey)}
+      style={{
+        height: DAY_BUTTON_SIZE,
+        opacity: isDisabled ? 0.35 : 1,
+        width: DAY_BUTTON_SIZE
+      }}
+    >
+      <Animated.View
+        pointerEvents="none"
+        className="absolute rounded-full"
+        style={[
+          {
+            backgroundColor: primaryColor,
+            height: DAY_BUTTON_SIZE,
+            width: DAY_BUTTON_SIZE
+          },
+          selectionStyle
+        ]}
+      />
+
+      <AnimatedText
+        variant="bodyMedium"
+        className={cn(
+          'text-center',
+          !isSelected && !isToday && 'text-foreground',
+          !isSelected && isToday && 'text-primary'
+        )}
+        style={textStyle}
+      >
+        {day.dayOfMonth}
+      </AnimatedText>
+
+      {mark?.dots ? (
+        <View className="absolute bottom-1 flex-row gap-0.5">
+          {mark.dots.map(dot => (
+            <View
+              key={dot.key}
+              className="h-1 w-1 rounded-full"
+              style={{
+                backgroundColor: isSelected ? dot.selectedDotColor : dot.color
+              }}
+            />
+          ))}
+        </View>
+      ) : null}
+    </Pressable>
+  );
+}
 
 export const MonthCalendar = memo(
   function MonthCalendar({
@@ -38,6 +153,7 @@ export const MonthCalendar = memo(
     days,
     handleDayPress,
     monthKey,
+    foregroundColor,
     primaryColor,
     primaryForegroundColor,
     selectedDateKey,
@@ -95,54 +211,17 @@ export const MonthCalendar = memo(
                 style={{ height: DAY_CELL_HEIGHT, width: dayCellWidth }}
               >
                 {day.isInMonth ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityState={{
-                      disabled: isDisabled,
-                      selected: isSelected
-                    }}
-                    className={cn(
-                      'items-center justify-center rounded-full',
-                      isSelected && 'bg-primary'
-                    )}
-                    disabled={isDisabled}
-                    onPress={() => handleDayPress(day.dateKey)}
-                    style={{
-                      height: DAY_BUTTON_SIZE,
-                      opacity: isDisabled ? 0.35 : 1,
-                      width: DAY_BUTTON_SIZE
-                    }}
-                  >
-                    <Text
-                      variant="bodyMedium"
-                      className={cn(
-                        'text-center',
-                        isSelected
-                          ? 'text-primary-foreground'
-                          : isToday
-                            ? 'text-primary'
-                            : 'text-foreground'
-                      )}
-                    >
-                      {day.dayOfMonth}
-                    </Text>
-
-                    {mark?.dots ? (
-                      <View className="absolute bottom-1 flex-row gap-0.5">
-                        {mark.dots.map(dot => (
-                          <View
-                            key={dot.key}
-                            className="h-1 w-1 rounded-full"
-                            style={{
-                              backgroundColor: isSelected
-                                ? dot.selectedDotColor
-                                : dot.color
-                            }}
-                          />
-                        ))}
-                      </View>
-                    ) : null}
-                  </Pressable>
+                  <CalendarDayButton
+                    day={day}
+                    foregroundColor={foregroundColor}
+                    isDisabled={isDisabled}
+                    isSelected={isSelected}
+                    isToday={isToday}
+                    mark={mark}
+                    primaryColor={primaryColor}
+                    primaryForegroundColor={primaryForegroundColor}
+                    onPress={handleDayPress}
+                  />
                 ) : null}
               </View>
             );
@@ -157,6 +236,7 @@ export const MonthCalendar = memo(
       prevProps.days !== nextProps.days ||
       prevProps.handleDayPress !== nextProps.handleDayPress ||
       prevProps.monthKey !== nextProps.monthKey ||
+      prevProps.foregroundColor !== nextProps.foregroundColor ||
       prevProps.primaryColor !== nextProps.primaryColor ||
       prevProps.primaryForegroundColor !== nextProps.primaryForegroundColor ||
       prevProps.title !== nextProps.title ||

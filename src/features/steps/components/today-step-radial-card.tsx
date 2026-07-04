@@ -2,12 +2,20 @@ import { Badge } from '@/src/components/ui/badge';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Text } from '@/src/components/ui/text';
 import { formatSteps } from '@/src/features/steps/display';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
 import { cn } from '@/src/lib/utils/cn';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { nativeFontSizes } from '@/src/theme/sizes';
 import { Canvas, Circle, Path, Skia } from '@shopify/react-native-skia';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
+import {
+  Easing,
+  runOnJS,
+  useAnimatedReaction,
+  useSharedValue,
+  withTiming
+} from 'react-native-reanimated';
 
 interface TodayStepRadialCardProps {
   steps: number;
@@ -36,10 +44,12 @@ export function TodayStepRadialCard({
   const { colors } = useAppTheme();
 
   const safeProgress = Math.min(Math.max(progress, 0), 100);
+  const progressEnd = useSharedValue(safeProgress / 100);
+  const stepValue = useSharedValue(steps);
+  const [displayedSteps, setDisplayedSteps] = useState(steps);
   const isLiveStepCounterActive = liveStepCounterStatus === 'active';
   const progressPath = useMemo(() => {
     const path = Skia.Path.Make();
-    const sweep = Math.max(0.1, (safeProgress / 100) * MAX_SWEEP_DEGREES);
 
     path.addArc(
       {
@@ -49,11 +59,33 @@ export function TodayStepRadialCard({
         height: CHART_SIZE - STROKE_WIDTH
       },
       START_ANGLE_DEGREES,
-      sweep
+      MAX_SWEEP_DEGREES
     );
 
     return path;
-  }, [safeProgress]);
+  }, []);
+
+  useEffect(() => {
+    progressEnd.value = withTiming(safeProgress / 100, {
+      duration: MOTION_DURATION_MS.standard,
+      easing: Easing.out(Easing.cubic)
+    });
+  }, [progressEnd, safeProgress]);
+
+  useEffect(() => {
+    stepValue.value = withTiming(steps, {
+      duration: MOTION_DURATION_MS.standard,
+      easing: Easing.out(Easing.cubic)
+    });
+  }, [stepValue, steps]);
+
+  useAnimatedReaction(
+    () => Math.round(stepValue.value),
+    currentSteps => {
+      runOnJS(setDisplayedSteps)(currentSteps);
+    },
+    []
+  );
 
   return (
     <Card className="mt-5 overflow-hidden">
@@ -83,7 +115,7 @@ export function TodayStepRadialCard({
                   strokeWidth={STROKE_WIDTH}
                   strokeCap="round"
                   start={0}
-                  end={1}
+                  end={progressEnd}
                 />
               </Canvas>
             </View>
@@ -97,7 +129,7 @@ export function TodayStepRadialCard({
                 minimumFontScale={0.72}
                 style={{ fontSize: nativeFontSizes.stepRadialValueCompact }}
               >
-                {formatSteps(steps)}
+                {formatSteps(displayedSteps)}
               </Text>
 
               <Text

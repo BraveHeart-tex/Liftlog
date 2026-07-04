@@ -22,16 +22,45 @@ import {
   parseDurationMsInput,
   parseTrackingFieldValues
 } from '@/src/features/workouts/components/set-form-utils';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
 import { cn } from '@/src/lib/utils/cn';
 import { formatDurationMs } from '@/src/lib/utils/format-time';
+import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { CheckIcon, CopyIcon, PlusIcon, Trash2Icon } from 'lucide-react-native';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Alert, Keyboard, View, type LayoutChangeEvent } from 'react-native';
 import ReanimatedSwipeable, {
   type SwipeableMethods
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Animated, {
+  FadeInDown,
+  FadeOut,
+  LinearTransition,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming
+} from 'react-native-reanimated';
 
 type RowPhase = 'editing' | 'saving' | 'awaiting_sync' | 'error';
+
+type FieldTone = 'neutral' | 'valid' | 'committed' | 'error';
+
+const rowEntering = FadeInDown.duration(MOTION_DURATION_MS.standard);
+const rowExiting = FadeOut.duration(MOTION_DURATION_MS.exit);
+const rowLayout = LinearTransition.duration(MOTION_DURATION_MS.standard);
+
+const lightFeedbackColors = {
+  danger: '#e8294a',
+  success: '#34c76a'
+} as const;
+
+const darkFeedbackColors = {
+  danger: '#c41535',
+  success: '#1f9e4a'
+} as const;
 
 interface SetFormProps {
   trackingType: TrackingType;
@@ -104,7 +133,27 @@ export function SetForm({
   onDeleteSet
 }: SetFormProps) {
   const { weightUnit } = useSettings();
+  const { colors, colorScheme } = useAppTheme();
   const trackingDefinition = TRACKING_TYPE_DEFINITIONS[trackingType];
+  const feedbackColors =
+    colorScheme === 'dark' ? darkFeedbackColors : lightFeedbackColors;
+  const animatedFieldColors = useMemo<AnimatedFieldColors>(
+    () => ({
+      border: [
+        'transparent',
+        colors.primary,
+        feedbackColors.success,
+        feedbackColors.danger
+      ],
+      background: [
+        colors.muted,
+        `${colors.primary}1A`,
+        `${feedbackColors.success}1A`,
+        `${feedbackColors.danger}1A`
+      ]
+    }),
+    [colors.muted, colors.primary, feedbackColors]
+  );
   const [draftRows, setDraftRows] = useState<DraftRowState[]>([]);
   const [draftValuesByKey, setDraftValuesByKey] = useState<
     Record<string, Record<string, string>>
@@ -679,6 +728,18 @@ export function SetForm({
     });
   };
 
+  const getRowFieldTone = (row: SetFormRow, isValid: boolean): FieldTone => {
+    if (row.phase === 'error') {
+      return 'error';
+    }
+
+    if (row.isCommitted) {
+      return 'committed';
+    }
+
+    return isValid ? 'valid' : 'neutral';
+  };
+
   const hasRows = rows.length > 0;
 
   return (
@@ -701,6 +762,7 @@ export function SetForm({
           <View className="gap-2">
             {rows.map(row => {
               const isValid = Boolean(row.validatedValues);
+              const fieldTone = getRowFieldTone(row, isValid);
               const isCopyDisabled = !isValid || row.isSaving || hasPendingCopy;
               const rowContent = (
                 <View className="bg-card min-h-16 flex-row items-center gap-2 rounded-lg px-3 py-2">
@@ -722,69 +784,75 @@ export function SetForm({
 
                   {trackingDefinition.fields.map(field =>
                     field.key === 'durationMs' ? (
-                      <SetDurationField
+                      <AnimatedFieldSurface
                         key={field.key}
-                        value={row.fieldValues[field.key] ?? ''}
-                        placeholder="0:00.00"
-                        disabled={row.isSaving}
-                        isCommitted={row.isCommitted}
-                        isValid={isValid}
-                        accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
-                        onPress={() => handleOpenDurationPicker(row, field)}
-                      />
+                        tone={fieldTone}
+                        colors={animatedFieldColors}
+                        className="flex-1"
+                      >
+                        <SetDurationField
+                          value={row.fieldValues[field.key] ?? ''}
+                          placeholder="0:00.00"
+                          disabled={row.isSaving}
+                          isCommitted={row.isCommitted}
+                          isValid={isValid}
+                          surfaceClassName="border-transparent bg-transparent"
+                          accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
+                          onPress={() => handleOpenDurationPicker(row, field)}
+                        />
+                      </AnimatedFieldSurface>
                     ) : (
-                      <Input
+                      <AnimatedFieldSurface
                         key={field.key}
-                        value={row.fieldValues[field.key] ?? ''}
-                        onChangeText={value =>
-                          updateFieldValue(row, field, value)
-                        }
-                        keyboardType={field.keyboardType}
-                        placeholder="0"
-                        withContainerDefaults={false}
-                        editable={!row.isSaving}
-                        onFocus={() => onRowFocus?.(row.key)}
-                        wrapperClassName="flex-1"
-                        containerClassName={cn(
-                          'bg-muted min-h-12 flex-row items-center rounded-lg border px-1',
-                          row.isCommitted
-                            ? 'border-success/40 bg-success/10'
-                            : isValid
-                              ? 'border-muted'
-                              : 'border-transparent'
-                        )}
-                        inputClassName="text-body-medium flex-1 px-2 py-2"
-                        textAlign="center"
-                        accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
-                      />
+                        tone={fieldTone}
+                        colors={animatedFieldColors}
+                        className="flex-1"
+                      >
+                        <Input
+                          value={row.fieldValues[field.key] ?? ''}
+                          onChangeText={value =>
+                            updateFieldValue(row, field, value)
+                          }
+                          keyboardType={field.keyboardType}
+                          placeholder="0"
+                          withContainerDefaults={false}
+                          editable={!row.isSaving}
+                          onFocus={() => onRowFocus?.(row.key)}
+                          containerClassName="min-h-12 flex-row items-center rounded-lg px-1"
+                          inputClassName="text-body-medium flex-1 px-2 py-2"
+                          textAlign="center"
+                          accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
+                        />
+                      </AnimatedFieldSurface>
                     )
                   )}
 
-                  <Button
-                    variant={isValid ? 'secondary' : 'ghost'}
-                    size="icon"
-                    disabled={!isValid || row.isSaving}
-                    accessibilityLabel={`Save set ${row.setNumber}`}
-                    className={cn(
-                      'h-12 w-12',
-                      row.isCommitted
-                        ? 'border-success/40 bg-success/10'
-                        : isValid && 'border-primary/30 bg-primary/10'
-                    )}
-                    onPress={() => void handleCommitRow(row)}
+                  <AnimatedSaveButtonSurface
+                    tone={fieldTone}
+                    isCommitted={row.isCommitted}
+                    colors={animatedFieldColors}
                   >
-                    <Icon
-                      as={CheckIcon}
-                      tone={
-                        row.isCommitted
-                          ? 'success'
-                          : isValid
-                            ? 'primary'
-                            : 'mutedForeground'
-                      }
-                      size="md"
-                    />
-                  </Button>
+                    <Button
+                      variant={isValid ? 'secondary' : 'ghost'}
+                      size="icon"
+                      disabled={!isValid || row.isSaving}
+                      accessibilityLabel={`Save set ${row.setNumber}`}
+                      className="h-12 w-12 border-transparent bg-transparent"
+                      onPress={() => void handleCommitRow(row)}
+                    >
+                      <Icon
+                        as={CheckIcon}
+                        tone={
+                          row.isCommitted
+                            ? 'success'
+                            : isValid
+                              ? 'primary'
+                              : 'mutedForeground'
+                        }
+                        size="md"
+                      />
+                    </Button>
+                  </AnimatedSaveButtonSurface>
                 </View>
               );
 
@@ -803,8 +871,11 @@ export function SetForm({
               };
 
               return (
-                <View
+                <Animated.View
                   key={row.key}
+                  entering={rowEntering}
+                  exiting={rowExiting}
+                  layout={rowLayout}
                   onLayout={event =>
                     onRowLayout?.(row.key, event.nativeEvent.layout)
                   }
@@ -826,7 +897,7 @@ export function SetForm({
                   >
                     {rowContent}
                   </ReanimatedSwipeable>
-                </View>
+                </Animated.View>
               );
             })}
           </View>
@@ -884,5 +955,111 @@ function HeaderCell({
     <Text variant="overline" tone="muted" className={className}>
       {children}
     </Text>
+  );
+}
+
+interface AnimatedFieldColors {
+  background: [string, string, string, string];
+  border: [string, string, string, string];
+}
+
+interface AnimatedFieldSurfaceProps {
+  children: ReactNode;
+  className?: string;
+  colors: AnimatedFieldColors;
+  tone: FieldTone;
+}
+
+const toneProgress: Record<FieldTone, number> = {
+  neutral: 0,
+  valid: 1,
+  committed: 2,
+  error: 3
+};
+
+function AnimatedFieldSurface({
+  children,
+  className,
+  colors,
+  tone
+}: AnimatedFieldSurfaceProps) {
+  const progress = useSharedValue(toneProgress[tone]);
+
+  useEffect(() => {
+    progress.value = withTiming(toneProgress[tone], {
+      duration: MOTION_DURATION_MS.standard
+    });
+  }, [progress, tone]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      progress.value,
+      [0, 1, 2, 3],
+      colors.background
+    ),
+    borderColor: interpolateColor(progress.value, [0, 1, 2, 3], colors.border)
+  }));
+
+  return (
+    <Animated.View
+      className={cn('min-h-12 rounded-lg border', className)}
+      style={animatedStyle}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+
+interface AnimatedSaveButtonSurfaceProps {
+  children: ReactNode;
+  colors: AnimatedFieldColors;
+  isCommitted: boolean;
+  tone: FieldTone;
+}
+
+function AnimatedSaveButtonSurface({
+  children,
+  colors,
+  isCommitted,
+  tone
+}: AnimatedSaveButtonSurfaceProps) {
+  const previousIsCommitted = useRef(isCommitted);
+  const progress = useSharedValue(toneProgress[tone]);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    progress.value = withTiming(toneProgress[tone], {
+      duration: MOTION_DURATION_MS.standard
+    });
+  }, [progress, tone]);
+
+  useEffect(() => {
+    if (isCommitted && !previousIsCommitted.current) {
+      scale.value = withSequence(
+        withSpring(1.14, { damping: 10, stiffness: 260 }),
+        withSpring(1, { damping: 12, stiffness: 260 })
+      );
+    }
+
+    previousIsCommitted.current = isCommitted;
+  }, [isCommitted, scale]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      progress.value,
+      [0, 1, 2, 3],
+      colors.background
+    ),
+    borderColor: interpolateColor(progress.value, [0, 1, 2, 3], colors.border),
+    transform: [{ scale: scale.value }]
+  }));
+
+  return (
+    <Animated.View
+      className="h-12 w-12 rounded-lg border"
+      style={animatedStyle}
+    >
+      {children}
+    </Animated.View>
   );
 }

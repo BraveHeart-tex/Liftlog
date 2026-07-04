@@ -1,4 +1,5 @@
 import { Text } from '@/src/components/ui/text';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
 import { cn } from '@/src/lib/utils/cn';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, View, type LayoutChangeEvent } from 'react-native';
@@ -46,7 +47,9 @@ export function SegmentedControl<T extends string>({
   const itemWidth = trackWidth / options.length;
 
   useEffect(() => {
-    translateX.value = withTiming(activeIndex * itemWidth, { duration: 180 });
+    translateX.value = withTiming(activeIndex * itemWidth, {
+      duration: MOTION_DURATION_MS.standard
+    });
   }, [activeIndex, itemWidth, translateX]);
 
   const indicatorStyle = useAnimatedStyle(() => ({

@@ -11,13 +11,17 @@ import {
   useWorkoutRowsForDate
 } from '@/src/features/workouts/hooks';
 import type { CompletedWorkoutLogRow } from '@/src/features/workouts/repository';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
 import { toLocalDateKey } from '@/src/lib/utils/date';
 import { router } from 'expo-router';
 import { PlusIcon } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
+import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
 
 const WORKOUT_LOG_PAST_MONTH_RANGE = 12;
+const selectedDayEntering = FadeInDown.duration(MOTION_DURATION_MS.standard);
+const selectedDayExiting = FadeOutUp.duration(MOTION_DURATION_MS.exit);
 
 function formatSelectedDate(dateKey: string): string {
   const [year, month, day] = dateKey.split('-').map(Number);
@@ -45,18 +49,24 @@ export function WorkoutLogContent() {
 
   const renderWorkoutRow = useCallback(
     ({ item }: { item: CompletedWorkoutLogRow }) => (
-      <WorkoutLogRow
-        workout={item.workout}
-        setCount={item.setCount}
-        onPress={workout =>
-          router.push({
-            pathname: '/workouts/[id]',
-            params: { id: workout.id }
-          })
-        }
-      />
+      <Animated.View
+        key={`${selectedDateKey}-${item.workout.id}`}
+        entering={selectedDayEntering}
+        exiting={selectedDayExiting}
+      >
+        <WorkoutLogRow
+          workout={item.workout}
+          setCount={item.setCount}
+          onPress={workout =>
+            router.push({
+              pathname: '/workouts/[id]',
+              params: { id: workout.id }
+            })
+          }
+        />
+      </Animated.View>
     ),
-    []
+    [selectedDateKey]
   );
 
   const listHeader = useMemo(
@@ -75,7 +85,12 @@ export function WorkoutLogContent() {
           />
         </View>
 
-        <View className="mt-6 flex-row items-end justify-between gap-4">
+        <Animated.View
+          key={selectedDateKey}
+          className="mt-6 flex-row items-end justify-between gap-4"
+          entering={selectedDayEntering}
+          exiting={selectedDayExiting}
+        >
           <View>
             <Text variant="caption" tone="muted">
               Selected day
@@ -89,7 +104,7 @@ export function WorkoutLogContent() {
               workoutRows.length === 1 ? 'workout' : 'workouts'
             }`}
           </Text>
-        </View>
+        </Animated.View>
 
         <Button
           className="mt-4 w-full"
@@ -129,6 +144,7 @@ export function WorkoutLogContent() {
           ) : null
         }
         renderItem={renderWorkoutRow}
+        extraData={selectedDateKey}
         contentContainerClassName="px-4 pt-4 pb-6"
       />
 

@@ -1,5 +1,6 @@
 import { Button } from '@/src/components/ui/button';
 import { Text } from '@/src/components/ui/text';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, PanResponder, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -98,7 +99,7 @@ export function SnackbarHost() {
     if (!message) {
       Animated.timing(progress, {
         toValue: 0,
-        duration: 160,
+        duration: MOTION_DURATION_MS.exit,
         useNativeDriver: true
       }).start(({ finished }) => {
         if (finished) {

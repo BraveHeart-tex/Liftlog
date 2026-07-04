@@ -18,9 +18,23 @@ import {
   useReorderWorkoutExercises
 } from '@/src/features/workouts/hooks';
 import { triggerWorkoutEditModeHaptics } from '@/src/features/workouts/workout-haptics';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
 import { PlusIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Keyboard, View } from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeOut,
+  FadeOutDown,
+  LinearTransition
+} from 'react-native-reanimated';
+
+const headerEntering = FadeIn.duration(MOTION_DURATION_MS.standard);
+const headerExiting = FadeOut.duration(MOTION_DURATION_MS.exit);
+const chromeEntering = FadeInDown.duration(MOTION_DURATION_MS.standard);
+const chromeExiting = FadeOutDown.duration(MOTION_DURATION_MS.exit);
+const chromeLayout = LinearTransition.duration(MOTION_DURATION_MS.standard);
 
 interface ActiveWorkoutContentProps {
   activeWorkout: Workout;
@@ -138,36 +152,51 @@ export function ActiveWorkoutContent({
     }
   }, [isEditingExercises, workoutExerciseRows.length]);
 
+  const headerContent = isEditingExercises ? (
+    <ActiveWorkoutEditHeader workoutName={workoutName} onDone={exitEditMode} />
+  ) : mode === 'historical' ? (
+    <HistoricalWorkoutHeader
+      workoutName={workoutName}
+      startedAt={activeWorkout.startedAt}
+      canSave={canSaveHistoricalWorkout}
+      onDiscard={() => onDiscardHistoricalWorkout?.(hasWorkoutExercises)}
+      onSave={onSaveHistoricalWorkout ?? (() => undefined)}
+    />
+  ) : (
+    <ActiveWorkoutHeaderWithActions
+      workoutName={workoutName}
+      workoutId={activeWorkout.id}
+      startedAt={activeWorkout.startedAt}
+      canFinish={canFinishWorkout}
+      canSaveTemplate={hasWorkoutExercises}
+      workoutExerciseRows={workoutExerciseRows.map(workoutExercise => ({
+        exerciseId: workoutExercise.exerciseId,
+        order: workoutExercise.order
+      }))}
+    />
+  );
+
+  const headerKey = isEditingExercises ? 'edit' : mode;
+
   return (
     <Screen withPadding={false}>
-      {isEditingExercises ? (
-        <ActiveWorkoutEditHeader
-          workoutName={workoutName}
-          onDone={exitEditMode}
-        />
-      ) : mode === 'historical' ? (
-        <HistoricalWorkoutHeader
-          workoutName={workoutName}
-          startedAt={activeWorkout.startedAt}
-          canSave={canSaveHistoricalWorkout}
-          onDiscard={() => onDiscardHistoricalWorkout?.(hasWorkoutExercises)}
-          onSave={onSaveHistoricalWorkout ?? (() => undefined)}
-        />
-      ) : (
-        <ActiveWorkoutHeaderWithActions
-          workoutName={workoutName}
-          workoutId={activeWorkout.id}
-          startedAt={activeWorkout.startedAt}
-          canFinish={canFinishWorkout}
-          canSaveTemplate={hasWorkoutExercises}
-          workoutExerciseRows={workoutExerciseRows.map(workoutExercise => ({
-            exerciseId: workoutExercise.exerciseId,
-            order: workoutExercise.order
-          }))}
-        />
-      )}
+      <Animated.View
+        key={headerKey}
+        entering={headerEntering}
+        exiting={headerExiting}
+      >
+        {headerContent}
+      </Animated.View>
 
-      {!isEditingExercises && mode === 'active' && <RestTimerWidget />}
+      {!isEditingExercises && mode === 'active' && (
+        <Animated.View
+          entering={chromeEntering}
+          exiting={chromeExiting}
+          layout={chromeLayout}
+        >
+          <RestTimerWidget />
+        </Animated.View>
+      )}
 
       {isLoadingWorkoutExercises ? (
         <View className="flex-1 px-4">
@@ -195,7 +224,12 @@ export function ActiveWorkoutContent({
       {!isEditingExercises &&
         !isLoadingWorkoutExercises &&
         workoutExerciseRows.length > 0 && (
-          <View className="border-border bg-background border-t px-4 py-4">
+          <Animated.View
+            className="border-border bg-background border-t px-4 py-4"
+            entering={chromeEntering}
+            exiting={chromeExiting}
+            layout={chromeLayout}
+          >
             <Button
               variant="secondary"
               className="w-full"
@@ -205,7 +239,7 @@ export function ActiveWorkoutContent({
             >
               Add exercise
             </Button>
-          </View>
+          </Animated.View>
         )}
 
       <ActiveWorkoutExercisePickerSheet

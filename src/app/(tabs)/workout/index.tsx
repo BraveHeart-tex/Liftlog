@@ -6,9 +6,33 @@ import { ActiveWorkoutSummaryCard } from '@/src/features/workouts/components/act
 import { RecentWorkoutsSection } from '@/src/features/workouts/components/recent-workouts-section';
 import { WorkoutTemplatesSection } from '@/src/features/workouts/components/workout-templates-section';
 import { useWorkoutStart } from '@/src/features/workouts/hooks';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
 import { router } from 'expo-router';
 import { SettingsIcon } from 'lucide-react-native';
 import { View } from 'react-native';
+import Animated, { Keyframe } from 'react-native-reanimated';
+
+const workoutStateEntering = new Keyframe({
+  0: {
+    opacity: 0,
+    transform: [{ translateY: 8 }, { scale: 0.98 }]
+  },
+  100: {
+    opacity: 1,
+    transform: [{ translateY: 0 }, { scale: 1 }]
+  }
+}).duration(MOTION_DURATION_MS.standard);
+
+const workoutStateExiting = new Keyframe({
+  0: {
+    opacity: 1,
+    transform: [{ translateY: 0 }, { scale: 1 }]
+  },
+  100: {
+    opacity: 0,
+    transform: [{ translateY: -6 }, { scale: 0.98 }]
+  }
+}).duration(MOTION_DURATION_MS.exit);
 
 export default function WorkoutStartScreen() {
   const { activeWorkout, startWorkout, resumeWorkout } = useWorkoutStart();
@@ -28,19 +52,30 @@ export default function WorkoutStartScreen() {
       </View>
 
       {activeWorkout ? (
-        <ActiveWorkoutSummaryCard
-          workout={activeWorkout}
-          onPress={resumeWorkout}
-        />
+        <Animated.View
+          key="active-workout-summary"
+          entering={workoutStateEntering}
+          exiting={workoutStateExiting}
+        >
+          <ActiveWorkoutSummaryCard
+            workout={activeWorkout}
+            onPress={resumeWorkout}
+          />
+        </Animated.View>
       ) : (
-        <View className="gap-4">
+        <Animated.View
+          key="start-workout-cta"
+          className="gap-4"
+          entering={workoutStateEntering}
+          exiting={workoutStateExiting}
+        >
           <Button className="mt-6 w-full" onPress={startWorkout}>
             Start Workout
           </Button>
           <Text tone="muted" variant="caption" className="text-center">
             Log exercises as you go, no setup needed.
           </Text>
-        </View>
+        </Animated.View>
       )}
 
       <WorkoutTemplatesSection />
