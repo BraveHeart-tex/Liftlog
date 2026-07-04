@@ -146,7 +146,7 @@ export function RestTimerHost() {
     showSnackbar({
       message: 'Rest time is up',
       actionLabel: 'Dismiss',
-      onAction: () => {
+      onDismiss: () => {
         void stopCompletionSound();
       }
     });

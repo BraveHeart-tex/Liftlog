@@ -15,6 +15,7 @@ interface SnackbarOptions {
   message: string;
   actionLabel?: string;
   onAction?: () => void;
+  onDismiss?: () => void;
   durationMs?: number;
 }
 
@@ -30,19 +31,41 @@ interface SnackbarState {
 
 let nextSnackbarId = 1;
 
-const useSnackbarStore = create<SnackbarState>(set => ({
+function notifySnackbarDismissed(message: SnackbarMessage) {
+  try {
+    message.onDismiss?.();
+  } catch (error) {
+    console.error('Snackbar dismissal callback failed', error);
+  }
+}
+
+const useSnackbarStore = create<SnackbarState>((set, get) => ({
   message: null,
   showSnackbar: options => {
+    const currentMessage = get().message;
+
     set({
       message: {
         id: nextSnackbarId,
         ...options
       }
     });
+
+    if (currentMessage) {
+      notifySnackbarDismissed(currentMessage);
+    }
+
     nextSnackbarId += 1;
   },
   dismissSnackbar: () => {
+    const currentMessage = get().message;
+
+    if (!currentMessage) {
+      return;
+    }
+
     set({ message: null });
+    notifySnackbarDismissed(currentMessage);
   }
 }));
 
