@@ -12,6 +12,7 @@ import { WorkoutDetailHeader } from '@/src/features/workouts/components/workout-
 import { WorkoutHistoryExerciseCard } from '@/src/features/workouts/components/workout-history-exercise-card';
 import { WorkoutMetricCard } from '@/src/features/workouts/components/workout-metric-card';
 import {
+  useHistoricalWorkoutEditStart,
   useRepeatWorkout,
   useWorkoutDelete,
   useWorkoutHistoryDetail,
@@ -90,6 +91,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
   const renameWorkout = useWorkoutRename();
   const workoutName = workout.name;
   const deleteWorkout = useWorkoutDelete();
+  const startWorkoutEdit = useHistoricalWorkoutEditStart();
   const repeatWorkout = useRepeatWorkout({
     workout,
     activeWorkout,
@@ -150,6 +152,22 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
   );
   const openRenameSheet = useCallback(() => setIsRenameSheetOpen(true), []);
   const closeRenameSheet = useCallback(() => setIsRenameSheetOpen(false), []);
+
+  const editWorkout = useCallback(() => {
+    try {
+      const draftWorkout = startWorkoutEdit(workout.id);
+
+      if (!draftWorkout) {
+        Alert.alert(
+          'Could not edit workout',
+          'This workout may have been deleted.'
+        );
+      }
+    } catch (error) {
+      console.error('Failed to start workout edit', error);
+      Alert.alert('Could not edit workout', 'Please try again.');
+    }
+  }, [startWorkoutEdit, workout.id]);
 
   const confirmDeleteWorkout = useCallback(() => {
     Alert.alert(
@@ -305,6 +323,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
       <WorkoutDetailActionsSheet
         isOpen={isActionSheetOpen}
         onClose={closeActions}
+        onEdit={editWorkout}
         onRename={openRenameSheet}
         onDelete={confirmDeleteWorkout}
       />

@@ -39,7 +39,7 @@ const chromeLayout = LinearTransition.duration(MOTION_DURATION_MS.standard);
 interface ActiveWorkoutContentProps {
   activeWorkout: Workout;
   exerciseRows?: ExerciseListItem[];
-  mode?: 'active' | 'historical';
+  mode?: 'active' | 'historical' | 'historical-edit';
   onDiscardHistoricalWorkout?: (hasWorkoutExercises: boolean) => void;
   onSaveHistoricalWorkout?: () => void;
 }
@@ -154,7 +154,7 @@ export function ActiveWorkoutContent({
 
   const headerContent = isEditingExercises ? (
     <ActiveWorkoutEditHeader workoutName={workoutName} onDone={exitEditMode} />
-  ) : mode === 'historical' ? (
+  ) : mode === 'historical' || mode === 'historical-edit' ? (
     <HistoricalWorkoutHeader
       workoutName={workoutName}
       startedAt={activeWorkout.startedAt}

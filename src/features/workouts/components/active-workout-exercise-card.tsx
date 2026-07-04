@@ -10,7 +10,7 @@ import { WorkoutExerciseSummary } from '@/src/features/workouts/components/worko
 interface ActiveWorkoutExerciseCardProps {
   item: WorkoutExerciseWithSets;
   className?: string;
-  mode?: 'active' | 'historical';
+  mode?: 'active' | 'historical' | 'historical-edit';
   weightUnit: WeightUnit;
   onLongPress: () => void;
 }
@@ -25,6 +25,12 @@ export function ActiveWorkoutExerciseCard({
   const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();
 
   const completedSets = item.sets.filter(set => set.status === 'completed');
+  const pathname =
+    mode === 'historical'
+      ? '/workouts/backfill/exercise/[workoutExerciseId]'
+      : mode === 'historical-edit'
+        ? '/workouts/edit/exercise/[workoutExerciseId]'
+        : '/(tabs)/workout/exercise/[workoutExerciseId]';
 
   return (
     <Animated.View
@@ -37,10 +43,7 @@ export function ActiveWorkoutExerciseCard({
       <Pressable
         onPress={() =>
           router.push({
-            pathname:
-              mode === 'historical'
-                ? '/workouts/backfill/exercise/[workoutExerciseId]'
-                : '/(tabs)/workout/exercise/[workoutExerciseId]',
+            pathname,
             params: { workoutExerciseId: item.workoutExercise.id }
           })
         }

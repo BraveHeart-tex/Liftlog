@@ -35,6 +35,7 @@ import {
 } from 'drizzle-orm';
 
 export const HISTORICAL_WORKOUT_DRAFT_STATUS = 'historical_draft';
+export const HISTORICAL_WORKOUT_EDIT_DRAFT_STATUS = 'historical_edit_draft';
 const HISTORICAL_WORKOUT_DRAFT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const HISTORICAL_SET_INTERVAL_MS = 60_000;
 
@@ -67,6 +68,11 @@ export interface CompletedWorkoutLogRow {
 }
 
 interface SavedHistoricalWorkoutDraft {
+  workout: Workout;
+  affectedExerciseIds: WorkoutExercise['exerciseId'][];
+}
+
+interface SavedHistoricalWorkoutEditDraft {
   workout: Workout;
   affectedExerciseIds: WorkoutExercise['exerciseId'][];
 }
@@ -219,6 +225,21 @@ export function getHistoricalWorkoutDraftQuery(
     );
 }
 
+export function getHistoricalWorkoutEditDraftQuery(
+  db: DrizzleDb,
+  id: Workout['id']
+) {
+  return db
+    .select()
+    .from(workouts)
+    .where(
+      and(
+        eq(workouts.id, id),
+        eq(workouts.status, HISTORICAL_WORKOUT_EDIT_DRAFT_STATUS)
+      )
+    );
+}
+
 export function getActiveWorkoutSummaryQuery(db: DrizzleDb) {
   return db
     .select({
@@ -354,7 +375,10 @@ function cleanupStaleHistoricalWorkoutDrafts(db: DrizzleDb): void {
   db.delete(workouts)
     .where(
       and(
-        eq(workouts.status, HISTORICAL_WORKOUT_DRAFT_STATUS),
+        inArray(workouts.status, [
+          HISTORICAL_WORKOUT_DRAFT_STATUS,
+          HISTORICAL_WORKOUT_EDIT_DRAFT_STATUS
+        ]),
         lte(
           workouts.completedAt,
           Date.now() - HISTORICAL_WORKOUT_DRAFT_MAX_AGE_MS
@@ -442,6 +466,140 @@ export function createHistoricalWorkoutDraftFromTemplate(
         }))
       )
       .run();
+  });
+
+  return createdWorkout;
+}
+
+export function createHistoricalWorkoutEditDraft(
+  db: DrizzleDb,
+  sourceWorkoutId: Workout['id']
+): Workout | undefined {
+  cleanupStaleHistoricalWorkoutDrafts(db);
+
+  let createdWorkout: Workout | undefined;
+
+  db.transaction(tx => {
+    const sourceWorkout = tx
+      .select()
+      .from(workouts)
+      .where(
+        and(eq(workouts.id, sourceWorkoutId), eq(workouts.status, 'completed'))
+      )
+      .get();
+
+    if (!sourceWorkout) {
+      return;
+    }
+
+    const sourceWorkoutExercises = tx
+      .select()
+      .from(workoutExercises)
+      .where(eq(workoutExercises.workoutId, sourceWorkoutId))
+      .orderBy(asc(workoutExercises.order))
+      .all();
+
+    const sourceWorkoutExerciseIds = sourceWorkoutExercises.map(
+      workoutExercise => workoutExercise.id
+    );
+    const sourceSets =
+      sourceWorkoutExerciseIds.length > 0
+        ? tx
+            .select()
+            .from(sets)
+            .where(inArray(sets.workoutExerciseId, sourceWorkoutExerciseIds))
+            .orderBy(asc(sets.order))
+            .all()
+        : [];
+    const sourceSetsByWorkoutExerciseId = new Map<
+      WorkoutExercise['id'],
+      Set[]
+    >();
+
+    for (const set of sourceSets) {
+      const existingSets =
+        sourceSetsByWorkoutExerciseId.get(set.workoutExerciseId) ?? [];
+
+      sourceSetsByWorkoutExerciseId.set(set.workoutExerciseId, [
+        ...existingSets,
+        set
+      ]);
+    }
+
+    createdWorkout = tx
+      .insert(workouts)
+      .values({
+        name: sourceWorkout.name,
+        status: HISTORICAL_WORKOUT_EDIT_DRAFT_STATUS,
+        startedAt: sourceWorkout.startedAt,
+        dateKey: sourceWorkout.dateKey,
+        completedAt: Date.now(),
+        notes: sourceWorkout.notes,
+        sourceWorkoutId: sourceWorkout.id
+      })
+      .returning()
+      .get();
+
+    const createdWorkoutRow = createdWorkout;
+
+    if (!createdWorkoutRow || sourceWorkoutExercises.length === 0) {
+      return;
+    }
+
+    const draftWorkoutExercises = tx
+      .insert(workoutExercises)
+      .values(
+        sourceWorkoutExercises.map(workoutExercise => ({
+          workoutId: createdWorkoutRow.id,
+          exerciseId: workoutExercise.exerciseId,
+          order: workoutExercise.order,
+          notes: workoutExercise.notes
+        }))
+      )
+      .returning()
+      .all();
+    const draftWorkoutExerciseIdBySourceId = new Map<
+      WorkoutExercise['id'],
+      WorkoutExercise['id']
+    >(
+      sourceWorkoutExercises.map((sourceWorkoutExercise, index) => [
+        sourceWorkoutExercise.id,
+        draftWorkoutExercises[index]?.id ?? ''
+      ])
+    );
+    const draftSets: NewSet[] = [];
+
+    for (const sourceWorkoutExercise of sourceWorkoutExercises) {
+      const draftWorkoutExerciseId = draftWorkoutExerciseIdBySourceId.get(
+        sourceWorkoutExercise.id
+      );
+
+      if (!draftWorkoutExerciseId) {
+        continue;
+      }
+
+      const sourceSetRows =
+        sourceSetsByWorkoutExerciseId.get(sourceWorkoutExercise.id) ?? [];
+
+      for (const set of sourceSetRows) {
+        draftSets.push({
+          workoutExerciseId: draftWorkoutExerciseId,
+          order: set.order,
+          weightKg: set.weightKg,
+          reps: set.reps,
+          distanceMeters: set.distanceMeters,
+          durationMs: set.durationMs,
+          durationSeconds: set.durationSeconds,
+          rpe: set.rpe,
+          status: set.status,
+          completedAt: set.completedAt
+        });
+      }
+    }
+
+    if (draftSets.length > 0) {
+      tx.insert(sets).values(draftSets).run();
+    }
   });
 
   return createdWorkout;
@@ -625,6 +783,175 @@ export function saveHistoricalWorkoutDraft(
 
     affectedExerciseIds = Array.from(
       new Set(completedSetRows.map(row => row.exerciseId))
+    );
+  });
+
+  if (!savedWorkout) {
+    return undefined;
+  }
+
+  return {
+    workout: savedWorkout,
+    affectedExerciseIds
+  };
+}
+
+export function saveHistoricalWorkoutEditDraft(
+  db: DrizzleDb,
+  {
+    sourceWorkoutId,
+    draftWorkoutId
+  }: {
+    sourceWorkoutId: Workout['id'];
+    draftWorkoutId: Workout['id'];
+  }
+): SavedHistoricalWorkoutEditDraft | undefined {
+  let savedWorkout: Workout | undefined;
+  let affectedExerciseIds: WorkoutExercise['exerciseId'][] = [];
+
+  db.transaction(tx => {
+    const sourceWorkout = tx
+      .select()
+      .from(workouts)
+      .where(
+        and(eq(workouts.id, sourceWorkoutId), eq(workouts.status, 'completed'))
+      )
+      .get();
+    const draftWorkout = tx
+      .select()
+      .from(workouts)
+      .where(
+        and(
+          eq(workouts.id, draftWorkoutId),
+          eq(workouts.status, HISTORICAL_WORKOUT_EDIT_DRAFT_STATUS),
+          eq(workouts.sourceWorkoutId, sourceWorkoutId)
+        )
+      )
+      .get();
+
+    if (!sourceWorkout || !draftWorkout) {
+      return;
+    }
+
+    const sourceWorkoutExercises = tx
+      .select()
+      .from(workoutExercises)
+      .where(eq(workoutExercises.workoutId, sourceWorkoutId))
+      .orderBy(asc(workoutExercises.order))
+      .all();
+    const draftWorkoutExercises = tx
+      .select()
+      .from(workoutExercises)
+      .where(eq(workoutExercises.workoutId, draftWorkoutId))
+      .orderBy(asc(workoutExercises.order))
+      .all();
+    const draftWorkoutExerciseIds = draftWorkoutExercises.map(
+      workoutExercise => workoutExercise.id
+    );
+    const draftSetRows =
+      draftWorkoutExerciseIds.length > 0
+        ? tx
+            .select()
+            .from(sets)
+            .where(inArray(sets.workoutExerciseId, draftWorkoutExerciseIds))
+            .orderBy(asc(sets.order))
+            .all()
+        : [];
+    const completedDraftSetRows = draftSetRows.filter(
+      set => set.status === 'completed'
+    );
+
+    if (completedDraftSetRows.length === 0) {
+      return;
+    }
+
+    const draftSetsByWorkoutExerciseId = new Map<
+      WorkoutExercise['id'],
+      Set[]
+    >();
+
+    for (const set of draftSetRows) {
+      const existingSets =
+        draftSetsByWorkoutExerciseId.get(set.workoutExerciseId) ?? [];
+
+      draftSetsByWorkoutExerciseId.set(set.workoutExerciseId, [
+        ...existingSets,
+        set
+      ]);
+    }
+
+    const sourceExerciseIds = sourceWorkoutExercises.map(
+      workoutExercise => workoutExercise.exerciseId
+    );
+    const draftExerciseIds = draftWorkoutExercises.map(
+      workoutExercise => workoutExercise.exerciseId
+    );
+
+    tx.delete(workoutExercises)
+      .where(eq(workoutExercises.workoutId, sourceWorkoutId))
+      .run();
+
+    if (draftWorkoutExercises.length > 0) {
+      const replacementWorkoutExercises = tx
+        .insert(workoutExercises)
+        .values(
+          draftWorkoutExercises.map(workoutExercise => ({
+            workoutId: sourceWorkoutId,
+            exerciseId: workoutExercise.exerciseId,
+            order: workoutExercise.order,
+            notes: workoutExercise.notes
+          }))
+        )
+        .returning()
+        .all();
+      const replacementWorkoutExerciseIdByDraftId = new Map<
+        WorkoutExercise['id'],
+        WorkoutExercise['id']
+      >(
+        draftWorkoutExercises.map((draftWorkoutExercise, index) => [
+          draftWorkoutExercise.id,
+          replacementWorkoutExercises[index]?.id ?? ''
+        ])
+      );
+      const replacementSets: NewSet[] = [];
+
+      for (const draftWorkoutExercise of draftWorkoutExercises) {
+        const replacementWorkoutExerciseId =
+          replacementWorkoutExerciseIdByDraftId.get(draftWorkoutExercise.id);
+
+        if (!replacementWorkoutExerciseId) {
+          continue;
+        }
+
+        const draftSets =
+          draftSetsByWorkoutExerciseId.get(draftWorkoutExercise.id) ?? [];
+
+        for (const set of draftSets) {
+          replacementSets.push({
+            workoutExerciseId: replacementWorkoutExerciseId,
+            order: set.order,
+            weightKg: set.weightKg,
+            reps: set.reps,
+            distanceMeters: set.distanceMeters,
+            durationMs: set.durationMs,
+            durationSeconds: set.durationSeconds,
+            rpe: set.rpe,
+            status: set.status,
+            completedAt: set.completedAt
+          });
+        }
+      }
+
+      if (replacementSets.length > 0) {
+        tx.insert(sets).values(replacementSets).run();
+      }
+    }
+
+    tx.delete(workouts).where(eq(workouts.id, draftWorkoutId)).run();
+
+    savedWorkout = sourceWorkout;
+    affectedExerciseIds = Array.from(
+      new Set([...sourceExerciseIds, ...draftExerciseIds])
     );
   });
 

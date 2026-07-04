@@ -1,6 +1,7 @@
 import { toLocalDateKey } from '@/src/lib/utils/date';
 import { generateUuid } from '@/src/lib/utils/uuid';
 import {
+  type AnySQLiteColumn,
   index,
   integer,
   real,
@@ -50,7 +51,11 @@ export const workouts = sqliteTable(
       .notNull()
       .$defaultFn(() => toLocalDateKey(Date.now())),
     completedAt: integer('completed_at'),
-    notes: text('notes')
+    notes: text('notes'),
+    sourceWorkoutId: text('source_workout_id').references(
+      (): AnySQLiteColumn => workouts.id,
+      { onDelete: 'set null' }
+    )
   },
   table => [
     index('workouts_status_date_key_started_at_idx').on(
@@ -58,7 +63,8 @@ export const workouts = sqliteTable(
       table.dateKey,
       table.startedAt
     ),
-    index('workouts_status_started_at_idx').on(table.status, table.startedAt)
+    index('workouts_status_started_at_idx').on(table.status, table.startedAt),
+    index('workouts_source_workout_id_idx').on(table.sourceWorkoutId)
   ]
 );
 

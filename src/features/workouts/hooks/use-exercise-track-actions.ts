@@ -35,6 +35,7 @@ interface UseExerciseTrackActionsParams {
   setEditingSetId: (setId: Set['id'] | null) => void;
   completedAt?: number;
   enableFeedback?: boolean;
+  preserveExistingSetCompletedAt?: boolean;
   rebuildProgressOnChange?: boolean;
 }
 
@@ -59,6 +60,7 @@ export function useExerciseTrackActions({
   setEditingSetId,
   completedAt,
   enableFeedback = true,
+  preserveExistingSetCompletedAt = false,
   rebuildProgressOnChange = true
 }: UseExerciseTrackActionsParams) {
   const db = useDrizzle();
@@ -169,10 +171,15 @@ export function useExerciseTrackActions({
 
   const updateExistingSet = useCallback(
     ({ setId, ...values }: SetValues & { setId: Set['id'] }) => {
+      const existingSet = item.sets.find(set => set.id === setId);
+      const nextCompletedAt =
+        preserveExistingSetCompletedAt && existingSet?.completedAt != null
+          ? existingSet.completedAt
+          : (completedAt ?? Date.now());
       const updatedSet = updateSet(db, setId, {
         ...getSetStorageValues(values),
         status: 'completed',
-        completedAt: completedAt ?? Date.now()
+        completedAt: nextCompletedAt
       });
 
       if (!rebuildProgressOnChange) {
@@ -198,6 +205,8 @@ export function useExerciseTrackActions({
       checkAndCreatePR,
       completedAt,
       db,
+      item.sets,
+      preserveExistingSetCompletedAt,
       rebuildProgressOnChange,
       setEditingSetId,
       triggerFeedback

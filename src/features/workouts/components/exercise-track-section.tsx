@@ -21,6 +21,7 @@ interface ExerciseTrackTabProps {
   item: WorkoutExerciseWithSets;
   historyBeforeStartedAt?: number;
   mode?: 'active' | 'historical';
+  preserveExistingSetCompletedAt?: boolean;
   onVerticalScrollStart?: () => void;
   onVerticalScrollEnd?: () => void;
 }
@@ -29,6 +30,7 @@ export function ExerciseTrackSection({
   item,
   historyBeforeStartedAt,
   mode = 'active',
+  preserveExistingSetCompletedAt = false,
   onVerticalScrollStart,
   onVerticalScrollEnd
 }: ExerciseTrackTabProps) {
@@ -166,6 +168,7 @@ export function ExerciseTrackSection({
     setEditingSetId: () => undefined,
     completedAt: historyBeforeStartedAt,
     enableFeedback: mode === 'active',
+    preserveExistingSetCompletedAt,
     rebuildProgressOnChange: mode === 'active'
   });
 

@@ -33,7 +33,7 @@ const listExiting = new Keyframe({
 interface ActiveWorkoutExerciseListProps {
   workoutExercises: WorkoutExercise[];
   exerciseById: Map<ExerciseListItem['id'], ExerciseListItem>;
-  mode?: 'active' | 'historical';
+  mode?: 'active' | 'historical' | 'historical-edit';
   onEnterEditMode: () => void;
   onReorderExercises: (
     orderedWorkoutExerciseIds: WorkoutExercise['id'][]

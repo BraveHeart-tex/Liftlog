@@ -6,13 +6,14 @@ import {
 import { Icon } from '@/src/components/ui/icon';
 import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
-import { PencilIcon, Trash2Icon } from 'lucide-react-native';
+import { NotebookPen, PencilIcon, Trash2Icon } from 'lucide-react-native';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface WorkoutDetailActionsSheetProps {
   isOpen: boolean;
   onClose: () => void;
+  onEdit: () => void;
   onRename: () => void;
   onDelete: () => void;
 }
@@ -20,10 +21,16 @@ interface WorkoutDetailActionsSheetProps {
 export function WorkoutDetailActionsSheet({
   isOpen,
   onClose,
+  onEdit,
   onRename,
   onDelete
 }: WorkoutDetailActionsSheetProps) {
   const insets = useSafeAreaInsets();
+
+  const handleEdit = () => {
+    onClose();
+    requestAnimationFrame(onEdit);
+  };
 
   const handleRename = () => {
     onClose();
@@ -44,6 +51,19 @@ export function WorkoutDetailActionsSheet({
       </BottomSheetHeader>
 
       <View className="px-4 pt-2" style={{ paddingBottom: insets.bottom + 8 }}>
+        <PressableSurface
+          accessibilityLabel="Edit workout"
+          className="min-h-14 flex-row items-center justify-center gap-3 rounded-lg px-3 py-3"
+          onPress={handleEdit}
+        >
+          <Icon as={NotebookPen} size="lg" tone="foreground" />
+          <Text variant="bodyMedium" className="text-center">
+            Edit workout
+          </Text>
+        </PressableSurface>
+
+        <View className="border-border my-1 border-t" />
+
         <PressableSurface
           accessibilityLabel="Rename workout"
           className="min-h-14 flex-row items-center justify-center gap-3 rounded-lg px-3 py-3"

@@ -52,6 +52,14 @@ function RootNavigator() {
         options={{ animation: 'slide_from_right' }}
       />
       <Stack.Screen
+        name="workouts/edit/[id]"
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
+        name="workouts/edit/exercise/[workoutExerciseId]"
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
         name="workouts/templates/[id]"
         options={{ animation: 'slide_from_right' }}
       />
