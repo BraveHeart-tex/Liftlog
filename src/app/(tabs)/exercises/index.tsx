@@ -107,7 +107,8 @@ export default function ExercisesScreen() {
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="search"
-          containerClassName="mt-4 py-0"
+          density="compact"
+          containerClassName="mt-4"
           leftIcon={<SearchInputIcon />}
         />
       </View>

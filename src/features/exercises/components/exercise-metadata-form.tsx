@@ -272,7 +272,7 @@ export function ExerciseMetadataForm({
               autoCorrect={false}
               returnKeyType="done"
               error={nameError}
-              containerClassName="py-0"
+              density="compact"
             />
           ) : (
             <Input
@@ -285,7 +285,7 @@ export function ExerciseMetadataForm({
               autoCorrect={false}
               returnKeyType="done"
               error={nameError}
-              containerClassName="py-0"
+              density="compact"
             />
           )}
         </View>

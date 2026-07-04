@@ -9,7 +9,7 @@ type CardProps<TChildren = ReactNode> = {
 
 export function Card({ children, className }: CardProps) {
   return (
-    <View className={cn('border-border bg-card rounded-lg border', className)}>
+    <View className={cn('border-border bg-card rounded-md border', className)}>
       {children}
     </View>
   );

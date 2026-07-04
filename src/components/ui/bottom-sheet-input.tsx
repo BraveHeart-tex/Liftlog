@@ -15,6 +15,7 @@ type NativeTextInputProps = ComponentPropsWithoutRef<typeof TextInput>;
 type BottomSheetTextInputRef = ComponentRef<typeof StyledBottomSheetTextInput>;
 
 type BottomSheetInputProps = NativeTextInputProps & {
+  density?: 'default' | 'compact';
   label?: string;
   hint?: string;
   error?: string;
@@ -38,6 +39,7 @@ export const BottomSheetInput = forwardRef<
 >(function BottomSheetInput(
   {
     label,
+    density = 'default',
     hint,
     error,
     leftIcon,
@@ -62,6 +64,8 @@ export const BottomSheetInput = forwardRef<
   const [focused, setFocused] = useState(false);
   const hasError = Boolean(error);
   const isEditable = editable ?? !disabled;
+  const containerDensityClassName =
+    density === 'compact' ? 'min-h-11 px-3 py-2' : 'min-h-12 px-4 py-3';
 
   return (
     <View className={cn('w-full', className)}>
@@ -74,10 +78,13 @@ export const BottomSheetInput = forwardRef<
       <View
         className={cn(
           withContainerDefaults &&
-            'border-border bg-input mt-2 flex-row items-center rounded-lg border px-4 py-3',
+            cn(
+              'border-border bg-input mt-2 flex-row items-center rounded-md border',
+              containerDensityClassName
+            ),
           focused && !hasError && 'border-ring',
           hasError && 'border-danger',
-          disabled && 'opacity-50',
+          disabled && 'opacity-60',
           containerClassName
         )}
       >
@@ -94,8 +101,16 @@ export const BottomSheetInput = forwardRef<
 
         <StyledBottomSheetTextInput
           ref={ref}
-          className={cn('text-body text-foreground flex-1', inputClassName)}
+          className={cn(
+            'text-body text-foreground flex-1',
+            props.multiline && 'min-h-20',
+            disabled && 'text-muted-foreground',
+            inputClassName
+          )}
+          textAlignVertical={props.multiline ? 'top' : 'center'}
           editable={isEditable}
+          accessibilityLabel={props.accessibilityLabel ?? label}
+          accessibilityHint={props.accessibilityHint ?? hint}
           onBlur={event => {
             setFocused(false);
             onBlur?.(event);

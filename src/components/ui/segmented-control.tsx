@@ -32,6 +32,7 @@ export function SegmentedControl<T extends string>({
   indicatorClassName
 }: SegmentedControlProps<T>) {
   const [width, setWidth] = useState(0);
+  const [pressedValue, setPressedValue] = useState<T | null>(null);
   const translateX = useSharedValue(0);
 
   const activeIndex = useMemo(
@@ -70,7 +71,7 @@ export function SegmentedControl<T extends string>({
   return (
     <View
       onLayout={handleLayout}
-      className={cn('bg-input relative flex-row rounded-xl p-1', className)}
+      className={cn('bg-input relative flex-row rounded-md p-1', className)}
     >
       {width > 0 ? (
         <Animated.View
@@ -88,10 +89,15 @@ export function SegmentedControl<T extends string>({
         return (
           <Pressable
             key={option.value}
-            accessibilityRole="button"
+            accessibilityRole="tab"
             accessibilityState={{ selected: isActive }}
             onPress={() => onChange(option.value)}
-            className="min-h-10 flex-1 items-center justify-center px-4"
+            onPressIn={() => setPressedValue(option.value)}
+            onPressOut={() => setPressedValue(null)}
+            className={cn(
+              'min-h-11 flex-1 items-center justify-center rounded-md px-4',
+              pressedValue === option.value && !isActive && 'opacity-70'
+            )}
           >
             <Text
               variant="bodyMedium"

@@ -12,6 +12,7 @@ import { View, type TextInput } from 'react-native';
 type NativeTextInputProps = ComponentPropsWithoutRef<typeof TextInput>;
 
 type InputProps = NativeTextInputProps & {
+  density?: 'default' | 'compact';
   label?: string;
   hint?: string;
   error?: string;
@@ -32,6 +33,7 @@ type InputProps = NativeTextInputProps & {
 export const Input = forwardRef<TextInput, InputProps>(function Input(
   {
     label,
+    density = 'default',
     hint,
     error,
     leftIcon,
@@ -56,9 +58,11 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
   const [focused, setFocused] = useState(false);
   const hasError = Boolean(error);
   const isEditable = editable ?? !disabled;
+  const containerDensityClassName =
+    density === 'compact' ? 'min-h-11 px-3 py-2' : 'min-h-12 px-4 py-3';
 
   return (
-    <View className={cn('w-full', disabled && 'opacity-50', wrapperClassName)}>
+    <View className={cn('w-full', wrapperClassName)}>
       {label ? (
         <Text variant="small" className={labelClassName}>
           {label}
@@ -67,9 +71,13 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
       <View
         className={cn(
           withContainerDefaults &&
-            'border-border bg-input mt-2 flex-row items-center rounded-lg border px-4 py-3',
+            cn(
+              'border-border bg-input mt-2 flex-row items-center rounded-md border',
+              containerDensityClassName
+            ),
           focused && !hasError && 'border-ring',
           hasError && 'border-danger',
+          disabled && 'opacity-60',
           containerClassName
         )}
       >
@@ -88,6 +96,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
           className={cn(
             'text-body text-foreground flex-1',
             props.multiline && 'min-h-20',
+            disabled && 'text-muted-foreground',
             inputClassName
           )}
           textAlignVertical={props.multiline ? 'top' : 'center'}

@@ -157,13 +157,9 @@ export function SnackbarHost() {
         }}
         {...panResponder.panHandlers}
       >
-        <View className="border-border bg-secondary flex-row items-center gap-3 rounded-lg border px-4 py-3 shadow-lg">
+        <View className="border-border bg-card flex-row items-center gap-3 rounded-md border px-4 py-3 shadow-lg">
           <View className="bg-primary h-8 w-1 rounded-sm" />
-          <Text
-            variant="bodyMedium"
-            className="text-secondary-foreground flex-1"
-            numberOfLines={2}
-          >
+          <Text variant="bodyMedium" className="flex-1" numberOfLines={2}>
             {renderedMessage.message}
           </Text>
 

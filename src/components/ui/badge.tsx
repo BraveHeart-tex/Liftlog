@@ -11,10 +11,10 @@ const badgeVariantConfig = cva(
     variants: {
       variant: {
         default: 'bg-secondary',
-        success: 'bg-success',
-        warning: 'bg-warning',
-        danger: 'bg-danger',
-        info: 'bg-info',
+        success: 'bg-success/10',
+        warning: 'bg-warning/10',
+        danger: 'bg-danger/10',
+        info: 'bg-info/10',
         outline: 'border border-border'
       }
     },
@@ -41,10 +41,10 @@ const badgeTextVariants = cva('font-medium', {
   variants: {
     variant: {
       default: 'text-secondary-foreground',
-      success: 'text-accent-foreground',
-      warning: 'text-accent-foreground',
-      danger: 'text-primary-foreground',
-      info: 'text-primary-foreground',
+      success: 'text-success',
+      warning: 'text-warning',
+      danger: 'text-danger',
+      info: 'text-info',
       outline: 'text-foreground'
     }
   },

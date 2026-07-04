@@ -1,4 +1,5 @@
 import { PressableSurface } from '@/src/components/ui/pressable-surface';
+import { StyledActivityIndicator } from '@/src/components/styled/activity-indicator';
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn';
 import { appFonts } from '@/src/theme/fonts';
@@ -19,7 +20,8 @@ const buttonVariantConfig = cva(
         primary: 'bg-primary border-primary disabled:border-primary/50',
         secondary: 'border-border bg-card disabled:border-border/50',
         ghost: 'border-transparent bg-transparent',
-        destructive: 'border-border bg-card disabled:border-border/50'
+        destructive:
+          'border-danger/30 bg-danger/10 disabled:border-danger/20 disabled:bg-danger/5'
       },
       size: {
         sm: 'min-h-11 px-3 py-3',
@@ -79,6 +81,20 @@ const buttonTextVariants = cva('text-body-medium', {
   }
 });
 
+const buttonSpinnerVariants = cva('', {
+  variants: {
+    variant: {
+      primary: 'text-primary-foreground',
+      secondary: 'text-foreground',
+      ghost: 'text-foreground',
+      destructive: 'text-danger'
+    }
+  },
+  defaultVariants: {
+    variant: 'primary'
+  }
+});
+
 const buttonTextStyle: TextStyle = {
   fontFamily: appFonts.faces.semiBold
 };
@@ -121,18 +137,29 @@ export function Button({
       containerClassName={getButtonContainerClassName(className)}
       className={cn(buttonVariants({ variant, size }), className)}
       disabled={isBlocked}
+      pressedClassName={cn(
+        variant === 'destructive' ? 'bg-danger/15' : 'opacity-80'
+      )}
       onPress={onPress}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
     >
       {loading ? (
-        <Text
-          tone="inherit"
-          className={cn(buttonTextVariants({ variant }), textClassName)}
-          style={[buttonTextStyle, textStyle]}
-        >
-          Loading...
-        </Text>
+        <View className="flex-row items-center justify-center gap-2">
+          <StyledActivityIndicator
+            className={cn(buttonSpinnerVariants({ variant }))}
+            size="small"
+          />
+          {isIconButton ? null : (
+            <Text
+              tone="inherit"
+              className={cn(buttonTextVariants({ variant }), textClassName)}
+              style={[buttonTextStyle, textStyle]}
+            >
+              Loading...
+            </Text>
+          )}
+        </View>
       ) : (
         <View className="flex-row items-center justify-center gap-1">
           {leftIcon}

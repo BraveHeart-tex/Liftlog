@@ -106,7 +106,7 @@ const ExercisePickerSearchInput = memo(function ExercisePickerSearchInput({
       autoCorrect={false}
       returnKeyType="search"
       leftIcon={<SearchInputIcon />}
-      containerClassName="py-0"
+      density="compact"
     />
   );
 });

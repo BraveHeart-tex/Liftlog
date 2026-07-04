@@ -53,7 +53,7 @@ export function BackButton({
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         className={cn(
-          'border-border bg-card h-11 w-11 items-center justify-center rounded-lg border',
+          'border-border bg-card h-12 w-12 items-center justify-center rounded-md border',
           pressed && 'opacity-80',
           className
         )}

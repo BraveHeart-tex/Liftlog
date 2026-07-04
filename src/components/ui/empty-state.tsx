@@ -34,7 +34,7 @@ export function EmptyState({
     >
       {icon ? (
         isSection ? (
-          <View className="bg-card h-12 w-12 items-center justify-center rounded-lg">
+          <View className="border-border bg-muted h-12 w-12 items-center justify-center rounded-md border">
             <Icon as={icon} tone="mutedForeground" size="md" />
           </View>
         ) : (

@@ -14,7 +14,7 @@ export const PulsatingDot = () => {
 
   useEffect(() => {
     scale.value = withRepeat(
-      withTiming(2.2, { duration: 1000, easing: Easing.out(Easing.ease) }),
+      withTiming(1.9, { duration: 1000, easing: Easing.out(Easing.ease) }),
       -1,
       false // don't reverse — let it reset and repeat, like a sonar ping
     );
@@ -31,7 +31,7 @@ export const PulsatingDot = () => {
   }));
 
   return (
-    <View className="justify-content h-2 w-2 items-center">
+    <View className="h-2 w-2 items-center justify-center">
       {/* expanding ring */}
       <Animated.View
         className="bg-primary absolute h-2 w-2 rounded-full"
