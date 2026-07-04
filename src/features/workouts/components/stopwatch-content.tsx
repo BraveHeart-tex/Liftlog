@@ -3,6 +3,7 @@ import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn';
 import { formatDurationMs } from '@/src/lib/utils/format-time';
+import { useAudioPlayer } from 'expo-audio';
 import {
   PauseIcon,
   PlayIcon,
@@ -31,6 +32,14 @@ export function StopwatchContent({
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [accumulatedMs, setAccumulatedMs] = useState(0);
   const [now, setNow] = useState(() => Date.now());
+  const startSoundPlayer = useAudioPlayer(
+    require('@/assets/sounds/stopwatch-start.wav'),
+    { downloadFirst: true }
+  );
+  const stopSoundPlayer = useAudioPlayer(
+    require('@/assets/sounds/stopwatch-stop.wav'),
+    { downloadFirst: true }
+  );
 
   const getElapsedMs = (timestamp = Date.now()) => {
     if (status !== 'running' || startedAt === null) {
@@ -44,6 +53,18 @@ export function StopwatchContent({
   const isRunning = status === 'running';
   const canReset = elapsedMs > 0;
   const canSave = elapsedMs >= 10;
+
+  const playSound = async (
+    player: typeof startSoundPlayer,
+    errorMessage: string
+  ) => {
+    try {
+      await player.seekTo(0);
+      player.play();
+    } catch (error) {
+      console.error(errorMessage, error);
+    }
+  };
 
   const reset = () => {
     setStatus('idle');
@@ -71,11 +92,13 @@ export function StopwatchContent({
   }, [isRunning]);
 
   const handleStart = () => {
+    void playSound(startSoundPlayer, 'Failed to play stopwatch start sound');
     setStartedAt(Date.now());
     setStatus('running');
   };
 
   const handlePause = () => {
+    void playSound(stopSoundPlayer, 'Failed to play stopwatch stop sound');
     setAccumulatedMs(getElapsedMs());
     setStartedAt(null);
     setStatus('paused');

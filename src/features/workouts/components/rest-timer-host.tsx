@@ -14,6 +14,8 @@ import {
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 
+const REST_TIMER_COMPLETION_SOUND_DURATION_MS = 5000;
+
 function triggerCompletionHaptics() {
   notificationAsync(NotificationFeedbackType.Warning).catch(error => {
     console.error('Failed to trigger rest timer completion haptics', error);
@@ -38,34 +40,52 @@ export function RestTimerHost() {
   const isSheetOpen = useRestTimerStore(state => state.isSheetOpen);
   const tick = useRestTimerStore(state => state.tick);
   const lastHandledCompletionCountRef = useRef(completionCount);
+  const completionSoundTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const player = useAudioPlayer(
-    require('@/src/assets/sounds/rest-complete.mp3'),
+    require('@/assets/sounds/rest-timer-finished.wav'),
     {
       downloadFirst: true,
       keepAudioSessionActive: true
     }
   );
 
-  const playCompletionSound = useCallback(async () => {
-    try {
-      await setIsAudioActiveAsync(true);
-      await player.seekTo(0);
-      player.volume = 1;
-      player.play();
-    } catch (error) {
-      console.error('Failed to play rest timer completion sound', error);
-    }
-  }, [player]);
-
   const stopCompletionSound = useCallback(async () => {
     try {
+      if (completionSoundTimeoutRef.current) {
+        clearTimeout(completionSoundTimeoutRef.current);
+        completionSoundTimeoutRef.current = null;
+      }
+
       player.pause();
+      player.loop = false;
       await player.seekTo(0);
-      await setIsAudioActiveAsync(false);
     } catch (error) {
       console.error('Failed to stop rest timer completion sound', error);
     }
   }, [player]);
+
+  const playCompletionSound = useCallback(async () => {
+    try {
+      if (completionSoundTimeoutRef.current) {
+        clearTimeout(completionSoundTimeoutRef.current);
+        completionSoundTimeoutRef.current = null;
+      }
+
+      await setIsAudioActiveAsync(true);
+      await player.seekTo(0);
+      player.loop = true;
+      player.volume = 1;
+      player.play();
+      completionSoundTimeoutRef.current = setTimeout(() => {
+        completionSoundTimeoutRef.current = null;
+        void stopCompletionSound();
+      }, REST_TIMER_COMPLETION_SOUND_DURATION_MS);
+    } catch (error) {
+      console.error('Failed to play rest timer completion sound', error);
+    }
+  }, [player, stopCompletionSound]);
 
   useEffect(() => {
     setAudioModeAsync({
@@ -103,6 +123,12 @@ export function RestTimerHost() {
 
     return () => subscription.remove();
   }, [stopCompletionSound, tick]);
+
+  useEffect(() => {
+    return () => {
+      void stopCompletionSound();
+    };
+  }, [stopCompletionSound]);
 
   useEffect(() => {
     if (completionCount <= lastHandledCompletionCountRef.current) {
