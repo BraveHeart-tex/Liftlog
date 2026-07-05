@@ -1,8 +1,11 @@
 import { Text } from '@/src/components/ui/text';
 import type { Set } from '@/src/db';
-import type { TrackingType } from '@/src/features/progress/tracking';
-import { cn } from '@/src/lib/utils/cn';
-import { formatWeightForUnit, type WeightUnit } from '@/src/lib/utils/weight';
+import type { TrackingType } from '@/src/features/progress/tracking.domain';
+import { cn } from '@/src/lib/utils/cn.utils';
+import {
+  formatWeightForUnit,
+  type WeightUnit
+} from '@/src/lib/utils/weight.utils';
 import { View } from 'react-native';
 import { WorkoutSetSummary } from '@/src/features/workouts/components/workout-set-summary';
 

@@ -1,8 +1,8 @@
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { RestTimerCountdown } from '@/src/features/workouts/components/rest-timer-countdown';
-import { triggerRestTimerImpact } from '@/src/features/workouts/rest-timer-haptics';
-import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer-store';
+import { triggerRestTimerImpact } from '@/src/features/workouts/rest-timer.haptics';
+import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
 import { iconSizes } from '@/src/theme/sizes';
 import { ImpactFeedbackStyle } from 'expo-haptics';
 import { PauseIcon } from 'lucide-react-native';

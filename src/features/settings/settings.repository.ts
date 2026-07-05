@@ -5,7 +5,7 @@ import {
   MIN_STEP_GOAL
 } from '@/src/features/steps/steps.constants';
 import { isValidStepGoal } from '@/src/features/steps/steps.validation';
-import type { WeightUnit } from '@/src/lib/utils/weight';
+import type { WeightUnit } from '@/src/lib/utils/weight.utils';
 import { eq } from 'drizzle-orm';
 
 export type { WeightUnit };

@@ -1,6 +1,6 @@
 import { StyledBottomSheetTextInput } from '@/src/components/styled/bottom-sheet';
 import { Text } from '@/src/components/ui/text';
-import { cn } from '@/src/lib/utils/cn';
+import { cn } from '@/src/lib/utils/cn.utils';
 import {
   forwardRef,
   useState,

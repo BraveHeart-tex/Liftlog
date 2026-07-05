@@ -6,11 +6,11 @@ import {
   formatPersonalRecordValue,
   formatScore,
   type TrackingType
-} from '@/src/features/progress/tracking';
+} from '@/src/features/progress/tracking.domain';
 import { WorkoutSetSummary } from '@/src/features/workouts/components/workout-set-summary';
-import type { useExerciseHistory } from '@/src/features/workouts/hooks';
-import { cn } from '@/src/lib/utils/cn';
-import type { WeightUnit } from '@/src/lib/utils/weight';
+import type { useExerciseHistory } from '@/src/features/workouts/hooks/use-exercise-history';
+import { cn } from '@/src/lib/utils/cn.utils';
+import type { WeightUnit } from '@/src/lib/utils/weight.utils';
 import {
   MinusIcon,
   StarIcon,

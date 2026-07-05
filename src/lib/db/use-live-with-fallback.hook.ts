@@ -2,7 +2,7 @@ import type { AnySQLiteSelect } from 'drizzle-orm/sqlite-core';
 import { addDatabaseChangeListener } from 'expo-sqlite';
 import { useEffect, useMemo, useState, type DependencyList } from 'react';
 
-import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task';
+import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task.utils';
 
 type LiveRowsQuery = Pick<AnySQLiteSelect, '_' | 'then'> &
   PromiseLike<unknown[]> & {

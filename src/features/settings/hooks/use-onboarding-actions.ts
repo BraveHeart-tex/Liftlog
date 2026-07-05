@@ -1,9 +1,9 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import { completeOnboarding } from '@/src/features/settings/onboarding';
+import { completeOnboarding } from '@/src/features/settings/onboarding.service';
 import {
   setWeightUnit,
   type WeightUnit
-} from '@/src/features/settings/repository';
+} from '@/src/features/settings/settings.repository';
 import { router } from 'expo-router';
 import { useCallback } from 'react';
 

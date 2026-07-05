@@ -1,7 +1,7 @@
 import { Text } from '@/src/components/ui/text';
-import type { ExerciseListItem } from '@/src/features/exercises/repository';
-import { usePressScale } from '@/src/lib/animations/use-press-scale';
-import { cn } from '@/src/lib/utils/cn';
+import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
+import { usePressScale } from '@/src/lib/animations/use-press-scale.hook';
+import { cn } from '@/src/lib/utils/cn.utils';
 import type { ReactNode } from 'react';
 import {
   Animated,

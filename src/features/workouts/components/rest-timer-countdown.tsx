@@ -1,7 +1,7 @@
 import { Badge } from '@/src/components/ui/badge';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
-import { formatTime } from '@/src/lib/utils/format-time';
+import { formatTime } from '@/src/lib/utils/format-time.utils';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { nativeFontSizes } from '@/src/theme/sizes';
 import { Canvas, Circle, Path, Skia } from '@shopify/react-native-skia';

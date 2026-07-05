@@ -2,7 +2,7 @@ import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
-import { formatWorkoutDate } from '@/src/lib/utils/date';
+import { formatWorkoutDate } from '@/src/lib/utils/date.utils';
 import { EllipsisVerticalIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 

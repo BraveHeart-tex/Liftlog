@@ -6,14 +6,14 @@ import {
   CATEGORY_FILTERS,
   MUSCLE_GROUP,
   type ExerciseCategory
-} from '@/src/features/exercises/constants';
+} from '@/src/features/exercises/exercise.constants';
 import {
   TRACKING_TYPE_DEFINITIONS,
   TRACKING_TYPES,
   type TrackingType
-} from '@/src/features/progress/tracking';
-import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task';
-import { toTitleCase } from '@/src/lib/utils/string';
+} from '@/src/features/progress/tracking.domain';
+import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task.utils';
+import { toTitleCase } from '@/src/lib/utils/string.utils';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Keyboard, View, type LayoutChangeEvent } from 'react-native';
 

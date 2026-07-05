@@ -1,8 +1,8 @@
 import { Icon } from '@/src/components/ui/icon';
 import { ExerciseRow } from '@/src/features/exercises/components/exercise-row';
-import type { ExerciseListItem } from '@/src/features/exercises/repository';
-import { getPrimaryMuscleLabel } from '@/src/lib/utils/muscle';
-import { toTitleCase } from '@/src/lib/utils/string';
+import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
+import { getPrimaryMuscleLabel } from '@/src/features/exercises/muscle.utils';
+import { toTitleCase } from '@/src/lib/utils/string.utils';
 import { ChevronRightIcon } from 'lucide-react-native';
 
 interface ExerciseListRowProps {

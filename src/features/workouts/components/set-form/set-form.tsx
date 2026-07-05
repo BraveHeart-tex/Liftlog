@@ -6,8 +6,8 @@ import {
   TRACKING_TYPE_DEFINITIONS,
   type SetValues,
   type TrackingType
-} from '@/src/features/progress/tracking';
-import { useSettings } from '@/src/features/settings/hooks';
+} from '@/src/features/progress/tracking.domain';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import { SetDurationPickerSheet } from '@/src/features/workouts/components/set-duration-picker-sheet';
 import { SetFormEmptyState } from '@/src/features/workouts/components/set-form/set-form-empty-state';
 import type { SetFormFieldColors } from '@/src/features/workouts/components/set-form/set-form-field-surface';

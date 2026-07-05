@@ -7,8 +7,8 @@ import {
   getSetValues,
   type TrackingFieldDefinition,
   type TrackingType
-} from '@/src/features/progress/tracking';
-import type { useSettings } from '@/src/features/settings/hooks';
+} from '@/src/features/progress/tracking.domain';
+import type { useSettings } from '@/src/features/settings/hooks/use-settings';
 import { SetDurationField } from '@/src/features/workouts/components/set-duration-field';
 import {
   SetFormFieldSurface,
@@ -17,9 +17,9 @@ import {
   type SetFormFieldTone
 } from '@/src/features/workouts/components/set-form/set-form-field-surface';
 import { SetFormRowActions } from '@/src/features/workouts/components/set-form/set-form-row-actions';
-import type { SetFormRow as SetFormRowModel } from '@/src/features/workouts/components/set-form/set-form-types';
-import { getFieldHeaderLabel } from '@/src/features/workouts/components/set-form/set-form-utils';
-import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
+import type { SetFormRow as SetFormRowModel } from '@/src/features/workouts/components/set-form/set-form.types';
+import { getFieldHeaderLabel } from '@/src/features/workouts/components/set-form/set-form.utils';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { CheckIcon } from 'lucide-react-native';
 import { View, type LayoutChangeEvent } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';

@@ -4,7 +4,7 @@ import {
   formatStepMonthDay,
   formatStepWeekday,
   formatSteps
-} from '@/src/features/steps/display';
+} from '@/src/features/steps/steps-display.utils';
 import { View } from 'react-native';
 
 interface StepDayRowProps {

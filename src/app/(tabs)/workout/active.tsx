@@ -3,7 +3,7 @@ import { EmptyState } from '@/src/components/ui/empty-state';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { ActiveWorkoutContent } from '@/src/features/workouts/components/active-workout-content';
-import { useActiveWorkoutScreen } from '@/src/features/workouts/hooks';
+import { useActiveWorkoutScreen } from '@/src/features/workouts/hooks/use-active-workout-screen';
 import { router } from 'expo-router';
 
 export default function ActiveWorkoutScreen() {

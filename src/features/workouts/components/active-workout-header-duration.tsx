@@ -1,6 +1,6 @@
 import { Text } from '@/src/components/ui/text';
 import type { Workout } from '@/src/db';
-import { formatDuration } from '@/src/lib/utils/date';
+import { formatDuration } from '@/src/lib/utils/date.utils';
 import { useEffect, useState } from 'react';
 
 interface ActiveWorkoutHeaderDurationProps {

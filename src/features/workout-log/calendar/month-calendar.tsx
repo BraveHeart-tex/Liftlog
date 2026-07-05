@@ -2,17 +2,17 @@ import { Text } from '@/src/components/ui/text';
 import {
   DEFAULT_CALENDAR_HEIGHT,
   WEEKDAY_LABELS
-} from '@/src/features/calendar/calendar.constants';
+} from '@/src/features/workout-log/calendar/workout-log-calendar.constants';
 import {
   getMarkedDatesForMonth,
   isDateInMonth
-} from '@/src/features/calendar/calendar.helpers';
+} from '@/src/features/workout-log/calendar/workout-log-calendar.helpers';
 import type {
   CalendarDateMark,
   CalendarDay
-} from '@/src/features/calendar/calendar.types';
-import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
-import { cn } from '@/src/lib/utils/cn';
+} from '@/src/features/workout-log/calendar/workout-log-calendar.types';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { memo, useEffect, useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, {

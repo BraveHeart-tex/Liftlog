@@ -2,9 +2,9 @@ import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import { useOnboardingActions } from '@/src/features/settings/hooks';
-import { cn } from '@/src/lib/utils/cn';
-import type { WeightUnit } from '@/src/lib/utils/weight';
+import { useOnboardingActions } from '@/src/features/settings/hooks/use-onboarding-actions';
+import { cn } from '@/src/lib/utils/cn.utils';
+import type { WeightUnit } from '@/src/lib/utils/weight.utils';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 

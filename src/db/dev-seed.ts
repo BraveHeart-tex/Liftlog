@@ -13,8 +13,8 @@ import {
   type NewPersonalRecord,
   type NewSet
 } from '@/src/db/schema';
-import { computeEstimated1RM } from '@/src/features/progress/repository';
-import { toLocalDateKey } from '@/src/lib/utils/date';
+import { computeEstimated1RM } from '@/src/features/progress/progress.repository';
+import { toLocalDateKey } from '@/src/lib/utils/date.utils';
 import { eq, inArray } from 'drizzle-orm';
 
 const DEV_SEED_KEY = 'dev_mock_seed_version';

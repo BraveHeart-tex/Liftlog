@@ -1,5 +1,5 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
-import { cn } from '@/src/lib/utils/cn';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { useEffect, useState, type ReactNode, type Ref } from 'react';
 import {
   Keyboard,

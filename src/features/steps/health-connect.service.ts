@@ -16,7 +16,7 @@ import { Platform } from 'react-native';
 import {
   getRecentLocalDayRanges,
   getTodayDateKey
-} from '@/src/features/steps/date';
+} from '@/src/features/steps/steps-date.utils';
 
 export type HealthConnectAvailability =
   | 'available'

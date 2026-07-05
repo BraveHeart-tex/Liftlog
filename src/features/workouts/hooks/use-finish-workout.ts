@@ -1,6 +1,6 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { Workout } from '@/src/db';
-import { completeWorkout } from '@/src/features/workouts/repository';
+import { completeWorkout } from '@/src/features/workouts/workout.repository';
 import { NotificationFeedbackType, notificationAsync } from 'expo-haptics';
 import { router } from 'expo-router';
 import { useCallback } from 'react';

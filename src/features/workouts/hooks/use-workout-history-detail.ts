@@ -3,16 +3,16 @@ import type { Set, WorkoutExercise } from '@/src/db/schema';
 import {
   getExercisesByIdsQuery,
   type ExerciseListItem
-} from '@/src/features/exercises/repository';
-import { useSettings } from '@/src/features/settings/hooks';
+} from '@/src/features/exercises/exercise.repository';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import {
   getActiveWorkoutQuery,
   getSetsForWorkoutExercisesQuery,
   getWorkoutByIdQuery,
-  getWorkoutExercisesQuery,
-  getWorkoutTemplateBySourceWorkoutIdQuery
-} from '@/src/features/workouts/repository';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
+  getWorkoutExercisesQuery
+} from '@/src/features/workouts/workout.repository';
+import { getWorkoutTemplateBySourceWorkoutIdQuery } from '@/src/features/workouts/workout-template.repository';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useMemo } from 'react';
 
 export function useWorkoutHistoryDetail(workoutId: string | undefined) {

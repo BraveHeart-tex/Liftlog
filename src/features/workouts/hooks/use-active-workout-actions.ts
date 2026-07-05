@@ -3,8 +3,8 @@ import type { NewExercise, Workout, WorkoutExercise } from '@/src/db/schema';
 import {
   createExercise,
   type ExerciseListItem
-} from '@/src/features/exercises/repository';
-import { createWorkoutExercise } from '@/src/features/workouts/repository';
+} from '@/src/features/exercises/exercise.repository';
+import { createWorkoutExercise } from '@/src/features/workouts/workout.repository';
 import { useCallback } from 'react';
 
 interface UseActiveWorkoutActionsParams {

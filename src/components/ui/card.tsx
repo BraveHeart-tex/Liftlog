@@ -1,4 +1,4 @@
-import { cn } from '@/src/lib/utils/cn';
+import { cn } from '@/src/lib/utils/cn.utils';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 

@@ -9,12 +9,12 @@ import {
   getExerciseByIdQuery,
   getExerciseTemplateUsageCountQuery,
   getExerciseUsageCountQuery
-} from '@/src/features/exercises/repository';
+} from '@/src/features/exercises/exercise.repository';
 import {
   buildExerciseHistory,
   getExerciseHistorySetsQuery,
   getRecentExerciseHistoryWorkoutsQuery
-} from '@/src/features/progress/repository';
+} from '@/src/features/progress/progress.repository';
 import {
   TRACKING_TYPE_DEFINITIONS,
   formatScore,
@@ -23,11 +23,11 @@ import {
   getSetValues,
   resolveTrackingType,
   type TrackingType
-} from '@/src/features/progress/tracking';
-import { useSettings } from '@/src/features/settings/hooks';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
-import { parseMuscleList } from '@/src/lib/utils/muscle';
-import { formatCompletedSets } from '@/src/lib/utils/set';
+} from '@/src/features/progress/tracking.domain';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
+import { parseMuscleList } from '@/src/features/exercises/muscle.utils';
+import { formatCompletedSets } from '@/src/features/workouts/set-display.utils';
 import { useMemo } from 'react';
 
 const EXERCISE_HISTORY_LIMIT = 20;

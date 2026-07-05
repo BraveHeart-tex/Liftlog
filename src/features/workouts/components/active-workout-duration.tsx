@@ -1,6 +1,6 @@
 import { Text } from '@/src/components/ui/text';
 import type { Workout } from '@/src/db';
-import { formatTimerDuration } from '@/src/lib/utils/date';
+import { formatTimerDuration } from '@/src/lib/utils/date.utils';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 

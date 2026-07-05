@@ -18,8 +18,8 @@ import {
   type ExerciseListDataItem,
   type ExerciseListRowItem,
   type ExerciseListSectionHeaderItem
-} from '@/src/features/exercises/display';
-import type { ExerciseListItem } from '@/src/features/exercises/repository';
+} from '@/src/features/exercises/exercise-display.utils';
+import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import {
   ExercisePickerFilters,
   type ExercisePickerFilter

@@ -1,4 +1,4 @@
-import { cn } from '@/src/lib/utils/cn';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { appFonts, type AppFontFace } from '@/src/theme/fonts';
 import { cva, type VariantProps } from 'class-variance-authority';
 import {

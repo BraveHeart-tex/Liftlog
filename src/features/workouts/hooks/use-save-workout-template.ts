@@ -1,7 +1,7 @@
 import { showSnackbar } from '@/src/components/ui/snackbar';
 import { useDrizzle } from '@/src/components/database-provider';
 import type { Workout, WorkoutTemplateExercise } from '@/src/db/schema';
-import { createWorkoutTemplate } from '@/src/features/workouts/repository';
+import { createWorkoutTemplate } from '@/src/features/workouts/workout-template.repository';
 import { NotificationFeedbackType, notificationAsync } from 'expo-haptics';
 import { useCallback } from 'react';
 

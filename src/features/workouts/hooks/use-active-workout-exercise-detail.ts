@@ -1,13 +1,13 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import { getExerciseByIdQuery } from '@/src/features/exercises/repository';
+import { getExerciseByIdQuery } from '@/src/features/exercises/exercise.repository';
 import {
   getSetsByWorkoutExerciseIdQuery,
   getWorkoutByIdQuery,
   getWorkoutExerciseByIdQuery
-} from '@/src/features/workouts/repository';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
+} from '@/src/features/workouts/workout.repository';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useMemo } from 'react';
-import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
 
 export function useActiveWorkoutExerciseDetail(
   workoutExerciseId: string | undefined

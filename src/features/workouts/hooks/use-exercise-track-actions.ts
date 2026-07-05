@@ -4,28 +4,28 @@ import {
   getPersonalRecordsByExercise,
   maybeRebuildPersonalRecords,
   rebuildPersonalRecordsForExercise
-} from '@/src/features/progress/repository';
+} from '@/src/features/progress/progress.repository';
 import {
   getSetScore,
   resolveTrackingType
-} from '@/src/features/progress/tracking';
+} from '@/src/features/progress/tracking.domain';
 import {
   createSet,
   deleteSet,
   updateSet
-} from '@/src/features/workouts/repository';
+} from '@/src/features/workouts/workout.repository';
 import {
   ImpactFeedbackStyle,
   NotificationFeedbackType,
   impactAsync,
   notificationAsync
 } from 'expo-haptics';
-import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task';
+import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task.utils';
 import { useCallback } from 'react';
 import type {
   SetValues,
   WorkoutExerciseWithSets
-} from '@/src/features/workouts/components/types';
+} from '@/src/features/workouts/components/workout-components.types';
 
 type AddSetValues = SetValues & { order: Set['order'] };
 

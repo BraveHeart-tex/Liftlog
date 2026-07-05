@@ -3,17 +3,17 @@ import type { WorkoutTemplate } from '@/src/db/schema';
 import {
   getExercisesByIdsQuery,
   type ExerciseListItem
-} from '@/src/features/exercises/repository';
+} from '@/src/features/exercises/exercise.repository';
+import { getActiveWorkoutQuery } from '@/src/features/workouts/workout.repository';
 import {
   createWorkoutFromTemplate,
   deleteWorkoutTemplate,
-  getActiveWorkoutQuery,
   getWorkoutTemplateByIdQuery,
   getWorkoutTemplateExercisesQuery,
   updateWorkoutTemplateExercises,
   updateWorkoutTemplateName
-} from '@/src/features/workouts/repository';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
+} from '@/src/features/workouts/workout-template.repository';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { router, type Href } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 

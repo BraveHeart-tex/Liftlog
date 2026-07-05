@@ -8,7 +8,7 @@ import {
 import { Button } from '@/src/components/ui/button';
 import type { NewExercise } from '@/src/db/schema';
 import { ExerciseMetadataForm } from '@/src/features/exercises/components/exercise-metadata-form';
-import { useCustomExerciseForm } from '@/src/features/exercises/hooks';
+import { useCustomExerciseForm } from '@/src/features/exercises/hooks/use-custom-exercise-form';
 import {
   memo,
   useCallback,

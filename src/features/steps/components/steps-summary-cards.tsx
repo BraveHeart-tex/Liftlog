@@ -6,8 +6,8 @@ import {
   formatSteps,
   getStepAverageComparison,
   type StepAverageComparisonTone
-} from '@/src/features/steps/display';
-import { cn } from '@/src/lib/utils/cn';
+} from '@/src/features/steps/steps-display.utils';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { View } from 'react-native';
 
 interface StepsSummaryCardsProps {

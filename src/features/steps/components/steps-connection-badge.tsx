@@ -1,6 +1,6 @@
 import { Badge } from '@/src/components/ui/badge';
 import { Text } from '@/src/components/ui/text';
-import { cn } from '@/src/lib/utils/cn';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { View } from 'react-native';
 
 interface StepsConnectionBadgeProps {

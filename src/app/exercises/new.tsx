@@ -4,10 +4,8 @@ import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import type { NewExercise } from '@/src/db/schema';
 import { ExerciseMetadataForm } from '@/src/features/exercises/components/exercise-metadata-form';
-import {
-  useCustomExerciseForm,
-  useExerciseActions
-} from '@/src/features/exercises/hooks';
+import { useCustomExerciseForm } from '@/src/features/exercises/hooks/use-custom-exercise-form';
+import { useExerciseActions } from '@/src/features/exercises/hooks/use-exercise-actions';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Keyboard, View, type ScrollView } from 'react-native';

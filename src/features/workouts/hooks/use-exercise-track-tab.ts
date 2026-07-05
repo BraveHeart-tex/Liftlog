@@ -3,14 +3,17 @@ import {
   buildExerciseHistory,
   getExerciseHistorySets,
   getRecentExerciseHistoryWorkouts
-} from '@/src/features/progress/repository';
-import { resolveTrackingType } from '@/src/features/progress/tracking';
-import { useSettings } from '@/src/features/settings/hooks';
-import { formatCompletedSets, getCompletedSets } from '@/src/lib/utils/set';
-import { convertWeightToKg } from '@/src/lib/utils/weight';
+} from '@/src/features/progress/progress.repository';
+import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
+import {
+  formatCompletedSets,
+  getCompletedSets
+} from '@/src/features/workouts/set-display.utils';
+import { convertWeightToKg } from '@/src/lib/utils/weight.utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getProgressionSuggestion } from '@/src/features/workouts/components/progression-suggestion-utils';
-import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
+import { getProgressionSuggestion } from '@/src/features/workouts/components/progression-suggestion.utils';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
 
 const PROGRESSION_HISTORY_LIMIT = 4;
 

@@ -1,5 +1,5 @@
 import { Text } from '@/src/components/ui/text';
-import { pluralizeUnit } from '@/src/lib/utils/string';
+import { pluralizeUnit } from '@/src/lib/utils/string.utils';
 import { View } from 'react-native';
 
 interface ActiveWorkoutStatsProps {

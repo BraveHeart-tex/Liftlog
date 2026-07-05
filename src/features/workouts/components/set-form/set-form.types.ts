@@ -2,7 +2,7 @@ import type { Set } from '@/src/db/schema';
 import type {
   SetValues,
   TrackingFieldDefinition
-} from '@/src/features/progress/tracking';
+} from '@/src/features/progress/tracking.domain';
 
 export type RowPhase = 'editing' | 'saving' | 'awaiting_sync' | 'error';
 

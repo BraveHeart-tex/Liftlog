@@ -1,6 +1,6 @@
 import { Button } from '@/src/components/ui/button';
 import { Text } from '@/src/components/ui/text';
-import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, PanResponder, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

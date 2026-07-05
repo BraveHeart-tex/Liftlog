@@ -4,8 +4,8 @@ import { WheelPicker } from '@/src/components/ui/wheel-picker';
 import {
   MIN_REST_TIMER_SECONDS,
   useRestTimerStore
-} from '@/src/features/workouts/stores/rest-timer-store';
-import { getTimerParts } from '@/src/lib/utils/date';
+} from '@/src/features/workouts/stores/rest-timer.store';
+import { getTimerParts } from '@/src/lib/utils/date.utils';
 import type {
   OnValueChanged,
   OnValueChanging

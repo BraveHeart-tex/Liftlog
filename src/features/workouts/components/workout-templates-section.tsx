@@ -4,7 +4,7 @@ import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { WorkoutTemplateCard } from '@/src/features/workouts/components/workout-template-card';
-import { useWorkoutTemplates } from '@/src/features/workouts/hooks';
+import { useWorkoutTemplates } from '@/src/features/workouts/hooks/use-workout-templates';
 import { iconSizes } from '@/src/theme/sizes';
 import { useRouter } from 'expo-router';
 import { ClipboardListIcon, PlusIcon } from 'lucide-react-native';

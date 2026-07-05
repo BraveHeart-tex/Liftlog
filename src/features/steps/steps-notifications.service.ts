@@ -1,9 +1,9 @@
 import { Platform } from 'react-native';
-import { requestActivityRecognitionPermission } from '@/src/features/steps/step-counter-permissions';
+import { requestActivityRecognitionPermission } from '@/src/features/steps/step-counter.permissions';
 import { StepCounter } from 'expo-step-counter';
 import notifee, { AuthorizationStatus } from 'react-native-notify-kit';
-import { getTodayDateKey } from '@/src/features/steps/date';
-import { readTodayStepCount } from '@/src/features/steps/health-connect';
+import { getTodayDateKey } from '@/src/features/steps/steps-date.utils';
+import { readTodayStepCount } from '@/src/features/steps/health-connect.service';
 
 const STEP_NOTIFICATION_ID = 'steps';
 const STEP_NOTIFICATION_REFRESH_MS = 15 * 60 * 1000;

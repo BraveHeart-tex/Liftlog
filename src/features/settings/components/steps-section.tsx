@@ -4,12 +4,12 @@ import { Icon } from '@/src/components/ui/icon';
 import { Switch } from '@/src/components/ui/switch';
 import { Text } from '@/src/components/ui/text';
 import { StepGoalSheet } from '@/src/features/settings/components/step-goal-sheet';
-import { useSettings } from '@/src/features/settings/hooks';
-import { openStepHealthConnectSettings } from '@/src/features/steps/health-connect';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
+import { openStepHealthConnectSettings } from '@/src/features/steps/health-connect.service';
 import {
   requestStepNotificationPermission,
   stopStepNotification
-} from '@/src/features/steps/notifications';
+} from '@/src/features/steps/steps-notifications.service';
 
 import { iconSizes } from '@/src/theme/sizes';
 import { ChevronDown, ExternalLink } from 'lucide-react-native';

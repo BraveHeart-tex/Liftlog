@@ -1,5 +1,5 @@
 import { Text } from '@/src/components/ui/text';
-import { cn } from '@/src/lib/utils/cn';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { Pressable, View } from 'react-native';
 
 interface SetDurationFieldProps {

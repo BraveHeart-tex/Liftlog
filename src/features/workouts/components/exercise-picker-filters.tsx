@@ -5,7 +5,7 @@ import { Icon } from '@/src/components/ui/icon';
 import {
   CATEGORY_FILTERS,
   type ExerciseCategory
-} from '@/src/features/exercises/constants';
+} from '@/src/features/exercises/exercise.constants';
 import { UserIcon } from 'lucide-react-native';
 import {
   useCallback,

@@ -1,10 +1,10 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { Set, WorkoutExercise } from '@/src/db/schema';
-import type { ExerciseListItem } from '@/src/features/exercises/repository';
-import { getSetsForWorkoutExercisesQuery } from '@/src/features/workouts/repository';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
+import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
+import { getSetsForWorkoutExercisesQuery } from '@/src/features/workouts/workout.repository';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useMemo } from 'react';
-import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
 
 interface UseActiveWorkoutExerciseListParams {
   workoutExercises: WorkoutExercise[];

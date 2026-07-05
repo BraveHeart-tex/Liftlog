@@ -5,12 +5,12 @@ import {
 } from '@/src/components/ui/bottom-sheet';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
-import { useSettings } from '@/src/features/settings/hooks';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import { RestTimerIdleContent } from '@/src/features/workouts/components/rest-timer-idle-content';
 import { RestTimerPausedContent } from '@/src/features/workouts/components/rest-timer-paused-content';
 import { RestTimerRunningContent } from '@/src/features/workouts/components/rest-timer-running-content';
-import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer-store';
-import { cn } from '@/src/lib/utils/cn';
+import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { XIcon } from 'lucide-react-native';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';

@@ -3,11 +3,9 @@ import { EmptyState } from '@/src/components/ui/empty-state';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { ActiveWorkoutContent } from '@/src/features/workouts/components/active-workout-content';
-import {
-  useHistoricalWorkoutEditActions,
-  useHistoricalWorkoutEditScreen
-} from '@/src/features/workouts/hooks';
-import { getRouteParamId } from '@/src/lib/utils/route';
+import { useHistoricalWorkoutEditActions } from '@/src/features/workouts/hooks/use-historical-workout-edit-actions';
+import { useHistoricalWorkoutEditScreen } from '@/src/features/workouts/hooks/use-historical-workout-edit-screen';
+import { getRouteParamId } from '@/src/lib/utils/route.utils';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback } from 'react';
 import { Alert } from 'react-native';

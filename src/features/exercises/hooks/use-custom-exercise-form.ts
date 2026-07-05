@@ -1,7 +1,7 @@
 import type { NewExercise } from '@/src/db/schema';
-import type { ExerciseCategory } from '@/src/features/exercises/constants';
+import type { ExerciseCategory } from '@/src/features/exercises/exercise.constants';
 import { useExerciseActions } from '@/src/features/exercises/hooks/use-exercise-actions';
-import type { TrackingType } from '@/src/features/progress/tracking';
+import type { TrackingType } from '@/src/features/progress/tracking.domain';
 import { useCallback, useState } from 'react';
 
 interface UseCustomExerciseFormResult {

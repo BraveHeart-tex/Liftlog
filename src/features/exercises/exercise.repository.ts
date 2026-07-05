@@ -6,7 +6,7 @@ import {
   type Exercise,
   type NewExercise
 } from '@/src/db/schema';
-import { rebuildPersonalRecordsForExercise } from '@/src/features/progress/repository';
+import { rebuildPersonalRecordsForExercise } from '@/src/features/progress/progress.repository';
 import { and, count, eq, inArray, ne, sql } from 'drizzle-orm';
 import type { InferColumnsDataTypes } from 'drizzle-orm/column';
 

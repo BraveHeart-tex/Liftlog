@@ -1,5 +1,5 @@
-import { CATEGORY_FILTERS } from '@/src/features/exercises/constants';
-import type { ExerciseListItem } from '@/src/features/exercises/repository';
+import { CATEGORY_FILTERS } from '@/src/features/exercises/exercise.constants';
+import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 
 export interface ExerciseListSectionHeaderItem {
   type: 'section-header';

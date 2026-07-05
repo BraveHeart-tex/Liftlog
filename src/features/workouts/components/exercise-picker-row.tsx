@@ -1,8 +1,8 @@
 import { Icon } from '@/src/components/ui/icon';
 import { ExerciseRow } from '@/src/features/exercises/components/exercise-row';
-import type { ExerciseListItem } from '@/src/features/exercises/repository';
-import { getCategoryLabel } from '@/src/features/workouts/components/utils';
-import { cn } from '@/src/lib/utils/cn';
+import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
+import { getCategoryLabel } from '@/src/features/workouts/components/workout-components.utils';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { CheckIcon, PlusIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 

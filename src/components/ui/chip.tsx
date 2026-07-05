@@ -1,6 +1,6 @@
 import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
-import { cn } from '@/src/lib/utils/cn';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { appFonts } from '@/src/theme/fonts';
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';

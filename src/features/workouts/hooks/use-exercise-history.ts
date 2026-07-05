@@ -1,18 +1,18 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { Exercise, Set } from '@/src/db/schema';
-import { getExerciseByIdQuery } from '@/src/features/exercises/repository';
+import { getExerciseByIdQuery } from '@/src/features/exercises/exercise.repository';
 import {
   buildExerciseHistory,
   getExerciseHistorySetsQuery,
   getExerciseHistoryWorkoutsQuery,
   getPersonalRecordsByExerciseQuery
-} from '@/src/features/progress/repository';
+} from '@/src/features/progress/progress.repository';
 import {
   getSetScore,
   resolveTrackingType,
   type TrackingType
-} from '@/src/features/progress/tracking';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
+} from '@/src/features/progress/tracking.domain';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useMemo } from 'react';
 
 function getCompletedSets(sets: Set[]) {

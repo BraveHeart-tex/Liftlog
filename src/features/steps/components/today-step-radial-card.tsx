@@ -1,9 +1,9 @@
 import { Badge } from '@/src/components/ui/badge';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Text } from '@/src/components/ui/text';
-import { formatSteps } from '@/src/features/steps/display';
-import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
-import { cn } from '@/src/lib/utils/cn';
+import { formatSteps } from '@/src/features/steps/steps-display.utils';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { nativeFontSizes } from '@/src/theme/sizes';
 import { Canvas, Circle, Path, Skia } from '@shopify/react-native-skia';

@@ -1,5 +1,5 @@
-import { toLocalDateKey } from '@/src/lib/utils/date';
-import { generateUuid } from '@/src/lib/utils/uuid';
+import { toLocalDateKey } from '@/src/lib/utils/date.utils';
+import { generateUuid } from '@/src/lib/utils/uuid.utils';
 import {
   type AnySQLiteColumn,
   index,

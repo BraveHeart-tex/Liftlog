@@ -3,9 +3,9 @@ import {
   getCompletedWorkoutLogRowsForDateKeyQuery,
   getCompletedWorkoutCountRowsQuery,
   type WorkoutCalendarDateRange
-} from '@/src/features/workouts/repository';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
-import { toLocalDateKey } from '@/src/lib/utils/date';
+} from '@/src/features/workout-log/workout-log.repository';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
+import { toLocalDateKey } from '@/src/lib/utils/date.utils';
 import { useMemo } from 'react';
 
 function getWorkoutCalendarDateRange(

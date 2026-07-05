@@ -17,8 +17,8 @@ import {
   getAvailabilityLabel,
   getLiveStepCounterBadgeLabel,
   getLiveStepCounterMessage
-} from '@/src/features/steps/display';
-import { useStepsScreen } from '@/src/features/steps/hooks';
+} from '@/src/features/steps/steps-display.utils';
+import { useStepsScreen } from '@/src/features/steps/hooks/use-steps-screen';
 import { EllipsisVerticalIcon } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';

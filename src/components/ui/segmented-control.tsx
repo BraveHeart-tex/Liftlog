@@ -1,6 +1,6 @@
 import { Text } from '@/src/components/ui/text';
-import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
-import { cn } from '@/src/lib/utils/cn';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, View, type LayoutChangeEvent } from 'react-native';
 import Animated, {

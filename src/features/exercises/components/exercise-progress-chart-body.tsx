@@ -4,9 +4,9 @@ import {
   TRACKING_TYPE_DEFINITIONS,
   formatScore,
   type TrackingType
-} from '@/src/features/progress/tracking';
-import { formatWorkoutDate } from '@/src/lib/utils/date';
-import type { WeightUnit } from '@/src/lib/utils/weight';
+} from '@/src/features/progress/tracking.domain';
+import { formatWorkoutDate } from '@/src/lib/utils/date.utils';
+import type { WeightUnit } from '@/src/lib/utils/weight.utils';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { appFonts } from '@/src/theme/fonts';
 import { nativeFontSizes } from '@/src/theme/sizes';

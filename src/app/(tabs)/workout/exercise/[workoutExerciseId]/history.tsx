@@ -4,8 +4,8 @@ import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { ExerciseHistoryList } from '@/src/features/workouts/components/exercise-history-list';
-import { useWorkoutExerciseHistoryScreen } from '@/src/features/workouts/hooks';
-import { getRouteParamId } from '@/src/lib/utils/route';
+import { useWorkoutExerciseHistoryScreen } from '@/src/features/workouts/hooks/use-workout-exercise-history-screen';
+import { getRouteParamId } from '@/src/lib/utils/route.utils';
 import { useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 

@@ -1,6 +1,6 @@
 import type { WorkoutExercise } from '@/src/db/schema';
 import { ActiveWorkoutExerciseEditRow } from '@/src/features/workouts/components/active-workout-exercise-edit-row';
-import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import DraggableFlatList, {

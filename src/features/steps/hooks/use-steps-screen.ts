@@ -3,7 +3,7 @@ import type { HealthStepDay } from '@/src/db/schema';
 import {
   getRecentStepDaysQuery,
   upsertStepDays
-} from '@/src/features/steps/repository';
+} from '@/src/features/steps/steps.repository';
 import {
   getHealthConnectAvailability,
   getStepPermissionState,
@@ -12,18 +12,21 @@ import {
   syncStepDaysFromHealthConnect,
   type HealthConnectAvailability,
   type StepPermissionState
-} from '@/src/features/steps/health-connect';
+} from '@/src/features/steps/health-connect.service';
 import {
   refreshStepNotification,
   showStepNotification
-} from '@/src/features/steps/notifications';
+} from '@/src/features/steps/steps-notifications.service';
 import {
   getMillisecondsUntilNextLocalDay,
   getTodayDateKey
-} from '@/src/features/steps/date';
-import { SETTINGS_KEYS, setSetting } from '@/src/features/settings/repository';
-import { useSettings } from '@/src/features/settings/hooks';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
+} from '@/src/features/steps/steps-date.utils';
+import {
+  SETTINGS_KEYS,
+  setSetting
+} from '@/src/features/settings/settings.repository';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLiveStepCounter } from '@/src/features/steps/hooks/use-live-step-counter';

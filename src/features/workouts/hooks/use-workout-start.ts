@@ -2,13 +2,15 @@ import { useDrizzle } from '@/src/components/database-provider';
 import type { WorkoutTemplate } from '@/src/db/schema';
 import {
   createWorkout,
+  getActiveWorkoutSummaryQuery
+} from '@/src/features/workouts/workout.repository';
+import {
   createWorkoutFromTemplate,
   deleteWorkoutTemplate,
-  getActiveWorkoutSummaryQuery,
   updateWorkoutTemplateName
-} from '@/src/features/workouts/repository';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
-import { formatWorkoutName } from '@/src/lib/utils/workout';
+} from '@/src/features/workouts/workout-template.repository';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
+import { formatWorkoutName } from '@/src/features/workouts/workout-display.utils';
 import { router, type Href } from 'expo-router';
 import { useCallback } from 'react';
 

@@ -1,6 +1,9 @@
 import type { PersonalRecord, Set } from '@/src/db/schema';
-import { formatDurationMs } from '@/src/lib/utils/format-time';
-import { formatWeightForUnit, type WeightUnit } from '@/src/lib/utils/weight';
+import { formatDurationMs } from '@/src/lib/utils/format-time.utils';
+import {
+  formatWeightForUnit,
+  type WeightUnit
+} from '@/src/lib/utils/weight.utils';
 
 export const TRACKING_TYPES = [
   'weight_reps',

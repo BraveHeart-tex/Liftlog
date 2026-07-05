@@ -1,4 +1,4 @@
-import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer-store';
+import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
 import { useEffect, useState } from 'react';
 
 export function useIsRestTimerRunning() {

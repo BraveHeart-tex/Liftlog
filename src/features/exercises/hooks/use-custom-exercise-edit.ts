@@ -1,7 +1,7 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import { getExerciseByIdQuery } from '@/src/features/exercises/repository';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
-import { parseMuscleList } from '@/src/lib/utils/muscle';
+import { getExerciseByIdQuery } from '@/src/features/exercises/exercise.repository';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
+import { parseMuscleList } from '@/src/features/exercises/muscle.utils';
 import { useMemo } from 'react';
 
 export function useCustomExerciseEdit(exerciseId: string | undefined) {

@@ -2,15 +2,15 @@ import { useDrizzle } from '@/src/components/database-provider';
 import {
   buildAlphabetizedExerciseListItems,
   matchesExerciseSearch
-} from '@/src/features/exercises/display';
+} from '@/src/features/exercises/exercise-display.utils';
 import {
   getExercisesQuery,
   type ExerciseListItem
-} from '@/src/features/exercises/repository';
+} from '@/src/features/exercises/exercise.repository';
 import type { ExercisePickerFilter } from '@/src/features/workouts/components/exercise-picker-filters';
-import { getRecentExerciseIdsQuery } from '@/src/features/workouts/repository';
+import { getRecentExerciseIdsQuery } from '@/src/features/workouts/workout.repository';
 import { RECENT_EXERCISES_LIMIT } from '@/src/features/workouts/workout.constants';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useEffect, useMemo, useState } from 'react';
 
 function matchesExerciseFilter(

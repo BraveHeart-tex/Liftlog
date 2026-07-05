@@ -7,11 +7,11 @@ import { Button } from '@/src/components/ui/button';
 import { Text } from '@/src/components/ui/text';
 import { StopwatchContent } from '@/src/features/workouts/components/stopwatch-content';
 import { SetDurationWheel } from '@/src/features/workouts/components/set-duration-wheel';
-import { cn } from '@/src/lib/utils/cn';
+import { cn } from '@/src/lib/utils/cn.utils';
 import {
   formatDurationMs,
   getDurationMsParts
-} from '@/src/lib/utils/format-time';
+} from '@/src/lib/utils/format-time.utils';
 import { memo, useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

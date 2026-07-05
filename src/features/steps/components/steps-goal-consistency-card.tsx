@@ -2,7 +2,7 @@ import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Text } from '@/src/components/ui/text';
 import type { HealthStepDay } from '@/src/db/schema';
-import { getTodayDateKey } from '@/src/features/steps/date';
+import { getTodayDateKey } from '@/src/features/steps/steps-date.utils';
 import {
   formatSteps,
   getStepGoalConsistencyAverageSteps,
@@ -10,8 +10,8 @@ import {
   getStepGoalConsistencyFillHeight,
   getStepGoalConsistencyHitCount,
   STEP_GOAL_CONSISTENCY_DAY_COUNT
-} from '@/src/features/steps/display';
-import { cn } from '@/src/lib/utils/cn';
+} from '@/src/features/steps/steps-display.utils';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 

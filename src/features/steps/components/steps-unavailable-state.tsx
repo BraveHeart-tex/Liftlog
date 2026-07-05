@@ -1,6 +1,6 @@
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
-import type { HealthConnectAvailability } from '@/src/features/steps/health-connect';
+import type { HealthConnectAvailability } from '@/src/features/steps/health-connect.service';
 import { HeartIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 

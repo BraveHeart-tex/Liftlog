@@ -17,7 +17,7 @@ import {
   getPersonalRecordSnapshot,
   getSetScore,
   resolveTrackingType
-} from '@/src/features/progress/tracking';
+} from '@/src/features/progress/tracking.domain';
 
 const MAX_EXERCISE_HISTORY_WORKOUTS = 20;
 

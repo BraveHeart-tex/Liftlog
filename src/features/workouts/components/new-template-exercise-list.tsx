@@ -1,5 +1,5 @@
 import type { Exercise } from '@/src/db';
-import type { ExerciseListItem } from '@/src/features/exercises/repository';
+import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import { NewTemplateExerciseRow } from '@/src/features/workouts/components/new-template-exercise-row';
 import { useCallback } from 'react';
 import DraggableFlatList, {

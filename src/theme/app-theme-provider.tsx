@@ -1,4 +1,4 @@
-import { cn } from '@/src/lib/utils/cn';
+import { cn } from '@/src/lib/utils/cn.utils';
 import {
   getThemePreference,
   setThemePreference as persistThemePreference,

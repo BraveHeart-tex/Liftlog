@@ -1,8 +1,8 @@
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
-import { useSettings } from '@/src/features/settings/hooks';
-import type { ProgressionSuggestionData } from '@/src/features/workouts/components/progression-suggestion-utils';
-import { formatWeightForUnit } from '@/src/lib/utils/weight';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
+import type { ProgressionSuggestionData } from '@/src/features/workouts/components/progression-suggestion.utils';
+import { formatWeightForUnit } from '@/src/lib/utils/weight.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { Link } from 'expo-router';
 import { ChevronRightIcon, TrendingUpIcon } from 'lucide-react-native';

@@ -1,10 +1,10 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import { getExercisesQuery } from '@/src/features/exercises/repository';
+import { getExercisesQuery } from '@/src/features/exercises/exercise.repository';
 import {
   getHistoricalWorkoutEditDraftQuery,
   getWorkoutByIdQuery
-} from '@/src/features/workouts/repository';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
+} from '@/src/features/workouts/workout.repository';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 
 export function useHistoricalWorkoutEditScreen({
   draftWorkoutId,

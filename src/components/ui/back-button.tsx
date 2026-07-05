@@ -1,7 +1,7 @@
 import { Button } from '@/src/components/ui/button';
 import { Icon, type IconComponent } from '@/src/components/ui/icon';
-import { usePressScale } from '@/src/lib/animations/use-press-scale';
-import { cn } from '@/src/lib/utils/cn';
+import { usePressScale } from '@/src/lib/animations/use-press-scale.hook';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { router } from 'expo-router';
 import { ChevronLeftIcon } from 'lucide-react-native';
 import type { ReactNode } from 'react';

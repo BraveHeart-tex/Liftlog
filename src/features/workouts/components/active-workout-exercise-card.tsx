@@ -1,10 +1,10 @@
-import { resolveTrackingType } from '@/src/features/progress/tracking';
-import { usePressScale } from '@/src/lib/animations/use-press-scale';
-import { cn } from '@/src/lib/utils/cn';
-import type { WeightUnit } from '@/src/lib/utils/weight';
+import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
+import { usePressScale } from '@/src/lib/animations/use-press-scale.hook';
+import { cn } from '@/src/lib/utils/cn.utils';
+import type { WeightUnit } from '@/src/lib/utils/weight.utils';
 import { router } from 'expo-router';
 import { Animated, Pressable, View } from 'react-native';
-import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
 import { WorkoutExerciseSummary } from '@/src/features/workouts/components/workout-exercise-summary';
 
 interface ActiveWorkoutExerciseCardProps {

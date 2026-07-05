@@ -1,7 +1,7 @@
 import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { StyledActivityIndicator } from '@/src/components/styled/activity-indicator';
 import { Text } from '@/src/components/ui/text';
-import { cn } from '@/src/lib/utils/cn';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { appFonts } from '@/src/theme/fonts';
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { ReactNode } from 'react';

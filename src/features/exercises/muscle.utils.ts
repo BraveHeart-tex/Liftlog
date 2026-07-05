@@ -1,5 +1,5 @@
 import type { Exercise } from '@/src/db';
-import { toTitleCase } from '@/src/lib/utils/string';
+import { toTitleCase } from '@/src/lib/utils/string.utils';
 
 export function parseMuscleList(value: Exercise['primaryMuscles']): string[] {
   try {

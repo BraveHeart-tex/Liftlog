@@ -1,6 +1,6 @@
 import { Text } from '@/src/components/ui/text';
 import { StyledActivityIndicator } from '@/src/components/styled/activity-indicator';
-import { cn } from '@/src/lib/utils/cn';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { View } from 'react-native';
 
 interface LoadingStateProps {

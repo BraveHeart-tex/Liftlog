@@ -1,7 +1,7 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import { getExercisesQuery } from '@/src/features/exercises/repository';
-import { getHistoricalWorkoutDraftQuery } from '@/src/features/workouts/repository';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
+import { getExercisesQuery } from '@/src/features/exercises/exercise.repository';
+import { getHistoricalWorkoutDraftQuery } from '@/src/features/workouts/workout.repository';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 
 export function useHistoricalWorkoutDraftScreen(workoutId: string | undefined) {
   const db = useDrizzle();

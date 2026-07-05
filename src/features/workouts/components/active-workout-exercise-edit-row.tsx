@@ -1,12 +1,12 @@
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
-import { resolveTrackingType } from '@/src/features/progress/tracking';
-import { useSettings } from '@/src/features/settings/hooks';
-import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/types';
-import { useRemoveWorkoutExercise } from '@/src/features/workouts/hooks';
-import { cn } from '@/src/lib/utils/cn';
-import { formatWeightForUnit } from '@/src/lib/utils/weight';
+import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
+import { useRemoveWorkoutExercise } from '@/src/features/workouts/hooks/use-remove-workout-exercise';
+import { cn } from '@/src/lib/utils/cn.utils';
+import { formatWeightForUnit } from '@/src/lib/utils/weight.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { GripIcon, TrashIcon } from 'lucide-react-native';
 import { Alert, View } from 'react-native';

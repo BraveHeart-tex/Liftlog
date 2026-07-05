@@ -1,6 +1,6 @@
 import type { DrizzleDb } from '@/src/db';
 import { appMeta, exercises, type NewExercise } from '@/src/db/schema';
-import { MUSCLE_GROUP } from '@/src/features/exercises/constants';
+import { MUSCLE_GROUP } from '@/src/features/exercises/exercise.constants';
 import { eq } from 'drizzle-orm';
 
 const HAS_SEEDED_KEY = 'has_seeded';

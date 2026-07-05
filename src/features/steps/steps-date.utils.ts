@@ -1,4 +1,4 @@
-import { toLocalDateKey } from '@/src/lib/utils/date';
+import { toLocalDateKey } from '@/src/lib/utils/date.utils';
 
 interface LocalDayRange {
   dateKey: string;

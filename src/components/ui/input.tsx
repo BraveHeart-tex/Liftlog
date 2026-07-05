@@ -1,6 +1,6 @@
 import { StyledTextInput } from '@/src/components/styled/text-input';
 import { Text } from '@/src/components/ui/text';
-import { cn } from '@/src/lib/utils/cn';
+import { cn } from '@/src/lib/utils/cn.utils';
 import {
   forwardRef,
   useState,

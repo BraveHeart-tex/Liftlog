@@ -9,10 +9,10 @@ import { WorkoutLogStartSheet } from '@/src/features/workout-log/components/work
 import {
   useWorkoutCalendarMarks,
   useWorkoutRowsForDate
-} from '@/src/features/workouts/hooks';
-import type { CompletedWorkoutLogRow } from '@/src/features/workouts/repository';
-import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
-import { toLocalDateKey } from '@/src/lib/utils/date';
+} from '@/src/features/workout-log/hooks/use-workout-log';
+import type { CompletedWorkoutLogRow } from '@/src/features/workout-log/workout-log.repository';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { toLocalDateKey } from '@/src/lib/utils/date.utils';
 import { router } from 'expo-router';
 import { PlusIcon } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';

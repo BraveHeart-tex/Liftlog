@@ -1,6 +1,6 @@
-import type { ExerciseListItem } from '@/src/features/exercises/repository';
+import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise-picker-sheet';
-import { useActiveWorkoutExercisePicker } from '@/src/features/workouts/hooks';
+import { useActiveWorkoutExercisePicker } from '@/src/features/workouts/hooks/use-active-workout-exercise-picker';
 import { useCallback, useState } from 'react';
 
 interface ActiveWorkoutExercisePickerSheetProps {

@@ -1,5 +1,5 @@
-import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
-import { cn } from '@/src/lib/utils/cn';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { useEffect, useRef, type ReactNode } from 'react';
 import Animated, {
   interpolateColor,
@@ -17,7 +17,7 @@ export interface SetFormFieldColors {
   border: [string, string, string, string];
 }
 
-export const toneProgress: Record<SetFormFieldTone, number> = {
+const toneProgress: Record<SetFormFieldTone, number> = {
   neutral: 0,
   valid: 1,
   committed: 2,

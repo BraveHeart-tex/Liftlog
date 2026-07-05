@@ -4,15 +4,15 @@ import {
   type SetValues,
   type TrackingFieldDefinition,
   type TrackingType
-} from '@/src/features/progress/tracking';
-import type { useSettings } from '@/src/features/settings/hooks';
+} from '@/src/features/progress/tracking.domain';
+import type { useSettings } from '@/src/features/settings/hooks/use-settings';
 import {
   areSetValuesEqual,
   getHasSavedChanges,
   getInitialFieldValues,
   parseDurationMsInput,
   parseTrackingFieldValues
-} from '@/src/features/workouts/components/set-form/set-form-utils';
+} from '@/src/features/workouts/components/set-form/set-form.utils';
 import type {
   ActiveDurationPickerState,
   DraftRowState,
@@ -20,8 +20,8 @@ import type {
   PersistedEditState,
   PersistedSetFormRow,
   SetFormRow
-} from '@/src/features/workouts/components/set-form/set-form-types';
-import { formatDurationMs } from '@/src/lib/utils/format-time';
+} from '@/src/features/workouts/components/set-form/set-form.types';
+import { formatDurationMs } from '@/src/lib/utils/format-time.utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Keyboard } from 'react-native';
 

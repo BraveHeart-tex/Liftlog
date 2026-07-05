@@ -3,12 +3,12 @@ import type { Workout } from '@/src/db/schema';
 import {
   getExercisesByIdsQuery,
   type ExerciseListItem
-} from '@/src/features/exercises/repository';
+} from '@/src/features/exercises/exercise.repository';
 import {
   getCompletedSetCountsForWorkoutsQuery,
   getWorkoutExercisesQuery
-} from '@/src/features/workouts/repository';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
+} from '@/src/features/workouts/workout.repository';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useMemo, useState } from 'react';
 
 interface UseActiveWorkoutContentParams {

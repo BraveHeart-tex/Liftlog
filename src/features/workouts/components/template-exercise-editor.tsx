@@ -2,11 +2,9 @@ import { Button } from '@/src/components/ui/button';
 import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
-import {
-  useExerciseActions,
-  useExercises
-} from '@/src/features/exercises/hooks';
-import type { ExerciseListItem } from '@/src/features/exercises/repository';
+import { useExerciseActions } from '@/src/features/exercises/hooks/use-exercise-actions';
+import { useExercises } from '@/src/features/exercises/hooks/use-exercises';
+import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/create-custom-exercise-sheet';
 import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise-picker-sheet';
 import { NewTemplateExerciseList } from '@/src/features/workouts/components/new-template-exercise-list';

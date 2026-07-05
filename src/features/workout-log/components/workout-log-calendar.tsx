@@ -4,19 +4,19 @@ import {
   CALENDAR_COLUMNS,
   DEFAULT_CALENDAR_HEIGHT,
   DEFAULT_PAST_MONTH_RANGE
-} from '@/src/features/calendar/calendar.constants';
+} from '@/src/features/workout-log/calendar/workout-log-calendar.constants';
 import {
   getCalendarMonths,
   getMonthIndexForDate,
   isDateInMonth
-} from '@/src/features/calendar/calendar.helpers';
+} from '@/src/features/workout-log/calendar/workout-log-calendar.helpers';
 import type {
   CalendarDateMark,
   CalendarMonth
-} from '@/src/features/calendar/calendar.types';
-import { MonthCalendar } from '@/src/features/calendar/month-calendar';
+} from '@/src/features/workout-log/calendar/workout-log-calendar.types';
+import { MonthCalendar } from '@/src/features/workout-log/calendar/month-calendar';
 
-import { toLocalDateKey } from '@/src/lib/utils/date';
+import { toLocalDateKey } from '@/src/lib/utils/date.utils';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { useCallback, useMemo, useState } from 'react';
 import { type LayoutChangeEvent, View } from 'react-native';

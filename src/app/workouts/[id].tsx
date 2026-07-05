@@ -5,22 +5,20 @@ import { LoadingState } from '@/src/components/ui/loading-state';
 import { RenameSheet } from '@/src/components/ui/rename-sheet';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import { resolveTrackingType } from '@/src/features/progress/tracking';
+import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
 import { WorkoutDetailActionsSheet } from '@/src/features/workouts/components/workout-detail-actions-sheet';
 import { WorkoutDetailHeader } from '@/src/features/workouts/components/workout-detail-header';
 import { WorkoutHistoryExerciseCard } from '@/src/features/workouts/components/workout-history-exercise-card';
 import { WorkoutMetricCard } from '@/src/features/workouts/components/workout-metric-card';
-import {
-  useHistoricalWorkoutEditStart,
-  useRepeatWorkout,
-  useWorkoutDelete,
-  useWorkoutHistoryDetail,
-  useWorkoutRename
-} from '@/src/features/workouts/hooks';
-import { formatDuration } from '@/src/lib/utils/date';
-import { getRouteParamId } from '@/src/lib/utils/route';
-import { formatWeightForUnit } from '@/src/lib/utils/weight';
+import { useHistoricalWorkoutEditStart } from '@/src/features/workouts/hooks/use-historical-workout-edit-start';
+import { useRepeatWorkout } from '@/src/features/workouts/hooks/use-repeat-workout';
+import { useWorkoutDelete } from '@/src/features/workouts/hooks/use-workout-delete';
+import { useWorkoutHistoryDetail } from '@/src/features/workouts/hooks/use-workout-history-detail';
+import { useWorkoutRename } from '@/src/features/workouts/hooks/use-workout-rename';
+import { formatDuration } from '@/src/lib/utils/date.utils';
+import { getRouteParamId } from '@/src/lib/utils/route.utils';
+import { formatWeightForUnit } from '@/src/lib/utils/weight.utils';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   BookmarkIcon,

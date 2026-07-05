@@ -2,10 +2,10 @@ import { useDrizzle } from '@/src/components/database-provider';
 import {
   getExercisesQuery,
   type ExerciseListItem
-} from '@/src/features/exercises/repository';
-import { getRecentExerciseIdsQuery } from '@/src/features/workouts/repository';
+} from '@/src/features/exercises/exercise.repository';
+import { getRecentExerciseIdsQuery } from '@/src/features/workouts/workout.repository';
 import { RECENT_EXERCISES_LIMIT } from '@/src/features/workouts/workout.constants';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useMemo } from 'react';
 
 interface UseActiveWorkoutExercisePickerParams {

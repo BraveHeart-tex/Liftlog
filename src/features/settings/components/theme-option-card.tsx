@@ -1,7 +1,7 @@
 import { Icon, type IconComponent } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
-import { usePressScale } from '@/src/lib/animations/use-press-scale';
-import { cn } from '@/src/lib/utils/cn';
+import { usePressScale } from '@/src/lib/animations/use-press-scale.hook';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { Animated, Pressable } from 'react-native';
 
 interface ThemeOptionCardProps {

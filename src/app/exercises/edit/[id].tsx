@@ -4,16 +4,14 @@ import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { ExerciseMetadataForm } from '@/src/features/exercises/components/exercise-metadata-form';
-import type { ExerciseCategory } from '@/src/features/exercises/constants';
-import {
-  useCustomExerciseEdit,
-  useExerciseActions
-} from '@/src/features/exercises/hooks';
+import type { ExerciseCategory } from '@/src/features/exercises/exercise.constants';
+import { useCustomExerciseEdit } from '@/src/features/exercises/hooks/use-custom-exercise-edit';
+import { useExerciseActions } from '@/src/features/exercises/hooks/use-exercise-actions';
 import {
   resolveTrackingType,
   type TrackingType
-} from '@/src/features/progress/tracking';
-import { getRouteParamId } from '@/src/lib/utils/route';
+} from '@/src/features/progress/tracking.domain';
+import { getRouteParamId } from '@/src/lib/utils/route.utils';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Keyboard, View, type ScrollView } from 'react-native';

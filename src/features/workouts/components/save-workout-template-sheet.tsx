@@ -8,7 +8,7 @@ import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import type { Workout, WorkoutExercise } from '@/src/db/schema';
-import { useSaveWorkoutTemplate } from '@/src/features/workouts/hooks';
+import { useSaveWorkoutTemplate } from '@/src/features/workouts/hooks/use-save-workout-template';
 import { XIcon } from 'lucide-react-native';
 import {
   memo,

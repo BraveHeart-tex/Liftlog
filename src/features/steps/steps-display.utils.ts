@@ -2,10 +2,10 @@ import type { HealthStepDay } from '@/src/db/schema';
 import {
   getRecentLocalDayRanges,
   getTodayDateKey
-} from '@/src/features/steps/date';
-import type { HealthConnectAvailability } from '@/src/features/steps/health-connect';
+} from '@/src/features/steps/steps-date.utils';
+import type { HealthConnectAvailability } from '@/src/features/steps/health-connect.service';
 import type { LiveStepCounterStatus } from '@/src/features/steps/hooks/use-live-step-counter';
-import { formatWorkoutDate } from '@/src/lib/utils/date';
+import { formatWorkoutDate } from '@/src/lib/utils/date.utils';
 
 export const STEP_GOAL_CONSISTENCY_DAY_COUNT = 7;
 

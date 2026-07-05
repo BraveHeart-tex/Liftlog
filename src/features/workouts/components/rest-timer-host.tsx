@@ -1,5 +1,5 @@
 import { showSnackbar } from '@/src/components/ui/snackbar';
-import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer-store';
+import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
 import {
   setAudioModeAsync,
   setIsAudioActiveAsync,

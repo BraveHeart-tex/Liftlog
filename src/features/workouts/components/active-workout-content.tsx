@@ -4,7 +4,7 @@ import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import type { Workout, WorkoutExercise } from '@/src/db/schema';
-import type { ExerciseListItem } from '@/src/features/exercises/repository';
+import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import { ActiveWorkoutEditHeader } from '@/src/features/workouts/components/active-workout-edit-header';
 import { ActiveWorkoutExerciseList } from '@/src/features/workouts/components/active-workout-exercise-list';
 import { ActiveWorkoutExercisePickerSheet } from '@/src/features/workouts/components/active-workout-exercise-picker-sheet';
@@ -12,13 +12,11 @@ import { ActiveWorkoutHeaderWithActions } from '@/src/features/workouts/componen
 import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/create-custom-exercise-sheet';
 import { HistoricalWorkoutHeader } from '@/src/features/workouts/components/historical-workout-header';
 import { RestTimerWidget } from '@/src/features/workouts/components/rest-timer-widget';
-import {
-  useActiveWorkoutActions,
-  useActiveWorkoutContent as useActiveWorkoutContentData,
-  useReorderWorkoutExercises
-} from '@/src/features/workouts/hooks';
-import { triggerWorkoutEditModeHaptics } from '@/src/features/workouts/workout-haptics';
-import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
+import { useActiveWorkoutActions } from '@/src/features/workouts/hooks/use-active-workout-actions';
+import { useActiveWorkoutContent as useActiveWorkoutContentData } from '@/src/features/workouts/hooks/use-active-workout-content';
+import { useReorderWorkoutExercises } from '@/src/features/workouts/hooks/use-reorder-workout-exercises';
+import { triggerWorkoutEditModeHaptics } from '@/src/features/workouts/workout.haptics';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { PlusIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Keyboard, View } from 'react-native';

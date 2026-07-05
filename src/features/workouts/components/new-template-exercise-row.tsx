@@ -1,9 +1,9 @@
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
-import type { ExerciseListItem } from '@/src/features/exercises/repository';
-import { getCategoryLabel } from '@/src/features/workouts/components/utils';
-import { cn } from '@/src/lib/utils/cn';
+import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
+import { getCategoryLabel } from '@/src/features/workouts/components/workout-components.utils';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { GripIcon, TrashIcon } from 'lucide-react-native';
 import { View } from 'react-native';

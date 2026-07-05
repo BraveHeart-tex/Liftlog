@@ -3,8 +3,8 @@ import { LoadingState } from '@/src/components/ui/loading-state';
 import { Text } from '@/src/components/ui/text';
 import { ExerciseProgressChartBody } from '@/src/features/exercises/components/exercise-progress-chart-body';
 import type { ExerciseProgressPoint } from '@/src/features/exercises/exercise.types';
-import type { TrackingType } from '@/src/features/progress/tracking';
-import type { WeightUnit } from '@/src/lib/utils/weight';
+import type { TrackingType } from '@/src/features/progress/tracking.domain';
+import type { WeightUnit } from '@/src/lib/utils/weight.utils';
 import { View } from 'react-native';
 
 interface ExerciseProgressChartProps {

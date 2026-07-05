@@ -1,7 +1,7 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
-import { getTimerParts } from '@/src/lib/utils/date';
-import { pluralize } from '@/src/lib/utils/string';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
+import { getTimerParts } from '@/src/lib/utils/date.utils';
+import { pluralize } from '@/src/lib/utils/string.utils';
 import { useCallback, useMemo } from 'react';
 import {
   SETTINGS_DEFAULTS,
@@ -20,7 +20,7 @@ import {
   setStepsNotificationEnabled as setStepsNotificationEnabledRepo,
   setWeightUnit as setWeightUnitRepo,
   type WeightUnit
-} from '@/src/features/settings/repository';
+} from '@/src/features/settings/settings.repository';
 
 export function useSettings() {
   const db = useDrizzle();

@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { Text } from '@/src/components/ui/text';
-import { cn } from '@/src/lib/utils/cn';
+import { cn } from '@/src/lib/utils/cn.utils';
 
 const badgeVariantConfig = cva(
   'self-start flex-row items-center gap-1 rounded-md px-2 py-0.5',

@@ -1,5 +1,5 @@
 import { Text } from '@/src/components/ui/text';
-import { cn } from '@/src/lib/utils/cn';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import WheelPickerBase, {
   withVirtualized,

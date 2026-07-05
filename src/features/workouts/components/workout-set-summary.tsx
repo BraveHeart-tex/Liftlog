@@ -4,10 +4,10 @@ import {
   formatTrackingValue,
   getSetValues,
   type TrackingType
-} from '@/src/features/progress/tracking';
-import { cn } from '@/src/lib/utils/cn';
-import { getDisplaySetGroups } from '@/src/lib/utils/set';
-import type { WeightUnit } from '@/src/lib/utils/weight';
+} from '@/src/features/progress/tracking.domain';
+import { cn } from '@/src/lib/utils/cn.utils';
+import { getDisplaySetGroups } from '@/src/features/workouts/set-display.utils';
+import type { WeightUnit } from '@/src/lib/utils/weight.utils';
 import { View } from 'react-native';
 
 interface WorkoutSetSummaryProps {

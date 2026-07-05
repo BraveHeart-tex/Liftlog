@@ -9,7 +9,7 @@ import { Button } from '@/src/components/ui/button';
 import { ChoiceChip } from '@/src/components/ui/chip';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
-import { useSettings } from '@/src/features/settings/hooks';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import {
   MAX_STEP_GOAL,
   MIN_STEP_GOAL,

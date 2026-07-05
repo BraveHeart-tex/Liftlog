@@ -1,14 +1,14 @@
 import {
   CALENDAR_COLUMNS,
   CALENDAR_ROWS
-} from '@/src/features/calendar/calendar.constants';
+} from '@/src/features/workout-log/calendar/workout-log-calendar.constants';
 import type {
   CalendarDateMark,
   CalendarDay,
   CalendarMarkedDates,
   CalendarMonth
-} from '@/src/features/calendar/calendar.types';
-import { toLocalDateKey } from '@/src/lib/utils/date';
+} from '@/src/features/workout-log/calendar/workout-log-calendar.types';
+import { toLocalDateKey } from '@/src/lib/utils/date.utils';
 
 function parseDateKey(dateKey: string): Date {
   const [year, month, day] = dateKey.split('-').map(Number);

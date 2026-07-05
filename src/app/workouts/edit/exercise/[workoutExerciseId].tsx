@@ -3,9 +3,9 @@ import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { ExerciseTrackSection } from '@/src/features/workouts/components/exercise-track-section';
-import { useActiveWorkoutExerciseDetail } from '@/src/features/workouts/hooks';
-import { HISTORICAL_WORKOUT_EDIT_DRAFT_STATUS } from '@/src/features/workouts/repository';
-import { getRouteParamId } from '@/src/lib/utils/route';
+import { useActiveWorkoutExerciseDetail } from '@/src/features/workouts/hooks/use-active-workout-exercise-detail';
+import { HISTORICAL_WORKOUT_EDIT_DRAFT_STATUS } from '@/src/features/workouts/workout.repository';
+import { getRouteParamId } from '@/src/lib/utils/route.utils';
 import { useLocalSearchParams } from 'expo-router';
 import { KeyboardAvoidingView, Platform, View } from 'react-native';
 

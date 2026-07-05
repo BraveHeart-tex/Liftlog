@@ -1,4 +1,4 @@
-import { useSettings } from '@/src/features/settings/hooks';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import { useExerciseHistory } from '@/src/features/workouts/hooks/use-exercise-history';
 import { useActiveWorkoutExerciseDetail } from '@/src/features/workouts/hooks/use-active-workout-exercise-detail';
 

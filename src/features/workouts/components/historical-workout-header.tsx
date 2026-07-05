@@ -2,7 +2,7 @@ import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Text } from '@/src/components/ui/text';
 import type { Workout } from '@/src/db/schema';
-import { formatWorkoutDate } from '@/src/lib/utils/date';
+import { formatWorkoutDate } from '@/src/lib/utils/date.utils';
 import { View } from 'react-native';
 
 interface HistoricalWorkoutHeaderProps {

@@ -1,6 +1,6 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { Workout, WorkoutExercise } from '@/src/db/schema';
-import { repeatWorkout } from '@/src/features/workouts/repository';
+import { repeatWorkout } from '@/src/features/workouts/workout.repository';
 import { router } from 'expo-router';
 import { useCallback } from 'react';
 

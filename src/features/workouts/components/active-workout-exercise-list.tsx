@@ -1,11 +1,11 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import type { WorkoutExercise } from '@/src/db/schema';
-import type { ExerciseListItem } from '@/src/features/exercises/repository';
-import { useSettings } from '@/src/features/settings/hooks';
-import { useActiveWorkoutExerciseList } from '@/src/features/workouts/hooks';
+import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
+import { useActiveWorkoutExerciseList } from '@/src/features/workouts/hooks/use-active-workout-exercise-list';
 import { ActiveWorkoutExerciseCard } from '@/src/features/workouts/components/active-workout-exercise-card';
 import { ActiveWorkoutExerciseEditList } from '@/src/features/workouts/components/active-workout-exercise-edit-list';
-import { MOTION_DURATION_MS } from '@/src/lib/animations/motion';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import Animated, { Keyframe } from 'react-native-reanimated';
 
 const listEntering = new Keyframe({

@@ -3,12 +3,12 @@ import type { WorkoutTemplate, WorkoutTemplateExercise } from '@/src/db/schema';
 import {
   getExercisesByIdsQuery,
   type ExerciseListItem
-} from '@/src/features/exercises/repository';
+} from '@/src/features/exercises/exercise.repository';
 import {
   getWorkoutTemplateExercisesForTemplatesQuery,
   getWorkoutTemplatesQuery
-} from '@/src/features/workouts/repository';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback';
+} from '@/src/features/workouts/workout-template.repository';
+import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useMemo } from 'react';
 
 interface UseWorkoutTemplatesOptions {

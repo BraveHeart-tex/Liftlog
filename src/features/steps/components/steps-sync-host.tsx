@@ -2,15 +2,15 @@ import { useDrizzle } from '@/src/components/database-provider';
 import {
   getTodayStepDay,
   upsertStepDays
-} from '@/src/features/steps/repository';
-import { syncStepDaysFromHealthConnect } from '@/src/features/steps/health-connect';
+} from '@/src/features/steps/steps.repository';
+import { syncStepDaysFromHealthConnect } from '@/src/features/steps/health-connect.service';
 import {
   showStepNotification,
   startStepNotificationRefresh,
   stopStepNotification
-} from '@/src/features/steps/notifications';
-import { useSettings } from '@/src/features/settings/hooks';
-import { getTodayDateKey } from '@/src/features/steps/date';
+} from '@/src/features/steps/steps-notifications.service';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
+import { getTodayDateKey } from '@/src/features/steps/steps-date.utils';
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 

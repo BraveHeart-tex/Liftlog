@@ -1,5 +1,5 @@
-import type { HealthConnectAvailability } from '@/src/features/steps/health-connect';
-import { requestActivityRecognitionPermission } from '@/src/features/steps/step-counter-permissions';
+import type { HealthConnectAvailability } from '@/src/features/steps/health-connect.service';
+import { requestActivityRecognitionPermission } from '@/src/features/steps/step-counter.permissions';
 import { StepCounter, type StepCounterChangeEvent } from 'expo-step-counter';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';

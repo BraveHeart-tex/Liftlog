@@ -5,7 +5,7 @@ import { Text } from '@/src/components/ui/text';
 import type { Workout } from '@/src/db/schema';
 import { ActiveWorkoutDuration } from '@/src/features/workouts/components/active-workout-duration';
 import { ActiveWorkoutStats } from '@/src/features/workouts/components/active-workout-stats';
-import { usePressScale } from '@/src/lib/animations/use-press-scale';
+import { usePressScale } from '@/src/lib/animations/use-press-scale.hook';
 import { Animated, Pressable, View } from 'react-native';
 
 interface ActiveWorkoutSummaryCardProps {

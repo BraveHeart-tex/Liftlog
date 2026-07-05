@@ -6,7 +6,7 @@ import {
   removeCustomExercise,
   updateCustomExerciseDetails,
   updateCustomExerciseName
-} from '@/src/features/exercises/repository';
+} from '@/src/features/exercises/exercise.repository';
 
 export function useExerciseActions() {
   const db = useDrizzle();

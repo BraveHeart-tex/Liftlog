@@ -5,15 +5,13 @@ import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { ExerciseDetailHeader } from '@/src/features/exercises/components/exercise-detail-header';
 import { ExerciseProgressChart } from '@/src/features/exercises/components/exercise-progress-chart';
-import {
-  useExerciseActions,
-  useExerciseDetail
-} from '@/src/features/exercises/hooks';
-import { cn } from '@/src/lib/utils/cn';
-import { formatWorkoutDate } from '@/src/lib/utils/date';
-import { formatMuscleList } from '@/src/lib/utils/muscle';
-import { getRouteParamId } from '@/src/lib/utils/route';
-import { toTitleCase } from '@/src/lib/utils/string';
+import { useExerciseActions } from '@/src/features/exercises/hooks/use-exercise-actions';
+import { useExerciseDetail } from '@/src/features/exercises/hooks/use-exercise-detail';
+import { cn } from '@/src/lib/utils/cn.utils';
+import { formatWorkoutDate } from '@/src/lib/utils/date.utils';
+import { formatMuscleList } from '@/src/features/exercises/muscle.utils';
+import { getRouteParamId } from '@/src/lib/utils/route.utils';
+import { toTitleCase } from '@/src/lib/utils/string.utils';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Alert, View } from 'react-native';
 

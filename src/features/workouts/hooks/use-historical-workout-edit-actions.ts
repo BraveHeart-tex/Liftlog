@@ -1,10 +1,10 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { Workout } from '@/src/db/schema';
-import { rebuildPersonalRecordsForExercise } from '@/src/features/progress/repository';
+import { rebuildPersonalRecordsForExercise } from '@/src/features/progress/progress.repository';
 import {
   deleteWorkout,
   saveHistoricalWorkoutEditDraft
-} from '@/src/features/workouts/repository';
+} from '@/src/features/workouts/workout.repository';
 import { useCallback } from 'react';
 
 export function useHistoricalWorkoutEditActions() {

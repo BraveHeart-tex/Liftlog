@@ -1,6 +1,6 @@
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
-import { cn } from '@/src/lib/utils/cn';
+import { cn } from '@/src/lib/utils/cn.utils';
 import type { LucideIcon } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';

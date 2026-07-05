@@ -5,11 +5,14 @@ import {
   type SetValues,
   type TrackingFieldDefinition,
   type TrackingType
-} from '@/src/features/progress/tracking';
-import type { useSettings } from '@/src/features/settings/hooks';
-import { convertWeightToKg, formatWeightForUnit } from '@/src/lib/utils/weight';
-import { formatInputNumber } from '@/src/features/workouts/components/utils';
-import { formatDurationMs } from '@/src/lib/utils/format-time';
+} from '@/src/features/progress/tracking.domain';
+import type { useSettings } from '@/src/features/settings/hooks/use-settings';
+import {
+  convertWeightToKg,
+  formatWeightForUnit
+} from '@/src/lib/utils/weight.utils';
+import { formatInputNumber } from '@/src/features/workouts/components/workout-components.utils';
+import { formatDurationMs } from '@/src/lib/utils/format-time.utils';
 
 export function getFieldHeaderLabel(
   field: TrackingFieldDefinition,

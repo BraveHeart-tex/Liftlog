@@ -7,8 +7,8 @@ import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { WheelPicker } from '@/src/components/ui/wheel-picker';
-import { useSettings } from '@/src/features/settings/hooks';
-import { getTimerParts } from '@/src/lib/utils/date';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
+import { getTimerParts } from '@/src/lib/utils/date.utils';
 import type {
   OnValueChanged,
   OnValueChanging

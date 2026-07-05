@@ -1,5 +1,5 @@
-import { usePressScale } from '@/src/lib/animations/use-press-scale';
-import { cn } from '@/src/lib/utils/cn';
+import { usePressScale } from '@/src/lib/animations/use-press-scale.hook';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { ImpactFeedbackStyle, impactAsync, selectionAsync } from 'expo-haptics';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import { Animated, Pressable, type GestureResponderEvent } from 'react-native';

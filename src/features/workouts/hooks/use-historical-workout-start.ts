@@ -3,7 +3,7 @@ import type { WorkoutTemplate } from '@/src/db/schema';
 import {
   createHistoricalWorkoutDraft,
   createHistoricalWorkoutDraftFromTemplate
-} from '@/src/features/workouts/repository';
+} from '@/src/features/workouts/workout.repository';
 import { useWorkoutTemplates } from '@/src/features/workouts/hooks/use-workout-templates';
 import { router } from 'expo-router';
 import { useCallback } from 'react';

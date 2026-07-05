@@ -4,10 +4,8 @@ import { ActiveWorkoutActionsSheet } from '@/src/features/workouts/components/ac
 import { ActiveWorkoutHeader } from '@/src/features/workouts/components/active-workout-header';
 import { ActiveWorkoutHeaderDuration } from '@/src/features/workouts/components/active-workout-header-duration';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
-import {
-  useWorkoutDelete,
-  useWorkoutRename
-} from '@/src/features/workouts/hooks';
+import { useWorkoutDelete } from '@/src/features/workouts/hooks/use-workout-delete';
+import { useWorkoutRename } from '@/src/features/workouts/hooks/use-workout-rename';
 import { router } from 'expo-router';
 import { Fragment, useCallback, useState } from 'react';
 import { Alert } from 'react-native';
