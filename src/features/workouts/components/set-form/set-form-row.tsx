@@ -32,6 +32,7 @@ import Animated, {
 const rowEntering = FadeInDown.duration(MOTION_DURATION_MS.standard);
 const rowExiting = FadeOut.duration(MOTION_DURATION_MS.exit);
 const rowLayout = LinearTransition.duration(MOTION_DURATION_MS.standard);
+const emptyInputSelection = { start: 0, end: 0 };
 
 interface SetFormRowProps {
   row: SetFormRowModel;
@@ -216,6 +217,8 @@ function SetFormEditableField({
   onOpenDurationPicker: SetFormRowProps['onOpenDurationPicker'];
   onRowFocus: SetFormRowProps['onRowFocus'];
 }) {
+  const value = row.fieldValues[field.key] ?? '';
+
   return (
     <SetFormFieldSurface
       tone={fieldTone}
@@ -224,7 +227,7 @@ function SetFormEditableField({
     >
       {field.key === 'durationMs' ? (
         <SetDurationField
-          value={row.fieldValues[field.key] ?? ''}
+          value={value}
           placeholder="0:00.00"
           disabled={row.isSaving}
           isCommitted={row.isCommitted}
@@ -234,19 +237,32 @@ function SetFormEditableField({
           onPress={() => onOpenDurationPicker(row, field)}
         />
       ) : (
-        <Input
-          value={row.fieldValues[field.key] ?? ''}
-          onChangeText={value => onFieldChange(row, field, value)}
-          keyboardType={field.keyboardType}
-          placeholder="0"
-          withContainerDefaults={false}
-          editable={!row.isSaving}
-          onFocus={() => onRowFocus?.(row.key)}
-          containerClassName="min-h-12 flex-row items-center rounded-lg px-1"
-          inputClassName="text-body-medium min-w-0 flex-1 px-2 py-2"
-          textAlign="center"
-          accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
-        />
+        <View className="relative">
+          <Input
+            value={value}
+            onChangeText={value => onFieldChange(row, field, value)}
+            keyboardType={field.keyboardType}
+            placeholder=""
+            withContainerDefaults={false}
+            editable={!row.isSaving}
+            onFocus={() => onRowFocus?.(row.key)}
+            containerClassName="min-h-12 flex-row items-center rounded-lg px-1"
+            inputClassName="text-body-medium min-w-0 flex-1 px-2 py-2"
+            selection={value.length === 0 ? emptyInputSelection : undefined}
+            textAlign="center"
+            accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
+          />
+          {value.length === 0 ? (
+            <View
+              pointerEvents="none"
+              className="absolute inset-0 items-center justify-center"
+            >
+              <Text variant="bodyMedium" tone="muted">
+                0
+              </Text>
+            </View>
+          ) : null}
+        </View>
       )}
     </SetFormFieldSurface>
   );
