@@ -1,6 +1,7 @@
 import {
   BottomSheet,
   BottomSheetHeader,
+  BottomSheetSafeFooter,
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
 import { Button } from '@/src/components/ui/button';
@@ -14,7 +15,6 @@ import {
 } from '@/src/lib/utils/format-time.utils';
 import { memo, useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface SetDurationPickerSheetProps {
   isOpen: boolean;
@@ -83,7 +83,6 @@ const SetDurationPickerSheetContent = memo(
     onConfirm,
     renderWheels
   }: SetDurationPickerSheetContentProps) {
-    const insets = useSafeAreaInsets();
     const canUseStopwatch = enableStopwatch;
     const initialParts = getDurationMsParts(valueMs);
     const [mode, setMode] = useState<DurationInputMode>(
@@ -243,10 +242,7 @@ const SetDurationPickerSheetContent = memo(
               </View>
             </View>
 
-            <View
-              className="flex-row gap-3 px-4 pt-6"
-              style={{ paddingBottom: insets.bottom + 16 }}
-            >
+            <BottomSheetSafeFooter className="pb-safe-offset-4 pt-6">
               <View className="flex-1">
                 <Button
                   variant="secondary"
@@ -265,7 +261,7 @@ const SetDurationPickerSheetContent = memo(
                   Done
                 </Button>
               </View>
-            </View>
+            </BottomSheetSafeFooter>
           </>
         )}
       </>

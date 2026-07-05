@@ -13,7 +13,6 @@ import { useHistoricalWorkoutStart } from '@/src/features/workouts/hooks/use-his
 import { formatWorkoutDate } from '@/src/lib/utils/date.utils';
 import { ChevronRightIcon, PlusIcon } from 'lucide-react-native';
 import { View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface WorkoutLogStartSheetProps {
   dateKey: string;
@@ -32,7 +31,6 @@ export function WorkoutLogStartSheet({
   isOpen,
   onClose
 }: WorkoutLogStartSheetProps) {
-  const insets = useSafeAreaInsets();
   const { templates, startBlankWorkout, startWorkoutFromTemplate, isLoading } =
     useHistoricalWorkoutStart(dateKey, { enabled: isOpen });
   const selectedDateLabel = formatWorkoutDate(
@@ -108,8 +106,6 @@ export function WorkoutLogStartSheet({
             </View>
           )}
         </View>
-
-        <View style={{ height: insets.bottom + 16 }} />
       </BottomSheetContent>
     </BottomSheet>
   );

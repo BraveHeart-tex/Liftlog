@@ -36,7 +36,6 @@ import {
   useState
 } from 'react';
 import { Keyboard, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ExercisePickerSheetCommonProps {
   isOpen: boolean;
@@ -184,7 +183,6 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
   onCreateCustomExercise,
   ...selectionProps
 }: ExercisePickerSheetProps) {
-  const insets = useSafeAreaInsets();
   const latestQueryRef = useRef('');
   const [committedQuery, setCommittedQuery] = useState('');
   const [selectedFilter, setSelectedFilter] =
@@ -478,10 +476,7 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
         />
       )}
 
-      <View
-        style={{ paddingBottom: insets.bottom }}
-        className="border-border bg-card gap-2 border-t px-4 pt-3"
-      >
+      <View className="border-border bg-card pb-safe gap-2 border-t px-4 pt-3">
         <Button variant="secondary" onPress={createCustomExercise}>
           {createButtonLabel}
         </Button>

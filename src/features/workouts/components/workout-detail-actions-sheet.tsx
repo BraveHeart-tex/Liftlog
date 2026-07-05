@@ -1,6 +1,7 @@
 import {
   BottomSheet,
   BottomSheetHeader,
+  BottomSheetSafeContent,
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
 import { Icon } from '@/src/components/ui/icon';
@@ -8,7 +9,6 @@ import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
 import { NotebookPen, PencilIcon, Trash2Icon } from 'lucide-react-native';
 import { View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface WorkoutDetailActionsSheetProps {
   isOpen: boolean;
@@ -25,8 +25,6 @@ export function WorkoutDetailActionsSheet({
   onRename,
   onDelete
 }: WorkoutDetailActionsSheetProps) {
-  const insets = useSafeAreaInsets();
-
   const handleEdit = () => {
     onClose();
     requestAnimationFrame(onEdit);
@@ -50,7 +48,7 @@ export function WorkoutDetailActionsSheet({
         </BottomSheetTitle>
       </BottomSheetHeader>
 
-      <View className="px-4 pt-2" style={{ paddingBottom: insets.bottom + 8 }}>
+      <BottomSheetSafeContent>
         <PressableSurface
           accessibilityLabel="Edit workout"
           className="min-h-14 flex-row items-center justify-center gap-3 rounded-lg px-3 py-3"
@@ -87,7 +85,7 @@ export function WorkoutDetailActionsSheet({
             Delete workout
           </Text>
         </PressableSurface>
-      </View>
+      </BottomSheetSafeContent>
     </BottomSheet>
   );
 }

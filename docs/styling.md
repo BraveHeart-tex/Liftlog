@@ -11,6 +11,7 @@ Use styled wrappers for third-party components with multiple style props. Avoid 
 ## NativeWind
 
 - NativeWind is preview-versioned. Do not use `remapProps` or `cssInterop`; use `styled(...)`.
+- Use NativeWind safe-area utilities for static safe-area spacing. Reserve numeric safe-area insets for calculations and native/third-party props that need numbers.
 - Use raw theme tokens only for native/third-party props that cannot consume classes.
 - Do not add global `lineHeight` tokens; React Native treats line height as layout height.
 

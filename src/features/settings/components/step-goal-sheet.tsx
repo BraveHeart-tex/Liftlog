@@ -3,6 +3,7 @@ import { StyledGestureScrollView } from '@/src/components/styled/scroll-view';
 import {
   BottomSheet,
   BottomSheetHeader,
+  BottomSheetSafeFooter,
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
 import { Button } from '@/src/components/ui/button';
@@ -20,7 +21,6 @@ import { nativeFontSizes } from '@/src/theme/sizes';
 import { XIcon } from 'lucide-react-native';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Keyboard, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const numberFormatter = new Intl.NumberFormat();
 
@@ -59,7 +59,6 @@ const StepGoalSheetContent = memo(function StepGoalSheetContent({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const insets = useSafeAreaInsets();
   const { stepGoal, setStepGoal } = useSettings();
   const [draftValue, setDraftValue] = useState('');
 
@@ -182,7 +181,7 @@ const StepGoalSheetContent = memo(function StepGoalSheetContent({
           })}
         </StyledGestureScrollView>
       </View>
-      <View className="px-4 pt-8" style={{ paddingBottom: insets.bottom + 16 }}>
+      <BottomSheetSafeFooter className="pb-safe-offset-4 flex-col gap-0 pt-8">
         <Button
           className="w-full rounded-xl"
           disabled={!canSave}
@@ -190,7 +189,7 @@ const StepGoalSheetContent = memo(function StepGoalSheetContent({
         >
           Save goal
         </Button>
-      </View>
+      </BottomSheetSafeFooter>
     </>
   );
 });

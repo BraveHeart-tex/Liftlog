@@ -1,5 +1,6 @@
 import {
   BottomSheet,
+  BottomSheetSafeContent,
   BottomSheetHeader,
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
@@ -13,7 +14,6 @@ import {
   Trash2Icon
 } from 'lucide-react-native';
 import { View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ExerciseDetailActionsSheetProps {
   isOpen: boolean;
@@ -32,7 +32,6 @@ export function ExerciseDetailActionsSheet({
   onEditDetails,
   onRemove
 }: ExerciseDetailActionsSheetProps) {
-  const insets = useSafeAreaInsets();
   const RemoveIcon = removeActionLabel === 'Archive' ? ArchiveIcon : Trash2Icon;
 
   const handleRename = () => {
@@ -58,7 +57,7 @@ export function ExerciseDetailActionsSheet({
         </BottomSheetTitle>
       </BottomSheetHeader>
 
-      <View className="px-4 pt-2" style={{ paddingBottom: insets.bottom + 8 }}>
+      <BottomSheetSafeContent>
         <PressableSurface
           accessibilityLabel="Rename exercise"
           className="min-h-14 flex-row items-center justify-center gap-3 rounded-lg px-3 py-3"
@@ -95,7 +94,7 @@ export function ExerciseDetailActionsSheet({
             {removeActionLabel}
           </Text>
         </PressableSurface>
-      </View>
+      </BottomSheetSafeContent>
     </BottomSheet>
   );
 }

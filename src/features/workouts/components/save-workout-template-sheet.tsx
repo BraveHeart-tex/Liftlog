@@ -2,6 +2,7 @@ import {
   BottomSheet,
   BottomSheetDescription,
   BottomSheetHeader,
+  BottomSheetSafeFooter,
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
 import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
@@ -19,7 +20,6 @@ import {
   type ComponentRef
 } from 'react';
 import { Keyboard, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface SaveWorkoutTemplateSheetProps {
   isOpen: boolean;
@@ -69,7 +69,6 @@ const SaveWorkoutTemplateSheetContent = memo(
     workoutExerciseRows,
     onClose
   }: SaveWorkoutTemplateSheetProps) {
-    const insets = useSafeAreaInsets();
     const templateInputRef = useRef<BottomSheetInputRef>(null);
     const isSavingTemplateRef = useRef(false);
     const [templateName, setTemplateName] = useState('');
@@ -152,10 +151,7 @@ const SaveWorkoutTemplateSheetContent = memo(
         </View>
 
         <View className="border-border mt-4 border-t" />
-        <View
-          className="flex-row gap-3 px-4 pt-4"
-          style={{ paddingBottom: insets.bottom + 8 }}
-        >
+        <BottomSheetSafeFooter>
           <View className="flex-1">
             <Button variant="ghost" className="w-full" onPress={handleClose}>
               Cancel
@@ -170,7 +166,7 @@ const SaveWorkoutTemplateSheetContent = memo(
               Save template
             </Button>
           </View>
-        </View>
+        </BottomSheetSafeFooter>
       </>
     );
   }

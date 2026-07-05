@@ -1,6 +1,5 @@
 import { BackButton } from '@/src/components/ui/back-button';
 import { LoadingState } from '@/src/components/ui/loading-state';
-import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { ExerciseHistoryList } from '@/src/features/workouts/components/exercise-history-list';
@@ -51,7 +50,7 @@ export default function WorkoutExerciseHistoryScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
+    <View className="bg-background pt-safe flex-1">
       <View className="flex-1">
         <View className="px-4 pt-4 pb-3">
           <View className="flex-row items-center gap-3">
@@ -76,6 +75,6 @@ export default function WorkoutExerciseHistoryScreen() {
           weightUnit={weightUnit}
         />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }

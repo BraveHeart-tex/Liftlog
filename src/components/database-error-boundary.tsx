@@ -1,6 +1,6 @@
 import { EmptyState } from '@/src/components/ui/empty-state';
-import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 import { Component, type ReactNode } from 'react';
+import { View } from 'react-native';
 
 interface Props {
   children: ReactNode;
@@ -26,13 +26,13 @@ export class DatabaseErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <SafeAreaView style={{ flex: 1 }} className="bg-background">
+        <View className="bg-background p-safe flex-1">
           <EmptyState
             className="bg-background"
             title="Database unavailable"
             description="Failed to initialize the database. Please restart the app and try again."
           />
-        </SafeAreaView>
+        </View>
       );
     }
 

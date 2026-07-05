@@ -2,6 +2,7 @@ import {
   BottomSheet,
   BottomSheetDescription,
   BottomSheetHeader,
+  BottomSheetSafeFooter,
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
 import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
@@ -10,7 +11,6 @@ import { Icon } from '@/src/components/ui/icon';
 import { XIcon } from 'lucide-react-native';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Keyboard, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface RenameSheetProps {
   isOpen: boolean;
@@ -77,7 +77,6 @@ const RenameSheetContent = memo(function RenameSheetContent({
   onClose,
   onSubmit
 }: RenameSheetProps) {
-  const insets = useSafeAreaInsets();
   const isSavingRef = useRef(false);
   const [name, setName] = useState('');
   const [error, setError] = useState<string | undefined>();
@@ -184,10 +183,7 @@ const RenameSheetContent = memo(function RenameSheetContent({
       </View>
 
       <View className="border-border mt-4 border-t" />
-      <View
-        className="flex-row gap-3 px-4 pt-4"
-        style={{ paddingBottom: insets.bottom + 8 }}
-      >
+      <BottomSheetSafeFooter>
         <View className="flex-1">
           <Button variant="ghost" className="w-full" onPress={handleClose}>
             Cancel
@@ -203,7 +199,7 @@ const RenameSheetContent = memo(function RenameSheetContent({
             {submitLabel}
           </Button>
         </View>
-      </View>
+      </BottomSheetSafeFooter>
     </>
   );
 });

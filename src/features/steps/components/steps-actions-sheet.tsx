@@ -2,6 +2,7 @@ import {
   BottomSheet,
   BottomSheetDescription,
   BottomSheetHeader,
+  BottomSheetSafeContent,
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
 import { Icon } from '@/src/components/ui/icon';
@@ -9,7 +10,6 @@ import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
 import { RefreshCwIcon, SettingsIcon } from 'lucide-react-native';
 import { View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface StepsActionsSheetProps {
   availabilityLabel: string;
@@ -28,8 +28,6 @@ export function StepsActionsSheet({
   onManage,
   onRefresh
 }: StepsActionsSheetProps) {
-  const insets = useSafeAreaInsets();
-
   const handleRefresh = () => {
     onClose();
     requestAnimationFrame(() => {
@@ -51,7 +49,7 @@ export function StepsActionsSheet({
         </BottomSheetDescription>
       </BottomSheetHeader>
 
-      <View className="px-4 pt-2" style={{ paddingBottom: insets.bottom + 8 }}>
+      <BottomSheetSafeContent>
         <PressableSurface
           accessibilityLabel="Refresh steps"
           className="min-h-14 flex-row items-center justify-center gap-3 rounded-lg px-3 py-3"
@@ -76,7 +74,7 @@ export function StepsActionsSheet({
             Manage Health Connect
           </Text>
         </PressableSurface>
-      </View>
+      </BottomSheetSafeContent>
     </BottomSheet>
   );
 }

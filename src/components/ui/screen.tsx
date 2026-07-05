@@ -10,8 +10,9 @@ import {
   type ScrollView,
   type ScrollViewProps
 } from 'react-native';
-import { useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
-import { SafeAreaView } from '@/src/components/ui/safe-area-view';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+type ScreenEdge = 'top' | 'bottom' | 'left' | 'right';
 
 interface ScreenProps {
   children: ReactNode;
@@ -19,7 +20,7 @@ interface ScreenProps {
   contentClassName?: string;
   scroll?: boolean;
   withPadding?: boolean;
-  edges?: Edge[];
+  edges?: ScreenEdge[];
   footer?: ReactNode;
   scrollRef?: Ref<ScrollView>;
   /**
@@ -51,6 +52,12 @@ export function Screen({
   const insets = useSafeAreaInsets();
   const [androidKeyboardOffset, setAndroidKeyboardOffset] = useState(0);
   const hasFooter = Boolean(footer);
+  const safeAreaClassName = cn(
+    edges.includes('top') && 'pt-safe',
+    edges.includes('bottom') && 'pb-safe',
+    edges.includes('left') && 'pl-safe',
+    edges.includes('right') && 'pr-safe'
+  );
 
   useEffect(() => {
     if (Platform.OS !== 'android' || !hasFooter) {
@@ -116,19 +123,12 @@ export function Screen({
   );
 
   return (
-    <SafeAreaView
-      style={{ flex: 1 }}
-      className={cn('bg-background', className)}
-      edges={edges}
-    >
+    <View className={cn('bg-background flex-1', safeAreaClassName, className)}>
       {Platform.OS === 'ios' ? (
         <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
           {content}
           {footer ? (
-            <View
-              className="border-border bg-background border-t px-4 pt-4"
-              style={{ paddingBottom: insets.bottom + 12 }}
-            >
+            <View className="border-border bg-background pb-safe-offset-3 border-t px-4 pt-4">
               {footer}
             </View>
           ) : null}
@@ -138,10 +138,9 @@ export function Screen({
           {content}
           {footer ? (
             <View
-              className="border-border bg-background border-t px-4 pt-4"
+              className="border-border bg-background pb-safe-offset-3 border-t px-4 pt-4"
               style={{
-                marginBottom: androidKeyboardOffset,
-                paddingBottom: insets.bottom + 12
+                marginBottom: androidKeyboardOffset
               }}
             >
               {footer}
@@ -149,6 +148,6 @@ export function Screen({
           ) : null}
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }

@@ -1,6 +1,7 @@
 import {
   BottomSheet,
   BottomSheetDescription,
+  BottomSheetSafeFooter,
   BottomSheetHeader,
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
@@ -8,7 +9,6 @@ import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { XIcon } from 'lucide-react-native';
 import { View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface DiscardWorkoutSheetProps {
   isOpen: boolean;
@@ -27,8 +27,6 @@ export const DiscardWorkoutSheet = ({
   onResume,
   onDiscardAndStart
 }: DiscardWorkoutSheetProps) => {
-  const insets = useSafeAreaInsets();
-
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} enableDynamicSizing>
       <BottomSheetHeader className="flex-row items-center justify-between">
@@ -45,12 +43,7 @@ export const DiscardWorkoutSheet = ({
 
       <View className="border-border mt-4 border-t" />
 
-      <View
-        className="flex-row gap-3 px-4 pt-4"
-        style={{
-          paddingBottom: insets.bottom + 8
-        }}
-      >
+      <BottomSheetSafeFooter>
         <View className="flex-1">
           <Button variant="ghost" className="w-full" onPress={onResume}>
             Resume workout
@@ -65,7 +58,7 @@ export const DiscardWorkoutSheet = ({
             Discard and start
           </Button>
         </View>
-      </View>
+      </BottomSheetSafeFooter>
     </BottomSheet>
   );
 };

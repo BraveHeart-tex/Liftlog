@@ -53,7 +53,7 @@ export default defineConfig([
               name: 'react-native-safe-area-context',
               importNames: ['SafeAreaView'],
               message:
-                'Use SafeAreaView from @/src/components/ui/safe-area-view to avoid jumpy React Navigation layouts.'
+                'Use NativeWind safe-area utilities for static safe-area spacing. Use useSafeAreaInsets only for numeric calculations.'
             },
             {
               name: 'react-native',

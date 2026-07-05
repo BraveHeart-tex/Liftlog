@@ -1,3 +1,4 @@
+import { BottomSheetSafeFooter } from '@/src/components/ui/bottom-sheet';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { PressableSurface } from '@/src/components/ui/pressable-surface';
@@ -8,7 +9,6 @@ import { useAudioPlayer } from 'expo-audio';
 import { RotateCcwIcon, SaveIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type StopwatchStatus = 'idle' | 'running' | 'paused';
 
@@ -25,7 +25,6 @@ export function StopwatchContent({
   onClose,
   onConfirm
 }: StopwatchContentProps) {
-  const insets = useSafeAreaInsets();
   const [status, setStatus] = useState<StopwatchStatus>('idle');
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [accumulatedMs, setAccumulatedMs] = useState(0);
@@ -171,10 +170,7 @@ export function StopwatchContent({
         </PressableSurface>
       </View>
 
-      <View
-        className="flex-row gap-3 px-4 pt-6"
-        style={{ paddingBottom: insets.bottom + 16 }}
-      >
+      <BottomSheetSafeFooter className="pb-safe-offset-4 pt-6">
         <View className="flex-1">
           <Button
             variant="secondary"
@@ -204,7 +200,7 @@ export function StopwatchContent({
             Save
           </Button>
         </View>
-      </View>
+      </BottomSheetSafeFooter>
     </>
   );
 }

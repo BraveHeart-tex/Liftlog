@@ -1,4 +1,3 @@
-import { SafeAreaView } from '@/src/components/ui/safe-area-view';
 import {
   LogHeader,
   type LogView
@@ -13,11 +12,11 @@ export default function LogScreen() {
   const selectedView = Platform.OS === 'android' ? view : 'workouts';
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top']}>
+    <View className="bg-background pt-safe flex-1">
       <View className="px-4 pt-6">
         <LogHeader view={selectedView} onViewChange={setView} />
       </View>
       {selectedView === 'steps' ? <StepsContent /> : <WorkoutLogContent />}
-    </SafeAreaView>
+    </View>
   );
 }

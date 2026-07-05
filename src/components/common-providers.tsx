@@ -7,10 +7,6 @@ import { AppThemeProvider } from '@/src/theme/app-theme-provider';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import type { PropsWithChildren } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import {
-  initialWindowMetrics,
-  SafeAreaProvider
-} from 'react-native-safe-area-context';
 
 interface CommonProvidersProps extends PropsWithChildren {
   onDatabaseError?: () => void;
@@ -24,23 +20,18 @@ export function CommonProviders({
 }: CommonProvidersProps) {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider
-        initialMetrics={initialWindowMetrics}
-        style={{ flex: 1 }}
-      >
-        <AppThemeProvider>
-          <DatabaseProvider onError={onDatabaseError} onReady={onDatabaseReady}>
-            <ScreenErrorBoundary>
-              <BottomSheetModalProvider>
-                {children}
-                <StepsSyncHost />
-                <RestTimerHost />
-                <SnackbarHost />
-              </BottomSheetModalProvider>
-            </ScreenErrorBoundary>
-          </DatabaseProvider>
-        </AppThemeProvider>
-      </SafeAreaProvider>
+      <AppThemeProvider>
+        <DatabaseProvider onError={onDatabaseError} onReady={onDatabaseReady}>
+          <ScreenErrorBoundary>
+            <BottomSheetModalProvider>
+              {children}
+              <StepsSyncHost />
+              <RestTimerHost />
+              <SnackbarHost />
+            </BottomSheetModalProvider>
+          </ScreenErrorBoundary>
+        </DatabaseProvider>
+      </AppThemeProvider>
     </GestureHandlerRootView>
   );
 }

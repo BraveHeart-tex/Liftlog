@@ -3,6 +3,7 @@ import {
   BottomSheet,
   BottomSheetDescription,
   BottomSheetHeader,
+  BottomSheetSafeFooter,
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
 import { Button } from '@/src/components/ui/button';
@@ -18,7 +19,6 @@ import {
   type ComponentRef
 } from 'react';
 import { Keyboard, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface CreateCustomExerciseSheetProps {
   isOpen: boolean;
@@ -68,7 +68,6 @@ const CreateCustomExerciseSheetContent = memo(
     onClose,
     onSave
   }: CreateCustomExerciseSheetProps) {
-    const insets = useSafeAreaInsets();
     const scrollRef =
       useRef<ComponentRef<typeof StyledBottomSheetScrollView>>(null);
     const [errorScrollRequestId, setErrorScrollRequestId] = useState(0);
@@ -148,10 +147,7 @@ const CreateCustomExerciseSheetContent = memo(
           />
         </StyledBottomSheetScrollView>
 
-        <View
-          className="border-border border-t px-4 pt-4"
-          style={{ paddingBottom: insets.bottom + 12 }}
-        >
+        <BottomSheetSafeFooter className="border-border pb-safe-offset-3 flex-col gap-0 border-t">
           <View className="flex-row gap-3">
             <View className="flex-1">
               <Button variant="secondary" onPress={handleClose}>
@@ -162,7 +158,7 @@ const CreateCustomExerciseSheetContent = memo(
               <Button onPress={handleSave}>Save</Button>
             </View>
           </View>
-        </View>
+        </BottomSheetSafeFooter>
       </>
     );
   }

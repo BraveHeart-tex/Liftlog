@@ -1,6 +1,7 @@
 import {
   BottomSheet,
   BottomSheetHeader,
+  BottomSheetSafeContent,
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
 import { Icon } from '@/src/components/ui/icon';
@@ -8,7 +9,6 @@ import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
 import { BookmarkIcon, PencilIcon, Trash2Icon } from 'lucide-react-native';
 import { View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ActiveWorkoutActionsSheetProps {
   isOpen: boolean;
@@ -27,8 +27,6 @@ export function ActiveWorkoutActionsSheet({
   onSaveTemplate,
   onDiscard
 }: ActiveWorkoutActionsSheetProps) {
-  const insets = useSafeAreaInsets();
-
   const handleRename = () => {
     onClose();
     requestAnimationFrame(onRename);
@@ -56,7 +54,7 @@ export function ActiveWorkoutActionsSheet({
         </BottomSheetTitle>
       </BottomSheetHeader>
 
-      <View className="px-4 pt-2" style={{ paddingBottom: insets.bottom + 8 }}>
+      <BottomSheetSafeContent>
         <PressableSurface
           accessibilityLabel="Rename workout"
           className="min-h-14 flex-row items-center justify-center gap-3 rounded-lg px-3 py-3"
@@ -92,7 +90,7 @@ export function ActiveWorkoutActionsSheet({
             Discard workout
           </Text>
         </PressableSurface>
-      </View>
+      </BottomSheetSafeContent>
     </BottomSheet>
   );
 }

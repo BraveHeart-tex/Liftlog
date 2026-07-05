@@ -224,10 +224,34 @@ export function BottomSheetContent({
 }: BottomSheetSectionProps) {
   return (
     <StyledBottomSheetScrollView
-      contentContainerClassName={cn('px-4', className)}
+      contentContainerClassName={cn('px-4 pb-safe-offset-4', className)}
       showsVerticalScrollIndicator={false}
     >
       {children}
     </StyledBottomSheetScrollView>
+  );
+}
+
+export function BottomSheetSafeContent({
+  children,
+  className
+}: BottomSheetSectionProps) {
+  return (
+    <View className={cn('pb-safe-offset-2 px-4 pt-2', className)}>
+      {children}
+    </View>
+  );
+}
+
+export function BottomSheetSafeFooter({
+  children,
+  className
+}: BottomSheetSectionProps) {
+  return (
+    <View
+      className={cn('pb-safe-offset-2 flex-row gap-3 px-4 pt-4', className)}
+    >
+      {children}
+    </View>
   );
 }
