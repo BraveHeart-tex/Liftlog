@@ -3,9 +3,11 @@ import { Text } from '@/src/components/ui/text';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, PanResponder, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
 
 const DEFAULT_SNACKBAR_DURATION_MS = 4000;
+const SNACKBAR_BOTTOM_OFFSET = 88;
 const SWIPE_DISMISS_DISTANCE = 48;
 const SWIPE_DISMISS_VELOCITY = 0.75;
 
@@ -81,6 +83,7 @@ export function dismissSnackbar(key?: string) {
 }
 
 export function SnackbarHost() {
+  const insets = useSafeAreaInsets();
   const message = useSnackbarStore(state => state.message);
   const dismissSnackbar = useSnackbarStore(state => state.dismissSnackbar);
   const [renderedMessage, setRenderedMessage] =
@@ -176,7 +179,8 @@ export function SnackbarHost() {
   return (
     <View
       pointerEvents="box-none"
-      className="bottom-safe-offset-[88px] absolute inset-x-0 z-50 px-4"
+      className="absolute inset-x-0 z-50 px-4"
+      style={{ bottom: insets.bottom + SNACKBAR_BOTTOM_OFFSET }}
     >
       <Animated.View
         style={{
