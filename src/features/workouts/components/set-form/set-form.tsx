@@ -38,7 +38,10 @@ interface SetFormProps {
     rowKey: string,
     layout: LayoutChangeEvent['nativeEvent']['layout']
   ) => void;
-  onAddSet: (data: SetValues & { order: Set['order'] }) => Set | Promise<Set>;
+  onAddSet: (
+    data: SetValues & { order: Set['order'] },
+    options?: { shouldScrollAfterMutation?: boolean }
+  ) => Set | Promise<Set>;
   onUpdateSet: (
     data: SetValues & { setId: Set['id'] }
   ) => Set | undefined | Promise<Set | undefined>;

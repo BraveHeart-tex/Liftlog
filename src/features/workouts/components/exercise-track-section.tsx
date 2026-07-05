@@ -171,11 +171,14 @@ export function ExerciseTrackSection({
   });
 
   const handleAddSet = async (
-    data: Parameters<typeof _handleAddSet>[0]
+    data: Parameters<typeof _handleAddSet>[0],
+    options?: { shouldScrollAfterMutation?: boolean }
   ): Promise<Set> => {
     const createdSet = await Promise.resolve(_handleAddSet(data));
 
-    schedulePostMutationWork({ shouldScroll: true });
+    schedulePostMutationWork({
+      shouldScroll: options?.shouldScrollAfterMutation ?? true
+    });
 
     return createdSet;
   };
@@ -185,7 +188,7 @@ export function ExerciseTrackSection({
   ): Promise<Set | undefined> => {
     const updatedSet = await Promise.resolve(_handleUpdateSet(data));
 
-    schedulePostMutationWork({ shouldScroll: true });
+    schedulePostMutationWork({ shouldScroll: false });
 
     return updatedSet;
   };

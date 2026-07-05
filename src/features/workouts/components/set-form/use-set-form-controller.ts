@@ -33,7 +33,10 @@ interface UseSetFormControllerArgs {
   weightUnit: ReturnType<typeof useSettings>['weightUnit'];
   sets: Set[];
   previousSets: Set[];
-  onAddSet: (data: SetValues & { order: Set['order'] }) => Set | Promise<Set>;
+  onAddSet: (
+    data: SetValues & { order: Set['order'] },
+    options?: { shouldScrollAfterMutation?: boolean }
+  ) => Set | Promise<Set>;
   onUpdateSet: (
     data: SetValues & { setId: Set['id'] }
   ) => Set | undefined | Promise<Set | undefined>;
@@ -397,7 +400,10 @@ export function useSetFormController({
 
     try {
       const createdSet = await Promise.resolve(
-        onAddSet({ ...validatedValues, order: row.order })
+        onAddSet(
+          { ...validatedValues, order: row.order },
+          { shouldScrollAfterMutation: false }
+        )
       );
 
       persistedSetIdsWithoutEnterAnimationRef.current.add(createdSet.id);
@@ -454,7 +460,10 @@ export function useSetFormController({
 
     try {
       await Promise.resolve(
-        onAddSet({ ...row.validatedValues, order: getNextSetOrder() })
+        onAddSet(
+          { ...row.validatedValues, order: getNextSetOrder() },
+          { shouldScrollAfterMutation: true }
+        )
       );
     } catch (error) {
       console.error('Failed to copy set', error);
