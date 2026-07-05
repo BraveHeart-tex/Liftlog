@@ -10,12 +10,12 @@ import { formatWeightForUnit } from '@/src/lib/utils/weight.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { GripIcon, TrashIcon } from 'lucide-react-native';
 import { Alert, View } from 'react-native';
+import Sortable from 'react-native-sortables';
 
 interface ActiveWorkoutExerciseEditRowProps {
   item: WorkoutExerciseWithSets;
   className?: string;
   isDragging: boolean;
-  onDrag: () => void;
   shouldShowDragHandle: boolean;
 }
 
@@ -23,7 +23,6 @@ export function ActiveWorkoutExerciseEditRow({
   item,
   className,
   isDragging,
-  onDrag,
   shouldShowDragHandle = true
 }: ActiveWorkoutExerciseEditRowProps) {
   const { weightUnit } = useSettings();
@@ -95,15 +94,16 @@ export function ActiveWorkoutExerciseEditRow({
       </View>
 
       {shouldShowDragHandle && (
-        <Button
-          variant="ghost"
-          size="icon"
-          disabled={isDragging}
-          accessibilityLabel="Drag exercise"
-          onPressIn={onDrag}
-        >
-          <Icon as={GripIcon} size={iconSizes.sm} tone="mutedForeground" />
-        </Button>
+        <Sortable.Handle>
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={isDragging}
+            accessibilityLabel="Drag exercise"
+          >
+            <Icon as={GripIcon} size={iconSizes.sm} tone="mutedForeground" />
+          </Button>
+        </Sortable.Handle>
       )}
     </View>
   );

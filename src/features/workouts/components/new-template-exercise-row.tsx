@@ -7,12 +7,12 @@ import { cn } from '@/src/lib/utils/cn.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { GripIcon, TrashIcon } from 'lucide-react-native';
 import { View } from 'react-native';
+import Sortable from 'react-native-sortables';
 
 interface NewTemplateExerciseRowProps {
   exercise: ExerciseListItem;
   isDragging: boolean;
   onDelete: () => void;
-  onDrag: () => void;
   shouldShowDragHandle: boolean;
 }
 
@@ -20,7 +20,6 @@ export function NewTemplateExerciseRow({
   exercise,
   isDragging,
   onDelete,
-  onDrag,
   shouldShowDragHandle
 }: NewTemplateExerciseRowProps) {
   const subtitle =
@@ -52,15 +51,16 @@ export function NewTemplateExerciseRow({
       </View>
 
       {shouldShowDragHandle && (
-        <Button
-          variant="ghost"
-          size="icon"
-          disabled={isDragging}
-          accessibilityLabel={`Reorder ${exercise.name}`}
-          onPressIn={onDrag}
-        >
-          <Icon as={GripIcon} size={iconSizes.sm} tone="mutedForeground" />
-        </Button>
+        <Sortable.Handle>
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={isDragging}
+            accessibilityLabel={`Reorder ${exercise.name}`}
+          >
+            <Icon as={GripIcon} size={iconSizes.sm} tone="mutedForeground" />
+          </Button>
+        </Sortable.Handle>
       )}
     </View>
   );

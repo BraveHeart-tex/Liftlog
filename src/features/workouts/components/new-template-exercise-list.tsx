@@ -1,14 +1,15 @@
-import type { Exercise } from '@/src/db';
 import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import { NewTemplateExerciseRow } from '@/src/features/workouts/components/new-template-exercise-row';
+import type { ComponentRef } from 'react';
 import { useCallback } from 'react';
-import DraggableFlatList, {
-  type DragEndParams,
-  type RenderItemParams
-} from 'react-native-draggable-flatlist';
+import type Animated from 'react-native-reanimated';
+import { useAnimatedRef } from 'react-native-reanimated';
+import Sortable, {
+  type SortableGridDragEndParams,
+  type SortableGridRenderItem
+} from 'react-native-sortables';
 
-const listContainerStyle = { flex: 1 };
-const contentContainerStyle = { paddingBottom: 24 };
+const DRAG_ACTIVATION_DELAY_MS = 0;
 
 interface NewTemplateExerciseListProps {
   exercises: ExerciseListItem[];
@@ -22,14 +23,15 @@ export function NewTemplateExerciseList({
   onReorderExercises
 }: NewTemplateExerciseListProps) {
   const shouldShowDragHandle = exercises.length > 1;
+  const scrollableRef =
+    useAnimatedRef<ComponentRef<typeof Animated.ScrollView>>();
 
-  const renderExercise = useCallback(
-    ({ item, drag, isActive }: RenderItemParams<ExerciseListItem>) => (
+  const renderExercise = useCallback<SortableGridRenderItem<ExerciseListItem>>(
+    ({ item }) => (
       <NewTemplateExerciseRow
         exercise={item}
-        isDragging={isActive}
+        isDragging={false}
         onDelete={() => onDeleteExercise(item.id)}
-        onDrag={drag}
         shouldShowDragHandle={shouldShowDragHandle}
       />
     ),
@@ -37,28 +39,44 @@ export function NewTemplateExerciseList({
   );
 
   const handleDragEnd = useCallback(
-    ({ data, from, to }: DragEndParams<ExerciseListItem>) => {
-      if (from !== to) {
+    ({
+      data,
+      fromIndex,
+      toIndex
+    }: SortableGridDragEndParams<ExerciseListItem>) => {
+      if (fromIndex !== toIndex) {
         onReorderExercises(data);
       }
     },
     [onReorderExercises]
   );
 
-  // TODO(FE-195): This is bad, but we have to use to solve the list flickering issue
   const keyExtractor = useCallback(
-    (exercise: Exercise, index: number) => `${exercise.id}-${index}`,
+    (exercise: ExerciseListItem) => String(exercise.id),
     []
   );
 
   return (
-    <DraggableFlatList
+    <Sortable.Grid
+      columns={1}
+      customHandle
       data={exercises}
+      dimensionsAnimationType="none"
+      dragActivationDelay={DRAG_ACTIVATION_DELAY_MS}
+      activationAnimationDuration={120}
+      dropAnimationDuration={120}
+      itemEntering={null}
+      itemExiting={null}
       keyExtractor={keyExtractor}
-      containerStyle={listContainerStyle}
-      contentContainerStyle={contentContainerStyle}
-      showsVerticalScrollIndicator={false}
       renderItem={renderExercise}
+      scrollableRef={scrollableRef}
+      strategy="insert"
+      overDrag="vertical"
+      activeItemScale={1.02}
+      activeItemOpacity={0.96}
+      inactiveItemOpacity={1}
+      inactiveItemScale={1}
+      hapticsEnabled={false}
       onDragEnd={handleDragEnd}
     />
   );

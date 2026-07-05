@@ -1,14 +1,17 @@
 import type { WorkoutExercise } from '@/src/db/schema';
 import { ActiveWorkoutExerciseEditRow } from '@/src/features/workouts/components/active-workout-exercise-edit-row';
 import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
+import type { ComponentRef } from 'react';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
-import DraggableFlatList, {
-  type DragEndParams,
-  type RenderItemParams
-} from 'react-native-draggable-flatlist';
+import type Animated from 'react-native-reanimated';
+import { useAnimatedRef } from 'react-native-reanimated';
+import Sortable, {
+  type SortableGridDragEndParams,
+  type SortableGridRenderItem
+} from 'react-native-sortables';
 
-const draggableListContainerStyle = { flex: 1 };
+const DRAG_ACTIVATION_DELAY_MS = 0;
 
 interface ActiveWorkoutExerciseEditListProps {
   rows: WorkoutExerciseWithSets[];
@@ -23,6 +26,8 @@ export const ActiveWorkoutExerciseEditList = memo(
     onReorderExercises
   }: ActiveWorkoutExerciseEditListProps) {
     const [orderedRows, setOrderedRows] = useState(rows);
+    const scrollableRef =
+      useAnimatedRef<ComponentRef<typeof Animated.ScrollView>>();
 
     const rowIds = rows.map(r => r.workoutExercise.id).join(',');
     const shouldShowDragHandle = rows.length > 1;
@@ -33,30 +38,31 @@ export const ActiveWorkoutExerciseEditList = memo(
       setOrderedRows(rows);
     }, [rowIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const renderRow = useCallback(
-      ({ item, drag, isActive }: RenderItemParams<WorkoutExerciseWithSets>) => (
+    const renderRow = useCallback<
+      SortableGridRenderItem<WorkoutExerciseWithSets>
+    >(
+      ({ item }) => (
         <ActiveWorkoutExerciseEditRow
           item={item}
-          isDragging={isActive}
-          onDrag={drag}
+          isDragging={false}
           shouldShowDragHandle={shouldShowDragHandle}
         />
       ),
       [shouldShowDragHandle]
     );
 
-    const renderFooter = useCallback(() => <View className="h-6" />, []);
-
-    // TODO(FE-195): This is bad, but we have to use to solve the list flickering issue
     const getRowKey = useCallback(
-      (item: WorkoutExerciseWithSets, index: number) =>
-        `${item.workoutExercise.id}-${index}`,
+      (item: WorkoutExerciseWithSets) => String(item.workoutExercise.id),
       []
     );
 
     const handleDragEnd = useCallback(
-      ({ data, from, to }: DragEndParams<WorkoutExerciseWithSets>) => {
-        if (from === to) {
+      ({
+        data,
+        fromIndex,
+        toIndex
+      }: SortableGridDragEndParams<WorkoutExerciseWithSets>) => {
+        if (fromIndex === toIndex) {
           return;
         }
 
@@ -77,13 +83,26 @@ export const ActiveWorkoutExerciseEditList = memo(
 
     return (
       <View className="flex-1 px-4">
-        <DraggableFlatList
+        <Sortable.Grid
+          columns={1}
+          customHandle
           data={orderedRows}
+          dimensionsAnimationType="none"
+          dragActivationDelay={DRAG_ACTIVATION_DELAY_MS}
+          activationAnimationDuration={120}
+          dropAnimationDuration={120}
+          itemEntering={null}
+          itemExiting={null}
           keyExtractor={getRowKey}
-          containerStyle={draggableListContainerStyle}
-          showsVerticalScrollIndicator={false}
-          ListFooterComponent={renderFooter}
           renderItem={renderRow}
+          scrollableRef={scrollableRef}
+          strategy="insert"
+          overDrag="vertical"
+          activeItemScale={1.02}
+          activeItemOpacity={0.96}
+          inactiveItemOpacity={1}
+          inactiveItemScale={1}
+          hapticsEnabled={false}
           onDragEnd={handleDragEnd}
         />
       </View>
