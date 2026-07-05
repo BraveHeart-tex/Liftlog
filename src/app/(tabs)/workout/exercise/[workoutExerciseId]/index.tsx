@@ -7,7 +7,7 @@ import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sh
 import { RestTimerTrigger } from '@/src/features/workouts/components/rest-timer-trigger';
 import { useActiveWorkoutExerciseDetail } from '@/src/features/workouts/hooks/use-active-workout-exercise-detail';
 import { getRouteParamId } from '@/src/lib/utils/route.utils';
-import { useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { KeyboardAvoidingView, Platform, View } from 'react-native';
 
@@ -49,16 +49,16 @@ export default function ActiveWorkoutExerciseScreen() {
   }
 
   return (
-    <Screen withPadding={false}>
+    <Screen withPadding={false} edges={[]}>
+      <Stack.Screen
+        options={{
+          headerRight: () => <RestTimerTrigger onPress={openRestTimer} />
+        }}
+      />
+
       <View className="flex-1 px-4">
-        <View className="pt-4 pb-3">
-          <View className="flex-row items-center gap-3">
-            <BackButton />
-            <Text variant="h2" className="flex-1 text-center" numberOfLines={1}>
-              {item.exercise?.name ?? 'Unknown exercise'}
-            </Text>
-            <RestTimerTrigger onPress={openRestTimer} />
-          </View>
+        <View className="pt-6 pb-4">
+          <Text variant="h2">{item.exercise?.name ?? 'Unknown exercise'}</Text>
         </View>
         <KeyboardAvoidingView
           style={{ flex: 1 }}

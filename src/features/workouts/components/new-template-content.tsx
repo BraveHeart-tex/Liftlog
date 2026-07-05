@@ -1,8 +1,6 @@
-import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
 import { Screen } from '@/src/components/ui/screen';
-import { Text } from '@/src/components/ui/text';
 import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import { TemplateExerciseEditor } from '@/src/features/workouts/components/template-exercise-editor';
 import { useSaveWorkoutTemplate } from '@/src/features/workouts/hooks/use-save-workout-template';
@@ -71,6 +69,7 @@ export function NewTemplateContent() {
   return (
     <Screen
       withPadding={false}
+      edges={[]}
       footer={
         <Button
           className="w-full"
@@ -83,13 +82,7 @@ export function NewTemplateContent() {
       }
     >
       <View className="px-4 pt-6">
-        <View className="flex-row items-center gap-3">
-          <BackButton />
-          <Text variant="h1">New template</Text>
-        </View>
-
         <Input
-          wrapperClassName="mt-6"
           label="Template name"
           value={name}
           onChangeText={setName}

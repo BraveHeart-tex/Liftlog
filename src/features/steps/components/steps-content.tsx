@@ -13,13 +13,13 @@ import { StepsGoalConsistencyCard } from '@/src/features/steps/components/steps-
 import { StepsSummaryCards } from '@/src/features/steps/components/steps-summary-cards';
 import { StepsUnavailableState } from '@/src/features/steps/components/steps-unavailable-state';
 import { TodayStepRadialCard } from '@/src/features/steps/components/today-step-radial-card';
+import { useStepsScreen } from '@/src/features/steps/hooks/use-steps-screen';
 import {
   getAvailabilityLabel,
   getLiveStepCounterBadgeLabel,
   getLiveStepCounterMessage
 } from '@/src/features/steps/steps-display.utils';
-import { useStepsScreen } from '@/src/features/steps/hooks/use-steps-screen';
-import { EllipsisVerticalIcon } from 'lucide-react-native';
+import { EllipsisIcon } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 
@@ -127,11 +127,7 @@ export function StepsContent() {
                 accessibilityLabel="Open step actions"
                 onPress={openActionsSheet}
               >
-                <Icon
-                  as={EllipsisVerticalIcon}
-                  size="md"
-                  tone="secondaryForeground"
-                />
+                <Icon as={EllipsisIcon} size="md" tone="secondaryForeground" />
               </Button>
             </View>
 

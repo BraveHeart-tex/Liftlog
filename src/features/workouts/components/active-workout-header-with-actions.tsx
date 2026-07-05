@@ -1,20 +1,22 @@
+import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
 import { RenameSheet } from '@/src/components/ui/rename-sheet';
+import { Text } from '@/src/components/ui/text';
 import type { Workout, WorkoutExercise } from '@/src/db';
 import { ActiveWorkoutActionsSheet } from '@/src/features/workouts/components/active-workout-actions-sheet';
-import { ActiveWorkoutHeader } from '@/src/features/workouts/components/active-workout-header';
 import { ActiveWorkoutHeaderDuration } from '@/src/features/workouts/components/active-workout-header-duration';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
 import { useWorkoutDelete } from '@/src/features/workouts/hooks/use-workout-delete';
 import { useWorkoutRename } from '@/src/features/workouts/hooks/use-workout-rename';
-import { router } from 'expo-router';
+import { Stack, router } from 'expo-router';
+import { EllipsisIcon } from 'lucide-react-native';
 import { Fragment, useCallback, useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, View } from 'react-native';
 
 interface ActiveWorkoutHeaderWithActionsProps {
   workoutName: string;
   workoutId: Workout['id'];
   startedAt: Workout['startedAt'];
-  canFinish: boolean;
   canSaveTemplate: boolean;
   workoutExerciseRows: Pick<WorkoutExercise, 'exerciseId' | 'order'>[];
 }
@@ -23,7 +25,6 @@ export const ActiveWorkoutHeaderWithActions = ({
   workoutName,
   workoutId,
   startedAt,
-  canFinish,
   canSaveTemplate,
   workoutExerciseRows
 }: ActiveWorkoutHeaderWithActionsProps) => {
@@ -108,13 +109,26 @@ export const ActiveWorkoutHeaderWithActions = ({
 
   return (
     <Fragment>
-      <ActiveWorkoutHeader
-        workoutName={workoutName}
-        workoutId={workoutId}
-        duration={<ActiveWorkoutHeaderDuration startedAt={startedAt} />}
-        canFinish={canFinish}
-        onOpenActions={openActions}
+      <Stack.Screen
+        options={{
+          title: 'Active workout',
+          headerRight: () => (
+            <Button
+              variant="ghost"
+              size="icon"
+              accessibilityLabel="Workout actions"
+              onPress={openActions}
+            >
+              <Icon as={EllipsisIcon} size="lg" tone="foreground" />
+            </Button>
+          )
+        }}
       />
+
+      <View className="px-4 pt-4 pb-3">
+        <Text variant="h2">{workoutName}</Text>
+        <ActiveWorkoutHeaderDuration startedAt={startedAt} />
+      </View>
 
       <ActiveWorkoutActionsSheet
         isOpen={isActionSheetOpen}

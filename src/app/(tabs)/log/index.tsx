@@ -1,9 +1,9 @@
+import { StepsContent } from '@/src/features/steps/components/steps-content';
 import {
   LogHeader,
   type LogView
 } from '@/src/features/workout-log/components/log-header';
 import { WorkoutLogContent } from '@/src/features/workout-log/components/workout-log-content';
-import { StepsContent } from '@/src/features/steps/components/steps-content';
 import { useState } from 'react';
 import { Platform, View } from 'react-native';
 

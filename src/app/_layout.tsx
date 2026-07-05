@@ -19,6 +19,14 @@ function RootNavigator() {
     <Stack
       screenOptions={{
         headerShown: false,
+        headerShadowVisible: true,
+        headerStyle: {
+          backgroundColor: colors.card
+        },
+        headerTintColor: colors.foreground,
+        headerTitleStyle: {
+          color: colors.foreground
+        },
         contentStyle: {
           backgroundColor: colors.background
         }
@@ -30,22 +38,39 @@ function RootNavigator() {
       <Stack.Screen
         name="settings"
         singular
-        options={{ animation: 'slide_from_right' }}
+        options={{
+          animation: 'slide_from_right',
+          headerShown: true,
+          title: 'Settings'
+        }}
       />
       <Stack.Screen
         name="exercises/[id]"
         singular
-        options={{ animation: 'slide_from_right' }}
+        options={{
+          animation: 'slide_from_right',
+          headerShown: true,
+          title: 'Exercise'
+        }}
       />
       <Stack.Screen
         name="exercises/new"
         singular
-        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+        options={{
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+          headerShown: true,
+          title: 'Create exercise'
+        }}
       />
       <Stack.Screen
         name="workouts/[id]"
         singular
-        options={{ animation: 'slide_from_right' }}
+        options={{
+          animation: 'slide_from_right',
+          headerShown: true,
+          title: 'Workout'
+        }}
       />
       <Stack.Screen
         name="workouts/backfill/[id]"
@@ -58,22 +83,39 @@ function RootNavigator() {
       />
       <Stack.Screen
         name="workouts/edit/[id]"
-        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+        options={{
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+          title: 'Edit workout'
+        }}
       />
       <Stack.Screen
         name="workouts/edit/exercise/[workoutExerciseId]"
         singular
-        options={{ animation: 'slide_from_right' }}
+        options={{
+          animation: 'slide_from_right',
+          headerShown: true,
+          title: 'Exercise'
+        }}
       />
       <Stack.Screen
         name="workouts/templates/[id]"
         singular
-        options={{ animation: 'slide_from_right' }}
+        options={{
+          animation: 'slide_from_right',
+          headerShown: true,
+          title: 'Template'
+        }}
       />
       <Stack.Screen
         name="workouts/templates/new"
         singular
-        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+        options={{
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+          headerShown: true,
+          title: 'Create template'
+        }}
       />
     </Stack>
   );

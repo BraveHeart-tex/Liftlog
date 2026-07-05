@@ -14,10 +14,11 @@ import { HistoricalWorkoutHeader } from '@/src/features/workouts/components/hist
 import { RestTimerWidget } from '@/src/features/workouts/components/rest-timer-widget';
 import { useActiveWorkoutActions } from '@/src/features/workouts/hooks/use-active-workout-actions';
 import { useActiveWorkoutContent as useActiveWorkoutContentData } from '@/src/features/workouts/hooks/use-active-workout-content';
+import { useFinishWorkout } from '@/src/features/workouts/hooks/use-finish-workout';
 import { useReorderWorkoutExercises } from '@/src/features/workouts/hooks/use-reorder-workout-exercises';
 import { triggerWorkoutEditModeHaptics } from '@/src/features/workouts/workout.haptics';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
-import { PlusIcon } from 'lucide-react-native';
+import { CircleCheckBig, PlusIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Keyboard, View } from 'react-native';
 import Animated, {
@@ -71,6 +72,7 @@ export function ActiveWorkoutContent({
       setIsExercisePickerOpen
     });
   const reorderWorkoutExercises = useReorderWorkoutExercises(activeWorkout.id);
+  const finishWorkout = useFinishWorkout();
 
   const workoutName = activeWorkout.name;
   const hasWorkoutExercises =
@@ -99,6 +101,21 @@ export function ActiveWorkoutContent({
     () => setIsExercisePickerOpen(true),
     [setIsExercisePickerOpen]
   );
+  const confirmFinishWorkout = useCallback(() => {
+    Alert.alert(
+      'Finish workout?',
+      `"${workoutName}" will be saved to your workout history.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Finish',
+          onPress: () => {
+            finishWorkout(activeWorkout.id);
+          }
+        }
+      ]
+    );
+  }, [activeWorkout.id, finishWorkout, workoutName]);
   const closeExercisePicker = useCallback(
     () => setIsExercisePickerOpen(false),
     [setIsExercisePickerOpen]
@@ -154,6 +171,7 @@ export function ActiveWorkoutContent({
     <ActiveWorkoutEditHeader workoutName={workoutName} onDone={exitEditMode} />
   ) : mode === 'historical' || mode === 'historical-edit' ? (
     <HistoricalWorkoutHeader
+      title={mode === 'historical-edit' ? 'Edit workout' : 'Log workout'}
       workoutName={workoutName}
       startedAt={activeWorkout.startedAt}
       canSave={canSaveHistoricalWorkout}
@@ -165,7 +183,6 @@ export function ActiveWorkoutContent({
       workoutName={workoutName}
       workoutId={activeWorkout.id}
       startedAt={activeWorkout.startedAt}
-      canFinish={canFinishWorkout}
       canSaveTemplate={hasWorkoutExercises}
       workoutExerciseRows={workoutExerciseRows.map(workoutExercise => ({
         exerciseId: workoutExercise.exerciseId,
@@ -177,7 +194,7 @@ export function ActiveWorkoutContent({
   const headerKey = isEditingExercises ? 'edit' : mode;
 
   return (
-    <Screen withPadding={false}>
+    <Screen withPadding={false} edges={[]}>
       <Animated.View
         key={headerKey}
         entering={headerEntering}
@@ -228,15 +245,34 @@ export function ActiveWorkoutContent({
             exiting={chromeExiting}
             layout={chromeLayout}
           >
-            <Button
-              variant="secondary"
-              className="w-full"
-              disabled={isLoadingWorkoutExercises}
-              leftIcon={<Icon as={PlusIcon} size="sm" tone="foreground" />}
-              onPress={openExercisePicker}
-            >
-              Add exercise
-            </Button>
+            <View className="flex-row items-center gap-3">
+              <View className="flex-1">
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  disabled={isLoadingWorkoutExercises}
+                  leftIcon={<Icon as={PlusIcon} size="sm" tone="foreground" />}
+                  onPress={openExercisePicker}
+                >
+                  Add exercise
+                </Button>
+              </View>
+
+              <Button
+                variant="primary"
+                disabled={!canFinishWorkout}
+                leftIcon={
+                  <Icon
+                    as={CircleCheckBig}
+                    size="sm"
+                    tone="primaryForeground"
+                  />
+                }
+                onPress={confirmFinishWorkout}
+              >
+                Finish
+              </Button>
+            </View>
           </Animated.View>
         )}
 

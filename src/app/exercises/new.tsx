@@ -1,4 +1,3 @@
-import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
@@ -58,6 +57,7 @@ export default function NewExerciseScreen() {
   return (
     <Screen
       scroll
+      edges={[]}
       scrollRef={scrollRef}
       footer={
         <View className="flex-row gap-3">
@@ -73,15 +73,9 @@ export default function NewExerciseScreen() {
       }
     >
       <View>
-        <View className="flex-row items-center gap-3">
-          <BackButton />
-          <View className="flex-1">
-            <Text variant="h1">Create exercise</Text>
-            <Text variant="small" tone="muted" className="mt-1">
-              Add only what you need for fast logging.
-            </Text>
-          </View>
-        </View>
+        <Text variant="small" tone="muted">
+          Add only what you need for fast logging.
+        </Text>
 
         <View className="mt-6">
           <ExerciseMetadataForm

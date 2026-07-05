@@ -1,4 +1,3 @@
-import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
@@ -186,6 +185,7 @@ export default function EditExerciseScreen() {
   return (
     <Screen
       scroll
+      edges={[]}
       scrollRef={scrollRef}
       footer={
         <View className="flex-row gap-3">
@@ -203,15 +203,10 @@ export default function EditExerciseScreen() {
       }
     >
       <View>
-        <View className="flex-row items-center gap-3">
-          <BackButton />
-          <View className="flex-1">
-            <Text variant="h1">Edit details</Text>
-            <Text variant="small" tone="muted" className="mt-1">
-              Update category and muscle groups for this custom exercise.
-            </Text>
-          </View>
-        </View>
+        <Text variant="h2">{exercise.name}</Text>
+        <Text variant="small" tone="muted" className="mt-1">
+          Update category and muscle groups for this custom exercise.
+        </Text>
 
         <View className="mt-6">
           <ExerciseMetadataForm

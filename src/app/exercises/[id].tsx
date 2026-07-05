@@ -1,18 +1,23 @@
+import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { EmptyState } from '@/src/components/ui/empty-state';
+import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
+import { RenameSheet } from '@/src/components/ui/rename-sheet';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import { ExerciseDetailHeader } from '@/src/features/exercises/components/exercise-detail-header';
+import { ExerciseDetailActionsSheet } from '@/src/features/exercises/components/exercise-detail-actions-sheet';
 import { ExerciseProgressChart } from '@/src/features/exercises/components/exercise-progress-chart';
 import { useExerciseActions } from '@/src/features/exercises/hooks/use-exercise-actions';
 import { useExerciseDetail } from '@/src/features/exercises/hooks/use-exercise-detail';
+import { formatMuscleList } from '@/src/features/exercises/muscle.utils';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { formatWorkoutDate } from '@/src/lib/utils/date.utils';
-import { formatMuscleList } from '@/src/features/exercises/muscle.utils';
 import { getRouteParamId } from '@/src/lib/utils/route.utils';
 import { toTitleCase } from '@/src/lib/utils/string.utils';
-import { router, useLocalSearchParams } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { EllipsisIcon } from 'lucide-react-native';
+import { useCallback, useState } from 'react';
 import { Alert, View } from 'react-native';
 
 function formatUsageBreakdown({
@@ -74,6 +79,12 @@ export default function ExerciseDetailScreen() {
     renameCustomExercise,
     removeCustomExerciseById
   } = useExerciseActions();
+  const [isActionsOpen, setIsActionsOpen] = useState(false);
+  const [isRenameSheetOpen, setIsRenameSheetOpen] = useState(false);
+  const openActions = useCallback(() => setIsActionsOpen(true), []);
+  const closeActions = useCallback(() => setIsActionsOpen(false), []);
+  const openRenameSheet = useCallback(() => setIsRenameSheetOpen(true), []);
+  const closeRenameSheet = useCallback(() => setIsRenameSheetOpen(false), []);
 
   if (exerciseId && isLoading) {
     return (
@@ -189,16 +200,29 @@ export default function ExerciseDetailScreen() {
   };
 
   return (
-    <Screen scroll>
-      <ExerciseDetailHeader
-        name={exercise.name}
-        categoryLabel={toTitleCase(exercise.category)}
-        isCustomExercise={isCustomExercise}
-        removeActionLabel={removeActionLabel}
-        onRename={handleRenameExercise}
-        onEditDetails={handleEditDetails}
-        onRemove={handleRemoveCustomExercise}
+    <Screen scroll edges={[]}>
+      <Stack.Screen
+        options={{
+          headerRight: () =>
+            isCustomExercise ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                accessibilityLabel="Exercise actions"
+                onPress={openActions}
+              >
+                <Icon as={EllipsisIcon} size="lg" tone="foreground" />
+              </Button>
+            ) : null
+        }}
       />
+
+      <View>
+        <Text variant="h2">{exercise.name}</Text>
+        <Text variant="small" tone="muted" className="mt-1">
+          {toTitleCase(exercise.category)}
+        </Text>
+      </View>
 
       <ExerciseProgressChart
         points={progressPoints}
@@ -359,6 +383,27 @@ export default function ExerciseDetailScreen() {
           ) : null}
         </CardContent>
       </Card>
+
+      <ExerciseDetailActionsSheet
+        isOpen={isActionsOpen}
+        removeActionLabel={removeActionLabel}
+        onClose={closeActions}
+        onRename={openRenameSheet}
+        onEditDetails={handleEditDetails}
+        onRemove={handleRemoveCustomExercise}
+      />
+
+      <RenameSheet
+        isOpen={isRenameSheetOpen}
+        title="Rename exercise"
+        description="Update the custom exercise name shown in workouts and history."
+        inputLabel="Exercise name"
+        initialName={exercise.name}
+        requiredMessage="Exercise name is required."
+        fallbackErrorMessage="Could not rename exercise. Try again."
+        onClose={closeRenameSheet}
+        onSubmit={handleRenameExercise}
+      />
     </Screen>
   );
 }

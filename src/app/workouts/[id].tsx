@@ -8,7 +8,6 @@ import { Text } from '@/src/components/ui/text';
 import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
 import { WorkoutDetailActionsSheet } from '@/src/features/workouts/components/workout-detail-actions-sheet';
-import { WorkoutDetailHeader } from '@/src/features/workouts/components/workout-detail-header';
 import { WorkoutHistoryExerciseCard } from '@/src/features/workouts/components/workout-history-exercise-card';
 import { WorkoutMetricCard } from '@/src/features/workouts/components/workout-metric-card';
 import { useHistoricalWorkoutEditStart } from '@/src/features/workouts/hooks/use-historical-workout-edit-start';
@@ -16,14 +15,15 @@ import { useRepeatWorkout } from '@/src/features/workouts/hooks/use-repeat-worko
 import { useWorkoutDelete } from '@/src/features/workouts/hooks/use-workout-delete';
 import { useWorkoutHistoryDetail } from '@/src/features/workouts/hooks/use-workout-history-detail';
 import { useWorkoutRename } from '@/src/features/workouts/hooks/use-workout-rename';
-import { formatDuration } from '@/src/lib/utils/date.utils';
+import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date.utils';
 import { getRouteParamId } from '@/src/lib/utils/route.utils';
 import { formatWeightForUnit } from '@/src/lib/utils/weight.utils';
-import { router, useLocalSearchParams } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
   BookmarkIcon,
   ClockIcon,
   DumbbellIcon,
+  EllipsisIcon,
   LayersIcon,
   RepeatIcon
 } from 'lucide-react-native';
@@ -229,6 +229,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
   return (
     <Screen
       scroll
+      edges={[]}
       footer={
         <Button
           disabled={!canRepeatWorkout}
@@ -243,11 +244,27 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
         </Button>
       }
     >
-      <WorkoutDetailHeader
-        name={workoutName}
-        startedAt={workout.startedAt}
-        onOpenActions={openActions}
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <Button
+              variant="ghost"
+              size="icon"
+              accessibilityLabel="Workout actions"
+              onPress={openActions}
+            >
+              <Icon as={EllipsisIcon} size="lg" tone="foreground" />
+            </Button>
+          )
+        }}
       />
+
+      <View>
+        <Text variant="h2">{workoutName}</Text>
+        <Text variant="small" tone="muted" className="mt-1">
+          {formatWorkoutDate(workout.startedAt, 'full')}
+        </Text>
+      </View>
 
       <View className="mt-6 flex-row gap-3">
         {workoutMetrics.map(metric => (

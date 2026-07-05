@@ -11,7 +11,7 @@ export default function ActiveWorkoutScreen() {
 
   if (isLoading) {
     return (
-      <Screen withPadding={false}>
+      <Screen withPadding={false} edges={[]}>
         <LoadingState label="Loading workout..." />
       </Screen>
     );
@@ -19,7 +19,7 @@ export default function ActiveWorkoutScreen() {
 
   if (!activeWorkout) {
     return (
-      <Screen withPadding={false} contentClassName="px-6">
+      <Screen withPadding={false} edges={[]} contentClassName="px-6">
         <EmptyState
           title="No active workout"
           action={

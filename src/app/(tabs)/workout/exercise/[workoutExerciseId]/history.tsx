@@ -50,20 +50,10 @@ export default function WorkoutExerciseHistoryScreen() {
   }
 
   return (
-    <View className="bg-background pt-safe flex-1">
+    <Screen withPadding={false} edges={[]}>
       <View className="flex-1">
-        <View className="px-4 pt-4 pb-3">
-          <View className="flex-row items-center gap-3">
-            <BackButton />
-            <View className="min-w-0 flex-1">
-              <Text variant="h2" numberOfLines={1}>
-                {exercise.name}
-              </Text>
-              <Text variant="small" tone="muted" className="mt-1">
-                History
-              </Text>
-            </View>
-          </View>
+        <View className="px-4 pt-6 pb-2">
+          <Text variant="h2">{exercise.name}</Text>
         </View>
 
         <ExerciseHistoryList
@@ -75,6 +65,6 @@ export default function WorkoutExerciseHistoryScreen() {
           weightUnit={weightUnit}
         />
       </View>
-    </View>
+    </Screen>
   );
 }

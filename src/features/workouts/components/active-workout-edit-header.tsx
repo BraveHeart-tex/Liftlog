@@ -1,5 +1,7 @@
 import { Button } from '@/src/components/ui/button';
 import { Text } from '@/src/components/ui/text';
+import { Stack } from 'expo-router';
+import { Fragment } from 'react';
 import { View } from 'react-native';
 
 interface ActiveWorkoutEditHeaderProps {
@@ -12,16 +14,20 @@ export function ActiveWorkoutEditHeader({
   onDone
 }: ActiveWorkoutEditHeaderProps) {
   return (
-    <View className="flex-row items-center justify-between gap-3 px-4 pt-4 pb-2">
-      <View className="flex-1">
-        <Text variant="h2" numberOfLines={1}>
-          {workoutName}
-        </Text>
+    <Fragment>
+      <Stack.Screen
+        options={{
+          title: 'Edit exercises',
+          headerRight: () => (
+            <Button variant="ghost" size="sm" onPress={onDone}>
+              Done
+            </Button>
+          )
+        }}
+      />
+      <View className="px-4 pt-4 pb-3">
+        <Text variant="h2">{workoutName}</Text>
       </View>
-
-      <Button variant="ghost" size="sm" onPress={onDone}>
-        Done
-      </Button>
-    </View>
+    </Fragment>
   );
 }

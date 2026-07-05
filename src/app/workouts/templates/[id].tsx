@@ -16,8 +16,8 @@ import { triggerWorkoutEditModeHaptics } from '@/src/features/workouts/workout.h
 import { cn } from '@/src/lib/utils/cn.utils';
 import { getRouteParamId } from '@/src/lib/utils/route.utils';
 import { usePreventRemove } from '@react-navigation/native';
-import { router, useLocalSearchParams } from 'expo-router';
-import { DumbbellIcon, EllipsisVerticalIcon } from 'lucide-react-native';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { DumbbellIcon, EllipsisIcon } from 'lucide-react-native';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 
@@ -227,6 +227,7 @@ function WorkoutTemplateDetailLoaded({
     <Screen
       scroll={!isEditingExercises}
       withPadding={!isEditingExercises}
+      edges={[]}
       footer={
         isEditingExercises ? (
           <Button
@@ -248,45 +249,36 @@ function WorkoutTemplateDetailLoaded({
         )
       }
     >
-      <View
-        className={cn(
-          'flex-row items-start gap-3',
-          isEditingExercises && 'px-4 pt-6'
-        )}
-      >
-        <BackButton
-          onPress={
-            isEditingExercises ? confirmDiscardExerciseChanges : undefined
-          }
-        />
+      <Stack.Screen
+        options={{
+          title: isEditingExercises ? 'Edit template' : 'Template',
+          headerRight: () =>
+            isEditingExercises ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onPress={confirmDiscardExerciseChanges}
+              >
+                Cancel
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                accessibilityLabel="Template actions"
+                onPress={openActions}
+              >
+                <Icon as={EllipsisIcon} size="lg" tone="foreground" />
+              </Button>
+            )
+        }}
+      />
 
-        <View className="flex-1">
-          <Text variant="h1" numberOfLines={2}>
-            {template.name}
-          </Text>
-          <Text variant="small" tone="muted" className="mt-1">
-            {exerciseCount === 1 ? '1 exercise' : `${exerciseCount} exercises`}
-          </Text>
-        </View>
-
-        {isEditingExercises ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            onPress={confirmDiscardExerciseChanges}
-          >
-            Cancel
-          </Button>
-        ) : (
-          <Button
-            variant="ghost"
-            size="icon"
-            accessibilityLabel="Template actions"
-            onPress={openActions}
-          >
-            <Icon as={EllipsisVerticalIcon} size="lg" tone="foreground" />
-          </Button>
-        )}
+      <View className={cn('gap-1', isEditingExercises && 'px-4 pt-6')}>
+        <Text variant="h2">{template.name}</Text>
+        <Text variant="small" tone="muted">
+          {exerciseCount === 1 ? '1 exercise' : `${exerciseCount} exercises`}
+        </Text>
       </View>
 
       {isEditingExercises ? (
