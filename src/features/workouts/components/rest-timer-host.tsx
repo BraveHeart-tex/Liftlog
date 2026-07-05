@@ -51,7 +51,6 @@ export function RestTimerHost() {
   const completionSoundTimeoutRef = useRef<ReturnType<
     typeof setTimeout
   > | null>(null);
-  const completionSoundStopGenerationRef = useRef(0);
   const player = useAudioPlayer(
     require('@/assets/sounds/rest-timer-finished.wav'),
     {
@@ -59,24 +58,49 @@ export function RestTimerHost() {
       keepAudioSessionActive: true
     }
   );
+  const completionSoundOperationGenerationRef = useRef(0);
+  const completionSoundStopGenerationRef = useRef(0);
+  const latestAudioOperationIsStopRef = useRef(true);
+  const isAudioHostMountedRef = useRef(false);
+  const playerRef = useRef(player);
+
+  const clearCompletionSoundTimeout = useCallback(() => {
+    if (!completionSoundTimeoutRef.current) {
+      return;
+    }
+
+    clearTimeout(completionSoundTimeoutRef.current);
+    completionSoundTimeoutRef.current = null;
+  }, []);
+
+  const isCurrentAudioOperation = useCallback(
+    (generation: number, operationPlayer: typeof player) =>
+      isAudioHostMountedRef.current &&
+      completionSoundOperationGenerationRef.current === generation &&
+      playerRef.current === operationPlayer,
+    []
+  );
 
   const stopCompletionSound = useCallback(async () => {
-    completionSoundStopGenerationRef.current += 1;
-
     try {
-      if (completionSoundTimeoutRef.current) {
-        clearTimeout(completionSoundTimeoutRef.current);
-        completionSoundTimeoutRef.current = null;
+      completionSoundOperationGenerationRef.current += 1;
+      completionSoundStopGenerationRef.current += 1;
+      latestAudioOperationIsStopRef.current = true;
+      clearCompletionSoundTimeout();
+
+      const operationPlayer = playerRef.current;
+
+      if (isAudioHostMountedRef.current) {
+        operationPlayer.pause();
+        operationPlayer.loop = false;
+        await operationPlayer.seekTo(0);
       }
 
-      player.pause();
-      player.loop = false;
-      await player.seekTo(0);
       await setIsAudioActiveAsync(false);
     } catch (error) {
       console.error('Failed to stop rest timer completion sound', error);
     }
-  }, [player]);
+  }, [clearCompletionSoundTimeout]);
 
   const acknowledgeNotificationCompletion = useCallback(() => {
     const timerState = useRestTimerStore.getState();
@@ -100,42 +124,68 @@ export function RestTimerHost() {
   });
 
   const playCompletionSound = useCallback(async () => {
+    const operationGeneration =
+      completionSoundOperationGenerationRef.current + 1;
     const stopGeneration = completionSoundStopGenerationRef.current;
 
+    completionSoundOperationGenerationRef.current = operationGeneration;
+    latestAudioOperationIsStopRef.current = false;
+    clearCompletionSoundTimeout();
+
+    const operationPlayer = playerRef.current;
+
     try {
-      if (completionSoundTimeoutRef.current) {
-        clearTimeout(completionSoundTimeoutRef.current);
-        completionSoundTimeoutRef.current = null;
-      }
-
       await setIsAudioActiveAsync(true);
-      await player.seekTo(0);
 
-      if (stopGeneration !== completionSoundStopGenerationRef.current) {
-        player.loop = false;
-        await setIsAudioActiveAsync(false);
+      if (!isCurrentAudioOperation(operationGeneration, operationPlayer)) {
+        if (
+          completionSoundStopGenerationRef.current !== stopGeneration &&
+          (!isAudioHostMountedRef.current ||
+            latestAudioOperationIsStopRef.current)
+        ) {
+          await setIsAudioActiveAsync(false);
+        }
 
         return;
       }
 
-      player.loop = true;
-      player.volume = 1;
-      player.play();
+      await operationPlayer.seekTo(0);
 
-      if (stopGeneration !== completionSoundStopGenerationRef.current) {
-        await stopCompletionSound();
+      if (!isCurrentAudioOperation(operationGeneration, operationPlayer)) {
+        return;
+      }
 
+      operationPlayer.loop = true;
+      operationPlayer.volume = 1;
+      operationPlayer.play();
+
+      if (!isCurrentAudioOperation(operationGeneration, operationPlayer)) {
         return;
       }
 
       completionSoundTimeoutRef.current = setTimeout(() => {
+        if (
+          !isCurrentAudioOperation(operationGeneration, operationPlayer) ||
+          completionSoundTimeoutRef.current === null
+        ) {
+          return;
+        }
+
         completionSoundTimeoutRef.current = null;
         void stopCompletionSound();
       }, REST_TIMER_COMPLETION_SOUND_DURATION_MS);
     } catch (error) {
+      if (!isCurrentAudioOperation(operationGeneration, operationPlayer)) {
+        return;
+      }
+
       console.error('Failed to play rest timer completion sound', error);
     }
-  }, [player, stopCompletionSound]);
+  }, [
+    clearCompletionSoundTimeout,
+    isCurrentAudioOperation,
+    stopCompletionSound
+  ]);
 
   useEffect(() => {
     setAudioModeAsync({
@@ -145,6 +195,22 @@ export function RestTimerHost() {
       console.error('Failed to configure rest timer audio mode', error);
     });
   }, []);
+
+  useEffect(() => {
+    isAudioHostMountedRef.current = true;
+    playerRef.current = player;
+
+    return () => {
+      isAudioHostMountedRef.current = false;
+      completionSoundOperationGenerationRef.current += 1;
+      completionSoundStopGenerationRef.current += 1;
+      latestAudioOperationIsStopRef.current = true;
+      clearCompletionSoundTimeout();
+      setIsAudioActiveAsync(false).catch(error => {
+        console.error('Failed to deactivate rest timer audio session', error);
+      });
+    };
+  }, [clearCompletionSoundTimeout, player]);
 
   useEffect(() => {
     if (status !== 'running') {
@@ -195,12 +261,6 @@ export function RestTimerHost() {
 
     return () => subscription.remove();
   }, [stopCompletionSound, tick]);
-
-  useEffect(() => {
-    return () => {
-      void stopCompletionSound();
-    };
-  }, [stopCompletionSound]);
 
   useEffect(() => {
     if (completionCount <= lastHandledCompletionCountRef.current) {
