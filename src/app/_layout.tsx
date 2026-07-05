@@ -7,7 +7,7 @@ import { appFontAssets } from '@/src/theme/fonts';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { hideAsync, preventAutoHideAsync } from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 bootstrapThemeColorScheme();
 void preventAutoHideAsync();
@@ -73,19 +73,35 @@ function RootNavigator() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontLoadError] = useFonts(appFontAssets);
+  const [databaseStatus, setDatabaseStatus] = useState<
+    'loading' | 'ready' | 'error'
+  >('loading');
+
+  const handleDatabaseReady = useCallback(() => {
+    setDatabaseStatus(currentStatus =>
+      currentStatus === 'loading' ? 'ready' : currentStatus
+    );
+  }, []);
+
+  const handleDatabaseError = useCallback(() => {
+    setDatabaseStatus('error');
+  }, []);
 
   useEffect(() => {
-    if (fontsLoaded || fontLoadError) {
+    if ((fontsLoaded || fontLoadError) && databaseStatus !== 'loading') {
       void hideAsync();
     }
-  }, [fontLoadError, fontsLoaded]);
+  }, [databaseStatus, fontLoadError, fontsLoaded]);
 
   if (!fontsLoaded && !fontLoadError) {
     return null;
   }
 
   return (
-    <CommonProviders>
+    <CommonProviders
+      onDatabaseError={handleDatabaseError}
+      onDatabaseReady={handleDatabaseReady}
+    >
       <DrizzleStudio />
       <RootNavigator />
     </CommonProviders>

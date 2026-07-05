@@ -12,7 +12,16 @@ import {
   SafeAreaProvider
 } from 'react-native-safe-area-context';
 
-export function CommonProviders({ children }: PropsWithChildren) {
+interface CommonProvidersProps extends PropsWithChildren {
+  onDatabaseError?: () => void;
+  onDatabaseReady: () => void;
+}
+
+export function CommonProviders({
+  children,
+  onDatabaseError,
+  onDatabaseReady
+}: CommonProvidersProps) {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider
@@ -20,7 +29,7 @@ export function CommonProviders({ children }: PropsWithChildren) {
         style={{ flex: 1 }}
       >
         <AppThemeProvider>
-          <DatabaseProvider>
+          <DatabaseProvider onError={onDatabaseError} onReady={onDatabaseReady}>
             <ScreenErrorBoundary>
               <BottomSheetModalProvider>
                 {children}

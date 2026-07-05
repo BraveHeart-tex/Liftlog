@@ -1,5 +1,4 @@
 import { DatabaseErrorBoundary } from '@/src/components/database-error-boundary';
-import { LoadingState } from '@/src/components/ui/loading-state';
 import {
   configureDatabase,
   createDrizzleDb,
@@ -20,10 +19,8 @@ import {
   type PropsWithChildren,
   useContext,
   useEffect,
-  useMemo,
-  useState
+  useMemo
 } from 'react';
-import { View } from 'react-native';
 
 const DrizzleContext = createContext<DrizzleDb | null>(null);
 
@@ -83,36 +80,25 @@ async function migrateAsync(db: SQLiteDatabase) {
   }
 }
 
-type DatabaseProviderStatus = 'loading' | 'ready';
+interface DatabaseProviderProps extends PropsWithChildren {
+  onError?: () => void;
+  onReady: () => void;
+}
 
-export function DatabaseProvider({ children }: PropsWithChildren) {
-  const [status, setStatus] = useState<DatabaseProviderStatus>('loading');
-
+export function DatabaseProvider({
+  children,
+  onError,
+  onReady
+}: DatabaseProviderProps) {
   return (
-    <DatabaseErrorBoundary>
-      <View className="flex-1">
-        <SQLiteProvider
-          databaseName={databaseName}
-          onInit={migrateAsync}
-          options={databaseOptions}
-        >
-          <DrizzleProvider
-            onReady={() => {
-              setStatus(currentStatus =>
-                currentStatus === 'loading' ? 'ready' : currentStatus
-              );
-            }}
-          >
-            {children}
-          </DrizzleProvider>
-        </SQLiteProvider>
-        {status === 'loading' ? (
-          <LoadingState
-            label="Initializing database..."
-            className="bg-background absolute inset-0"
-          />
-        ) : null}
-      </View>
+    <DatabaseErrorBoundary onError={onError}>
+      <SQLiteProvider
+        databaseName={databaseName}
+        onInit={migrateAsync}
+        options={databaseOptions}
+      >
+        <DrizzleProvider onReady={onReady}>{children}</DrizzleProvider>
+      </SQLiteProvider>
     </DatabaseErrorBoundary>
   );
 }

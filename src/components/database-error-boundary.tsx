@@ -4,6 +4,7 @@ import { Component, type ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
+  onError?: () => void;
 }
 
 interface State {
@@ -19,6 +20,7 @@ export class DatabaseErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: unknown) {
     console.error('Database initialization failed', error);
+    this.props.onError?.();
   }
 
   render() {
