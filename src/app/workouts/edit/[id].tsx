@@ -86,7 +86,7 @@ export default function HistoricalWorkoutEditScreen() {
         return;
       }
 
-      router.replace({
+      router.dismissTo({
         pathname: '/workouts/[id]',
         params: { id: savedWorkout.id }
       });
