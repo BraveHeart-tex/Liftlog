@@ -5,23 +5,61 @@ import {
 } from '@/src/features/workouts/workout.repository';
 import { getRestTimerNotificationData } from '@/src/features/workouts/rest-timer-notifications.service';
 import {
-  addNotificationResponseReceivedListener,
   clearLastNotificationResponse,
-  getLastNotificationResponse,
-  type Notification
+  DEFAULT_ACTION_IDENTIFIER,
+  type Notification,
+  useLastNotificationResponse
 } from 'expo-notifications';
-import { router } from 'expo-router';
+import { router, type Href, useNavigationContainerRef } from 'expo-router';
 import { useCallback, useEffect, useRef } from 'react';
 
 interface UseRestTimerNotificationResponsesParams {
   onRestTimerNotificationPress: () => void;
 }
 
+const ROUTER_READY_RETRY_DELAY_MS = 50;
+const ROUTER_READY_MAX_RETRIES = 20;
+
 export function useRestTimerNotificationResponses({
   onRestTimerNotificationPress
 }: UseRestTimerNotificationResponsesParams) {
   const db = useDrizzle();
+  const lastNotificationResponse = useLastNotificationResponse();
+  const navigationRef = useNavigationContainerRef();
   const handledNotificationIdsRef = useRef(new Set<string>());
+  const navigationRetryTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+
+  const clearNavigationRetryTimeout = useCallback(() => {
+    if (navigationRetryTimeoutRef.current) {
+      clearTimeout(navigationRetryTimeoutRef.current);
+      navigationRetryTimeoutRef.current = null;
+    }
+  }, []);
+
+  const replaceWhenRouterReady = useCallback(
+    (href: Href, retryCount = 0) => {
+      clearNavigationRetryTimeout();
+
+      if (!navigationRef.isReady()) {
+        if (retryCount >= ROUTER_READY_MAX_RETRIES) {
+          console.error('Timed out routing from rest timer notification');
+
+          return;
+        }
+
+        navigationRetryTimeoutRef.current = setTimeout(() => {
+          replaceWhenRouterReady(href, retryCount + 1);
+        }, ROUTER_READY_RETRY_DELAY_MS);
+
+        return;
+      }
+
+      router.replace(href);
+    },
+    [clearNavigationRetryTimeout, navigationRef]
+  );
 
   const routeFromNotification = useCallback(
     (notification: Notification) => {
@@ -49,7 +87,7 @@ export function useRestTimerNotificationResponses({
       );
 
       if (!activeWorkout) {
-        router.replace('/(tabs)/workout');
+        replaceWhenRouterReady('/(tabs)/workout');
 
         return;
       }
@@ -63,7 +101,7 @@ export function useRestTimerNotificationResponses({
           );
 
         if (workoutExercise) {
-          router.replace({
+          replaceWhenRouterReady({
             pathname: '/(tabs)/workout/exercise/[workoutExerciseId]',
             params: { workoutExerciseId: workoutExercise.id }
           });
@@ -72,22 +110,21 @@ export function useRestTimerNotificationResponses({
         }
       }
 
-      router.replace('/(tabs)/workout/active');
+      replaceWhenRouterReady('/(tabs)/workout/active');
     },
-    [db, onRestTimerNotificationPress]
+    [db, onRestTimerNotificationPress, replaceWhenRouterReady]
   );
 
   useEffect(() => {
-    const lastResponse = getLastNotificationResponse();
-
-    if (lastResponse) {
-      routeFromNotification(lastResponse.notification);
+    if (
+      !lastNotificationResponse ||
+      lastNotificationResponse.actionIdentifier !== DEFAULT_ACTION_IDENTIFIER
+    ) {
+      return;
     }
 
-    const subscription = addNotificationResponseReceivedListener(response => {
-      routeFromNotification(response.notification);
-    });
+    routeFromNotification(lastNotificationResponse.notification);
+  }, [lastNotificationResponse, routeFromNotification]);
 
-    return () => subscription.remove();
-  }, [routeFromNotification]);
+  useEffect(() => clearNavigationRetryTimeout, [clearNavigationRetryTimeout]);
 }
