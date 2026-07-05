@@ -15,14 +15,14 @@ export const WorkoutTemplatesSection = () => {
   const { templates } = useWorkoutTemplates();
 
   const handleTemplatePress = (templateId: string) => {
-    router.push({
+    router.navigate({
       pathname: '/workouts/templates/[id]',
       params: { id: templateId }
     });
   };
 
   const handleCreateTemplatePress = () => {
-    router.push('/workouts/templates/new');
+    router.navigate('/workouts/templates/new');
   };
 
   return (

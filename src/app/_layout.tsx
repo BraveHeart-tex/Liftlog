@@ -29,18 +29,22 @@ function RootNavigator() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen
         name="settings"
+        singular
         options={{ animation: 'slide_from_right' }}
       />
       <Stack.Screen
         name="exercises/[id]"
+        singular
         options={{ animation: 'slide_from_right' }}
       />
       <Stack.Screen
         name="exercises/new"
+        singular
         options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
       />
       <Stack.Screen
         name="workouts/[id]"
+        singular
         options={{ animation: 'slide_from_right' }}
       />
       <Stack.Screen
@@ -49,6 +53,7 @@ function RootNavigator() {
       />
       <Stack.Screen
         name="workouts/backfill/exercise/[workoutExerciseId]"
+        singular
         options={{ animation: 'slide_from_right' }}
       />
       <Stack.Screen
@@ -57,14 +62,17 @@ function RootNavigator() {
       />
       <Stack.Screen
         name="workouts/edit/exercise/[workoutExerciseId]"
+        singular
         options={{ animation: 'slide_from_right' }}
       />
       <Stack.Screen
         name="workouts/templates/[id]"
+        singular
         options={{ animation: 'slide_from_right' }}
       />
       <Stack.Screen
         name="workouts/templates/new"
+        singular
         options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
       />
     </Stack>

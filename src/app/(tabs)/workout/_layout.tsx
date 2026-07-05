@@ -14,9 +14,9 @@ export default function WorkoutLayout() {
       }}
     >
       <Stack.Screen name="index" />
-      <Stack.Screen name="active" />
-      <Stack.Screen name="exercise/[workoutExerciseId]/index" />
-      <Stack.Screen name="exercise/[workoutExerciseId]/history" />
+      <Stack.Screen name="active" singular />
+      <Stack.Screen name="exercise/[workoutExerciseId]/index" singular />
+      <Stack.Screen name="exercise/[workoutExerciseId]/history" singular />
     </Stack>
   );
 }

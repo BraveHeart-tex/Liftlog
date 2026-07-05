@@ -39,7 +39,7 @@ export const RecentWorkoutsSection = () => {
               workout={workout}
               className={cn(index > 0 && 'mt-3')}
               onPress={() => {
-                router.push({
+                router.navigate({
                   pathname: '/workouts/[id]',
                   params: { id: workout.id }
                 });

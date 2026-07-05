@@ -182,7 +182,7 @@ export default function ExerciseDetailScreen() {
       return;
     }
 
-    router.push({
+    router.navigate({
       pathname: '/exercises/edit/[id]',
       params: { id: exercise.id }
     });

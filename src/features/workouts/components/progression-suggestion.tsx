@@ -59,6 +59,7 @@ export function ProgressionSuggestion({
             pathname: '/(tabs)/workout/exercise/[workoutExerciseId]/history',
             params: { workoutExerciseId }
           }}
+          dangerouslySingular
         >
           <View className="flex-row items-center gap-1">
             <Text tone="primary" variant="small">

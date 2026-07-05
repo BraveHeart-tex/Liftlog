@@ -58,7 +58,7 @@ export function WorkoutLogContent() {
           workout={item.workout}
           setCount={item.setCount}
           onPress={workout =>
-            router.push({
+            router.navigate({
               pathname: '/workouts/[id]',
               params: { id: workout.id }
             })

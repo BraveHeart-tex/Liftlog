@@ -38,11 +38,11 @@ export function useWorkoutStart() {
       status: 'in_progress'
     });
 
-    router.push(activeWorkoutRoute);
+    router.navigate(activeWorkoutRoute);
   }, [db]);
 
   const resumeWorkout = useCallback(() => {
-    router.push(activeWorkoutRoute);
+    router.navigate(activeWorkoutRoute);
   }, []);
 
   const startWorkoutFromTemplate = useCallback(
@@ -52,7 +52,7 @@ export function useWorkoutStart() {
       });
 
       if (createdWorkout) {
-        router.push(activeWorkoutRoute);
+        router.navigate(activeWorkoutRoute);
       }
     },
     [db]
@@ -66,7 +66,7 @@ export function useWorkoutStart() {
       });
 
       if (createdWorkout) {
-        router.push(activeWorkoutRoute);
+        router.navigate(activeWorkoutRoute);
       }
     },
     [activeWorkout?.id, db]

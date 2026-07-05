@@ -76,7 +76,7 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
     });
 
     if (createdWorkout) {
-      router.push(activeWorkoutRoute);
+      router.navigate(activeWorkoutRoute);
     }
   }, [db, template]);
 
@@ -91,12 +91,12 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
     });
 
     if (createdWorkout) {
-      router.push(activeWorkoutRoute);
+      router.navigate(activeWorkoutRoute);
     }
   }, [activeWorkout, db, template]);
 
   const resumeWorkout = useCallback(() => {
-    router.push(activeWorkoutRoute);
+    router.navigate(activeWorkoutRoute);
   }, []);
 
   const renameTemplate = useCallback(

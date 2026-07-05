@@ -25,7 +25,7 @@ export function useRepeatWorkout({
     }
 
     if (activeWorkout) {
-      router.push('/(tabs)/workout/active');
+      router.navigate('/(tabs)/workout/active');
 
       return;
     }
@@ -35,6 +35,6 @@ export function useRepeatWorkout({
       sourceWorkoutExercises: workoutExerciseRows
     });
 
-    router.push('/(tabs)/workout/active');
+    router.navigate('/(tabs)/workout/active');
   }, [activeWorkout, canRepeatWorkout, db, workout, workoutExerciseRows]);
 }

@@ -45,7 +45,7 @@ export default function WorkoutStartScreen() {
           variant="secondary"
           size="icon"
           accessibilityLabel="Open settings"
-          onPress={() => router.push('/settings')}
+          onPress={() => router.navigate('/settings')}
         >
           <Icon as={SettingsIcon} size="md" tone="secondaryForeground" />
         </Button>

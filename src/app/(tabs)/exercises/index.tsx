@@ -70,7 +70,7 @@ export default function ExercisesScreen() {
       <ExerciseListRow
         exercise={item.exercise}
         onPress={exercise =>
-          router.push({
+          router.navigate({
             pathname: '/exercises/[id]',
             params: { id: exercise.id }
           })
@@ -94,7 +94,7 @@ export default function ExercisesScreen() {
             variant="secondary"
             size="sm"
             accessibilityLabel="Create exercise"
-            onPress={() => router.push('/exercises/new')}
+            onPress={() => router.navigate('/exercises/new')}
           >
             <Icon as={PlusIcon} tone="secondaryForeground" />
           </Button>
@@ -169,7 +169,7 @@ export default function ExercisesScreen() {
                   size="md"
                   className="w-full"
                   onPress={() => {
-                    router.push('/exercises/new');
+                    router.navigate('/exercises/new');
                     setQuery('');
                     setSelectedFilter('all');
                   }}

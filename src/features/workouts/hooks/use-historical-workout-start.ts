@@ -21,10 +21,13 @@ export function useHistoricalWorkoutStart(
   const { templates, isLoading } = useWorkoutTemplates({ enabled });
 
   const openDraft = useCallback((workoutId: string) => {
-    router.push({
-      pathname: '/workouts/backfill/[id]',
-      params: { id: workoutId }
-    });
+    router.navigate(
+      {
+        pathname: '/workouts/backfill/[id]',
+        params: { id: workoutId }
+      },
+      { dangerouslySingular: () => 'workouts/backfill' }
+    );
   }, []);
 
   const startBlankWorkout = useCallback(() => {

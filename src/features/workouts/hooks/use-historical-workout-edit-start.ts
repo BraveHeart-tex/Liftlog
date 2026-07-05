@@ -18,13 +18,19 @@ export function useHistoricalWorkoutEditStart() {
         return undefined;
       }
 
-      router.push({
-        pathname: '/workouts/edit/[id]',
-        params: {
-          id: draftWorkout.id,
-          sourceWorkoutId
+      router.navigate(
+        {
+          pathname: '/workouts/edit/[id]',
+          params: {
+            id: draftWorkout.id,
+            sourceWorkoutId
+          }
+        },
+        {
+          dangerouslySingular: (_name, params) =>
+            `workouts/edit/${params.sourceWorkoutId ?? params.id}`
         }
-      });
+      );
 
       return draftWorkout;
     },

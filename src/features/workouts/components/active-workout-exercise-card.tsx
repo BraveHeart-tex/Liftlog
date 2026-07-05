@@ -42,7 +42,7 @@ export function ActiveWorkoutExerciseCard({
     >
       <Pressable
         onPress={() =>
-          router.push({
+          router.navigate({
             pathname,
             params: { workoutExerciseId: item.workoutExercise.id }
           })
