@@ -4,6 +4,7 @@ import {
   SchedulableTriggerInputTypes,
   cancelScheduledNotificationAsync,
   dismissNotificationAsync,
+  getAllScheduledNotificationsAsync,
   getPermissionsAsync,
   requestPermissionsAsync,
   scheduleNotificationAsync,
@@ -95,18 +96,31 @@ async function requestRestTimerNotificationPermission() {
 }
 
 async function cancelScheduledRestTimerNotification() {
-  const notificationId = scheduledRestTimerNotificationId;
+  const scheduledNotifications = await getAllScheduledNotificationsAsync();
+  const notificationIds = new Set(
+    scheduledNotifications
+      .map(notification => notification.identifier)
+      .filter(notificationId =>
+        notificationId.startsWith(REST_TIMER_NOTIFICATION_ID_PREFIX)
+      )
+  );
+
+  if (scheduledRestTimerNotificationId) {
+    notificationIds.add(scheduledRestTimerNotificationId);
+  }
 
   scheduledRestTimerNotificationId = null;
 
-  if (!notificationId) {
+  if (notificationIds.size === 0) {
     return;
   }
 
-  await Promise.allSettled([
-    cancelScheduledNotificationAsync(notificationId),
-    dismissNotificationAsync(notificationId)
-  ]);
+  await Promise.allSettled(
+    [...notificationIds].flatMap(notificationId => [
+      cancelScheduledNotificationAsync(notificationId),
+      dismissNotificationAsync(notificationId)
+    ])
+  );
 }
 
 export async function cancelRestTimerNotification() {
