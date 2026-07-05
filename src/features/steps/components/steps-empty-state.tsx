@@ -1,7 +1,7 @@
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
-import { HeartIcon, PlusIcon } from 'lucide-react-native';
+import { HeartIcon, HeartPulseIcon, PlusIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
 interface StepsEmptyStateProps {
@@ -36,6 +36,7 @@ export function StepsEmptyState({
         size="lg"
         className="mt-10 w-full"
         loading={isSyncing}
+        leftIcon={<Icon as={HeartPulseIcon} tone="primaryForeground" />}
         onPress={onConnect}
       >
         Connect Health Connect

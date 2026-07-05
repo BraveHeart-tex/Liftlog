@@ -5,7 +5,7 @@ import { triggerRestTimerImpact } from '@/src/features/workouts/rest-timer.hapti
 import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
 import { iconSizes } from '@/src/theme/sizes';
 import { ImpactFeedbackStyle } from 'expo-haptics';
-import { PauseIcon } from 'lucide-react-native';
+import { PauseIcon, XIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
 export function RestTimerRunningContent() {
@@ -45,6 +45,7 @@ export function RestTimerRunningContent() {
           <Button
             variant="destructive"
             className="w-full"
+            leftIcon={<Icon as={XIcon} tone="danger" />}
             onPress={handleCancel}
           >
             Cancel

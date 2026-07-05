@@ -1,4 +1,5 @@
 import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { WheelPicker } from '@/src/components/ui/wheel-picker';
 import {
@@ -11,6 +12,7 @@ import type {
   OnValueChanged,
   OnValueChanging
 } from '@quidone/react-native-wheel-picker';
+import { PlayIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
@@ -173,7 +175,12 @@ export function RestTimerIdleContent({
         </View>
       </View>
 
-      <Button className="w-full" disabled={!canStart} onPress={handleStart}>
+      <Button
+        className="w-full"
+        disabled={!canStart}
+        leftIcon={<Icon as={PlayIcon} tone="primaryForeground" />}
+        onPress={handleStart}
+      >
         Start
       </Button>
     </>

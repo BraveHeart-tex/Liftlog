@@ -25,6 +25,7 @@ import {
   DumbbellIcon,
   EllipsisIcon,
   LayersIcon,
+  PlayIcon,
   RepeatIcon
 } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
@@ -235,9 +236,10 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
           disabled={!canRepeatWorkout}
           onPress={repeatWorkout}
           leftIcon={
-            activeWorkout ? undefined : (
-              <Icon as={RepeatIcon} tone="primaryForeground" />
-            )
+            <Icon
+              as={activeWorkout ? PlayIcon : RepeatIcon}
+              tone="primaryForeground"
+            />
           }
         >
           {activeWorkout ? 'Resume active workout' : 'Repeat this workout'}

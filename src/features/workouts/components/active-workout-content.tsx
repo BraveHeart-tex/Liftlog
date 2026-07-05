@@ -231,7 +231,14 @@ export function ActiveWorkoutContent({
           <EmptyState
             title="No exercises yet"
             description="Add your first exercise to get started."
-            action={<Button onPress={openExercisePicker}>Add exercise</Button>}
+            action={
+              <Button
+                leftIcon={<Icon as={PlusIcon} tone="primaryForeground" />}
+                onPress={openExercisePicker}
+              >
+                Add exercise
+              </Button>
+            }
           />
         </View>
       )}

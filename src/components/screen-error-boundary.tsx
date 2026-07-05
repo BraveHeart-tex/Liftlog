@@ -1,7 +1,9 @@
 import { Component, type ReactNode } from 'react';
 import { View } from 'react-native';
 import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
+import { RefreshCwIcon } from 'lucide-react-native';
 
 interface Props {
   children: ReactNode;
@@ -45,6 +47,7 @@ export class ScreenErrorBoundary extends Component<Props, State> {
           <Button
             variant="secondary"
             className="mt-6"
+            leftIcon={<Icon as={RefreshCwIcon} tone="secondaryForeground" />}
             onPress={this.handleReset}
           >
             Try again

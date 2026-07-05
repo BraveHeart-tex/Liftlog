@@ -18,7 +18,7 @@ import {
 } from '@/src/features/steps/steps.constants';
 import { isValidStepGoal } from '@/src/features/steps/steps.validation';
 import { nativeFontSizes } from '@/src/theme/sizes';
-import { XIcon } from 'lucide-react-native';
+import { SaveIcon, XIcon } from 'lucide-react-native';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Keyboard, View } from 'react-native';
 
@@ -185,6 +185,7 @@ const StepGoalSheetContent = memo(function StepGoalSheetContent({
         <Button
           className="w-full rounded-xl"
           disabled={!canSave}
+          leftIcon={<Icon as={SaveIcon} tone="primaryForeground" />}
           onPress={handleSave}
         >
           Save goal

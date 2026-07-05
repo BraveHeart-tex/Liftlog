@@ -7,7 +7,11 @@ import { WorkoutTemplateCard } from '@/src/features/workouts/components/workout-
 import { useWorkoutTemplates } from '@/src/features/workouts/hooks/use-workout-templates';
 import { iconSizes } from '@/src/theme/sizes';
 import { useRouter } from 'expo-router';
-import { ClipboardListIcon, PlusIcon } from 'lucide-react-native';
+import {
+  ClipboardListIcon,
+  ClipboardPlusIcon,
+  PlusIcon
+} from 'lucide-react-native';
 import { View } from 'react-native';
 
 export const WorkoutTemplatesSection = () => {
@@ -57,6 +61,9 @@ export const WorkoutTemplatesSection = () => {
               variant="secondary"
               size="sm"
               textClassName="text-primary text-sm"
+              leftIcon={
+                <Icon as={ClipboardPlusIcon} tone="primary" size="sm" />
+              }
               onPress={handleCreateTemplatePress}
             >
               Create template

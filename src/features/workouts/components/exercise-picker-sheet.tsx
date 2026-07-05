@@ -25,7 +25,7 @@ import {
   type ExercisePickerFilter
 } from '@/src/features/workouts/components/exercise-picker-filters';
 import { ExercisePickerRow } from '@/src/features/workouts/components/exercise-picker-row';
-import { XIcon } from 'lucide-react-native';
+import { PlusIcon, XIcon } from 'lucide-react-native';
 import {
   memo,
   useCallback,
@@ -477,12 +477,17 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
       )}
 
       <View className="border-border bg-card pb-safe gap-2 border-t px-4 pt-3">
-        <Button variant="secondary" onPress={createCustomExercise}>
+        <Button
+          variant="secondary"
+          leftIcon={<Icon as={PlusIcon} tone="secondaryForeground" />}
+          onPress={createCustomExercise}
+        >
           {createButtonLabel}
         </Button>
         {isMultiple && (
           <Button
             disabled={pendingExercises.length === 0}
+            leftIcon={<Icon as={PlusIcon} tone="primaryForeground" />}
             onPress={addPendingExercises}
           >
             {addButtonLabel}

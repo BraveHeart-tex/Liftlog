@@ -8,7 +8,7 @@ import { WorkoutTemplatesSection } from '@/src/features/workouts/components/work
 import { useWorkoutStart } from '@/src/features/workouts/hooks/use-workout-start';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { router } from 'expo-router';
-import { SettingsIcon } from 'lucide-react-native';
+import { DumbbellIcon, SettingsIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 import Animated, { Keyframe } from 'react-native-reanimated';
 
@@ -69,7 +69,11 @@ export default function WorkoutStartScreen() {
           entering={workoutStateEntering}
           exiting={workoutStateExiting}
         >
-          <Button className="mt-6 w-full" onPress={startWorkout}>
+          <Button
+            className="mt-6 w-full"
+            leftIcon={<Icon as={DumbbellIcon} tone="primaryForeground" />}
+            onPress={startWorkout}
+          >
             Start Workout
           </Button>
           <Text tone="muted" variant="caption" className="text-center">

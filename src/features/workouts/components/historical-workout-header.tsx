@@ -1,8 +1,10 @@
 import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import type { Workout } from '@/src/db/schema';
 import { formatWorkoutDate } from '@/src/lib/utils/date.utils';
+import { SaveIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
 interface HistoricalWorkoutHeaderProps {
@@ -31,7 +33,12 @@ export function HistoricalWorkoutHeader({
           <Text variant="h3">{title}</Text>
         </View>
 
-        <Button size="sm" disabled={!canSave} onPress={onSave}>
+        <Button
+          size="sm"
+          disabled={!canSave}
+          leftIcon={<Icon as={SaveIcon} tone="primaryForeground" size="sm" />}
+          onPress={onSave}
+        >
           Save
         </Button>
       </View>

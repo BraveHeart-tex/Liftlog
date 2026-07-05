@@ -7,6 +7,7 @@ import {
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
 import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
 import type { NewExercise } from '@/src/db/schema';
 import { ExerciseMetadataForm } from '@/src/features/exercises/components/exercise-metadata-form';
 import { useCustomExerciseForm } from '@/src/features/exercises/hooks/use-custom-exercise-form';
@@ -18,6 +19,7 @@ import {
   useState,
   type ComponentRef
 } from 'react';
+import { SaveIcon } from 'lucide-react-native';
 import { Keyboard, View } from 'react-native';
 
 interface CreateCustomExerciseSheetProps {
@@ -155,7 +157,12 @@ const CreateCustomExerciseSheetContent = memo(
               </Button>
             </View>
             <View className="flex-1">
-              <Button onPress={handleSave}>Save</Button>
+              <Button
+                leftIcon={<Icon as={SaveIcon} tone="primaryForeground" />}
+                onPress={handleSave}
+              >
+                Save
+              </Button>
             </View>
           </View>
         </BottomSheetSafeFooter>

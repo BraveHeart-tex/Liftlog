@@ -14,7 +14,7 @@ import type {
   OnValueChanging
 } from '@quidone/react-native-wheel-picker';
 
-import { XIcon } from 'lucide-react-native';
+import { SaveIcon, XIcon } from 'lucide-react-native';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
@@ -218,7 +218,12 @@ const RestTimerSettingSheetContent = memo(
               </View>
             </View>
           </View>
-          <Button className="w-full" disabled={!canSave} onPress={handleSave}>
+          <Button
+            className="w-full"
+            disabled={!canSave}
+            leftIcon={<Icon as={SaveIcon} tone="primaryForeground" />}
+            onPress={handleSave}
+          >
             Save
           </Button>
         </View>

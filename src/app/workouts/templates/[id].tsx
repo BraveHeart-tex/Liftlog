@@ -17,7 +17,12 @@ import { cn } from '@/src/lib/utils/cn.utils';
 import { getRouteParamId } from '@/src/lib/utils/route.utils';
 import { usePreventRemove } from '@react-navigation/native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { DumbbellIcon, EllipsisIcon } from 'lucide-react-native';
+import {
+  DumbbellIcon,
+  EllipsisIcon,
+  PencilIcon,
+  SaveIcon
+} from 'lucide-react-native';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 
@@ -234,6 +239,7 @@ function WorkoutTemplateDetailLoaded({
             className="w-full"
             disabled={!canSaveExercises}
             loading={isSavingExercises}
+            leftIcon={<Icon as={SaveIcon} tone="primaryForeground" />}
             onPress={saveExerciseChanges}
           >
             Save changes
@@ -300,6 +306,7 @@ function WorkoutTemplateDetailLoaded({
               className="min-h-0 px-0 py-0"
               textClassName="text-primary text-sm"
               disabled={isLoadingExercises}
+              leftIcon={<Icon as={PencilIcon} tone="primary" size="sm" />}
               onPress={() => enterExerciseEditMode()}
             >
               Edit

@@ -1,10 +1,12 @@
 import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
 import { Input } from '@/src/components/ui/input';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { useOnboardingActions } from '@/src/features/settings/hooks/use-onboarding-actions';
 import { cn } from '@/src/lib/utils/cn.utils';
 import type { WeightUnit } from '@/src/lib/utils/weight.utils';
+import { ArrowRightIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -94,7 +96,11 @@ export default function OnboardingScreen() {
         </View>
       </View>
 
-      <Button className="mt-10 w-full" onPress={getStarted}>
+      <Button
+        className="mt-10 w-full"
+        rightIcon={<Icon as={ArrowRightIcon} tone="primaryForeground" />}
+        onPress={getStarted}
+      >
         Get started
       </Button>
     </Screen>

@@ -136,7 +136,14 @@ export function WorkoutLogContent() {
               description="Completed sessions for this day will show here."
               className="border-border bg-card rounded-lg border border-dashed px-6 py-10"
               action={
-                <Button variant="secondary" size="sm" onPress={openStartSheet}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={
+                    <Icon as={PlusIcon} tone="secondaryForeground" size="sm" />
+                  }
+                  onPress={openStartSheet}
+                >
                   Log workout
                 </Button>
               }

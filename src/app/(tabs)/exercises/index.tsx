@@ -188,6 +188,7 @@ export default function ExercisesScreen() {
                   <Button
                     variant="ghost"
                     className="w-full"
+                    leftIcon={<Icon as={SearchXIcon} tone="foreground" />}
                     onPress={() => {
                       setQuery('');
                       setSelectedFilter('all');

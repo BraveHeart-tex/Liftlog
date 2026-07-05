@@ -5,6 +5,7 @@ import {
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
 import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { StopwatchContent } from '@/src/features/workouts/components/stopwatch-content';
 import { SetDurationWheel } from '@/src/features/workouts/components/set-duration-wheel';
@@ -13,6 +14,7 @@ import {
   formatDurationMs,
   getDurationMsParts
 } from '@/src/lib/utils/format-time.utils';
+import { CheckIcon } from 'lucide-react-native';
 import { memo, useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -256,6 +258,7 @@ const SetDurationPickerSheetContent = memo(
                 <Button
                   className="w-full"
                   disabled={!canConfirm}
+                  leftIcon={<Icon as={CheckIcon} tone="primaryForeground" />}
                   onPress={handleConfirm}
                 >
                   Done

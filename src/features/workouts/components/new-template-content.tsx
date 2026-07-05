@@ -1,4 +1,5 @@
 import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
 import { Input } from '@/src/components/ui/input';
 import { Screen } from '@/src/components/ui/screen';
 import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
@@ -6,6 +7,7 @@ import { TemplateExerciseEditor } from '@/src/features/workouts/components/templ
 import { useSaveWorkoutTemplate } from '@/src/features/workouts/hooks/use-save-workout-template';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { router } from 'expo-router';
+import { BookmarkIcon } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { Alert, View } from 'react-native';
 
@@ -75,6 +77,7 @@ export function NewTemplateContent() {
           className="w-full"
           disabled={!canSave}
           loading={isSaving}
+          leftIcon={<Icon as={BookmarkIcon} tone="primaryForeground" />}
           onPress={saveTemplate}
         >
           Save template

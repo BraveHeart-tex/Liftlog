@@ -10,7 +10,7 @@ import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import type { Workout, WorkoutExercise } from '@/src/db/schema';
 import { useSaveWorkoutTemplate } from '@/src/features/workouts/hooks/use-save-workout-template';
-import { XIcon } from 'lucide-react-native';
+import { BookmarkIcon, XIcon } from 'lucide-react-native';
 import {
   memo,
   useCallback,
@@ -161,6 +161,7 @@ const SaveWorkoutTemplateSheetContent = memo(
             <Button
               className="w-full"
               loading={isSavingTemplate}
+              leftIcon={<Icon as={BookmarkIcon} tone="primaryForeground" />}
               onPress={submitTemplate}
             >
               Save template

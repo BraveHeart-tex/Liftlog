@@ -1,6 +1,8 @@
 import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { Stack } from 'expo-router';
+import { CheckIcon } from 'lucide-react-native';
 import { Fragment } from 'react';
 import { View } from 'react-native';
 
@@ -19,7 +21,12 @@ export function ActiveWorkoutEditHeader({
         options={{
           title: 'Edit exercises',
           headerRight: () => (
-            <Button variant="ghost" size="sm" onPress={onDone}>
+            <Button
+              variant="ghost"
+              size="sm"
+              leftIcon={<Icon as={CheckIcon} tone="foreground" size="sm" />}
+              onPress={onDone}
+            >
               Done
             </Button>
           )

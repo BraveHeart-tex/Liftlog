@@ -7,7 +7,7 @@ import {
 } from '@/src/components/ui/bottom-sheet';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
-import { XIcon } from 'lucide-react-native';
+import { PlayIcon, Trash2Icon, XIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
 interface DiscardWorkoutSheetProps {
@@ -45,7 +45,12 @@ export const DiscardWorkoutSheet = ({
 
       <BottomSheetSafeFooter>
         <View className="flex-1">
-          <Button variant="ghost" className="w-full" onPress={onResume}>
+          <Button
+            variant="ghost"
+            className="w-full"
+            leftIcon={<Icon as={PlayIcon} tone="foreground" />}
+            onPress={onResume}
+          >
             Resume workout
           </Button>
         </View>
@@ -53,6 +58,7 @@ export const DiscardWorkoutSheet = ({
           <Button
             variant="destructive"
             className="w-full"
+            leftIcon={<Icon as={Trash2Icon} tone="danger" />}
             onPress={onDiscardAndStart}
           >
             Discard and start

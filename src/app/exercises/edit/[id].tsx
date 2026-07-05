@@ -1,4 +1,5 @@
 import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
@@ -12,6 +13,7 @@ import {
 } from '@/src/features/progress/tracking.domain';
 import { getRouteParamId } from '@/src/lib/utils/route.utils';
 import { router, useLocalSearchParams } from 'expo-router';
+import { SaveIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Keyboard, View, type ScrollView } from 'react-native';
 
@@ -195,7 +197,12 @@ export default function EditExerciseScreen() {
             </Button>
           </View>
           <View className="flex-1">
-            <Button onPress={submit} loading={isSaving} disabled={isSaving}>
+            <Button
+              loading={isSaving}
+              disabled={isSaving}
+              leftIcon={<Icon as={SaveIcon} tone="primaryForeground" />}
+              onPress={submit}
+            >
               Save
             </Button>
           </View>

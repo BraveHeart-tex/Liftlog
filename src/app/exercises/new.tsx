@@ -1,4 +1,5 @@
 import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import type { NewExercise } from '@/src/db/schema';
@@ -6,6 +7,7 @@ import { ExerciseMetadataForm } from '@/src/features/exercises/components/exerci
 import { useCustomExerciseForm } from '@/src/features/exercises/hooks/use-custom-exercise-form';
 import { useExerciseActions } from '@/src/features/exercises/hooks/use-exercise-actions';
 import { router } from 'expo-router';
+import { SaveIcon } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { Keyboard, View, type ScrollView } from 'react-native';
 
@@ -67,7 +69,12 @@ export default function NewExerciseScreen() {
             </Button>
           </View>
           <View className="flex-1">
-            <Button onPress={submit}>Save</Button>
+            <Button
+              leftIcon={<Icon as={SaveIcon} tone="primaryForeground" />}
+              onPress={submit}
+            >
+              Save
+            </Button>
           </View>
         </View>
       }
