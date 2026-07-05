@@ -6,6 +6,12 @@ const DEFAULT_REST_TIMER_SECONDS = 90;
 
 type RestTimerStatus = 'idle' | 'running' | 'paused';
 
+export interface RestTimerContext {
+  workoutId?: string;
+  workoutExerciseId?: string;
+  exerciseName?: string;
+}
+
 interface RestTimerState {
   status: RestTimerStatus;
   endTime: number | null;
@@ -13,13 +19,14 @@ interface RestTimerState {
   durationSeconds: number;
   secondsRemaining: number;
   activeDurationSeconds: number;
+  context: RestTimerContext;
   completionCount: number;
   isSheetOpen: boolean;
   setSheetOpen: (isOpen: boolean) => void;
   syncDefaultDuration: (defaultDuration: number) => void;
   syncOnOpen: (defaultDuration: number) => void;
   tick: (now?: number) => void;
-  start: (durationSeconds: number) => void;
+  start: (durationSeconds: number, context?: RestTimerContext) => void;
   addTime: (seconds: number) => void;
   pause: () => void;
   resume: () => void;
@@ -58,6 +65,7 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
   durationSeconds: DEFAULT_REST_TIMER_SECONDS,
   secondsRemaining: DEFAULT_REST_TIMER_SECONDS,
   activeDurationSeconds: DEFAULT_REST_TIMER_SECONDS,
+  context: {},
   completionCount: 0,
   isSheetOpen: false,
   setSheetOpen: isSheetOpen => {
@@ -116,7 +124,7 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
       set({ secondsRemaining });
     }
   },
-  start: durationSeconds => {
+  start: (durationSeconds, context = {}) => {
     const totalSeconds = normalizeRestTimerInput(durationSeconds);
 
     if (totalSeconds < MIN_REST_TIMER_SECONDS) {
@@ -129,7 +137,8 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
       pausedRemainingMs: null,
       durationSeconds: totalSeconds,
       secondsRemaining: totalSeconds,
-      activeDurationSeconds: totalSeconds
+      activeDurationSeconds: totalSeconds,
+      context
     });
   },
   addTime: seconds => {

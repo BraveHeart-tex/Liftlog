@@ -37,6 +37,7 @@
         }
       ],
       "expo-font",
+      "expo-notifications",
       "expo-health-connect",
       "./plugins/with-step-activity-permissions",
       "react-native-notify-kit",

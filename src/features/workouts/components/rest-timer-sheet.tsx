@@ -9,7 +9,10 @@ import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import { RestTimerIdleContent } from '@/src/features/workouts/components/rest-timer-idle-content';
 import { RestTimerPausedContent } from '@/src/features/workouts/components/rest-timer-paused-content';
 import { RestTimerRunningContent } from '@/src/features/workouts/components/rest-timer-running-content';
-import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
+import {
+  type RestTimerContext,
+  useRestTimerStore
+} from '@/src/features/workouts/stores/rest-timer.store';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { XIcon } from 'lucide-react-native';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
@@ -17,10 +20,15 @@ import { View } from 'react-native';
 
 interface RestTimerSheetProps {
   isOpen: boolean;
+  context?: RestTimerContext;
   onClose: () => void;
 }
 
-export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
+export function RestTimerSheet({
+  isOpen,
+  context,
+  onClose
+}: RestTimerSheetProps) {
   const setSheetOpen = useRestTimerStore(state => state.setSheetOpen);
   const registeredOpenRef = useRef(false);
 
@@ -61,6 +69,7 @@ export function RestTimerSheet({ isOpen, onClose }: RestTimerSheetProps) {
       {({ isContentReady }) => (
         <RestTimerSheetContent
           isOpen={isOpen}
+          context={context}
           onClose={handleClose}
           renderWheels={isContentReady}
         />
@@ -75,6 +84,7 @@ interface RestTimerSheetContentProps extends RestTimerSheetProps {
 
 const RestTimerSheetContent = memo(function RestTimerSheetContent({
   isOpen,
+  context,
   onClose,
   renderWheels
 }: RestTimerSheetContentProps) {
@@ -127,6 +137,7 @@ const RestTimerSheetContent = memo(function RestTimerSheetContent({
         >
           <RestTimerIdleContent
             defaultDuration={defaultDuration}
+            context={context}
             openToken={openToken}
             renderWheels={status === 'idle' && renderWheels}
           />

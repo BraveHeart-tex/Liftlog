@@ -149,6 +149,46 @@ export function getActiveWorkoutQuery(db: DrizzleDb) {
     .orderBy(desc(workouts.startedAt));
 }
 
+export function getActiveWorkoutForRestTimerNotification(
+  db: DrizzleDb,
+  workoutId: Workout['id'] | undefined
+) {
+  const rows = db
+    .select()
+    .from(workouts)
+    .where(
+      and(
+        eq(workouts.status, 'in_progress'),
+        workoutId ? eq(workouts.id, workoutId) : undefined
+      )
+    )
+    .orderBy(desc(workouts.startedAt))
+    .limit(1);
+
+  return rows.get();
+}
+
+export function getActiveWorkoutExerciseForRestTimerNotification(
+  db: DrizzleDb,
+  workoutId: Workout['id'],
+  workoutExerciseId: WorkoutExercise['id']
+) {
+  const rows = db
+    .select({ workoutExercise: workoutExercises })
+    .from(workoutExercises)
+    .innerJoin(workouts, eq(workouts.id, workoutExercises.workoutId))
+    .where(
+      and(
+        eq(workouts.status, 'in_progress'),
+        eq(workouts.id, workoutId),
+        eq(workoutExercises.id, workoutExerciseId)
+      )
+    )
+    .limit(1);
+
+  return rows.get()?.workoutExercise;
+}
+
 export function getHistoricalWorkoutDraftQuery(
   db: DrizzleDb,
   id: Workout['id']

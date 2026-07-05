@@ -68,7 +68,15 @@ export default function ActiveWorkoutExerciseScreen() {
           <ExerciseTrackSection item={item} />
         </KeyboardAvoidingView>
       </View>
-      <RestTimerSheet isOpen={isRestTimerOpen} onClose={closeRestTimer} />
+      <RestTimerSheet
+        isOpen={isRestTimerOpen}
+        context={{
+          workoutId: item.workoutExercise.workoutId,
+          workoutExerciseId: item.workoutExercise.id,
+          exerciseName: item.exercise?.name
+        }}
+        onClose={closeRestTimer}
+      />
     </Screen>
   );
 }

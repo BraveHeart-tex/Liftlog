@@ -12,6 +12,7 @@ const SWIPE_DISMISS_DISTANCE = 48;
 const SWIPE_DISMISS_VELOCITY = 0.75;
 
 interface SnackbarOptions {
+  key?: string;
   message: string;
   actionLabel?: string;
   onAction?: () => void;
@@ -26,7 +27,7 @@ type SnackbarMessage = SnackbarOptions & {
 interface SnackbarState {
   message: SnackbarMessage | null;
   showSnackbar: (options: SnackbarOptions) => void;
-  dismissSnackbar: () => void;
+  dismissSnackbar: (key?: string) => void;
 }
 
 let nextSnackbarId = 1;
@@ -57,10 +58,14 @@ const useSnackbarStore = create<SnackbarState>((set, get) => ({
 
     nextSnackbarId += 1;
   },
-  dismissSnackbar: () => {
+  dismissSnackbar: key => {
     const currentMessage = get().message;
 
     if (!currentMessage) {
+      return;
+    }
+
+    if (key && currentMessage.key !== key) {
       return;
     }
 
@@ -71,6 +76,10 @@ const useSnackbarStore = create<SnackbarState>((set, get) => ({
 
 export function showSnackbar(options: SnackbarOptions) {
   useSnackbarStore.getState().showSnackbar(options);
+}
+
+export function dismissSnackbar(key?: string) {
+  useSnackbarStore.getState().dismissSnackbar(key);
 }
 
 export function SnackbarHost() {

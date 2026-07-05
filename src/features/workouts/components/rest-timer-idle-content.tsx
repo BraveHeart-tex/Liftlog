@@ -3,6 +3,7 @@ import { Text } from '@/src/components/ui/text';
 import { WheelPicker } from '@/src/components/ui/wheel-picker';
 import {
   MIN_REST_TIMER_SECONDS,
+  type RestTimerContext,
   useRestTimerStore
 } from '@/src/features/workouts/stores/rest-timer.store';
 import { getTimerParts } from '@/src/lib/utils/date.utils';
@@ -15,6 +16,7 @@ import { View } from 'react-native';
 
 interface RestTimerIdleContentProps {
   defaultDuration: number;
+  context?: RestTimerContext;
   openToken: number;
   renderWheels: boolean;
 }
@@ -38,6 +40,7 @@ function getDurationDraft(durationSeconds: number) {
 
 export function RestTimerIdleContent({
   defaultDuration,
+  context,
   openToken,
   renderWheels
 }: RestTimerIdleContentProps) {
@@ -95,7 +98,7 @@ export function RestTimerIdleContent({
       return;
     }
 
-    startTimer(selectedTotalSeconds);
+    startTimer(selectedTotalSeconds, context);
   };
 
   return (
