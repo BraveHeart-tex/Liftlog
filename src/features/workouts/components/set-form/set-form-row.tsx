@@ -24,14 +24,18 @@ import { CheckIcon } from 'lucide-react-native';
 import { View, type LayoutChangeEvent } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, {
+  Easing,
   FadeInDown,
   FadeOut,
   LinearTransition
 } from 'react-native-reanimated';
 
-const rowEntering = FadeInDown.duration(MOTION_DURATION_MS.standard);
-const rowExiting = FadeOut.duration(MOTION_DURATION_MS.exit);
-const rowLayout = LinearTransition.duration(MOTION_DURATION_MS.standard);
+const STAGGER_STEP_MS = 40;
+const MAX_STAGGER_MS = 200;
+const rowExiting = FadeOut.duration(MOTION_DURATION_MS.exit).easing(
+  Easing.in(Easing.cubic)
+);
+const rowLayout = LinearTransition.springify().dampingRatio(1).stiffness(200);
 const emptyInputSelection = { start: 0, end: 0 };
 
 interface SetFormRowProps {
@@ -85,10 +89,15 @@ export function SetFormRow({
         weightUnit
       )
     : '-';
+  const rowEntering = row.animateOnMount
+    ? FadeInDown.duration(MOTION_DURATION_MS.standard)
+        .easing(Easing.out(Easing.cubic))
+        .delay(Math.min((row.setNumber - 1) * STAGGER_STEP_MS, MAX_STAGGER_MS))
+    : undefined;
 
   return (
     <Animated.View
-      entering={row.animateOnMount ? rowEntering : undefined}
+      entering={rowEntering}
       exiting={rowExiting}
       layout={rowLayout}
       onLayout={event => onRowLayout?.(row.key, event.nativeEvent.layout)}

@@ -70,7 +70,6 @@ export function useSetFormController({
     useState<ActiveDurationPickerState | null>(null);
   const nextDraftIndexRef = useRef(0);
   const pendingCopyRef = useRef(false);
-  const persistedSetIdsWithoutEnterAnimationRef = useRef(new Set<Set['id']>());
 
   const liveSetIds = useMemo(() => new Set(sets.map(set => set.id)), [sets]);
   const setById = useMemo(
@@ -88,7 +87,6 @@ export function useSetFormController({
 
         if (isSynced && row.createdSetId !== undefined) {
           removedDraftKeys.push(row.key);
-          persistedSetIdsWithoutEnterAnimationRef.current.add(row.createdSetId);
         }
 
         return !isSynced;
@@ -195,9 +193,7 @@ export function useSetFormController({
         return {
           fieldValues,
           hasSavedChanges,
-          animateOnMount: !persistedSetIdsWithoutEnterAnimationRef.current.has(
-            set.id
-          ),
+          animateOnMount: false,
           isCommitted:
             isSaving || (set.status === 'completed' && !hasSavedChanges),
           isSaving,
@@ -405,8 +401,6 @@ export function useSetFormController({
           { shouldScrollAfterMutation: false }
         )
       );
-
-      persistedSetIdsWithoutEnterAnimationRef.current.add(createdSet.id);
 
       setDraftRows(currentRows =>
         currentRows.map(currentRow =>
