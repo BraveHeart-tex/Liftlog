@@ -3,11 +3,12 @@ import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
+import { replaySoundEffect } from '@/src/lib/audio/replay-sound-effect.utils';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { formatDurationMs } from '@/src/lib/utils/format-time.utils';
 import { useAudioPlayer } from 'expo-audio';
 import { RotateCcwIcon, SaveIcon } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 type StopwatchStatus = 'idle' | 'running' | 'paused';
@@ -29,6 +30,11 @@ export function StopwatchContent({
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [accumulatedMs, setAccumulatedMs] = useState(0);
   const [now, setNow] = useState(() => Date.now());
+  const isMountedRef = useRef(false);
+  const isOpenRef = useRef(isOpen);
+
+  isOpenRef.current = isOpen;
+
   const startSoundPlayer = useAudioPlayer(
     require('@/assets/sounds/stopwatch-start.wav'),
     { downloadFirst: true }
@@ -61,8 +67,10 @@ export function StopwatchContent({
     errorMessage: string
   ) => {
     try {
-      await player.seekTo(0);
-      player.play();
+      player.volume = 1;
+      await replaySoundEffect(player, {
+        shouldPlay: () => isMountedRef.current && isOpenRef.current
+      });
     } catch (error) {
       console.error(errorMessage, error);
     }
@@ -74,6 +82,14 @@ export function StopwatchContent({
     setAccumulatedMs(0);
     setNow(Date.now());
   };
+
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {

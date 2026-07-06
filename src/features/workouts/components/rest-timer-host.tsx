@@ -5,11 +5,7 @@ import {
   scheduleRestTimerNotification
 } from '@/src/features/workouts/rest-timer-notifications.service';
 import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
-import {
-  setAudioModeAsync,
-  setIsAudioActiveAsync,
-  useAudioPlayer
-} from 'expo-audio';
+import { useAudioPlayer } from 'expo-audio';
 import {
   ImpactFeedbackStyle,
   NotificationFeedbackType,
@@ -54,13 +50,10 @@ export function RestTimerHost() {
   const player = useAudioPlayer(
     require('@/assets/sounds/rest-timer-finished.wav'),
     {
-      downloadFirst: true,
-      keepAudioSessionActive: true
+      downloadFirst: true
     }
   );
   const completionSoundOperationGenerationRef = useRef(0);
-  const completionSoundStopGenerationRef = useRef(0);
-  const latestAudioOperationIsStopRef = useRef(true);
   const isAudioHostMountedRef = useRef(false);
   const playerRef = useRef(player);
 
@@ -81,22 +74,17 @@ export function RestTimerHost() {
     []
   );
 
-  const stopCompletionSound = useCallback(async () => {
+  const stopCompletionSound = useCallback(() => {
     try {
       completionSoundOperationGenerationRef.current += 1;
-      completionSoundStopGenerationRef.current += 1;
-      latestAudioOperationIsStopRef.current = true;
       clearCompletionSoundTimeout();
 
       const operationPlayer = playerRef.current;
 
       if (isAudioHostMountedRef.current) {
-        operationPlayer.pause();
         operationPlayer.loop = false;
-        await operationPlayer.seekTo(0);
+        operationPlayer.pause();
       }
-
-      await setIsAudioActiveAsync(false);
     } catch (error) {
       console.error('Failed to stop rest timer completion sound', error);
     }
@@ -116,7 +104,7 @@ export function RestTimerHost() {
     lastHandledCompletionCountRef.current =
       useRestTimerStore.getState().completionCount;
     dismissSnackbar(REST_TIMER_COMPLETION_SNACKBAR_KEY);
-    void stopCompletionSound();
+    stopCompletionSound();
   }, [stopCompletionSound]);
 
   useRestTimerNotificationResponses({
@@ -126,29 +114,13 @@ export function RestTimerHost() {
   const playCompletionSound = useCallback(async () => {
     const operationGeneration =
       completionSoundOperationGenerationRef.current + 1;
-    const stopGeneration = completionSoundStopGenerationRef.current;
 
     completionSoundOperationGenerationRef.current = operationGeneration;
-    latestAudioOperationIsStopRef.current = false;
     clearCompletionSoundTimeout();
 
     const operationPlayer = playerRef.current;
 
     try {
-      await setIsAudioActiveAsync(true);
-
-      if (!isCurrentAudioOperation(operationGeneration, operationPlayer)) {
-        if (
-          completionSoundStopGenerationRef.current !== stopGeneration &&
-          (!isAudioHostMountedRef.current ||
-            latestAudioOperationIsStopRef.current)
-        ) {
-          await setIsAudioActiveAsync(false);
-        }
-
-        return;
-      }
-
       await operationPlayer.seekTo(0);
 
       if (!isCurrentAudioOperation(operationGeneration, operationPlayer)) {
@@ -188,27 +160,13 @@ export function RestTimerHost() {
   ]);
 
   useEffect(() => {
-    setAudioModeAsync({
-      playsInSilentMode: true,
-      interruptionMode: 'duckOthers'
-    }).catch(error => {
-      console.error('Failed to configure rest timer audio mode', error);
-    });
-  }, []);
-
-  useEffect(() => {
     isAudioHostMountedRef.current = true;
     playerRef.current = player;
 
     return () => {
       isAudioHostMountedRef.current = false;
       completionSoundOperationGenerationRef.current += 1;
-      completionSoundStopGenerationRef.current += 1;
-      latestAudioOperationIsStopRef.current = true;
       clearCompletionSoundTimeout();
-      setIsAudioActiveAsync(false).catch(error => {
-        console.error('Failed to deactivate rest timer audio session', error);
-      });
     };
   }, [clearCompletionSoundTimeout, player]);
 
@@ -256,7 +214,7 @@ export function RestTimerHost() {
         return;
       }
 
-      void stopCompletionSound();
+      stopCompletionSound();
     });
 
     return () => subscription.remove();
@@ -280,7 +238,7 @@ export function RestTimerHost() {
       message: 'Rest time is up',
       actionLabel: 'Dismiss',
       onDismiss: () => {
-        void stopCompletionSound();
+        stopCompletionSound();
       }
     });
   }, [completionCount, isSheetOpen, playCompletionSound, stopCompletionSound]);

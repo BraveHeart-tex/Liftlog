@@ -6,3 +6,4 @@
 - After logic changes, run relevant checks and report failures.
 - Never hand-edit generated files, Drizzle migrations/snapshots, or generated SQL.
 - Read `/docs` only for touched subsystems: `bottom-sheet`, `data-access`, `database`, `layout`, `styling`, `ux-display`, `expo-router`.
+- Expo audio: configure app audio mode once at app level; no leaf `setAudioModeAsync`/`setIsAudioActiveAsync`.
