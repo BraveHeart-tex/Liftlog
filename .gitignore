@@ -55,3 +55,4 @@ app-example
 .idea/dataSources/
 .idea/dataSources.local.xml
 *.iml
+.env.local

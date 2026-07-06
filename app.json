@@ -50,6 +50,14 @@
             "minSdkVersion": 26
           }
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "liftlog",
+          "organization": "krc-94"
+        }
       ]
     ],
     "experiments": {

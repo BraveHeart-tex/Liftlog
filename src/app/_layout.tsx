@@ -4,10 +4,32 @@ import { DrizzleStudio } from '@/src/components/drizzle-studio';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { bootstrapThemeColorScheme } from '@/src/theme/bootstrap-theme';
 import { appFontAssets } from '@/src/theme/fonts';
+import {
+  init as initSentry,
+  mobileReplayIntegration,
+  wrap as wrapWithSentry
+} from '@sentry/react-native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { hideAsync, preventAutoHideAsync } from 'expo-splash-screen';
 import { useCallback, useEffect, useState } from 'react';
+
+initSentry({
+  dsn: 'https://1bdaf14c00267e50ae9ecee83e794a69@o4507100890726400.ingest.de.sentry.io/4511688205467728',
+
+  sendDefaultPii: false,
+
+  // Enable Logs
+  enableLogs: false,
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [mobileReplayIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  spotlight: __DEV__
+});
 
 bootstrapThemeColorScheme();
 void preventAutoHideAsync();
@@ -121,7 +143,7 @@ function RootNavigator() {
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const [fontsLoaded, fontLoadError] = useFonts(appFontAssets);
   const [databaseStatus, setDatabaseStatus] = useState<
     'loading' | 'ready' | 'error'
@@ -157,3 +179,5 @@ export default function RootLayout() {
     </CommonProviders>
   );
 }
+
+export default wrapWithSentry(RootLayout);
