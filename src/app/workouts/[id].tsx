@@ -9,7 +9,7 @@ import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
 import { WorkoutDetailActionsSheet } from '@/src/features/workouts/components/workout-detail-actions-sheet';
 import { WorkoutHistoryExerciseCard } from '@/src/features/workouts/components/workout-history-exercise-card';
-import { WorkoutMetricCard } from '@/src/features/workouts/components/workout-metric-card';
+import { WorkoutMetrics } from '@/src/features/workouts/components/workout-metrics';
 import { useHistoricalWorkoutEditStart } from '@/src/features/workouts/hooks/use-historical-workout-edit-start';
 import { useRepeatWorkout } from '@/src/features/workouts/hooks/use-repeat-workout';
 import { useWorkoutDelete } from '@/src/features/workouts/hooks/use-workout-delete';
@@ -268,15 +268,8 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
         </Text>
       </View>
 
-      <View className="mt-6 flex-row gap-3">
-        {workoutMetrics.map(metric => (
-          <WorkoutMetricCard
-            key={metric.label}
-            label={metric.label}
-            value={metric.value}
-            icon={metric.icon}
-          />
-        ))}
+      <View className="mt-6">
+        <WorkoutMetrics metrics={workoutMetrics} />
       </View>
 
       {workoutExerciseRows.length > 0 && !hasSavedTemplate && (
