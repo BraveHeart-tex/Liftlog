@@ -1,8 +1,12 @@
+import {
+  MAX_REST_TIMER_SECONDS,
+  MIN_REST_TIMER_SECONDS
+} from '@/src/features/workouts/rest-timer.constants';
 import { create } from 'zustand';
 
-export const MIN_REST_TIMER_SECONDS = 10;
-const MAX_REST_TIMER_SECONDS = 3600;
 const DEFAULT_REST_TIMER_SECONDS = 90;
+
+export { MAX_REST_TIMER_SECONDS, MIN_REST_TIMER_SECONDS };
 
 type RestTimerStatus = 'idle' | 'running' | 'paused';
 

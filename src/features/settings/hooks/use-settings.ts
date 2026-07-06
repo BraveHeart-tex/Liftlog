@@ -6,8 +6,12 @@ import { useCallback, useMemo } from 'react';
 import {
   SETTINGS_DEFAULTS,
   SETTINGS_KEYS,
+  addRestTimerPreset as addRestTimerPresetRepo,
+  deleteRestTimerPreset as deleteRestTimerPresetRepo,
   getHealthConnectStepsEnabled,
   getRestTimerDuration,
+  getRestTimerPresets,
+  getRestTimerPresetsFromValue,
   getSettingsQuery,
   getStepGoal,
   getStepsNotificationEnabled,
@@ -19,21 +23,25 @@ import {
   setStepGoal as setStepGoalRepo,
   setStepsNotificationEnabled as setStepsNotificationEnabledRepo,
   setWeightUnit as setWeightUnitRepo,
+  updateRestTimerPreset as updateRestTimerPresetRepo,
+  type RestTimerPreset,
   type WeightUnit
 } from '@/src/features/settings/settings.repository';
 
 export function useSettings() {
   const db = useDrizzle();
-  const initialSettings = useMemo(
-    () => ({
+  const initialSettings = useMemo(() => {
+    const restTimerDuration = getRestTimerDuration(db);
+
+    return {
       weightUnit: getWeightUnit(db),
-      restTimerDuration: getRestTimerDuration(db),
+      restTimerDuration,
+      restTimerPresets: getRestTimerPresets(db),
       healthConnectStepsEnabled: getHealthConnectStepsEnabled(db),
       stepsNotificationEnabled: getStepsNotificationEnabled(db),
       stepGoal: getStepGoal(db)
-    }),
-    [db]
-  );
+    };
+  }, [db]);
   const { data: rows, isLive } = useLiveWithFallback(getSettingsQuery(db), [
     db
   ]);
@@ -78,6 +86,18 @@ export function useSettings() {
     return parseBooleanSetting(row?.value);
   }, [initialSettings.healthConnectStepsEnabled, isLive, rows]);
 
+  const restTimerPresets = useMemo(() => {
+    if (!isLive) {
+      return initialSettings.restTimerPresets;
+    }
+
+    const row = rows.find(row => row.key === SETTINGS_KEYS.restTimerPresets);
+
+    return row
+      ? getRestTimerPresetsFromValue(row.value)
+      : initialSettings.restTimerPresets;
+  }, [initialSettings.restTimerPresets, isLive, rows]);
+
   const stepsNotificationEnabled = useMemo(() => {
     if (!isLive) {
       return initialSettings.stepsNotificationEnabled;
@@ -110,6 +130,27 @@ export function useSettings() {
   const setRestTimerDuration = useCallback(
     (seconds: number) => {
       setRestTimerDurationRepo(db, seconds);
+    },
+    [db]
+  );
+
+  const addRestTimerPreset = useCallback(
+    (preset: Omit<RestTimerPreset, 'id'>) => {
+      addRestTimerPresetRepo(db, preset);
+    },
+    [db]
+  );
+
+  const updateRestTimerPreset = useCallback(
+    (preset: RestTimerPreset) => {
+      updateRestTimerPresetRepo(db, preset);
+    },
+    [db]
+  );
+
+  const deleteRestTimerPreset = useCallback(
+    (id: string) => {
+      deleteRestTimerPresetRepo(db, id);
     },
     [db]
   );
@@ -153,12 +194,16 @@ export function useSettings() {
   return {
     weightUnit,
     restTimerDuration,
+    restTimerPresets,
     formattedRestTimerDuration,
     healthConnectStepsEnabled,
     stepsNotificationEnabled,
     stepGoal,
     setWeightUnit,
     setRestTimerDuration,
+    addRestTimerPreset,
+    updateRestTimerPreset,
+    deleteRestTimerPreset,
     setHealthConnectStepsEnabled,
     setStepsNotificationEnabled,
     setStepGoal

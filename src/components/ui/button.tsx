@@ -1,5 +1,5 @@
-import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { StyledActivityIndicator } from '@/src/components/styled/activity-indicator';
+import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { appFonts } from '@/src/theme/fonts';
@@ -55,6 +55,7 @@ interface ButtonProps {
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
   className?: string;
+  containerClassName?: string;
   textClassName?: string;
   textStyle?: StyleProp<TextStyle>;
   children: ReactNode;
@@ -99,14 +100,6 @@ const buttonTextStyle: TextStyle = {
   fontFamily: appFonts.faces.semiBold
 };
 
-function getButtonContainerClassName(className?: string) {
-  if (!className) {
-    return undefined;
-  }
-
-  return cn(className.includes('w-full') && 'w-full');
-}
-
 export function Button({
   variant = 'primary',
   size = 'md',
@@ -116,6 +109,7 @@ export function Button({
   leftIcon,
   rightIcon,
   className,
+  containerClassName,
   textClassName,
   textStyle,
   children,
@@ -134,7 +128,11 @@ export function Button({
     <PressableSurface
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ busy: loading }}
-      containerClassName={getButtonContainerClassName(className)}
+      containerClassName={cn(
+        // TODO: Remove this block after migrating every button to use containerClassName
+        className?.includes('w-full') && 'w-full',
+        containerClassName
+      )}
       className={cn(buttonVariants({ variant, size }), className)}
       disabled={isBlocked}
       pressedClassName={cn(

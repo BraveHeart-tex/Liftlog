@@ -1,20 +1,19 @@
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
-import { Text } from '@/src/components/ui/text';
-import { WheelPicker } from '@/src/components/ui/wheel-picker';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
+import type { RestTimerPreset } from '@/src/features/settings/settings.repository';
+import { RestTimerDurationPicker } from '@/src/features/workouts/components/rest-timer-duration-picker';
+import { RestTimerPresetEditorSheet } from '@/src/features/workouts/components/rest-timer-preset-editor-sheet';
+import { RestTimerPresetList } from '@/src/features/workouts/components/rest-timer-preset-list';
 import {
   MIN_REST_TIMER_SECONDS,
   type RestTimerContext,
   useRestTimerStore
 } from '@/src/features/workouts/stores/rest-timer.store';
 import { getTimerParts } from '@/src/lib/utils/date.utils';
-import type {
-  OnValueChanged,
-  OnValueChanging
-} from '@quidone/react-native-wheel-picker';
 import { PlayIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
 
 interface RestTimerIdleContentProps {
   defaultDuration: number;
@@ -22,19 +21,6 @@ interface RestTimerIdleContentProps {
   openToken: number;
   renderWheels: boolean;
 }
-
-const PICKER_ITEM_HEIGHT = 65;
-const PICKER_VISIBLE_ITEM_COUNT = 3;
-
-const minuteItems = Array.from({ length: 61 }, (_, value) => ({
-  label: String(value),
-  value
-}));
-
-const secondItems = Array.from({ length: 60 }, (_, value) => ({
-  label: String(value).padStart(2, '0'),
-  value
-}));
 
 function getDurationDraft(durationSeconds: number) {
   return getTimerParts(durationSeconds);
@@ -46,12 +32,23 @@ export function RestTimerIdleContent({
   openToken,
   renderWheels
 }: RestTimerIdleContentProps) {
+  const {
+    restTimerPresets,
+    setRestTimerDuration,
+    addRestTimerPreset,
+    updateRestTimerPreset,
+    deleteRestTimerPreset
+  } = useSettings();
   const durationSeconds = useRestTimerStore(state => state.durationSeconds);
   const startTimer = useRestTimerStore(state => state.start);
   const lastOpenTokenRef = useRef(openToken);
   const [durationDraft] = useState(() => getDurationDraft(durationSeconds));
   const [minutes, setMinutes] = useState(durationDraft.minutes);
   const [seconds, setSeconds] = useState(durationDraft.seconds);
+  const [editingPreset, setEditingPreset] = useState<RestTimerPreset | null>(
+    null
+  );
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const minutesRef = useRef(durationDraft.minutes);
   const secondsRef = useRef(durationDraft.seconds);
   const totalSeconds = minutes * 60 + seconds;
@@ -71,27 +68,23 @@ export function RestTimerIdleContent({
     setSeconds(nextDraft.seconds);
   }, [defaultDuration, openToken]);
 
-  const onMinuteChanging: OnValueChanging<(typeof minuteItems)[number]> =
-    useCallback(({ item }) => {
-      minutesRef.current = item.value;
-    }, []);
+  const handleMinutesChanging = useCallback((value: number) => {
+    minutesRef.current = value;
+  }, []);
 
-  const onMinuteChange: OnValueChanged<(typeof minuteItems)[number]> =
-    useCallback(({ item }) => {
-      minutesRef.current = item.value;
-      setMinutes(item.value);
-    }, []);
+  const handleMinutesChange = useCallback((value: number) => {
+    minutesRef.current = value;
+    setMinutes(value);
+  }, []);
 
-  const onSecondChanging: OnValueChanging<(typeof secondItems)[number]> =
-    useCallback(({ item }) => {
-      secondsRef.current = item.value;
-    }, []);
+  const handleSecondsChanging = useCallback((value: number) => {
+    secondsRef.current = value;
+  }, []);
 
-  const onSecondChange: OnValueChanged<(typeof secondItems)[number]> =
-    useCallback(({ item }) => {
-      secondsRef.current = item.value;
-      setSeconds(item.value);
-    }, []);
+  const handleSecondsChange = useCallback((value: number) => {
+    secondsRef.current = value;
+    setSeconds(value);
+  }, []);
 
   const handleStart = () => {
     const selectedTotalSeconds = minutesRef.current * 60 + secondsRef.current;
@@ -103,76 +96,89 @@ export function RestTimerIdleContent({
     startTimer(selectedTotalSeconds, context);
   };
 
+  const setDurationDraft = useCallback((nextDurationSeconds: number) => {
+    const nextDraft = getDurationDraft(nextDurationSeconds);
+
+    minutesRef.current = nextDraft.minutes;
+    secondsRef.current = nextDraft.seconds;
+    setMinutes(nextDraft.minutes);
+    setSeconds(nextDraft.seconds);
+  }, []);
+
+  const handlePresetPress = useCallback(
+    (preset: RestTimerPreset) => {
+      setDurationDraft(preset.durationSeconds);
+      setRestTimerDuration(preset.durationSeconds);
+    },
+    [setDurationDraft, setRestTimerDuration]
+  );
+
+  const openAddPreset = useCallback(() => {
+    setEditingPreset(null);
+    setIsEditorOpen(true);
+  }, []);
+
+  const openEditPreset = useCallback((preset: RestTimerPreset) => {
+    setEditingPreset(preset);
+    setIsEditorOpen(true);
+  }, []);
+
+  const closeEditor = useCallback(() => {
+    setIsEditorOpen(false);
+  }, []);
+
+  const handleSavePreset = useCallback(
+    (preset: Omit<RestTimerPreset, 'id'>) => {
+      try {
+        if (editingPreset) {
+          updateRestTimerPreset({ ...editingPreset, ...preset });
+        } else {
+          addRestTimerPreset(preset);
+        }
+      } catch {
+        Alert.alert(
+          'Preset not saved',
+          'Only 8 rest timer presets are allowed.'
+        );
+
+        return;
+      }
+
+      setIsEditorOpen(false);
+    },
+    [addRestTimerPreset, editingPreset, updateRestTimerPreset]
+  );
+
+  const handleDeletePreset = useCallback(
+    (preset: RestTimerPreset) => {
+      Alert.alert('Delete preset?', `${preset.name} will be removed.`, [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            deleteRestTimerPreset(preset.id);
+            setIsEditorOpen(false);
+          }
+        }
+      ]);
+    },
+    [deleteRestTimerPreset]
+  );
+
   return (
     <>
       <View className="items-center">
-        <View className="-mt-4 flex-row items-center justify-center">
-          <View className="relative w-32">
-            <WheelPicker
-              data={minuteItems}
-              value={minutes}
-              onValueChanging={onMinuteChanging}
-              onValueChanged={onMinuteChange}
-              renderWhen={renderWheels}
-              visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
-              itemHeight={PICKER_ITEM_HEIGHT}
-              width="100%"
-              overlayItemClassName="rounded-xl border border-border bg-secondary/40"
-              itemTextClassName="text-4xl font-semibold"
-              itemTextStyle={{ fontVariant: ['tabular-nums'] }}
-            />
-            <View
-              pointerEvents="none"
-              className="absolute top-0 right-3 bottom-0 z-10 justify-center"
-            >
-              <Text
-                variant="overline"
-                tone="muted"
-                className="text-[10px] font-bold"
-              >
-                MIN
-              </Text>
-            </View>
-          </View>
-
-          <View className="w-8 items-center justify-center">
-            <Text
-              variant="h2"
-              tone="muted"
-              className="pb-1 text-center font-semibold"
-            >
-              :
-            </Text>
-          </View>
-
-          <View className="relative w-32">
-            <WheelPicker
-              data={secondItems}
-              value={seconds}
-              onValueChanging={onSecondChanging}
-              onValueChanged={onSecondChange}
-              renderWhen={renderWheels}
-              visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
-              itemHeight={PICKER_ITEM_HEIGHT}
-              width="100%"
-              overlayItemClassName="rounded-xl border border-border bg-secondary/40"
-              itemTextClassName="text-4xl font-semibold"
-              itemTextStyle={{ fontVariant: ['tabular-nums'] }}
-            />
-            <View
-              pointerEvents="none"
-              className="absolute top-0 right-3 bottom-0 z-10 justify-center"
-            >
-              <Text
-                variant="overline"
-                tone="muted"
-                className="text-[10px] font-bold"
-              >
-                SEC
-              </Text>
-            </View>
-          </View>
-        </View>
+        <RestTimerDurationPicker
+          minutes={minutes}
+          seconds={seconds}
+          renderWhen={renderWheels}
+          className="-mt-4"
+          onMinutesChanging={handleMinutesChanging}
+          onMinutesChange={handleMinutesChange}
+          onSecondsChanging={handleSecondsChanging}
+          onSecondsChange={handleSecondsChange}
+        />
       </View>
 
       <Button
@@ -183,6 +189,23 @@ export function RestTimerIdleContent({
       >
         Start
       </Button>
+
+      <RestTimerPresetList
+        presets={restTimerPresets}
+        selectedDurationSeconds={totalSeconds}
+        onAddPreset={openAddPreset}
+        onPresetPress={handlePresetPress}
+        onPresetLongPress={openEditPreset}
+      />
+
+      <RestTimerPresetEditorSheet
+        isOpen={isEditorOpen}
+        preset={editingPreset}
+        defaultDuration={totalSeconds}
+        onClose={closeEditor}
+        onSave={handleSavePreset}
+        onDelete={handleDeletePreset}
+      />
     </>
   );
 }
