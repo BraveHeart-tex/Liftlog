@@ -44,6 +44,7 @@ export function RestTimerHost() {
   const isSheetOpen = useRestTimerStore(state => state.isSheetOpen);
   const tick = useRestTimerStore(state => state.tick);
   const lastHandledCompletionCountRef = useRef(completionCount);
+  const wasSheetOpenRef = useRef(isSheetOpen);
   const completionSoundTimeoutRef = useRef<ReturnType<
     typeof setTimeout
   > | null>(null);
@@ -219,6 +220,16 @@ export function RestTimerHost() {
 
     return () => subscription.remove();
   }, [stopCompletionSound, tick]);
+
+  useEffect(() => {
+    const wasSheetOpen = wasSheetOpenRef.current;
+
+    wasSheetOpenRef.current = isSheetOpen;
+
+    if (wasSheetOpen && !isSheetOpen) {
+      stopCompletionSound();
+    }
+  }, [isSheetOpen, stopCompletionSound]);
 
   useEffect(() => {
     if (completionCount <= lastHandledCompletionCountRef.current) {
