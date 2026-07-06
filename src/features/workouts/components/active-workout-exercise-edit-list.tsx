@@ -3,9 +3,7 @@ import { ActiveWorkoutExerciseEditRow } from '@/src/features/workouts/components
 import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
 import type { ComponentRef } from 'react';
 import { memo, useCallback, useEffect, useState } from 'react';
-import { View } from 'react-native';
-import type Animated from 'react-native-reanimated';
-import { useAnimatedRef } from 'react-native-reanimated';
+import Animated, { useAnimatedRef } from 'react-native-reanimated';
 import Sortable, {
   type SortableGridDragEndParams,
   type SortableGridRenderItem
@@ -82,7 +80,7 @@ export const ActiveWorkoutExerciseEditList = memo(
     );
 
     return (
-      <View className="flex-1 px-4">
+      <Animated.ScrollView className="flex-1 px-4" ref={scrollableRef}>
         <Sortable.Grid
           columns={1}
           customHandle
@@ -105,7 +103,7 @@ export const ActiveWorkoutExerciseEditList = memo(
           hapticsEnabled={false}
           onDragEnd={handleDragEnd}
         />
-      </View>
+      </Animated.ScrollView>
     );
   }
 );
