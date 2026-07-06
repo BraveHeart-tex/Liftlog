@@ -23,14 +23,16 @@ function getWorkoutTemplateRecordById(
     .get();
 }
 
-export function getWorkoutTemplatesQuery(db: DrizzleDb) {
-  return db
+export function getWorkoutTemplatesQuery(db: DrizzleDb, limit?: number) {
+  const query = db
     .select()
     .from(workoutTemplates)
     .orderBy(
       desc(workoutTemplates.updatedAt),
       desc(workoutTemplates.createdAt)
     );
+
+  return limit === undefined ? query : query.limit(limit);
 }
 
 export function getWorkoutTemplateByIdQuery(

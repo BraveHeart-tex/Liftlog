@@ -4,6 +4,7 @@ import type { ExerciseListItem } from '@/src/features/exercises/exercise.reposit
 import { getCategoryLabel } from '@/src/features/workouts/components/workout-components.utils';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { CheckIcon, PlusIcon } from 'lucide-react-native';
+import { memo } from 'react';
 import { View } from 'react-native';
 
 interface ExercisePickerRowProps {
@@ -12,11 +13,11 @@ interface ExercisePickerRowProps {
   onPress: (exercise: ExerciseListItem) => void;
 }
 
-export const ExercisePickerRow = ({
+export const ExercisePickerRow = memo(function ExercisePickerRow({
   exercise,
   isSelected = false,
   onPress
-}: ExercisePickerRowProps) => {
+}: ExercisePickerRowProps) {
   const metadataLabel =
     exercise.isCustom === 1 ? 'Custom' : getCategoryLabel(exercise.category);
 
@@ -44,4 +45,4 @@ export const ExercisePickerRow = ({
       }
     />
   );
-};
+});

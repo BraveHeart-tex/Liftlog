@@ -11,7 +11,7 @@ import {
   type Set,
   type Workout
 } from '@/src/db/schema';
-import { and, asc, desc, eq, inArray, lt } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lt } from 'drizzle-orm';
 import {
   computeEstimated1RM,
   getPersonalRecordSnapshot,
@@ -39,23 +39,6 @@ export function getPersonalRecordsByExercise(
   return getPersonalRecordsByExerciseQuery(db, exerciseId).all();
 }
 
-export function getExerciseHistoryWorkoutsQuery(
-  db: DrizzleDb,
-  exerciseId: Exercise['id']
-) {
-  return db
-    .select({ workout: workouts })
-    .from(workouts)
-    .innerJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
-    .where(
-      and(
-        eq(workouts.status, 'completed'),
-        eq(workoutExercises.exerciseId, exerciseId)
-      )
-    )
-    .orderBy(desc(workouts.startedAt));
-}
-
 export function getRecentExerciseHistoryWorkoutsQuery(
   db: DrizzleDb,
   exerciseId: Exercise['id'],
@@ -75,6 +58,27 @@ export function getRecentExerciseHistoryWorkoutsQuery(
     )
     .orderBy(desc(workouts.startedAt))
     .limit(limit);
+}
+
+export function getExerciseHistoryWorkoutsSinceQuery(
+  db: DrizzleDb,
+  exerciseId: Exercise['id'],
+  sinceStartedAt: Workout['startedAt'] | undefined
+) {
+  return db
+    .selectDistinct({ workout: workouts })
+    .from(workouts)
+    .innerJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
+    .where(
+      and(
+        eq(workouts.status, 'completed'),
+        eq(workoutExercises.exerciseId, exerciseId),
+        sinceStartedAt !== undefined
+          ? gte(workouts.startedAt, sinceStartedAt)
+          : eq(workouts.id, '')
+      )
+    )
+    .orderBy(desc(workouts.startedAt));
 }
 
 export function getRecentExerciseHistoryWorkouts(

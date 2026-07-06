@@ -14,9 +14,13 @@ import {
 } from 'lucide-react-native';
 import { View } from 'react-native';
 
+const WORKOUT_TAB_TEMPLATE_LIMIT = 10;
+
 export const WorkoutTemplatesSection = () => {
   const router = useRouter();
-  const { templates } = useWorkoutTemplates();
+  const { templates } = useWorkoutTemplates({
+    limit: WORKOUT_TAB_TEMPLATE_LIMIT
+  });
 
   const handleTemplatePress = (templateId: string) => {
     router.navigate({

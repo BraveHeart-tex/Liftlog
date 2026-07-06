@@ -21,9 +21,12 @@ export function TemplateExerciseEditor({
   exercises,
   onChange
 }: TemplateExerciseEditorProps) {
-  const availableExercises = useExercises();
   const { createCustomExercise } = useExerciseActions();
   const [isExercisePickerOpen, setIsExercisePickerOpen] = useState(false);
+  const { exercises: availableExercises, isLoading: isLoadingExercises } =
+    useExercises({
+      enabled: isExercisePickerOpen
+    });
   const [isCreateCustomExerciseOpen, setIsCreateCustomExerciseOpen] =
     useState(false);
   const [initialCustomExerciseName, setInitialCustomExerciseName] =
@@ -128,6 +131,7 @@ export function TemplateExerciseEditor({
         mode="multiple"
         isOpen={isExercisePickerOpen}
         exercises={availableExercises}
+        isLoading={isLoadingExercises}
         selectedExerciseIds={selectedExerciseIds}
         onClose={closeExercisePicker}
         onSelectExercises={selectExercises}

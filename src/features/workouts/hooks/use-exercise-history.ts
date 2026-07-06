@@ -4,8 +4,9 @@ import { getExerciseByIdQuery } from '@/src/features/exercises/exercise.reposito
 import {
   buildExerciseHistory,
   getExerciseHistorySetsQuery,
-  getExerciseHistoryWorkoutsQuery,
-  getPersonalRecordsByExerciseQuery
+  getExerciseHistoryWorkoutsSinceQuery,
+  getPersonalRecordsByExerciseQuery,
+  getRecentExerciseHistoryWorkoutsQuery
 } from '@/src/features/progress/progress.repository';
 import {
   getSetScore,
@@ -20,7 +21,6 @@ function getCompletedSets(sets: Set[]) {
 }
 
 const MAX_HISTORY_ITEM_LIMIT = 20;
-const VISIBLE_WORKOUT_LIMIT = 10;
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
 function getBestScore(sets: Set[], trackingType: TrackingType) {
@@ -48,32 +48,38 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
     () => new Set(prResult.data.map(personalRecord => personalRecord.setId)),
     [prResult.data]
   );
-  const workoutResult = useLiveWithFallback(
-    getExerciseHistoryWorkoutsQuery(db, exerciseId),
+  const visibleWorkoutResult = useLiveWithFallback(
+    getRecentExerciseHistoryWorkoutsQuery(
+      db,
+      exerciseId,
+      MAX_HISTORY_ITEM_LIMIT
+    ),
     [db, exerciseId]
   );
-  const workoutRows = workoutResult.data;
+  const visibleWorkoutRows = visibleWorkoutResult.data;
   const visibleWorkoutIds = useMemo(
-    () =>
-      Array.from(new Set(workoutRows.map(row => row.workout.id))).slice(
-        0,
-        VISIBLE_WORKOUT_LIMIT
-      ),
-    [workoutRows]
+    () => Array.from(new Set(visibleWorkoutRows.map(row => row.workout.id))),
+    [visibleWorkoutRows]
   );
-  const progressionWorkoutIds = useMemo(() => {
-    const latestWorkoutStartedAt = workoutRows[0]?.workout.startedAt;
-
-    if (!latestWorkoutStartedAt) {
-      return [];
-    }
-
-    const oldestProgressionTimestamp = latestWorkoutStartedAt - MONTH_MS * 2;
-
-    return workoutRows
-      .filter(row => row.workout.startedAt >= oldestProgressionTimestamp)
-      .map(row => row.workout.id);
-  }, [workoutRows]);
+  const latestWorkoutStartedAt = visibleWorkoutRows[0]?.workout.startedAt;
+  const oldestProgressionTimestamp =
+    latestWorkoutStartedAt !== undefined
+      ? latestWorkoutStartedAt - MONTH_MS * 2
+      : undefined;
+  const progressionWorkoutResult = useLiveWithFallback(
+    getExerciseHistoryWorkoutsSinceQuery(
+      db,
+      exerciseId,
+      oldestProgressionTimestamp
+    ),
+    [db, exerciseId, oldestProgressionTimestamp]
+  );
+  const progressionWorkoutRows = progressionWorkoutResult.data;
+  const progressionWorkoutIds = useMemo(
+    () =>
+      Array.from(new Set(progressionWorkoutRows.map(row => row.workout.id))),
+    [progressionWorkoutRows]
+  );
   const workoutIds = useMemo(
     () => Array.from(new Set([...visibleWorkoutIds, ...progressionWorkoutIds])),
     [progressionWorkoutIds, visibleWorkoutIds]
@@ -87,7 +93,7 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
   const history = useMemo(
     () =>
       buildExerciseHistory(
-        workoutRows,
+        visibleWorkoutRows,
         setResult.data.filter(row => visibleWorkoutIds.includes(row.workoutId))
       )
         .map(historyEntry => ({
@@ -96,17 +102,17 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
         }))
         .filter(historyEntry => historyEntry.sets.length > 0)
         .slice(0, MAX_HISTORY_ITEM_LIMIT),
-    [setResult.data, visibleWorkoutIds, workoutRows]
+    [setResult.data, visibleWorkoutIds, visibleWorkoutRows]
   );
   const monthlyProgression = useMemo(() => {
-    const latestWorkoutStartedAt = workoutRows[0]?.workout.startedAt;
+    const latestStartedAt = progressionWorkoutRows[0]?.workout.startedAt;
 
-    if (!latestWorkoutStartedAt) {
+    if (!latestStartedAt) {
       return null;
     }
 
-    const currentWindowStart = latestWorkoutStartedAt - MONTH_MS;
-    const previousWindowStart = latestWorkoutStartedAt - MONTH_MS * 2;
+    const currentWindowStart = latestStartedAt - MONTH_MS;
+    const previousWindowStart = latestStartedAt - MONTH_MS * 2;
     const setsByWorkoutId = new Map<string, Set[]>();
 
     for (const row of setResult.data) {
@@ -120,12 +126,12 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
       setsByWorkoutId.set(row.workoutId, [row.set]);
     }
 
-    const currentSets = workoutRows.flatMap(row =>
+    const currentSets = progressionWorkoutRows.flatMap(row =>
       row.workout.startedAt >= currentWindowStart
         ? (setsByWorkoutId.get(row.workout.id) ?? [])
         : []
     );
-    const previousSets = workoutRows.flatMap(row =>
+    const previousSets = progressionWorkoutRows.flatMap(row =>
       row.workout.startedAt >= previousWindowStart &&
       row.workout.startedAt < currentWindowStart
         ? (setsByWorkoutId.get(row.workout.id) ?? [])
@@ -147,7 +153,7 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
     return {
       delta: currentBestScore - previousBestScore
     };
-  }, [setResult.data, trackingType, workoutRows]);
+  }, [progressionWorkoutRows, setResult.data, trackingType]);
 
   return {
     history,

@@ -35,7 +35,7 @@ import {
   useRef,
   useState
 } from 'react';
-import { Keyboard, View } from 'react-native';
+import { Keyboard, Platform, View, type ListRenderItem } from 'react-native';
 
 interface ExercisePickerSheetCommonProps {
   isOpen: boolean;
@@ -191,6 +191,18 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
     []
   );
   const isMultiple = selectionProps.mode === 'multiple';
+  const onSelectExercise =
+    selectionProps.mode === 'multiple'
+      ? undefined
+      : selectionProps.onSelectExercise;
+  const onSelectExercises =
+    selectionProps.mode === 'multiple'
+      ? selectionProps.onSelectExercises
+      : undefined;
+  const pendingExerciseIdSet = useMemo(
+    () => new Set(pendingExercises.map(exercise => exercise.id)),
+    [pendingExercises]
+  );
   const shouldShowCustomExerciseFilter = exercises.some(
     exercise => exercise.isCustom === 1
   );
@@ -341,49 +353,78 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
     pendingExercises.length === 1 ? 'exercise' : 'exercises'
   }`;
 
-  const selectExercise = (exercise: ExerciseListItem) => {
-    if (selectionProps.mode !== 'multiple') {
-      selectionProps.onSelectExercise(exercise);
+  const selectExercise = useCallback(
+    (exercise: ExerciseListItem) => {
+      if (!isMultiple) {
+        onSelectExercise?.(exercise);
 
-      return;
-    }
-
-    setPendingExercises(currentExercises => {
-      if (
-        currentExercises.some(
-          currentExercise => currentExercise.id === exercise.id
-        )
-      ) {
-        return currentExercises.filter(
-          currentExercise => currentExercise.id !== exercise.id
-        );
+        return;
       }
 
-      return [...currentExercises, exercise];
-    });
-  };
+      setPendingExercises(currentExercises => {
+        if (
+          currentExercises.some(
+            currentExercise => currentExercise.id === exercise.id
+          )
+        ) {
+          return currentExercises.filter(
+            currentExercise => currentExercise.id !== exercise.id
+          );
+        }
 
-  const addPendingExercises = () => {
-    if (selectionProps.mode !== 'multiple' || pendingExercises.length === 0) {
+        return [...currentExercises, exercise];
+      });
+    },
+    [isMultiple, onSelectExercise]
+  );
+
+  const addPendingExercises = useCallback(() => {
+    if (!isMultiple || pendingExercises.length === 0) {
       return;
     }
 
-    selectionProps.onSelectExercises(pendingExercises);
+    onSelectExercises?.(pendingExercises);
     onClose();
-  };
+  }, [isMultiple, onClose, onSelectExercises, pendingExercises]);
 
-  const createCustomExercise = () => {
-    if (selectionProps.mode === 'multiple' && pendingExercises.length > 0) {
-      selectionProps.onSelectExercises(pendingExercises);
+  const createCustomExercise = useCallback(() => {
+    if (isMultiple && pendingExercises.length > 0) {
+      onSelectExercises?.(pendingExercises);
     }
 
     onCreateCustomExercise(latestQueryRef.current.trim());
-  };
+  }, [isMultiple, onCreateCustomExercise, onSelectExercises, pendingExercises]);
 
   const keyExtractor = useCallback(
     (item: ExerciseListDataItem) =>
       item.type === 'section-header' ? item.id : item.exercise.id,
     []
+  );
+  const renderExerciseItem = useCallback<ListRenderItem<ExerciseListDataItem>>(
+    ({ item }) => {
+      if (item.type === 'section-header') {
+        return (
+          <View className="pt-5 pb-1">
+            <Text
+              variant="small"
+              tone="muted"
+              className="font-semibold tracking-widest uppercase"
+            >
+              {item.title}
+            </Text>
+          </View>
+        );
+      }
+
+      return (
+        <ExercisePickerRow
+          exercise={item.exercise}
+          isSelected={pendingExerciseIdSet.has(item.exercise.id)}
+          onPress={selectExercise}
+        />
+      );
+    },
+    [pendingExerciseIdSet, selectExercise]
   );
 
   return (
@@ -440,31 +481,11 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
           keyboardShouldPersistTaps="handled"
           onScrollBeginDrag={Keyboard.dismiss}
           onTouchStart={Keyboard.dismiss}
-          renderItem={({ item }: { item: ExerciseListDataItem }) => {
-            if (item.type === 'section-header') {
-              return (
-                <View className="pt-5 pb-1">
-                  <Text
-                    variant="small"
-                    tone="muted"
-                    className="font-semibold tracking-widest uppercase"
-                  >
-                    {item.title}
-                  </Text>
-                </View>
-              );
-            }
-
-            return (
-              <ExercisePickerRow
-                exercise={item.exercise}
-                isSelected={pendingExercises.some(
-                  exercise => exercise.id === item.exercise.id
-                )}
-                onPress={selectExercise}
-              />
-            );
-          }}
+          initialNumToRender={14}
+          maxToRenderPerBatch={10}
+          removeClippedSubviews={Platform.OS === 'android'}
+          renderItem={renderExerciseItem}
+          windowSize={7}
           ListEmptyComponent={
             <EmptyState
               layout="section"

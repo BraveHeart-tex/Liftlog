@@ -13,6 +13,7 @@ import { useMemo } from 'react';
 
 interface UseWorkoutTemplatesOptions {
   enabled?: boolean;
+  limit?: number;
 }
 
 export interface WorkoutStartTemplateItem {
@@ -42,11 +43,11 @@ function buildTemplateSummary(
 }
 
 export function useWorkoutTemplates(options?: UseWorkoutTemplatesOptions) {
-  const { enabled = true } = options ?? {};
+  const { enabled = true, limit } = options ?? {};
   const db = useDrizzle();
   const templateResult = useLiveWithFallback(
-    getWorkoutTemplatesQuery(db),
-    [db, enabled],
+    getWorkoutTemplatesQuery(db, limit),
+    [db, enabled, limit],
     { enabled }
   );
 
