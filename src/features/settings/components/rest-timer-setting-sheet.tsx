@@ -219,7 +219,7 @@ const RestTimerSettingSheetContent = memo(
             </View>
           </View>
           <Button
-            className="w-full"
+            containerClassName="w-full"
             disabled={!canSave}
             leftIcon={<Icon as={SaveIcon} tone="primaryForeground" />}
             onPress={handleSave}

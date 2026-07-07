@@ -187,7 +187,7 @@ const RenameSheetContent = memo(function RenameSheetContent({
         <View className="flex-1">
           <Button
             variant="ghost"
-            containerClassName="flex-1"
+            containerClassName="w-full"
             onPress={handleClose}
           >
             Cancel
@@ -195,7 +195,7 @@ const RenameSheetContent = memo(function RenameSheetContent({
         </View>
         <View className="flex-1">
           <Button
-            containerClassName="flex-1"
+            containerClassName="w-full"
             loading={isSaving}
             onPress={handleSubmit}
             disabled={name.trim().length === 0}

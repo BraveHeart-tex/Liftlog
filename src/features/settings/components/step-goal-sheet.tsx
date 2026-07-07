@@ -183,8 +183,9 @@ const StepGoalSheetContent = memo(function StepGoalSheetContent({
       </View>
       <BottomSheetSafeFooter className="pb-safe-offset-4 flex-col gap-0 pt-8">
         <Button
-          className="w-full rounded-xl"
+          className="rounded-xl"
           disabled={!canSave}
+          containerClassName="w-full"
           leftIcon={<Icon as={SaveIcon} tone="primaryForeground" />}
           onPress={handleSave}
         >

@@ -47,7 +47,7 @@ export const DiscardWorkoutSheet = ({
         <View className="flex-1">
           <Button
             variant="ghost"
-            className="w-full"
+            containerClassName="w-full"
             leftIcon={<Icon as={PlayIcon} tone="foreground" />}
             onPress={onResume}
           >
@@ -57,7 +57,7 @@ export const DiscardWorkoutSheet = ({
         <View className="flex-1">
           <Button
             variant="destructive"
-            className="w-full"
+            containerClassName="w-full"
             leftIcon={<Icon as={Trash2Icon} tone="danger" />}
             onPress={onDiscardAndStart}
           >

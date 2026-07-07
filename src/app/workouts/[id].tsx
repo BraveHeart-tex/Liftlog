@@ -276,7 +276,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
         <View className="mt-6">
           <Button
             variant="secondary"
-            className="w-full"
+            containerClassName="w-full"
             onPress={openTemplateSheet}
             leftIcon={<Icon as={BookmarkIcon} tone="secondaryForeground" />}
           >

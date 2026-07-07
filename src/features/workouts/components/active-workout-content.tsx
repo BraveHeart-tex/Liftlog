@@ -256,7 +256,7 @@ export function ActiveWorkoutContent({
               <View className="flex-1">
                 <Button
                   variant="secondary"
-                  className="w-full"
+                  containerClassName="w-full"
                   disabled={isLoadingWorkoutExercises}
                   leftIcon={<Icon as={PlusIcon} size="sm" tone="foreground" />}
                   onPress={openExercisePicker}

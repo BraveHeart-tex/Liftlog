@@ -70,8 +70,9 @@ export default function WorkoutStartScreen() {
           exiting={workoutStateExiting}
         >
           <Button
-            className="mt-6 w-full"
+            className="mt-6"
             leftIcon={<Icon as={DumbbellIcon} tone="primaryForeground" />}
+            containerClassName="w-full"
             onPress={startWorkout}
           >
             Start Workout

@@ -74,7 +74,7 @@ export function NewTemplateContent() {
       edges={[]}
       footer={
         <Button
-          className="w-full"
+          containerClassName="w-full"
           disabled={!canSave}
           loading={isSaving}
           leftIcon={<Icon as={BookmarkIcon} tone="primaryForeground" />}

@@ -236,7 +236,7 @@ function WorkoutTemplateDetailLoaded({
       footer={
         isEditingExercises ? (
           <Button
-            className="w-full"
+            containerClassName="w-full"
             disabled={!canSaveExercises}
             loading={isSavingExercises}
             leftIcon={<Icon as={SaveIcon} tone="primaryForeground" />}
@@ -246,7 +246,7 @@ function WorkoutTemplateDetailLoaded({
           </Button>
         ) : (
           <Button
-            className="w-full"
+            containerClassName="w-full"
             leftIcon={<Icon as={DumbbellIcon} tone="primaryForeground" />}
             onPress={handleStartWorkout}
           >

@@ -167,7 +167,7 @@ export default function ExercisesScreen() {
               <View className="mt-10 w-full gap-4">
                 <Button
                   size="md"
-                  className="w-full"
+                  containerClassName="w-full"
                   onPress={() => {
                     router.navigate('/exercises/new');
                     setQuery('');
@@ -187,7 +187,7 @@ export default function ExercisesScreen() {
                 {hasActiveSearchOrFilter ? (
                   <Button
                     variant="ghost"
-                    className="w-full"
+                    containerClassName="w-full"
                     leftIcon={<Icon as={SearchXIcon} tone="foreground" />}
                     onPress={() => {
                       setQuery('');

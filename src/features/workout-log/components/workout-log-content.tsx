@@ -107,8 +107,9 @@ export function WorkoutLogContent() {
         </Animated.View>
 
         <Button
-          className="mt-4 w-full"
+          className="mt-4"
           leftIcon={<Icon as={PlusIcon} tone="primaryForeground" />}
+          containerClassName="w-full"
           onPress={openStartSheet}
         >
           Log workout

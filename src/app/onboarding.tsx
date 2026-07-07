@@ -97,8 +97,9 @@ export default function OnboardingScreen() {
       </View>
 
       <Button
-        className="mt-10 w-full"
+        className="mt-10"
         rightIcon={<Icon as={ArrowRightIcon} tone="primaryForeground" />}
+        containerClassName="w-full"
         onPress={getStarted}
       >
         Get started

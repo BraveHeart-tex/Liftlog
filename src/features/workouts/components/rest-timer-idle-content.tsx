@@ -182,7 +182,7 @@ export function RestTimerIdleContent({
       </View>
 
       <Button
-        className="w-full"
+        containerClassName="w-full"
         disabled={!canStart}
         leftIcon={<Icon as={PlayIcon} tone="primaryForeground" />}
         onPress={handleStart}

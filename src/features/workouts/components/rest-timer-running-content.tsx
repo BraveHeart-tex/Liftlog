@@ -44,7 +44,7 @@ export function RestTimerRunningContent() {
         <View className="flex-1">
           <Button
             variant="destructive"
-            className="w-full"
+            containerClassName="w-full"
             leftIcon={<Icon as={XIcon} tone="danger" />}
             onPress={handleCancel}
           >
@@ -54,7 +54,7 @@ export function RestTimerRunningContent() {
         <View className="flex-1">
           <Button
             variant="secondary"
-            className="w-full"
+            containerClassName="w-full"
             onPress={handlePause}
             leftIcon={
               <Icon
