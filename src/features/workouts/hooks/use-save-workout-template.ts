@@ -11,7 +11,10 @@ export function useSaveWorkoutTemplate() {
   return useCallback(
     (
       name: string,
-      exerciseRows: Pick<WorkoutTemplateExercise, 'exerciseId' | 'order'>[],
+      exerciseRows: Pick<
+        WorkoutTemplateExercise,
+        'exerciseId' | 'order' | 'supersetId'
+      >[],
       sourceWorkoutId?: Workout['id']
     ) => {
       const template = createWorkoutTemplate(db, {

@@ -6,12 +6,15 @@ import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
-import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import { DiscardWorkoutSheet } from '@/src/features/workouts/components/discard-workout-sheet';
 import { RenameTemplateSheet } from '@/src/features/workouts/components/rename-template-sheet';
-import { TemplateExerciseEditor } from '@/src/features/workouts/components/template-exercise-editor';
+import {
+  TemplateExerciseEditor,
+  type TemplateExerciseEditorRow
+} from '@/src/features/workouts/components/template-exercise-editor';
 import { WorkoutTemplateActionsSheet } from '@/src/features/workouts/components/workout-template-actions-sheet';
 import { useWorkoutTemplateDetail } from '@/src/features/workouts/hooks/use-workout-template-detail';
+import { getSupersetLabelByRowId } from '@/src/features/workouts/superset.utils';
 import { triggerWorkoutEditModeHaptics } from '@/src/features/workouts/workout.haptics';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { getRouteParamId } from '@/src/lib/utils/route.utils';
@@ -77,7 +80,9 @@ function WorkoutTemplateDetailLoaded({
   const [isReplaceSheetOpen, setIsReplaceSheetOpen] = useState(false);
   const [isEditingExercises, setIsEditingExercises] = useState(false);
   const [isSavingExercises, setIsSavingExercises] = useState(false);
-  const [draftExercises, setDraftExercises] = useState<ExerciseListItem[]>([]);
+  const [draftExercises, setDraftExercises] = useState<
+    TemplateExerciseEditorRow[]
+  >([]);
   const isSavingExercisesRef = useRef(false);
 
   const {
@@ -95,11 +100,16 @@ function WorkoutTemplateDetailLoaded({
     removeTemplate
   } = detail;
   const exerciseCount = templateExerciseRows.length;
+  const supersetLabelByTemplateExerciseId = useMemo(() => {
+    return getSupersetLabelByRowId(templateExerciseRows);
+  }, [templateExerciseRows]);
   const hasExerciseChanges = useMemo(
     () =>
       draftExercises.length !== orderedExercises.length ||
       draftExercises.some(
-        (exercise, index) => exercise.id !== orderedExercises[index]?.id
+        (row, index) =>
+          row.exercise.id !== orderedExercises[index]?.exercise.id ||
+          row.supersetId !== orderedExercises[index]?.supersetId
       ),
     [draftExercises, orderedExercises]
   );
@@ -290,7 +300,7 @@ function WorkoutTemplateDetailLoaded({
       {isEditingExercises ? (
         <View className="mt-6 flex-1">
           <TemplateExerciseEditor
-            exercises={draftExercises}
+            rows={draftExercises}
             onChange={setDraftExercises}
           />
         </View>
@@ -341,7 +351,11 @@ function WorkoutTemplateDetailLoaded({
                             {exercise?.name ?? 'Unknown exercise'}
                           </Text>
                           <Text variant="caption" tone="muted" className="mt-1">
-                            {exercise?.category ?? 'Exercise'}
+                            {supersetLabelByTemplateExerciseId.get(
+                              templateExercise.id
+                            ) ??
+                              exercise?.category ??
+                              'Exercise'}
                           </Text>
                         </View>
                       </CardContent>

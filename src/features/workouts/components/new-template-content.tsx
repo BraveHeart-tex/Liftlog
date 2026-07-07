@@ -2,8 +2,10 @@ import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Input } from '@/src/components/ui/input';
 import { Screen } from '@/src/components/ui/screen';
-import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
-import { TemplateExerciseEditor } from '@/src/features/workouts/components/template-exercise-editor';
+import {
+  TemplateExerciseEditor,
+  type TemplateExerciseEditorRow
+} from '@/src/features/workouts/components/template-exercise-editor';
 import { useSaveWorkoutTemplate } from '@/src/features/workouts/hooks/use-save-workout-template';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { router } from 'expo-router';
@@ -18,7 +20,7 @@ export function NewTemplateContent() {
   const [name, setName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [selectedExercises, setSelectedExercises] = useState<
-    ExerciseListItem[]
+    TemplateExerciseEditorRow[]
   >([]);
   const hasChanges = name.trim().length > 0 || selectedExercises.length > 0;
   const canSave = name.trim().length > 0 && selectedExercises.length > 0;
@@ -35,8 +37,9 @@ export function NewTemplateContent() {
       saveWorkoutTemplate(
         name,
         selectedExercises.map((exercise, order) => ({
-          exerciseId: exercise.id,
-          order
+          exerciseId: exercise.exercise.id,
+          order,
+          supersetId: exercise.supersetId
         }))
       );
       router.back();
@@ -97,7 +100,7 @@ export function NewTemplateContent() {
 
       <View className="mt-6 flex-1">
         <TemplateExerciseEditor
-          exercises={selectedExercises}
+          rows={selectedExercises}
           onChange={setSelectedExercises}
         />
       </View>

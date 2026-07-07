@@ -57,6 +57,13 @@
       "when": 1783198196222,
       "tag": "0007_even_unicorn",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1783441805614,
+      "tag": "0008_large_whistler",
+      "breakpoints": true
     }
   ]
 }

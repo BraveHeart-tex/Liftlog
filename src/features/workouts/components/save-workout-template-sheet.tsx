@@ -25,7 +25,10 @@ interface SaveWorkoutTemplateSheetProps {
   isOpen: boolean;
   initialName: string;
   sourceWorkoutId?: Workout['id'];
-  workoutExerciseRows: Pick<WorkoutExercise, 'exerciseId' | 'order'>[];
+  workoutExerciseRows: Pick<
+    WorkoutExercise,
+    'exerciseId' | 'order' | 'supersetId'
+  >[];
   onClose: () => void;
 }
 

@@ -1,4 +1,6 @@
 import { BackButton } from '@/src/components/ui/back-button';
+import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
@@ -7,7 +9,8 @@ import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sh
 import { RestTimerTrigger } from '@/src/features/workouts/components/rest-timer-trigger';
 import { useActiveWorkoutExerciseDetail } from '@/src/features/workouts/hooks/use-active-workout-exercise-detail';
 import { getRouteParamId } from '@/src/lib/utils/route.utils';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { ArrowRightIcon } from 'lucide-react-native';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { KeyboardAvoidingView, Platform, View } from 'react-native';
 
@@ -21,7 +24,8 @@ export default function ActiveWorkoutExerciseScreen() {
   const openRestTimer = useCallback(() => setIsRestTimerOpen(true), []);
   const closeRestTimer = useCallback(() => setIsRestTimerOpen(false), []);
 
-  const { item, isLoading } = useActiveWorkoutExerciseDetail(workoutExerciseId);
+  const { item, pairedWorkoutExercise, pairedExercise, isLoading } =
+    useActiveWorkoutExerciseDetail(workoutExerciseId);
 
   const keyboardAvoidingBehavior =
     Platform.OS === 'ios' ? ('padding' as const) : ('height' as const);
@@ -68,6 +72,22 @@ export default function ActiveWorkoutExerciseScreen() {
           <ExerciseTrackSection item={item} />
         </KeyboardAvoidingView>
       </View>
+      {pairedWorkoutExercise ? (
+        <View className="border-border bg-background border-t px-4 py-4">
+          <Button
+            containerClassName="w-full"
+            rightIcon={<Icon as={ArrowRightIcon} tone="primaryForeground" />}
+            onPress={() =>
+              router.replace({
+                pathname: '/(tabs)/workout/exercise/[workoutExerciseId]',
+                params: { workoutExerciseId: pairedWorkoutExercise.id }
+              })
+            }
+          >
+            {`Switch to ${pairedExercise?.name ?? 'paired exercise'}`}
+          </Button>
+        </View>
+      ) : null}
       <RestTimerSheet
         isOpen={isRestTimerOpen}
         context={{

@@ -11,6 +11,7 @@ interface ActiveWorkoutExerciseCardProps {
   item: WorkoutExerciseWithSets;
   className?: string;
   mode?: 'active' | 'historical' | 'historical-edit';
+  supersetLabel?: string;
   weightUnit: WeightUnit;
   onLongPress: () => void;
 }
@@ -19,6 +20,7 @@ export function ActiveWorkoutExerciseCard({
   item,
   className,
   mode = 'active',
+  supersetLabel,
   weightUnit,
   onLongPress
 }: ActiveWorkoutExerciseCardProps) {
@@ -54,6 +56,7 @@ export function ActiveWorkoutExerciseCard({
         <View className={cn('bg-card', pressed && 'opacity-80')}>
           <WorkoutExerciseSummary
             exerciseName={item.exercise?.name ?? 'Unknown exercise'}
+            supersetLabel={supersetLabel}
             completedSets={completedSets}
             weightUnit={weightUnit}
             trackingType={resolveTrackingType(item.exercise?.trackingType)}

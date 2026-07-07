@@ -28,6 +28,7 @@ import {
   notInArray,
   sql
 } from 'drizzle-orm';
+import { normalizeSupersetRows } from '@/src/features/workouts/superset.utils';
 
 export const HISTORICAL_WORKOUT_DRAFT_STATUS = 'historical_draft';
 export const HISTORICAL_WORKOUT_EDIT_DRAFT_STATUS = 'historical_edit_draft';
@@ -387,6 +388,7 @@ export function createHistoricalWorkoutDraftFromTemplate(
           workoutId: createdWorkoutRow.id,
           exerciseId: templateExercise.exerciseId,
           order: templateExercise.order,
+          supersetId: templateExercise.supersetId,
           notes: null
         }))
       )
@@ -478,6 +480,7 @@ export function createHistoricalWorkoutEditDraft(
           workoutId: createdWorkoutRow.id,
           exerciseId: workoutExercise.exerciseId,
           order: workoutExercise.order,
+          supersetId: workoutExercise.supersetId,
           notes: workoutExercise.notes
         }))
       )
@@ -761,6 +764,7 @@ export function saveHistoricalWorkoutEditDraft(
             workoutId: sourceWorkoutId,
             exerciseId: workoutExercise.exerciseId,
             order: workoutExercise.order,
+            supersetId: workoutExercise.supersetId,
             notes: workoutExercise.notes
           }))
         )
@@ -838,7 +842,31 @@ export function deleteWorkoutExercise(
   db: DrizzleDb,
   id: WorkoutExercise['id']
 ): void {
-  db.delete(workoutExercises).where(eq(workoutExercises.id, id)).run();
+  db.transaction(tx => {
+    const existingWorkoutExercise = tx
+      .select()
+      .from(workoutExercises)
+      .where(eq(workoutExercises.id, id))
+      .get();
+
+    if (!existingWorkoutExercise) {
+      return;
+    }
+
+    tx.delete(workoutExercises).where(eq(workoutExercises.id, id)).run();
+
+    if (existingWorkoutExercise.supersetId) {
+      tx.update(workoutExercises)
+        .set({ supersetId: null })
+        .where(
+          and(
+            eq(workoutExercises.workoutId, existingWorkoutExercise.workoutId),
+            eq(workoutExercises.supersetId, existingWorkoutExercise.supersetId)
+          )
+        )
+        .run();
+    }
+  });
 }
 
 export function reorderWorkoutExercises(
@@ -848,7 +876,11 @@ export function reorderWorkoutExercises(
 ): void {
   db.transaction(tx => {
     const existingWorkoutExercises = tx
-      .select({ id: workoutExercises.id, order: workoutExercises.order })
+      .select({
+        id: workoutExercises.id,
+        order: workoutExercises.order,
+        supersetId: workoutExercises.supersetId
+      })
       .from(workoutExercises)
       .where(eq(workoutExercises.workoutId, workoutId))
       .all();
@@ -867,9 +899,24 @@ export function reorderWorkoutExercises(
       throw new Error('Workout exercises changed before reorder completed.');
     }
 
-    const toUpdate = orderedWorkoutExerciseIds.filter(
-      (id, newOrder) => existingById.get(id)!.order !== newOrder
+    const normalizedRows = normalizeSupersetRows(
+      orderedWorkoutExerciseIds.map((id, order) => ({
+        id,
+        order,
+        supersetId: existingById.get(id)!.supersetId
+      }))
     );
+    const normalizedById = new Map(
+      normalizedRows.map(row => [row.id, row.supersetId])
+    );
+    const toUpdate = orderedWorkoutExerciseIds.filter((id, newOrder) => {
+      const existingRow = existingById.get(id)!;
+
+      return (
+        existingRow.order !== newOrder ||
+        existingRow.supersetId !== normalizedById.get(id)
+      );
+    });
 
     if (toUpdate.length === 0) {
       return;
@@ -885,8 +932,152 @@ export function reorderWorkoutExercises(
     );
 
     tx.update(workoutExercises)
-      .set({ order: sql`CASE id ${caseExpr} END` })
+      .set({
+        order: sql`CASE id ${caseExpr} END`,
+        supersetId: sql`CASE id ${sql.join(
+          toUpdate.map(id => sql`WHEN ${id} THEN ${normalizedById.get(id)}`),
+          sql` `
+        )} END`
+      })
       .where(inArray(workoutExercises.id, toUpdate))
+      .run();
+  });
+}
+
+export function updateWorkoutExerciseSupersets(
+  db: DrizzleDb,
+  workoutId: Workout['id'],
+  rows: Pick<WorkoutExercise, 'id' | 'supersetId'>[]
+): void {
+  db.transaction(tx => {
+    const existingWorkoutExercises = tx
+      .select({
+        id: workoutExercises.id,
+        order: workoutExercises.order,
+        supersetId: workoutExercises.supersetId
+      })
+      .from(workoutExercises)
+      .where(eq(workoutExercises.workoutId, workoutId))
+      .orderBy(asc(workoutExercises.order))
+      .all();
+    const rowById = new Map(rows.map(row => [row.id, row.supersetId]));
+
+    if (
+      existingWorkoutExercises.length !== rows.length ||
+      rows.some(
+        row =>
+          !existingWorkoutExercises.some(existing => existing.id === row.id)
+      )
+    ) {
+      throw new Error(
+        'Workout exercises changed before supersets were updated.'
+      );
+    }
+
+    const normalizedRows = normalizeSupersetRows(
+      existingWorkoutExercises.map(row => ({
+        id: row.id,
+        supersetId: rowById.get(row.id) ?? null
+      }))
+    );
+    const toUpdate = normalizedRows.filter(row => {
+      const existingRow = existingWorkoutExercises.find(
+        existing => existing.id === row.id
+      );
+
+      return existingRow?.supersetId !== row.supersetId;
+    });
+
+    if (toUpdate.length === 0) {
+      return;
+    }
+
+    const caseExpr = sql.join(
+      toUpdate.map(row => sql`WHEN ${row.id} THEN ${row.supersetId}`),
+      sql` `
+    );
+
+    tx.update(workoutExercises)
+      .set({ supersetId: sql`CASE id ${caseExpr} END` })
+      .where(
+        inArray(
+          workoutExercises.id,
+          toUpdate.map(row => row.id)
+        )
+      )
+      .run();
+  });
+}
+
+export function updateWorkoutExerciseOrderAndSupersets(
+  db: DrizzleDb,
+  workoutId: Workout['id'],
+  rows: Pick<WorkoutExercise, 'id' | 'supersetId'>[]
+): void {
+  db.transaction(tx => {
+    const existingWorkoutExercises = tx
+      .select({
+        id: workoutExercises.id,
+        order: workoutExercises.order,
+        supersetId: workoutExercises.supersetId
+      })
+      .from(workoutExercises)
+      .where(eq(workoutExercises.workoutId, workoutId))
+      .all();
+
+    const existingById = new Map(
+      existingWorkoutExercises.map(workoutExercise => [
+        workoutExercise.id,
+        workoutExercise
+      ])
+    );
+    const inputIdSet = new Set(rows.map(row => row.id));
+
+    if (
+      existingWorkoutExercises.length !== rows.length ||
+      inputIdSet.size !== rows.length ||
+      rows.some(row => !existingById.has(row.id))
+    ) {
+      throw new Error('Workout exercises changed before edits were saved.');
+    }
+
+    const normalizedRows = normalizeSupersetRows(
+      rows.map((row, order) => ({
+        id: row.id,
+        order,
+        supersetId: row.supersetId
+      }))
+    );
+    const toUpdate = normalizedRows.filter(row => {
+      const existingRow = existingById.get(row.id)!;
+
+      return (
+        existingRow.order !== row.order ||
+        existingRow.supersetId !== row.supersetId
+      );
+    });
+
+    if (toUpdate.length === 0) {
+      return;
+    }
+
+    tx.update(workoutExercises)
+      .set({
+        order: sql`CASE id ${sql.join(
+          toUpdate.map(row => sql`WHEN ${row.id} THEN ${row.order}`),
+          sql` `
+        )} END`,
+        supersetId: sql`CASE id ${sql.join(
+          toUpdate.map(row => sql`WHEN ${row.id} THEN ${row.supersetId}`),
+          sql` `
+        )} END`
+      })
+      .where(
+        inArray(
+          workoutExercises.id,
+          toUpdate.map(row => row.id)
+        )
+      )
       .run();
   });
 }
@@ -918,7 +1109,10 @@ export function repeatWorkout(
     sourceWorkoutExercises
   }: {
     sourceWorkout: Pick<Workout, 'name'>;
-    sourceWorkoutExercises: Pick<WorkoutExercise, 'exerciseId' | 'order'>[];
+    sourceWorkoutExercises: Pick<
+      WorkoutExercise,
+      'exerciseId' | 'order' | 'supersetId'
+    >[];
   }
 ): Workout {
   let createdWorkout: Workout | undefined;
@@ -949,6 +1143,7 @@ export function repeatWorkout(
           workoutId: createdWorkoutRow.id,
           exerciseId: workoutExercise.exerciseId,
           order: workoutExercise.order,
+          supersetId: workoutExercise.supersetId,
           notes: null
         }))
       )

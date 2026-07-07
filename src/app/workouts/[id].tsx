@@ -7,6 +7,7 @@ import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
+import { SupersetIndicator } from '@/src/features/workouts/components/superset-indicator';
 import { WorkoutDetailActionsSheet } from '@/src/features/workouts/components/workout-detail-actions-sheet';
 import { WorkoutHistoryExerciseCard } from '@/src/features/workouts/components/workout-history-exercise-card';
 import { WorkoutMetrics } from '@/src/features/workouts/components/workout-metrics';
@@ -15,6 +16,10 @@ import { useRepeatWorkout } from '@/src/features/workouts/hooks/use-repeat-worko
 import { useWorkoutDelete } from '@/src/features/workouts/hooks/use-workout-delete';
 import { useWorkoutHistoryDetail } from '@/src/features/workouts/hooks/use-workout-history-detail';
 import { useWorkoutRename } from '@/src/features/workouts/hooks/use-workout-rename';
+import {
+  formatSupersetLabel,
+  groupSupersetBlocks
+} from '@/src/features/workouts/superset.utils';
 import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date.utils';
 import { getRouteParamId } from '@/src/lib/utils/route.utils';
 import { formatWeightForUnit } from '@/src/lib/utils/weight.utils';
@@ -101,10 +106,23 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
     () =>
       workoutExerciseRows.map(workoutExercise => ({
         exerciseId: workoutExercise.exerciseId,
-        order: workoutExercise.order
+        order: workoutExercise.order,
+        supersetId: workoutExercise.supersetId
       })),
     [workoutExerciseRows]
   );
+  const supersetBlocks = useMemo(() => {
+    return groupSupersetBlocks(workoutExerciseRows);
+  }, [workoutExerciseRows]);
+  const supersetLabelByBlockId = useMemo(() => {
+    let supersetIndex = 0;
+
+    return new Map(
+      supersetBlocks
+        .filter(block => block.supersetId)
+        .map(block => [block.id, formatSupersetLabel(supersetIndex++)])
+    );
+  }, [supersetBlocks]);
 
   const workoutMetrics = useMemo(() => {
     if (!workout?.startedAt) {
@@ -304,19 +322,42 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
             className="mt-3 py-8"
           />
         ) : (
-          workoutExerciseRows.map(workoutExercise => {
-            const exercise = exerciseById.get(workoutExercise.exerciseId);
-            const completedSets =
-              setsByWorkoutExerciseId.get(workoutExercise.id) ?? [];
+          supersetBlocks.map(block => {
+            const renderExerciseCard = (
+              workoutExercise: (typeof workoutExerciseRows)[number],
+              className?: string
+            ) => {
+              const exercise = exerciseById.get(workoutExercise.exerciseId);
+              const completedSets =
+                setsByWorkoutExerciseId.get(workoutExercise.id) ?? [];
+
+              return (
+                <WorkoutHistoryExerciseCard
+                  key={workoutExercise.id}
+                  exerciseName={exercise?.name ?? 'Unknown exercise'}
+                  supersetLabel={
+                    block.supersetId
+                      ? supersetLabelByBlockId.get(block.id)
+                      : undefined
+                  }
+                  completedSets={completedSets}
+                  weightUnit={weightUnit}
+                  trackingType={resolveTrackingType(exercise?.trackingType)}
+                  className={className}
+                />
+              );
+            };
+
+            if (!block.supersetId) {
+              return renderExerciseCard(block.rows[0]);
+            }
 
             return (
-              <WorkoutHistoryExerciseCard
-                key={workoutExercise.id}
-                exerciseName={exercise?.name ?? 'Unknown exercise'}
-                completedSets={completedSets}
-                weightUnit={weightUnit}
-                trackingType={resolveTrackingType(exercise?.trackingType)}
-              />
+              <View key={block.id} className="mt-3">
+                {renderExerciseCard(block.rows[0], 'mt-0')}
+                <SupersetIndicator />
+                {renderExerciseCard(block.rows[1], 'mt-0')}
+              </View>
             );
           })
         )}

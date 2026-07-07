@@ -28,7 +28,15 @@ function buildTemplateSummary(
   exerciseById: Map<ExerciseListItem['id'], ExerciseListItem>
 ): string {
   const exerciseNames = exerciseRows
-    .map(exercise => exerciseById.get(exercise.exerciseId)?.name)
+    .map(exercise => {
+      const name = exerciseById.get(exercise.exerciseId)?.name;
+
+      if (!name) {
+        return null;
+      }
+
+      return exercise.supersetId ? `Superset: ${name}` : name;
+    })
     .filter((name): name is string => Boolean(name));
 
   if (exerciseNames.length === 0) {

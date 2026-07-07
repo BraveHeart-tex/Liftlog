@@ -10,6 +10,7 @@ import {
 } from '@/src/db/schema';
 import { toLocalDateKey } from '@/src/lib/utils/date.utils';
 import { resolveTemplateName } from '@/src/features/workouts/workout-display.utils';
+import { normalizeSupersetRows } from '@/src/features/workouts/superset.utils';
 import { asc, desc, eq, inArray } from 'drizzle-orm';
 
 function getWorkoutTemplateRecordById(
@@ -104,7 +105,7 @@ export function updateWorkoutTemplateName(
 export function updateWorkoutTemplateExercises(
   db: DrizzleDb,
   id: WorkoutTemplate['id'],
-  exerciseIds: WorkoutTemplateExercise['exerciseId'][]
+  exerciseRows: Pick<WorkoutTemplateExercise, 'exerciseId' | 'supersetId'>[]
 ): WorkoutTemplate | undefined {
   let updatedTemplate: WorkoutTemplate | undefined;
 
@@ -119,13 +120,21 @@ export function updateWorkoutTemplateExercises(
       .where(eq(workoutTemplateExercises.templateId, id))
       .run();
 
-    if (exerciseIds.length > 0) {
+    if (exerciseRows.length > 0) {
+      const normalizedExerciseRows = normalizeSupersetRows(
+        exerciseRows.map((exerciseRow, order) => ({
+          id: String(order),
+          ...exerciseRow
+        }))
+      );
+
       tx.insert(workoutTemplateExercises)
         .values(
-          exerciseIds.map((exerciseId, order) => ({
+          normalizedExerciseRows.map((exerciseRow, order) => ({
             templateId: id,
-            exerciseId,
-            order
+            exerciseId: exerciseRow.exerciseId,
+            order,
+            supersetId: exerciseRow.supersetId
           }))
         )
         .run();
@@ -157,7 +166,10 @@ export function createWorkoutTemplate(
     sourceWorkoutId
   }: {
     name: string;
-    exerciseRows: Pick<WorkoutTemplateExercise, 'exerciseId' | 'order'>[];
+    exerciseRows: Pick<
+      WorkoutTemplateExercise,
+      'exerciseId' | 'order' | 'supersetId'
+    >[];
     sourceWorkoutId?: Workout['id'];
   }
 ): WorkoutTemplate {
@@ -184,12 +196,20 @@ export function createWorkoutTemplate(
       return;
     }
 
+    const normalizedExerciseRows = normalizeSupersetRows(
+      exerciseRows.map(exercise => ({
+        id: String(exercise.order),
+        ...exercise
+      }))
+    );
+
     tx.insert(workoutTemplateExercises)
       .values(
-        exerciseRows.map(exercise => ({
+        normalizedExerciseRows.map(exercise => ({
           templateId: createdTemplateRow.id,
           exerciseId: exercise.exerciseId,
-          order: exercise.order
+          order: exercise.order,
+          supersetId: exercise.supersetId
         }))
       )
       .run();
@@ -258,6 +278,7 @@ export function createWorkoutFromTemplate(
             workoutId: createdWorkoutRow.id,
             exerciseId: templateExercise.exerciseId,
             order: templateExercise.order,
+            supersetId: templateExercise.supersetId,
             notes: null
           }))
         )

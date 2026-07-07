@@ -8,17 +8,25 @@ import { useExercises } from '@/src/features/exercises/hooks/use-exercises';
 import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/create-custom-exercise-sheet';
 import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise-picker-sheet';
 import { NewTemplateExerciseList } from '@/src/features/workouts/components/new-template-exercise-list';
+import { normalizeSupersetRows } from '@/src/features/workouts/superset.utils';
+import { generateUuid } from '@/src/lib/utils/uuid.utils';
 import { ClipboardListIcon, PlusIcon } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { Keyboard, View } from 'react-native';
 
 interface TemplateExerciseEditorProps {
-  exercises: ExerciseListItem[];
-  onChange: (exercises: ExerciseListItem[]) => void;
+  rows: TemplateExerciseEditorRow[];
+  onChange: (rows: TemplateExerciseEditorRow[]) => void;
+}
+
+export interface TemplateExerciseEditorRow {
+  id: string;
+  exercise: ExerciseListItem;
+  supersetId: string | null;
 }
 
 export function TemplateExerciseEditor({
-  exercises,
+  rows,
   onChange
 }: TemplateExerciseEditorProps) {
   const { createCustomExercise } = useExerciseActions();
@@ -32,8 +40,8 @@ export function TemplateExerciseEditor({
   const [initialCustomExerciseName, setInitialCustomExerciseName] =
     useState('');
   const selectedExerciseIds = useMemo(
-    () => exercises.map(exercise => exercise.id),
-    [exercises]
+    () => rows.map(row => row.exercise.id),
+    [rows]
   );
   const openExercisePicker = useCallback(
     () => setIsExercisePickerOpen(true),
@@ -55,27 +63,41 @@ export function TemplateExerciseEditor({
   );
 
   const deleteExercise = useCallback(
-    (exerciseId: ExerciseListItem['id']) => {
-      onChange(exercises.filter(exercise => exercise.id !== exerciseId));
+    (rowId: TemplateExerciseEditorRow['id']) => {
+      onChange(normalizeSupersetRows(rows.filter(row => row.id !== rowId)));
     },
-    [exercises, onChange]
+    [onChange, rows]
   );
 
   const selectExercises = useCallback(
     (selectedExercises: ExerciseListItem[]) => {
-      onChange([...exercises, ...selectedExercises]);
+      onChange([
+        ...rows,
+        ...selectedExercises.map(exercise => ({
+          id: generateUuid(),
+          exercise,
+          supersetId: null
+        }))
+      ]);
     },
-    [exercises, onChange]
+    [onChange, rows]
   );
 
   const saveCustomExercise = useCallback(
     (newExercise: Parameters<typeof createCustomExercise>[0]) => {
       const createdExercise = createCustomExercise(newExercise);
 
-      onChange([...exercises, createdExercise]);
+      onChange([
+        ...rows,
+        {
+          id: createdExercise.id,
+          exercise: createdExercise,
+          supersetId: null
+        }
+      ]);
       setIsCreateCustomExerciseOpen(false);
     },
-    [createCustomExercise, exercises, onChange]
+    [createCustomExercise, onChange, rows]
   );
 
   return (
@@ -84,7 +106,7 @@ export function TemplateExerciseEditor({
         <Text variant="overline" tone="muted">
           Exercises
         </Text>
-        {exercises.length > 0 && (
+        {rows.length > 0 && (
           <Button
             variant="ghost"
             size="sm"
@@ -98,7 +120,7 @@ export function TemplateExerciseEditor({
         )}
       </View>
 
-      {exercises.length === 0 ? (
+      {rows.length === 0 ? (
         <View className="px-4">
           <EmptyState
             layout="section"
@@ -121,7 +143,7 @@ export function TemplateExerciseEditor({
         </View>
       ) : (
         <NewTemplateExerciseList
-          exercises={exercises}
+          rows={rows}
           onDeleteExercise={deleteExercise}
           onReorderExercises={onChange}
         />

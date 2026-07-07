@@ -81,6 +81,7 @@ export const workoutExercises = sqliteTable(
       .notNull()
       .references(() => exercises.id, { onDelete: 'restrict' }),
     order: integer('order').notNull(),
+    supersetId: text('superset_id'),
     notes: text('notes')
   },
   table => [
@@ -131,7 +132,8 @@ export const workoutTemplateExercises = sqliteTable(
     exerciseId: text('exercise_id')
       .notNull()
       .references(() => exercises.id, { onDelete: 'restrict' }),
-    order: integer('order').notNull()
+    order: integer('order').notNull(),
+    supersetId: text('superset_id')
   },
   table => [
     index('workout_template_exercises_template_id_order_idx').on(

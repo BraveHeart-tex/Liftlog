@@ -1,9 +1,13 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import { getExerciseByIdQuery } from '@/src/features/exercises/exercise.repository';
+import {
+  getExerciseByIdQuery,
+  getExercisesByIdsQuery
+} from '@/src/features/exercises/exercise.repository';
 import {
   getSetsByWorkoutExerciseIdQuery,
   getWorkoutByIdQuery,
-  getWorkoutExerciseByIdQuery
+  getWorkoutExerciseByIdQuery,
+  getWorkoutExercisesQuery
 } from '@/src/features/workouts/workout.repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useMemo } from 'react';
@@ -29,6 +33,32 @@ export function useActiveWorkoutExerciseDetail(
     getWorkoutByIdQuery(db, workoutId ?? ''),
     [db, workoutId]
   );
+  const workoutExerciseRowsResult = useLiveWithFallback(
+    getWorkoutExercisesQuery(db, workoutId ?? ''),
+    [db, workoutId]
+  );
+  const pairedWorkoutExercise = useMemo(() => {
+    if (!workoutExercise?.supersetId) {
+      return null;
+    }
+
+    const pairedRows = workoutExerciseRowsResult.data.filter(
+      row => row.supersetId === workoutExercise.supersetId
+    );
+
+    if (pairedRows.length !== 2) {
+      return null;
+    }
+
+    return pairedRows.find(row => row.id !== workoutExercise.id) ?? null;
+  }, [workoutExercise, workoutExerciseRowsResult.data]);
+  const pairedExerciseResult = useLiveWithFallback(
+    getExercisesByIdsQuery(
+      db,
+      pairedWorkoutExercise ? [pairedWorkoutExercise.exerciseId] : []
+    ),
+    [db, pairedWorkoutExercise?.exerciseId]
+  );
   const exerciseResult = useLiveWithFallback(
     getExerciseByIdQuery(db, exerciseId ?? ''),
     [db, exerciseId]
@@ -48,12 +78,16 @@ export function useActiveWorkoutExerciseDetail(
 
   return {
     item,
+    pairedWorkoutExercise,
+    pairedExercise: pairedExerciseResult.data[0] ?? null,
     workout: workoutResult.data[0],
     isLoading:
       Boolean(workoutExerciseId) &&
       (!workoutExerciseResult.isLive ||
         !setResult.isLive ||
         Boolean(workoutId && !workoutResult.isLive) ||
+        Boolean(workoutId && !workoutExerciseRowsResult.isLive) ||
+        Boolean(pairedWorkoutExercise && !pairedExerciseResult.isLive) ||
         Boolean(exerciseId && !exerciseResult.isLive))
   };
 }

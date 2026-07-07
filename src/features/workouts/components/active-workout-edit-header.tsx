@@ -8,12 +8,12 @@ import { View } from 'react-native';
 
 interface ActiveWorkoutEditHeaderProps {
   workoutName: string;
-  onDone: () => void;
+  onSave: () => void;
 }
 
 export function ActiveWorkoutEditHeader({
   workoutName,
-  onDone
+  onSave
 }: ActiveWorkoutEditHeaderProps) {
   return (
     <Fragment>
@@ -25,9 +25,9 @@ export function ActiveWorkoutEditHeader({
               variant="ghost"
               size="sm"
               leftIcon={<Icon as={CheckIcon} tone="foreground" size="sm" />}
-              onPress={onDone}
+              onPress={onSave}
             >
-              Done
+              Save
             </Button>
           )
         }}

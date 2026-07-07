@@ -16,6 +16,8 @@ interface ActiveWorkoutExerciseEditRowProps {
   item: WorkoutExerciseWithSets;
   className?: string;
   isDragging: boolean;
+  label?: string;
+  onRemove?: () => void;
   shouldShowDragHandle: boolean;
 }
 
@@ -23,6 +25,8 @@ export function ActiveWorkoutExerciseEditRow({
   item,
   className,
   isDragging,
+  label,
+  onRemove,
   shouldShowDragHandle = true
 }: ActiveWorkoutExerciseEditRowProps) {
   const { weightUnit } = useSettings();
@@ -66,6 +70,7 @@ export function ActiveWorkoutExerciseEditRow({
           style: 'destructive',
           onPress: () => {
             removeWorkoutExercise(item.workoutExercise.id);
+            onRemove?.();
           }
         }
       ]
@@ -75,11 +80,19 @@ export function ActiveWorkoutExerciseEditRow({
   return (
     <View
       className={cn(
-        'border-border flex-row items-center gap-3 border-b py-4',
+        'flex-row items-center gap-3 py-3',
         isDragging && 'bg-muted/50',
         className
       )}
     >
+      {label ? (
+        <View className="bg-muted h-8 w-8 items-center justify-center rounded-lg">
+          <Text variant="caption" tone="muted">
+            {label}
+          </Text>
+        </View>
+      ) : null}
+
       <Button variant="ghost" size="icon" onPress={handleRemoveExercise}>
         <Icon as={TrashIcon} size={iconSizes.sm} tone="danger" />
       </Button>

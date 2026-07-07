@@ -18,7 +18,10 @@ interface ActiveWorkoutHeaderWithActionsProps {
   workoutId: Workout['id'];
   startedAt: Workout['startedAt'];
   canSaveTemplate: boolean;
-  workoutExerciseRows: Pick<WorkoutExercise, 'exerciseId' | 'order'>[];
+  workoutExerciseRows: Pick<
+    WorkoutExercise,
+    'exerciseId' | 'order' | 'supersetId'
+  >[];
 }
 
 export const ActiveWorkoutHeaderWithActions = ({

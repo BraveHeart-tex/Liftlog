@@ -1,10 +1,11 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import type { WorkoutTemplate } from '@/src/db/schema';
+import type { WorkoutTemplate, WorkoutTemplateExercise } from '@/src/db/schema';
 import {
   getExercisesByIdsQuery,
   type ExerciseListItem
 } from '@/src/features/exercises/exercise.repository';
 import { getActiveWorkoutQuery } from '@/src/features/workouts/workout.repository';
+import type { TemplateExerciseEditorRow } from '@/src/features/workouts/components/template-exercise-editor';
 import {
   createWorkoutFromTemplate,
   deleteWorkoutTemplate,
@@ -61,8 +62,28 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
   const orderedExercises = useMemo(
     () =>
       templateExerciseRows
-        .map(templateExercise => exerciseById.get(templateExercise.exerciseId))
-        .filter((exercise): exercise is ExerciseListItem => Boolean(exercise)),
+        .map(templateExercise => {
+          const exercise = exerciseById.get(templateExercise.exerciseId);
+
+          if (!exercise) {
+            return null;
+          }
+
+          return {
+            id: templateExercise.id,
+            exercise,
+            supersetId: templateExercise.supersetId
+          };
+        })
+        .filter(
+          (
+            row
+          ): row is {
+            id: WorkoutTemplateExercise['id'];
+            exercise: ExerciseListItem;
+            supersetId: WorkoutTemplateExercise['supersetId'];
+          } => Boolean(row)
+        ),
     [exerciseById, templateExerciseRows]
   );
 
@@ -106,11 +127,17 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
   );
 
   const saveTemplateExercises = useCallback(
-    (nextTemplateId: WorkoutTemplate['id'], exercises: ExerciseListItem[]) =>
+    (
+      nextTemplateId: WorkoutTemplate['id'],
+      rows: TemplateExerciseEditorRow[]
+    ) =>
       updateWorkoutTemplateExercises(
         db,
         nextTemplateId,
-        exercises.map(exercise => exercise.id)
+        rows.map(row => ({
+          exerciseId: row.exercise.id,
+          supersetId: row.supersetId
+        }))
       ),
     [db]
   );

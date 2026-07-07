@@ -15,7 +15,7 @@ import { RestTimerWidget } from '@/src/features/workouts/components/rest-timer-w
 import { useActiveWorkoutActions } from '@/src/features/workouts/hooks/use-active-workout-actions';
 import { useActiveWorkoutContent as useActiveWorkoutContentData } from '@/src/features/workouts/hooks/use-active-workout-content';
 import { useFinishWorkout } from '@/src/features/workouts/hooks/use-finish-workout';
-import { useReorderWorkoutExercises } from '@/src/features/workouts/hooks/use-reorder-workout-exercises';
+import { useSaveWorkoutExerciseEdits } from '@/src/features/workouts/hooks/use-reorder-workout-exercises';
 import { triggerWorkoutEditModeHaptics } from '@/src/features/workouts/workout.haptics';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { CircleCheckBig, PlusIcon } from 'lucide-react-native';
@@ -51,6 +51,8 @@ export function ActiveWorkoutContent({
   onSaveHistoricalWorkout
 }: ActiveWorkoutContentProps) {
   const [isEditingExercises, setIsEditingExercises] = useState(false);
+  const [draftExerciseRows, setDraftExerciseRows] =
+    useState<Pick<WorkoutExercise, 'id' | 'supersetId'>[]>();
 
   const [isCreateCustomExerciseOpen, setIsCreateCustomExerciseOpen] =
     useState(false);
@@ -71,7 +73,9 @@ export function ActiveWorkoutContent({
       isLoadingWorkoutExercises,
       setIsExercisePickerOpen
     });
-  const reorderWorkoutExercises = useReorderWorkoutExercises(activeWorkout.id);
+  const saveWorkoutExerciseEdits = useSaveWorkoutExerciseEdits(
+    activeWorkout.id
+  );
   const finishWorkout = useFinishWorkout();
 
   const workoutName = activeWorkout.name;
@@ -94,9 +98,30 @@ export function ActiveWorkoutContent({
       triggerWorkoutEditModeHaptics();
     }
 
+    setDraftExerciseRows(
+      workoutExerciseRows.map(workoutExercise => ({
+        id: workoutExercise.id,
+        supersetId: workoutExercise.supersetId
+      }))
+    );
     setIsEditingExercises(true);
-  }, [isEditingExercises, mode]);
-  const exitEditMode = useCallback(() => setIsEditingExercises(false), []);
+  }, [isEditingExercises, mode, workoutExerciseRows]);
+  const saveExerciseEdits = useCallback(() => {
+    if (!draftExerciseRows) {
+      setIsEditingExercises(false);
+
+      return;
+    }
+
+    try {
+      saveWorkoutExerciseEdits(draftExerciseRows);
+      setIsEditingExercises(false);
+      setDraftExerciseRows(undefined);
+    } catch (error) {
+      console.error('Failed to save workout exercise edits', error);
+      Alert.alert('Could not save exercise edits', 'Please try again.');
+    }
+  }, [draftExerciseRows, saveWorkoutExerciseEdits]);
   const openExercisePicker = useCallback(
     () => setIsExercisePickerOpen(true),
     [setIsExercisePickerOpen]
@@ -145,30 +170,19 @@ export function ActiveWorkoutContent({
     },
     [createAndSelectCustomExercise]
   );
-  const handleReorderExercises = useCallback(
-    (orderedWorkoutExerciseIds: WorkoutExercise['id'][]) => {
-      try {
-        reorderWorkoutExercises(orderedWorkoutExerciseIds);
-
-        return true;
-      } catch (error) {
-        console.error('Failed to reorder workout exercises', error);
-        Alert.alert('Could not reorder exercises', 'Please try again.');
-
-        return false;
-      }
-    },
-    [reorderWorkoutExercises]
-  );
 
   useEffect(() => {
     if (isEditingExercises && workoutExerciseRows.length === 0) {
       setIsEditingExercises(false);
+      setDraftExerciseRows(undefined);
     }
   }, [isEditingExercises, workoutExerciseRows.length]);
 
   const headerContent = isEditingExercises ? (
-    <ActiveWorkoutEditHeader workoutName={workoutName} onDone={exitEditMode} />
+    <ActiveWorkoutEditHeader
+      workoutName={workoutName}
+      onSave={saveExerciseEdits}
+    />
   ) : mode === 'historical' || mode === 'historical-edit' ? (
     <HistoricalWorkoutHeader
       title={mode === 'historical-edit' ? 'Edit workout' : 'Log workout'}
@@ -186,7 +200,8 @@ export function ActiveWorkoutContent({
       canSaveTemplate={hasWorkoutExercises}
       workoutExerciseRows={workoutExerciseRows.map(workoutExercise => ({
         exerciseId: workoutExercise.exerciseId,
-        order: workoutExercise.order
+        order: workoutExercise.order,
+        supersetId: workoutExercise.supersetId
       }))}
     />
   );
@@ -224,7 +239,8 @@ export function ActiveWorkoutContent({
           mode={mode}
           isEditing={isEditingExercises}
           onEnterEditMode={enterEditMode}
-          onReorderExercises={handleReorderExercises}
+          draftExerciseRows={draftExerciseRows}
+          onChangeDraftExerciseRows={setDraftExerciseRows}
         />
       ) : (
         <View className="flex-1 px-4 pb-6">

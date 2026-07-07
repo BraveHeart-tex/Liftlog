@@ -12,6 +12,7 @@ import Sortable from 'react-native-sortables';
 interface NewTemplateExerciseRowProps {
   exercise: ExerciseListItem;
   isDragging: boolean;
+  label?: string;
   onDelete: () => void;
   shouldShowDragHandle: boolean;
 }
@@ -19,6 +20,7 @@ interface NewTemplateExerciseRowProps {
 export function NewTemplateExerciseRow({
   exercise,
   isDragging,
+  label,
   onDelete,
   shouldShowDragHandle
 }: NewTemplateExerciseRowProps) {
@@ -28,10 +30,18 @@ export function NewTemplateExerciseRow({
   return (
     <View
       className={cn(
-        'border-border flex-row items-center gap-3 border-b py-4',
+        'flex-row items-center gap-3 py-3',
         isDragging && 'bg-muted/50'
       )}
     >
+      {label ? (
+        <View className="bg-muted h-8 w-8 items-center justify-center rounded-lg">
+          <Text variant="caption" tone="muted">
+            {label}
+          </Text>
+        </View>
+      ) : null}
+
       <Button
         variant="ghost"
         size="icon"
