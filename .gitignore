@@ -3,6 +3,11 @@
 # dependencies
 node_modules/
 
+# Local Impeccable installation/state
+/.agents/skills/impeccable/
+/.codex/hooks.json
+/.impeccable/
+
 # Expo
 .expo/
 dist/
