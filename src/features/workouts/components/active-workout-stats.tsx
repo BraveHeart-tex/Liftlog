@@ -12,24 +12,18 @@ export function ActiveWorkoutStats({
   exerciseCount
 }: ActiveWorkoutStatsProps) {
   return (
-    <View className="bg-muted my-4 flex-row rounded-md">
-      <View className="border-r-muted-foreground/20 flex-1 gap-1 border-r-[0.5px] py-2">
-        <Text className="text-center" variant="bodyMedium">
-          {exerciseCount}
-        </Text>
-        <Text variant="overline" className="text-center" tone="muted">
-          {pluralizeUnit(exerciseCount, 'Exercise')}
-        </Text>
-      </View>
-
-      <View className="flex-1 gap-1 py-2">
-        <Text className="text-center" variant="bodyMedium">
-          {completedSetCount}
-        </Text>
-        <Text variant="overline" className="text-center" tone="muted">
-          {pluralizeUnit(completedSetCount, 'Set')}
-        </Text>
-      </View>
+    <View className="my-4 flex-row items-baseline justify-center">
+      <Text variant="bodyMedium">{exerciseCount}</Text>
+      <Text variant="small" tone="muted" className="ml-1">
+        {pluralizeUnit(exerciseCount, 'exercise')}
+      </Text>
+      <Text variant="small" tone="muted" className="mx-2">
+        ·
+      </Text>
+      <Text variant="bodyMedium">{completedSetCount}</Text>
+      <Text variant="small" tone="muted" className="ml-1">
+        {pluralizeUnit(completedSetCount, 'set')}
+      </Text>
     </View>
   );
 }
