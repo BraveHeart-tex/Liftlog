@@ -220,16 +220,6 @@ export function ActiveWorkoutContent({
         {headerContent}
       </Animated.View>
 
-      {!isEditingExercises && mode === 'active' && (
-        <Animated.View
-          entering={chromeEntering}
-          exiting={chromeExiting}
-          layout={chromeLayout}
-        >
-          <RestTimerWidget />
-        </Animated.View>
-      )}
-
       {isLoadingWorkoutExercises ? (
         <View className="flex-1 px-4">
           <LoadingState label="Loading exercises..." />
@@ -270,6 +260,8 @@ export function ActiveWorkoutContent({
             exiting={chromeExiting}
             layout={chromeLayout}
           >
+            {mode === 'active' ? <RestTimerWidget className="mb-3" /> : null}
+
             <View className="flex-row items-center gap-3">
               <View className="flex-1">
                 <Button

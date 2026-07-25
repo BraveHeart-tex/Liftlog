@@ -1,5 +1,4 @@
 import { Button } from '@/src/components/ui/button';
-import { Icon } from '@/src/components/ui/icon';
 import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
 import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sheet';
@@ -7,9 +6,7 @@ import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.sto
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { formatTime } from '@/src/lib/utils/format-time.utils';
-import { PauseIcon, TimerIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
-import { View } from 'react-native';
 import Animated, {
   cancelAnimation,
   FadeInDown,
@@ -25,7 +22,11 @@ const ADD_TIME_SECONDS = 30;
 const widgetEntering = FadeInDown.duration(MOTION_DURATION_MS.standard);
 const widgetExiting = FadeOutUp.duration(MOTION_DURATION_MS.exit);
 
-export function RestTimerWidget() {
+interface RestTimerWidgetProps {
+  className?: string;
+}
+
+export function RestTimerWidget({ className }: RestTimerWidgetProps) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const status = useRestTimerStore(state => state.status);
   const secondsRemaining = useRestTimerStore(state => state.secondsRemaining);
@@ -72,7 +73,7 @@ export function RestTimerWidget() {
     <>
       {status !== 'idle' ? (
         <Animated.View
-          className="px-4 pt-2 pb-3"
+          className={className}
           entering={widgetEntering}
           exiting={widgetExiting}
         >
@@ -85,44 +86,21 @@ export function RestTimerWidget() {
           >
             <PressableSurface
               containerClassName="min-w-0 flex-1"
-              className="min-h-12 flex-row items-center gap-3 rounded-md px-2"
+              className="min-h-10 flex-row items-center gap-2 rounded-md px-2"
               accessibilityLabel={`Open rest timer, ${timerLabel} ${
                 isPaused ? 'paused' : 'remaining'
               }`}
               hapticFeedback="light"
               onPress={openSheet}
             >
-              <View
-                className={cn(
-                  'bg-info/15 h-10 w-10 items-center justify-center rounded-full',
-                  isPaused && 'bg-accent/15'
-                )}
+              <Text
+                variant="bodyMedium"
+                className={cn('text-info', isPaused && 'text-accent')}
+                numberOfLines={1}
+                style={{ fontVariant: ['tabular-nums'] }}
               >
-                <Icon
-                  as={isPaused ? PauseIcon : TimerIcon}
-                  size="lg"
-                  tone={isPaused ? 'accent' : 'info'}
-                />
-              </View>
-
-              <View className="min-w-0 flex-1">
-                <Text
-                  variant="caption"
-                  className={cn(
-                    'text-info font-semibold',
-                    isPaused && 'text-accent'
-                  )}
-                >
-                  {isPaused ? 'Paused' : 'Rest'}
-                </Text>
-                <Text
-                  variant="h3"
-                  numberOfLines={1}
-                  style={{ fontVariant: ['tabular-nums'] }}
-                >
-                  {timerLabel}
-                </Text>
-              </View>
+                {isPaused ? 'Paused' : 'Rest'} {timerLabel}
+              </Text>
             </PressableSurface>
 
             <Button
