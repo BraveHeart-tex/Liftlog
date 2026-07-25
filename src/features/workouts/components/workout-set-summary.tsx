@@ -55,7 +55,7 @@ export function WorkoutSetSummary({
           const isLast = index === displayGroups.length - 1;
           const setLabel =
             group.type === 'range'
-              ? `${group.startIndex}-${group.endIndex}`
+              ? `${group.setIds.length} sets`
               : `${group.startIndex}`;
 
           return (
