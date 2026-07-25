@@ -255,17 +255,18 @@ export function ActiveWorkoutContent({
         !isLoadingWorkoutExercises &&
         workoutExerciseRows.length > 0 && (
           <Animated.View
-            className="border-border bg-background border-t px-4 py-4"
+            className="border-border bg-background border-t px-4 py-3"
             entering={chromeEntering}
             exiting={chromeExiting}
             layout={chromeLayout}
           >
-            {mode === 'active' ? <RestTimerWidget className="mb-3" /> : null}
+            {mode === 'active' ? <RestTimerWidget className="mb-2" /> : null}
 
-            <View className="flex-row items-center gap-3">
+            <View className="flex-row items-center gap-2">
               <View className="flex-1">
                 <Button
                   variant="secondary"
+                  size="sm"
                   containerClassName="w-full"
                   disabled={isLoadingWorkoutExercises}
                   leftIcon={<Icon as={PlusIcon} size="sm" tone="foreground" />}
@@ -277,6 +278,7 @@ export function ActiveWorkoutContent({
 
               <Button
                 variant="primary"
+                size="sm"
                 disabled={!canFinishWorkout}
                 leftIcon={
                   <Icon
