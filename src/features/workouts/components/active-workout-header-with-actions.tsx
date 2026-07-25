@@ -120,6 +120,8 @@ export const ActiveWorkoutHeaderWithActions = ({
       <Stack.Screen
         options={{
           title: 'Active workout',
+          headerLeft: undefined,
+          headerTitleAlign: undefined,
           headerRight: () => (
             <Button
               variant="ghost"

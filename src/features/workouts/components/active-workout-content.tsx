@@ -122,6 +122,10 @@ export function ActiveWorkoutContent({
       Alert.alert('Could not save exercise edits', 'Please try again.');
     }
   }, [draftExerciseRows, saveWorkoutExerciseEdits]);
+  const cancelExerciseEdits = useCallback(() => {
+    setDraftExerciseRows(undefined);
+    setIsEditingExercises(false);
+  }, []);
   const openExercisePicker = useCallback(
     () => setIsExercisePickerOpen(true),
     [setIsExercisePickerOpen]
@@ -181,6 +185,7 @@ export function ActiveWorkoutContent({
   const headerContent = isEditingExercises ? (
     <ActiveWorkoutEditHeader
       workoutName={workoutName}
+      onCancel={cancelExerciseEdits}
       onSave={saveExerciseEdits}
     />
   ) : mode === 'historical' || mode === 'historical-edit' ? (

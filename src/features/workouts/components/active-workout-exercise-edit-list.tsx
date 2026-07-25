@@ -15,7 +15,7 @@ import {
   type SupersetBlock
 } from '@/src/features/workouts/superset.utils';
 import { iconSizes } from '@/src/theme/sizes';
-import { UnlinkIcon } from 'lucide-react-native';
+import { GripIcon, UnlinkIcon } from 'lucide-react-native';
 import type { ComponentRef } from 'react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
@@ -133,37 +133,61 @@ export const ActiveWorkoutExerciseEditList = memo(
           <View className="py-2">
             <View className="border-border border-b pb-2">
               {item.supersetId ? (
-                <View className="mb-1 flex-row items-center justify-between">
-                  <Text variant="caption" tone="muted">
-                    Superset {supersetLabel}
-                  </Text>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="min-h-0 px-0 py-0"
-                    textClassName="text-danger text-sm"
-                    leftIcon={
-                      <Icon as={UnlinkIcon} size={iconSizes.xs} tone="danger" />
-                    }
-                    onPress={() => {
-                      const nextWorkoutExerciseRows = unlinkSupersetRows(
-                        flatRows.map(row => row.workoutExercise),
-                        item.supersetId!
-                      );
+                <View className="mb-1 flex-row items-center justify-between gap-2">
+                  <View className="flex-row items-center gap-2">
+                    {shouldShowDragHandle ? (
+                      <Sortable.Handle>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={draggingBlockKey === item.id}
+                          accessibilityLabel={`Drag Superset ${supersetLabel}`}
+                        >
+                          <Icon
+                            as={GripIcon}
+                            size={iconSizes.sm}
+                            tone="mutedForeground"
+                          />
+                        </Button>
+                      </Sortable.Handle>
+                    ) : null}
+                    <Text variant="caption" tone="muted">
+                      Superset {supersetLabel}
+                    </Text>
+                  </View>
+                  <View className="shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="min-h-0 px-0 py-0"
+                      textClassName="text-danger text-sm"
+                      leftIcon={
+                        <Icon
+                          as={UnlinkIcon}
+                          size={iconSizes.xs}
+                          tone="danger"
+                        />
+                      }
+                      onPress={() => {
+                        const nextWorkoutExerciseRows = unlinkSupersetRows(
+                          flatRows.map(row => row.workoutExercise),
+                          item.supersetId!
+                        );
 
-                      onChangeRows(nextWorkoutExerciseRows);
-                      setRowsFromWorkoutExercises(
-                        flatRows,
-                        nextWorkoutExerciseRows
-                      );
-                    }}
-                  >
-                    Unlink
-                  </Button>
+                        onChangeRows(nextWorkoutExerciseRows);
+                        setRowsFromWorkoutExercises(
+                          flatRows,
+                          nextWorkoutExerciseRows
+                        );
+                      }}
+                    >
+                      Unlink
+                    </Button>
+                  </View>
                 </View>
               ) : null}
 
-              {item.rows.map((row, rowIndex) => (
+              {item.rows.map(row => (
                 <ActiveWorkoutExerciseEditRow
                   key={row.workoutExercise.id}
                   item={row}
@@ -187,7 +211,7 @@ export const ActiveWorkoutExerciseEditList = memo(
                     );
                   }}
                   shouldShowDragHandle={
-                    shouldShowDragHandle && rowIndex === item.rows.length - 1
+                    shouldShowDragHandle && !item.supersetId
                   }
                 />
               ))}
