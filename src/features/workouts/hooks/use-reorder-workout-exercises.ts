@@ -33,8 +33,11 @@ export function useSaveWorkoutExerciseEdits(workoutId: Workout['id']) {
   const db = useDrizzle();
 
   return useCallback(
-    (rows: Pick<WorkoutExercise, 'id' | 'supersetId'>[]) => {
-      updateWorkoutExerciseOrderAndSupersets(db, workoutId, rows);
+    (
+      rows: Pick<WorkoutExercise, 'id' | 'supersetId'>[],
+      baselineRows: Pick<WorkoutExercise, 'id' | 'order' | 'supersetId'>[]
+    ) => {
+      updateWorkoutExerciseOrderAndSupersets(db, workoutId, rows, baselineRows);
     },
     [db, workoutId]
   );

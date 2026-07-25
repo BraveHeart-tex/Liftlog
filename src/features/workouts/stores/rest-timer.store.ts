@@ -25,6 +25,7 @@ interface RestTimerState {
   activeDurationSeconds: number;
   context: RestTimerContext;
   completionCount: number;
+  cancellationCount: number;
   isSheetOpen: boolean;
   setSheetOpen: (isOpen: boolean) => void;
   syncDefaultDuration: (defaultDuration: number) => void;
@@ -35,6 +36,7 @@ interface RestTimerState {
   pause: () => void;
   resume: () => void;
   cancel: () => void;
+  cancelForWorkout: (workoutId: string) => boolean;
 }
 
 function clampRestTimerDuration(value: number) {
@@ -71,6 +73,7 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
   activeDurationSeconds: DEFAULT_REST_TIMER_SECONDS,
   context: {},
   completionCount: 0,
+  cancellationCount: 0,
   isSheetOpen: false,
   setSheetOpen: isSheetOpen => {
     set({ isSheetOpen });
@@ -227,14 +230,27 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
     });
   },
   cancel: () => {
-    const { durationSeconds } = get();
+    const { cancellationCount, durationSeconds } = get();
 
     set({
       status: 'idle',
       endTime: null,
       pausedRemainingMs: null,
       secondsRemaining: durationSeconds,
-      activeDurationSeconds: durationSeconds
+      activeDurationSeconds: durationSeconds,
+      context: {},
+      cancellationCount: cancellationCount + 1
     });
+  },
+  cancelForWorkout: workoutId => {
+    const state = get();
+
+    if (state.context.workoutId !== workoutId) {
+      return false;
+    }
+
+    state.cancel();
+
+    return true;
   }
 }));

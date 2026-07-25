@@ -838,37 +838,6 @@ export function createWorkoutExercise(
   return db.insert(workoutExercises).values(data).returning().get();
 }
 
-export function deleteWorkoutExercise(
-  db: DrizzleDb,
-  id: WorkoutExercise['id']
-): void {
-  db.transaction(tx => {
-    const existingWorkoutExercise = tx
-      .select()
-      .from(workoutExercises)
-      .where(eq(workoutExercises.id, id))
-      .get();
-
-    if (!existingWorkoutExercise) {
-      return;
-    }
-
-    tx.delete(workoutExercises).where(eq(workoutExercises.id, id)).run();
-
-    if (existingWorkoutExercise.supersetId) {
-      tx.update(workoutExercises)
-        .set({ supersetId: null })
-        .where(
-          and(
-            eq(workoutExercises.workoutId, existingWorkoutExercise.workoutId),
-            eq(workoutExercises.supersetId, existingWorkoutExercise.supersetId)
-          )
-        )
-        .run();
-    }
-  });
-}
-
 export function reorderWorkoutExercises(
   db: DrizzleDb,
   workoutId: Workout['id'],
@@ -1012,7 +981,8 @@ export function updateWorkoutExerciseSupersets(
 export function updateWorkoutExerciseOrderAndSupersets(
   db: DrizzleDb,
   workoutId: Workout['id'],
-  rows: Pick<WorkoutExercise, 'id' | 'supersetId'>[]
+  rows: Pick<WorkoutExercise, 'id' | 'supersetId'>[],
+  baselineRows: Pick<WorkoutExercise, 'id' | 'order' | 'supersetId'>[]
 ): void {
   db.transaction(tx => {
     const existingWorkoutExercises = tx
@@ -1032,15 +1002,31 @@ export function updateWorkoutExerciseOrderAndSupersets(
       ])
     );
     const inputIdSet = new Set(rows.map(row => row.id));
+    const baselineById = new Map(
+      baselineRows.map(workoutExercise => [workoutExercise.id, workoutExercise])
+    );
 
     if (
-      existingWorkoutExercises.length !== rows.length ||
       inputIdSet.size !== rows.length ||
-      rows.some(row => !existingById.has(row.id))
+      baselineById.size !== baselineRows.length ||
+      rows.some(row => !baselineById.has(row.id)) ||
+      existingWorkoutExercises.length !== baselineRows.length ||
+      existingWorkoutExercises.some(existingRow => {
+        const baselineRow = baselineById.get(existingRow.id);
+
+        return (
+          !baselineRow ||
+          existingRow.order !== baselineRow.order ||
+          existingRow.supersetId !== baselineRow.supersetId
+        );
+      })
     ) {
       throw new Error('Workout exercises changed before edits were saved.');
     }
 
+    const removedIds = baselineRows
+      .filter(workoutExercise => !inputIdSet.has(workoutExercise.id))
+      .map(workoutExercise => workoutExercise.id);
     const normalizedRows = normalizeSupersetRows(
       rows.map((row, order) => ({
         id: row.id,
@@ -1057,28 +1043,36 @@ export function updateWorkoutExerciseOrderAndSupersets(
       );
     });
 
-    if (toUpdate.length === 0) {
+    if (removedIds.length === 0 && toUpdate.length === 0) {
       return;
     }
 
-    tx.update(workoutExercises)
-      .set({
-        order: sql`CASE id ${sql.join(
-          toUpdate.map(row => sql`WHEN ${row.id} THEN ${row.order}`),
-          sql` `
-        )} END`,
-        supersetId: sql`CASE id ${sql.join(
-          toUpdate.map(row => sql`WHEN ${row.id} THEN ${row.supersetId}`),
-          sql` `
-        )} END`
-      })
-      .where(
-        inArray(
-          workoutExercises.id,
-          toUpdate.map(row => row.id)
+    if (removedIds.length > 0) {
+      tx.delete(workoutExercises)
+        .where(inArray(workoutExercises.id, removedIds))
+        .run();
+    }
+
+    if (toUpdate.length > 0) {
+      tx.update(workoutExercises)
+        .set({
+          order: sql`CASE id ${sql.join(
+            toUpdate.map(row => sql`WHEN ${row.id} THEN ${row.order}`),
+            sql` `
+          )} END`,
+          supersetId: sql`CASE id ${sql.join(
+            toUpdate.map(row => sql`WHEN ${row.id} THEN ${row.supersetId}`),
+            sql` `
+          )} END`
+        })
+        .where(
+          inArray(
+            workoutExercises.id,
+            toUpdate.map(row => row.id)
+          )
         )
-      )
-      .run();
+        .run();
+    }
   });
 }
 

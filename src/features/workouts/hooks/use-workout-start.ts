@@ -9,6 +9,7 @@ import {
   deleteWorkoutTemplate,
   updateWorkoutTemplateName
 } from '@/src/features/workouts/workout-template.repository';
+import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { formatWorkoutName } from '@/src/features/workouts/workout-display.utils';
 import { router, type Href } from 'expo-router';
@@ -31,6 +32,7 @@ export function useWorkoutStart() {
         completedSetCount: activeWorkoutSummary.completedSetCount
       }
     : undefined;
+  const activeWorkoutId = activeWorkout?.id;
 
   const startWorkout = useCallback(() => {
     createWorkout(db, {
@@ -62,14 +64,18 @@ export function useWorkoutStart() {
     (templateId: WorkoutTemplate['id']) => {
       const createdWorkout = createWorkoutFromTemplate(db, {
         templateId,
-        discardWorkoutId: activeWorkout?.id
+        discardWorkoutId: activeWorkoutId
       });
 
       if (createdWorkout) {
+        if (activeWorkoutId) {
+          useRestTimerStore.getState().cancelForWorkout(activeWorkoutId);
+        }
+
         router.navigate(activeWorkoutRoute);
       }
     },
-    [activeWorkout?.id, db]
+    [activeWorkoutId, db]
   );
 
   const renameTemplate = useCallback(

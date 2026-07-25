@@ -16,6 +16,7 @@ import { useActiveWorkoutActions } from '@/src/features/workouts/hooks/use-activ
 import { useActiveWorkoutContent as useActiveWorkoutContentData } from '@/src/features/workouts/hooks/use-active-workout-content';
 import { useFinishWorkout } from '@/src/features/workouts/hooks/use-finish-workout';
 import { useSaveWorkoutExerciseEdits } from '@/src/features/workouts/hooks/use-reorder-workout-exercises';
+import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
 import { triggerWorkoutEditModeHaptics } from '@/src/features/workouts/workout.haptics';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { CircleCheckBig, PlusIcon } from 'lucide-react-native';
@@ -53,6 +54,8 @@ export function ActiveWorkoutContent({
   const [isEditingExercises, setIsEditingExercises] = useState(false);
   const [draftExerciseRows, setDraftExerciseRows] =
     useState<Pick<WorkoutExercise, 'id' | 'supersetId'>[]>();
+  const [baselineExerciseRows, setBaselineExerciseRows] =
+    useState<Pick<WorkoutExercise, 'id' | 'order' | 'supersetId'>[]>();
 
   const [isCreateCustomExerciseOpen, setIsCreateCustomExerciseOpen] =
     useState(false);
@@ -77,12 +80,15 @@ export function ActiveWorkoutContent({
     activeWorkout.id
   );
   const finishWorkout = useFinishWorkout();
+  const restTimerStatus = useRestTimerStore(state => state.status);
 
   const workoutName = activeWorkout.name;
   const hasWorkoutExercises =
     !isLoadingWorkoutExercises && workoutExerciseRows.length > 0;
   const canFinishWorkout = completedSetCount > 0;
   const canSaveHistoricalWorkout = completedSetCount > 0;
+  const shouldShowWorkoutChrome =
+    !isEditingExercises || (mode === 'active' && restTimerStatus !== 'idle');
   const selectedWorkoutExerciseIds = useMemo(
     () =>
       workoutExerciseRows.map(workoutExercise => workoutExercise.exerciseId),
@@ -104,26 +110,35 @@ export function ActiveWorkoutContent({
         supersetId: workoutExercise.supersetId
       }))
     );
+    setBaselineExerciseRows(
+      workoutExerciseRows.map(workoutExercise => ({
+        id: workoutExercise.id,
+        order: workoutExercise.order,
+        supersetId: workoutExercise.supersetId
+      }))
+    );
     setIsEditingExercises(true);
   }, [isEditingExercises, mode, workoutExerciseRows]);
   const saveExerciseEdits = useCallback(() => {
-    if (!draftExerciseRows) {
+    if (!draftExerciseRows || !baselineExerciseRows) {
       setIsEditingExercises(false);
 
       return;
     }
 
     try {
-      saveWorkoutExerciseEdits(draftExerciseRows);
+      saveWorkoutExerciseEdits(draftExerciseRows, baselineExerciseRows);
       setIsEditingExercises(false);
       setDraftExerciseRows(undefined);
+      setBaselineExerciseRows(undefined);
     } catch (error) {
       console.error('Failed to save workout exercise edits', error);
       Alert.alert('Could not save exercise edits', 'Please try again.');
     }
-  }, [draftExerciseRows, saveWorkoutExerciseEdits]);
+  }, [baselineExerciseRows, draftExerciseRows, saveWorkoutExerciseEdits]);
   const cancelExerciseEdits = useCallback(() => {
     setDraftExerciseRows(undefined);
+    setBaselineExerciseRows(undefined);
     setIsEditingExercises(false);
   }, []);
   const openExercisePicker = useCallback(
@@ -179,6 +194,7 @@ export function ActiveWorkoutContent({
     if (isEditingExercises && workoutExerciseRows.length === 0) {
       setIsEditingExercises(false);
       setDraftExerciseRows(undefined);
+      setBaselineExerciseRows(undefined);
     }
   }, [isEditingExercises, workoutExerciseRows.length]);
 
@@ -256,7 +272,7 @@ export function ActiveWorkoutContent({
         </View>
       )}
 
-      {!isEditingExercises &&
+      {shouldShowWorkoutChrome &&
         !isLoadingWorkoutExercises &&
         workoutExerciseRows.length > 0 && (
           <Animated.View
@@ -265,38 +281,46 @@ export function ActiveWorkoutContent({
             exiting={chromeExiting}
             layout={chromeLayout}
           >
-            {mode === 'active' ? <RestTimerWidget className="mb-2" /> : null}
+            {mode === 'active' ? (
+              <RestTimerWidget
+                className={isEditingExercises ? undefined : 'mb-2'}
+              />
+            ) : null}
 
-            <View className="flex-row items-center gap-2">
-              <View className="flex-1">
+            {!isEditingExercises ? (
+              <View className="flex-row items-center gap-2">
+                <View className="flex-1">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    containerClassName="w-full"
+                    disabled={isLoadingWorkoutExercises}
+                    leftIcon={
+                      <Icon as={PlusIcon} size="sm" tone="foreground" />
+                    }
+                    onPress={openExercisePicker}
+                  >
+                    Add exercise
+                  </Button>
+                </View>
+
                 <Button
-                  variant="secondary"
+                  variant="primary"
                   size="sm"
-                  containerClassName="w-full"
-                  disabled={isLoadingWorkoutExercises}
-                  leftIcon={<Icon as={PlusIcon} size="sm" tone="foreground" />}
-                  onPress={openExercisePicker}
+                  disabled={!canFinishWorkout}
+                  leftIcon={
+                    <Icon
+                      as={CircleCheckBig}
+                      size="sm"
+                      tone="primaryForeground"
+                    />
+                  }
+                  onPress={confirmFinishWorkout}
                 >
-                  Add exercise
+                  Finish
                 </Button>
               </View>
-
-              <Button
-                variant="primary"
-                size="sm"
-                disabled={!canFinishWorkout}
-                leftIcon={
-                  <Icon
-                    as={CircleCheckBig}
-                    size="sm"
-                    tone="primaryForeground"
-                  />
-                }
-                onPress={confirmFinishWorkout}
-              >
-                Finish
-              </Button>
-            </View>
+            ) : null}
           </Animated.View>
         )}
 

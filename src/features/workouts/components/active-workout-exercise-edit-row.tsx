@@ -4,7 +4,6 @@ import { Text } from '@/src/components/ui/text';
 import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
-import { useRemoveWorkoutExercise } from '@/src/features/workouts/hooks/use-remove-workout-exercise';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { formatWeightForUnit } from '@/src/lib/utils/weight.utils';
 import { iconSizes } from '@/src/theme/sizes';
@@ -46,7 +45,6 @@ export function ActiveWorkoutExerciseEditRow({
           maximumFractionDigits: 0
         })} ${weightUnit}`
       : setLabel;
-  const removeWorkoutExercise = useRemoveWorkoutExercise();
 
   const handleRemoveExercise = () => {
     const exerciseName = item.exercise?.name ?? 'Unknown exercise';
@@ -69,7 +67,6 @@ export function ActiveWorkoutExerciseEditRow({
           text: 'Remove',
           style: 'destructive',
           onPress: () => {
-            removeWorkoutExercise(item.workoutExercise.id);
             onRemove?.();
           }
         }

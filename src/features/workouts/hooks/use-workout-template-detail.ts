@@ -14,6 +14,7 @@ import {
   updateWorkoutTemplateExercises,
   updateWorkoutTemplateName
 } from '@/src/features/workouts/workout-template.repository';
+import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { router, type Href } from 'expo-router';
 import { useCallback, useMemo } from 'react';
@@ -112,6 +113,7 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
     });
 
     if (createdWorkout) {
+      useRestTimerStore.getState().cancelForWorkout(activeWorkout.id);
       router.navigate(activeWorkoutRoute);
     }
   }, [activeWorkout, db, template]);

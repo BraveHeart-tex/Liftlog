@@ -18,33 +18,20 @@ import { AppState } from 'react-native';
 const REST_TIMER_COMPLETION_SOUND_DURATION_MS = 5000;
 const REST_TIMER_COMPLETION_SNACKBAR_KEY = 'rest-timer-completion';
 
-function triggerCompletionHaptics() {
-  notificationAsync(NotificationFeedbackType.Warning).catch(error => {
-    console.error('Failed to trigger rest timer completion haptics', error);
-  });
-
-  setTimeout(() => {
-    impactAsync(ImpactFeedbackStyle.Heavy).catch(error => {
-      console.error('Failed to trigger rest timer impact haptics', error);
-    });
-  }, 200);
-
-  setTimeout(() => {
-    impactAsync(ImpactFeedbackStyle.Heavy).catch(error => {
-      console.error('Failed to trigger rest timer impact haptics', error);
-    });
-  }, 400);
-}
-
 export function RestTimerHost() {
   const status = useRestTimerStore(state => state.status);
   const endTime = useRestTimerStore(state => state.endTime);
   const context = useRestTimerStore(state => state.context);
   const completionCount = useRestTimerStore(state => state.completionCount);
+  const cancellationCount = useRestTimerStore(state => state.cancellationCount);
   const isSheetOpen = useRestTimerStore(state => state.isSheetOpen);
   const tick = useRestTimerStore(state => state.tick);
   const lastHandledCompletionCountRef = useRef(completionCount);
+  const lastHandledCancellationCountRef = useRef(cancellationCount);
   const wasSheetOpenRef = useRef(isSheetOpen);
+  const completionHapticTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>(
+    []
+  );
   const completionSoundTimeoutRef = useRef<ReturnType<
     typeof setTimeout
   > | null>(null);
@@ -57,6 +44,26 @@ export function RestTimerHost() {
   const completionSoundOperationGenerationRef = useRef(0);
   const isAudioHostMountedRef = useRef(false);
   const playerRef = useRef(player);
+
+  const clearCompletionHapticTimeouts = useCallback(() => {
+    completionHapticTimeoutsRef.current.forEach(clearTimeout);
+    completionHapticTimeoutsRef.current = [];
+  }, []);
+
+  const triggerCompletionHaptics = useCallback(() => {
+    clearCompletionHapticTimeouts();
+    notificationAsync(NotificationFeedbackType.Warning).catch(error => {
+      console.error('Failed to trigger rest timer completion haptics', error);
+    });
+
+    completionHapticTimeoutsRef.current = [200, 400].map(delay =>
+      setTimeout(() => {
+        impactAsync(ImpactFeedbackStyle.Heavy).catch(error => {
+          console.error('Failed to trigger rest timer impact haptics', error);
+        });
+      }, delay)
+    );
+  }, [clearCompletionHapticTimeouts]);
 
   const clearCompletionSoundTimeout = useCallback(() => {
     if (!completionSoundTimeoutRef.current) {
@@ -167,9 +174,10 @@ export function RestTimerHost() {
     return () => {
       isAudioHostMountedRef.current = false;
       completionSoundOperationGenerationRef.current += 1;
+      clearCompletionHapticTimeouts();
       clearCompletionSoundTimeout();
     };
-  }, [clearCompletionSoundTimeout, player]);
+  }, [clearCompletionHapticTimeouts, clearCompletionSoundTimeout, player]);
 
   useEffect(() => {
     if (status !== 'running') {
@@ -232,6 +240,19 @@ export function RestTimerHost() {
   }, [isSheetOpen, stopCompletionSound]);
 
   useEffect(() => {
+    if (cancellationCount <= lastHandledCancellationCountRef.current) {
+      return;
+    }
+
+    lastHandledCancellationCountRef.current = cancellationCount;
+    lastHandledCompletionCountRef.current =
+      useRestTimerStore.getState().completionCount;
+    clearCompletionHapticTimeouts();
+    dismissSnackbar(REST_TIMER_COMPLETION_SNACKBAR_KEY);
+    stopCompletionSound();
+  }, [cancellationCount, clearCompletionHapticTimeouts, stopCompletionSound]);
+
+  useEffect(() => {
     if (completionCount <= lastHandledCompletionCountRef.current) {
       return;
     }
@@ -252,7 +273,13 @@ export function RestTimerHost() {
         stopCompletionSound();
       }
     });
-  }, [completionCount, isSheetOpen, playCompletionSound, stopCompletionSound]);
+  }, [
+    completionCount,
+    isSheetOpen,
+    playCompletionSound,
+    stopCompletionSound,
+    triggerCompletionHaptics
+  ]);
 
   return null;
 }
