@@ -18,6 +18,8 @@ interface ActiveWorkoutHeaderWithActionsProps {
   workoutId: Workout['id'];
   startedAt: Workout['startedAt'];
   canSaveTemplate: boolean;
+  exerciseCount: number;
+  completedSetCount: number;
   workoutExerciseRows: Pick<
     WorkoutExercise,
     'exerciseId' | 'order' | 'supersetId'
@@ -29,11 +31,14 @@ export const ActiveWorkoutHeaderWithActions = ({
   workoutId,
   startedAt,
   canSaveTemplate,
+  exerciseCount,
+  completedSetCount,
   workoutExerciseRows
 }: ActiveWorkoutHeaderWithActionsProps) => {
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
   const [isRenameSheetOpen, setIsRenameSheetOpen] = useState(false);
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
+  const hasWorkoutExercises = exerciseCount > 0;
 
   const renameWorkout = useWorkoutRename();
   const deleteWorkout = useWorkoutDelete();
@@ -128,9 +133,19 @@ export const ActiveWorkoutHeaderWithActions = ({
         }}
       />
 
-      <View className="px-4 pt-4 pb-3">
-        <Text variant="h2">{workoutName}</Text>
-        <ActiveWorkoutHeaderDuration startedAt={startedAt} />
+      <View
+        className={hasWorkoutExercises ? 'px-4 pt-3 pb-2' : 'px-4 pt-4 pb-3'}
+      >
+        <Text variant={hasWorkoutExercises ? 'h3' : 'h2'} numberOfLines={1}>
+          {workoutName}
+        </Text>
+        <ActiveWorkoutHeaderDuration
+          startedAt={startedAt}
+          exerciseCount={hasWorkoutExercises ? exerciseCount : undefined}
+          completedSetCount={
+            hasWorkoutExercises ? completedSetCount : undefined
+          }
+        />
       </View>
 
       <ActiveWorkoutActionsSheet

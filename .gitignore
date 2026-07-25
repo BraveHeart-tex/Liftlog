@@ -58,3 +58,5 @@ app-example
 .idea/dataSources.local.xml
 *.iml
 .env.local
+
+.design-reviews

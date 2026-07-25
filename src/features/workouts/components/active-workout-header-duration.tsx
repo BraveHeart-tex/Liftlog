@@ -5,10 +5,14 @@ import { useEffect, useState } from 'react';
 
 interface ActiveWorkoutHeaderDurationProps {
   startedAt: Workout['startedAt'];
+  exerciseCount?: number;
+  completedSetCount?: number;
 }
 
 export function ActiveWorkoutHeaderDuration({
-  startedAt
+  startedAt,
+  exerciseCount,
+  completedSetCount
 }: ActiveWorkoutHeaderDurationProps) {
   const [now, setNow] = useState(() => Date.now());
 
@@ -24,9 +28,23 @@ export function ActiveWorkoutHeaderDuration({
     };
   }, [startedAt]);
 
+  const duration = formatDuration({ startedAt, completedAt: now });
+  const shouldShowSummary =
+    exerciseCount !== undefined && completedSetCount !== undefined;
+
+  if (!shouldShowSummary) {
+    return (
+      <Text variant="caption" tone="muted">
+        {duration}
+      </Text>
+    );
+  }
+
   return (
-    <Text variant="caption" tone="muted">
-      {formatDuration({ startedAt, completedAt: now })}
+    <Text variant="caption" tone="muted" className="mt-1" numberOfLines={1}>
+      {duration} · {exerciseCount}{' '}
+      {exerciseCount === 1 ? 'exercise' : 'exercises'} · {completedSetCount}{' '}
+      {completedSetCount === 1 ? 'set' : 'sets'}
     </Text>
   );
 }
