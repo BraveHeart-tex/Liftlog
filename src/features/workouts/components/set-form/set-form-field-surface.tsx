@@ -1,12 +1,10 @@
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { cn } from '@/src/lib/utils/cn.utils';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
   useSharedValue,
-  withSequence,
-  withSpring,
   withTiming
 } from 'react-native-reanimated';
 
@@ -67,19 +65,15 @@ export function SetFormFieldSurface({
 interface SetFormSaveSurfaceProps {
   children: ReactNode;
   colors: SetFormFieldColors;
-  isCommitted: boolean;
   tone: SetFormFieldTone;
 }
 
 export function SetFormSaveSurface({
   children,
   colors,
-  isCommitted,
   tone
 }: SetFormSaveSurfaceProps) {
-  const previousIsCommitted = useRef(isCommitted);
   const progress = useSharedValue(toneProgress[tone]);
-  const scale = useSharedValue(1);
 
   useEffect(() => {
     progress.value = withTiming(toneProgress[tone], {
@@ -87,25 +81,13 @@ export function SetFormSaveSurface({
     });
   }, [progress, tone]);
 
-  useEffect(() => {
-    if (isCommitted && !previousIsCommitted.current) {
-      scale.value = withSequence(
-        withSpring(1.14, { damping: 10, stiffness: 260 }),
-        withSpring(1, { damping: 12, stiffness: 260 })
-      );
-    }
-
-    previousIsCommitted.current = isCommitted;
-  }, [isCommitted, scale]);
-
   const animatedStyle = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(
       progress.value,
       [0, 1, 2, 3],
       colors.background
     ),
-    borderColor: interpolateColor(progress.value, [0, 1, 2, 3], colors.border),
-    transform: [{ scale: scale.value }]
+    borderColor: interpolateColor(progress.value, [0, 1, 2, 3], colors.border)
   }));
 
   return (

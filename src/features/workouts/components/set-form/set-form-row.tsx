@@ -2,6 +2,7 @@ import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
+import { StyledActivityIndicator } from '@/src/components/styled/activity-indicator';
 import {
   formatTrackingValue,
   getSetValues,
@@ -32,6 +33,7 @@ import Animated, {
 
 const STAGGER_STEP_MS = 40;
 const MAX_STAGGER_MS = 200;
+const TRAILING_REGION_WIDTH = 56;
 const rowExiting = FadeOut.duration(MOTION_DURATION_MS.exit).easing(
   Easing.in(Easing.cubic)
 );
@@ -162,6 +164,9 @@ function SetFormRowContent({
   onOpenDurationPicker: SetFormRowProps['onOpenDurationPicker'];
   onRowFocus: SetFormRowProps['onRowFocus'];
 }) {
+  const lastField = trackingFields.at(-1);
+  const leadingFields = trackingFields.slice(0, -1);
+
   return (
     <View className="bg-card gap-3 rounded-lg px-3 py-3">
       <View className="flex-row items-start gap-2">
@@ -174,7 +179,7 @@ function SetFormRowContent({
       </View>
 
       <View className="flex-row items-end gap-2">
-        {trackingFields.map(field => (
+        {leadingFields.map(field => (
           <View key={field.key} className="min-w-0 flex-1 gap-1">
             <Text variant="overline" tone="muted">
               {getFieldHeaderLabel(field, weightUnit)}
@@ -193,13 +198,39 @@ function SetFormRowContent({
           </View>
         ))}
 
-        <SetFormSaveButton
-          row={row}
-          fieldTone={fieldTone}
-          fieldColors={fieldColors}
-          isValid={isValid}
-          onCommit={onCommit}
-        />
+        {lastField ? (
+          <View
+            className="min-w-0 flex-1 gap-1"
+            style={{ flexBasis: TRAILING_REGION_WIDTH }}
+          >
+            <Text variant="overline" tone="muted">
+              {getFieldHeaderLabel(lastField, weightUnit)}
+            </Text>
+            <View className="flex-row items-end gap-2">
+              <View className="min-w-0 flex-1">
+                <SetFormEditableField
+                  row={row}
+                  field={lastField}
+                  fieldTone={fieldTone}
+                  fieldColors={fieldColors}
+                  isValid={isValid}
+                  className="min-w-0"
+                  onFieldChange={onFieldChange}
+                  onOpenDurationPicker={onOpenDurationPicker}
+                  onRowFocus={onRowFocus}
+                />
+              </View>
+
+              <SetFormTrailingRegion
+                row={row}
+                fieldTone={fieldTone}
+                fieldColors={fieldColors}
+                isValid={isValid}
+                onCommit={onCommit}
+              />
+            </View>
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -277,7 +308,7 @@ function SetFormEditableField({
   );
 }
 
-function SetFormSaveButton({
+function SetFormTrailingRegion({
   row,
   fieldTone,
   fieldColors,
@@ -290,33 +321,38 @@ function SetFormSaveButton({
   isValid: boolean;
   onCommit: SetFormRowProps['onCommit'];
 }) {
+  const showCommitAction = isValid && !row.isCommitted && !row.isSaving;
+
   return (
-    <SetFormSaveSurface
-      tone={fieldTone}
-      isCommitted={row.isCommitted}
-      colors={fieldColors}
-    >
-      <Button
-        variant={isValid ? 'secondary' : 'ghost'}
-        size="icon"
-        disabled={!isValid || row.isSaving}
-        accessibilityLabel={`Save set ${row.setNumber}`}
-        className="h-12 w-12 border-transparent bg-transparent"
-        onPress={() => void onCommit(row)}
-      >
-        <Icon
-          as={CheckIcon}
-          tone={
-            row.isCommitted
-              ? 'success'
-              : isValid
-                ? 'primary'
-                : 'mutedForeground'
-          }
-          size="md"
-        />
-      </Button>
-    </SetFormSaveSurface>
+    <View className="h-12 w-12">
+      <SetFormSaveSurface tone={fieldTone} colors={fieldColors}>
+        {row.isSaving ? (
+          <View
+            accessible
+            accessibilityLabel={`Saving set ${row.setNumber}`}
+            accessibilityRole="progressbar"
+            className="h-12 w-12 items-center justify-center"
+          >
+            <StyledActivityIndicator className="text-primary" size="small" />
+          </View>
+        ) : (
+          <Button
+            variant={showCommitAction ? 'secondary' : 'ghost'}
+            size="icon"
+            disabled={!showCommitAction}
+            accessibilityLabel={`Commit set ${row.setNumber}`}
+            className="h-12 w-12 border-transparent bg-transparent"
+            onPress={() => void onCommit(row)}
+          >
+            <Icon
+              as={CheckIcon}
+              tone={showCommitAction ? 'primary' : 'mutedForeground'}
+              size="md"
+            />
+          </Button>
+        )}
+      </SetFormSaveSurface>
+    </View>
   );
 }
 
@@ -328,8 +364,12 @@ function getRowFieldTone(
     return 'error';
   }
 
+  if (row.isSaving) {
+    return 'valid';
+  }
+
   if (row.isCommitted) {
-    return 'committed';
+    return 'neutral';
   }
 
   return isValid ? 'valid' : 'neutral';
