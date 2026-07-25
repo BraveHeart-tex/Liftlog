@@ -2,7 +2,7 @@ import { useTabBarTheme } from '@/src/theme/app-theme-provider';
 import { appFonts } from '@/src/theme/fonts';
 import { iconSizes, nativeFontSizes } from '@/src/theme/sizes';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Tabs } from 'expo-router';
+import { Tabs, usePathname } from 'expo-router';
 import { ClockIcon, DumbbellIcon, ListIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
@@ -174,10 +174,15 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
 export default function TabLayout() {
   const tabBarTheme = useTabBarTheme();
+  const pathname = usePathname();
+  const shouldHideTabBar =
+    pathname === '/workout/active' || pathname.startsWith('/workout/exercise/');
 
   return (
     <Tabs
-      tabBar={props => <AnimatedTabBar {...props} />}
+      tabBar={props =>
+        shouldHideTabBar ? null : <AnimatedTabBar {...props} />
+      }
       screenOptions={{
         headerShown: false,
         sceneStyle: {
