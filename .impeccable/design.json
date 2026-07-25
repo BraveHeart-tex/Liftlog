@@ -1,0 +1,639 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-23T21:30:00Z",
+  "title": "Design System: LiftLog",
+  "extensions": {
+    "colorMeta": {
+      "ignition-orange": {
+        "role": "primary",
+        "displayName": "Ignition Orange",
+        "canonical": "#FF4D00",
+        "tonalRamp": [
+          "oklch(15% 0.24 38)",
+          "oklch(27% 0.24 38)",
+          "oklch(39% 0.24 38)",
+          "oklch(51% 0.24 38)",
+          "oklch(63% 0.24 38)",
+          "oklch(75% 0.24 38)",
+          "oklch(87% 0.24 38)",
+          "oklch(95% 0.24 38)"
+        ]
+      },
+      "forged-carbon": {
+        "role": "neutral",
+        "displayName": "Forged Carbon",
+        "canonical": "#1A1917",
+        "tonalRamp": [
+          "oklch(15% 0.01 65)",
+          "oklch(27% 0.01 65)",
+          "oklch(39% 0.01 65)",
+          "oklch(51% 0.01 65)",
+          "oklch(63% 0.01 65)",
+          "oklch(75% 0.01 65)",
+          "oklch(87% 0.01 65)",
+          "oklch(95% 0.01 65)"
+        ]
+      },
+      "chalk-canvas": {
+        "role": "neutral",
+        "displayName": "Chalk Canvas",
+        "canonical": "#F2EDE8",
+        "tonalRamp": [
+          "oklch(15% 0.02 65)",
+          "oklch(27% 0.02 65)",
+          "oklch(39% 0.02 65)",
+          "oklch(51% 0.02 65)",
+          "oklch(63% 0.02 65)",
+          "oklch(75% 0.02 65)",
+          "oklch(87% 0.02 65)",
+          "oklch(95% 0.02 65)"
+        ]
+      },
+      "steel-plate": {
+        "role": "neutral",
+        "displayName": "Steel Plate",
+        "canonical": "#252422",
+        "tonalRamp": [
+          "oklch(15% 0.01 65)",
+          "oklch(27% 0.01 65)",
+          "oklch(39% 0.01 65)",
+          "oklch(51% 0.01 65)",
+          "oklch(63% 0.01 65)",
+          "oklch(75% 0.01 65)",
+          "oklch(87% 0.01 65)",
+          "oklch(95% 0.01 65)"
+        ]
+      },
+      "chalk-white": {
+        "role": "neutral",
+        "displayName": "Chalk White",
+        "canonical": "#F0ECE8",
+        "tonalRamp": [
+          "oklch(15% 0.015 65)",
+          "oklch(27% 0.015 65)",
+          "oklch(39% 0.015 65)",
+          "oklch(51% 0.015 65)",
+          "oklch(63% 0.015 65)",
+          "oklch(75% 0.015 65)",
+          "oklch(87% 0.015 65)",
+          "oklch(95% 0.015 65)"
+        ]
+      },
+      "clean-white": {
+        "role": "neutral",
+        "displayName": "Clean White",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(100% 0 0)"
+        ]
+      },
+      "lifted-graphite": {
+        "role": "neutral",
+        "displayName": "Lifted Graphite",
+        "canonical": "#2E2C2A",
+        "tonalRamp": [
+          "oklch(15% 0.01 65)",
+          "oklch(27% 0.01 65)",
+          "oklch(39% 0.01 65)",
+          "oklch(51% 0.01 65)",
+          "oklch(63% 0.01 65)",
+          "oklch(75% 0.01 65)",
+          "oklch(87% 0.01 65)",
+          "oklch(95% 0.01 65)"
+        ]
+      },
+      "warm-ink": {
+        "role": "neutral",
+        "displayName": "Warm Ink",
+        "canonical": "#1A1512",
+        "tonalRamp": [
+          "oklch(15% 0.02 50)",
+          "oklch(27% 0.02 50)",
+          "oklch(39% 0.02 50)",
+          "oklch(51% 0.02 50)",
+          "oklch(63% 0.02 50)",
+          "oklch(75% 0.02 50)",
+          "oklch(87% 0.02 50)",
+          "oklch(95% 0.02 50)"
+        ]
+      },
+      "paper-white": {
+        "role": "neutral",
+        "displayName": "Paper White",
+        "canonical": "#FAFAF8",
+        "tonalRamp": [
+          "oklch(15% 0.006 90)",
+          "oklch(27% 0.006 90)",
+          "oklch(39% 0.006 90)",
+          "oklch(51% 0.006 90)",
+          "oklch(63% 0.006 90)",
+          "oklch(75% 0.006 90)",
+          "oklch(87% 0.006 90)",
+          "oklch(98% 0.006 90)"
+        ]
+      },
+      "rack-gray": {
+        "role": "neutral",
+        "displayName": "Rack Gray",
+        "canonical": "#3D3B38",
+        "tonalRamp": [
+          "oklch(15% 0.01 70)",
+          "oklch(27% 0.01 70)",
+          "oklch(39% 0.01 70)",
+          "oklch(51% 0.01 70)",
+          "oklch(63% 0.01 70)",
+          "oklch(75% 0.01 70)",
+          "oklch(87% 0.01 70)",
+          "oklch(95% 0.01 70)"
+        ]
+      },
+      "chalk-stone": {
+        "role": "neutral",
+        "displayName": "Chalk Stone",
+        "canonical": "#EDE8E2",
+        "tonalRamp": [
+          "oklch(15% 0.02 70)",
+          "oklch(27% 0.02 70)",
+          "oklch(39% 0.02 70)",
+          "oklch(51% 0.02 70)",
+          "oklch(63% 0.02 70)",
+          "oklch(75% 0.02 70)",
+          "oklch(87% 0.02 70)",
+          "oklch(94% 0.02 70)"
+        ]
+      },
+      "steel-dust": {
+        "role": "neutral",
+        "displayName": "Steel Dust",
+        "canonical": "#C5BFB8",
+        "tonalRamp": [
+          "oklch(15% 0.015 65)",
+          "oklch(27% 0.015 65)",
+          "oklch(39% 0.015 65)",
+          "oklch(51% 0.015 65)",
+          "oklch(63% 0.015 65)",
+          "oklch(75% 0.015 65)",
+          "oklch(87% 0.015 65)",
+          "oklch(95% 0.015 65)"
+        ]
+      },
+      "dark-steel": {
+        "role": "neutral",
+        "displayName": "Dark Steel",
+        "canonical": "#3A3330",
+        "tonalRamp": [
+          "oklch(15% 0.02 45)",
+          "oklch(27% 0.02 45)",
+          "oklch(39% 0.02 45)",
+          "oklch(51% 0.02 45)",
+          "oklch(63% 0.02 45)",
+          "oklch(75% 0.02 45)",
+          "oklch(87% 0.02 45)",
+          "oklch(95% 0.02 45)"
+        ]
+      },
+      "muted-ash": {
+        "role": "neutral",
+        "displayName": "Muted Ash",
+        "canonical": "#8A8580",
+        "tonalRamp": [
+          "oklch(15% 0.01 60)",
+          "oklch(27% 0.01 60)",
+          "oklch(39% 0.01 60)",
+          "oklch(51% 0.01 60)",
+          "oklch(63% 0.01 60)",
+          "oklch(75% 0.01 60)",
+          "oklch(87% 0.01 60)",
+          "oklch(95% 0.01 60)"
+        ]
+      },
+      "muted-clay": {
+        "role": "neutral",
+        "displayName": "Muted Clay",
+        "canonical": "#6B6460",
+        "tonalRamp": [
+          "oklch(15% 0.015 50)",
+          "oklch(27% 0.015 50)",
+          "oklch(39% 0.015 50)",
+          "oklch(51% 0.015 50)",
+          "oklch(63% 0.015 50)",
+          "oklch(75% 0.015 50)",
+          "oklch(87% 0.015 50)",
+          "oklch(95% 0.015 50)"
+        ]
+      },
+      "chalk-edge": {
+        "role": "neutral",
+        "displayName": "Chalk Edge",
+        "canonical": "#DDD8D2",
+        "tonalRamp": [
+          "oklch(15% 0.015 65)",
+          "oklch(27% 0.015 65)",
+          "oklch(39% 0.015 65)",
+          "oklch(51% 0.015 65)",
+          "oklch(63% 0.015 65)",
+          "oklch(75% 0.015 65)",
+          "oklch(87% 0.015 65)",
+          "oklch(95% 0.015 65)"
+        ]
+      },
+      "rep-green": {
+        "role": "secondary",
+        "displayName": "Rep Green",
+        "canonical": "#34C76A",
+        "tonalRamp": [
+          "oklch(15% 0.18 145)",
+          "oklch(27% 0.18 145)",
+          "oklch(39% 0.18 145)",
+          "oklch(51% 0.18 145)",
+          "oklch(63% 0.18 145)",
+          "oklch(75% 0.18 145)",
+          "oklch(87% 0.18 145)",
+          "oklch(95% 0.18 145)"
+        ]
+      },
+      "rep-green-deep": {
+        "role": "secondary",
+        "displayName": "Rep Green Deep",
+        "canonical": "#1F9E4A",
+        "tonalRamp": [
+          "oklch(15% 0.17 145)",
+          "oklch(27% 0.17 145)",
+          "oklch(39% 0.17 145)",
+          "oklch(51% 0.17 145)",
+          "oklch(63% 0.17 145)",
+          "oklch(75% 0.17 145)",
+          "oklch(87% 0.17 145)",
+          "oklch(95% 0.17 145)"
+        ]
+      },
+      "timer-amber": {
+        "role": "secondary",
+        "displayName": "Timer Amber",
+        "canonical": "#F5A623",
+        "tonalRamp": [
+          "oklch(15% 0.17 75)",
+          "oklch(27% 0.17 75)",
+          "oklch(39% 0.17 75)",
+          "oklch(51% 0.17 75)",
+          "oklch(63% 0.17 75)",
+          "oklch(75% 0.17 75)",
+          "oklch(87% 0.17 75)",
+          "oklch(95% 0.17 75)"
+        ]
+      },
+      "timer-ochre": {
+        "role": "secondary",
+        "displayName": "Timer Ochre",
+        "canonical": "#B06A00",
+        "tonalRamp": [
+          "oklch(15% 0.15 65)",
+          "oklch(27% 0.15 65)",
+          "oklch(39% 0.15 65)",
+          "oklch(51% 0.15 65)",
+          "oklch(63% 0.15 65)",
+          "oklch(75% 0.15 65)",
+          "oklch(87% 0.15 65)",
+          "oklch(95% 0.15 65)"
+        ]
+      },
+      "failure-red": {
+        "role": "tertiary",
+        "displayName": "Failure Red",
+        "canonical": "#E8294A",
+        "tonalRamp": [
+          "oklch(15% 0.22 20)",
+          "oklch(27% 0.22 20)",
+          "oklch(39% 0.22 20)",
+          "oklch(51% 0.22 20)",
+          "oklch(63% 0.22 20)",
+          "oklch(75% 0.22 20)",
+          "oklch(87% 0.22 20)",
+          "oklch(95% 0.22 20)"
+        ]
+      },
+      "failure-crimson": {
+        "role": "tertiary",
+        "displayName": "Failure Crimson",
+        "canonical": "#C41535",
+        "tonalRamp": [
+          "oklch(15% 0.21 20)",
+          "oklch(27% 0.21 20)",
+          "oklch(39% 0.21 20)",
+          "oklch(51% 0.21 20)",
+          "oklch(63% 0.21 20)",
+          "oklch(75% 0.21 20)",
+          "oklch(87% 0.21 20)",
+          "oklch(95% 0.21 20)"
+        ]
+      },
+      "rest-blue": {
+        "role": "secondary",
+        "displayName": "Rest Blue",
+        "canonical": "#4DB8FF",
+        "tonalRamp": [
+          "oklch(15% 0.14 240)",
+          "oklch(27% 0.14 240)",
+          "oklch(39% 0.14 240)",
+          "oklch(51% 0.14 240)",
+          "oklch(63% 0.14 240)",
+          "oklch(75% 0.14 240)",
+          "oklch(87% 0.14 240)",
+          "oklch(95% 0.14 240)"
+        ]
+      },
+      "rest-blue-deep": {
+        "role": "secondary",
+        "displayName": "Rest Blue Deep",
+        "canonical": "#0070C0",
+        "tonalRamp": [
+          "oklch(15% 0.16 245)",
+          "oklch(27% 0.16 245)",
+          "oklch(39% 0.16 245)",
+          "oklch(51% 0.16 245)",
+          "oklch(63% 0.16 245)",
+          "oklch(75% 0.16 245)",
+          "oklch(87% 0.16 245)",
+          "oklch(95% 0.16 245)"
+        ]
+      },
+      "steady-stone": {
+        "role": "neutral",
+        "displayName": "Steady Stone",
+        "canonical": "#7A7570",
+        "tonalRamp": [
+          "oklch(15% 0.01 60)",
+          "oklch(27% 0.01 60)",
+          "oklch(39% 0.01 60)",
+          "oklch(51% 0.01 60)",
+          "oklch(63% 0.01 60)",
+          "oklch(75% 0.01 60)",
+          "oklch(87% 0.01 60)",
+          "oklch(95% 0.01 60)"
+        ]
+      },
+      "steady-ash": {
+        "role": "neutral",
+        "displayName": "Steady Ash",
+        "canonical": "#8E8A85",
+        "tonalRamp": [
+          "oklch(15% 0.01 65)",
+          "oklch(27% 0.01 65)",
+          "oklch(39% 0.01 65)",
+          "oklch(51% 0.01 65)",
+          "oklch(63% 0.01 65)",
+          "oklch(75% 0.01 65)",
+          "oklch(87% 0.01 65)",
+          "oklch(95% 0.01 65)"
+        ]
+      },
+      "drop-orange": {
+        "role": "tertiary",
+        "displayName": "Drop Orange",
+        "canonical": "#FF7B2E",
+        "tonalRamp": [
+          "oklch(15% 0.19 45)",
+          "oklch(27% 0.19 45)",
+          "oklch(39% 0.19 45)",
+          "oklch(51% 0.19 45)",
+          "oklch(63% 0.19 45)",
+          "oklch(75% 0.19 45)",
+          "oklch(87% 0.19 45)",
+          "oklch(95% 0.19 45)"
+        ]
+      },
+      "drop-ember": {
+        "role": "tertiary",
+        "displayName": "Drop Ember",
+        "canonical": "#C93A00",
+        "tonalRamp": [
+          "oklch(15% 0.2 35)",
+          "oklch(27% 0.2 35)",
+          "oklch(39% 0.2 35)",
+          "oklch(51% 0.2 35)",
+          "oklch(63% 0.2 35)",
+          "oklch(75% 0.2 35)",
+          "oklch(87% 0.2 35)",
+          "oklch(95% 0.2 35)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Top-level screen titles."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Major section and empty-state headings."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Sheet titles, card headings, and task context."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Standard instructions, values, and descriptions."
+      },
+      "body-medium": {
+        "displayName": "Body Medium",
+        "purpose": "Buttons, selected controls, and operational emphasis."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Metadata and dense list information."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Status, hints, and tertiary information."
+      },
+      "overline": {
+        "displayName": "Overline",
+        "purpose": "Rare uppercase section markers."
+      }
+    },
+    "shadows": [
+      {
+        "name": "transient-float",
+        "value": "0 10px 15px -3px rgba(0, 0, 0, 0.24), 0 4px 6px -4px rgba(0, 0, 0, 0.18)",
+        "purpose": "Snackbars and genuinely floating transient surfaces."
+      },
+      {
+        "name": "control-lift",
+        "value": "0 1px 2px rgba(26, 25, 23, 0.16)",
+        "purpose": "Tight separation beneath the switch thumb."
+      }
+    ],
+    "motion": [
+      {
+        "name": "press-in",
+        "value": "100ms",
+        "purpose": "Fast tactile press response."
+      },
+      {
+        "name": "press-out",
+        "value": "120ms",
+        "purpose": "Quick release back to rest."
+      },
+      {
+        "name": "exit",
+        "value": "160ms",
+        "purpose": "Removal and dismissal transitions."
+      },
+      {
+        "name": "standard",
+        "value": "180ms",
+        "purpose": "State and indicator transitions."
+      },
+      {
+        "name": "press-scale",
+        "value": "0.97 after 75ms; spring speed 30, bounciness 0",
+        "purpose": "Subtle physical confirmation on reusable pressable surfaces."
+      },
+      {
+        "name": "active-indicator-spring",
+        "value": "damping 22, stiffness 260, mass 0.8",
+        "purpose": "Bottom-navigation active pill movement."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The decisive action control: firm, bright, and immediately legible.",
+      "html": "<button class=\"ds-btn-primary\">Start Workout</button>",
+      "css": ".ds-btn-primary { min-height: 48px; padding: 12px 16px; border: 1px solid #FF4D00; border-radius: 16px; background: #FF4D00; color: #FFFFFF; font: 600 15px Inter, system-ui, sans-serif; transition: opacity 120ms ease, transform 120ms ease; } .ds-btn-primary:hover { opacity: 0.92; } .ds-btn-primary:active { opacity: 0.8; transform: scale(0.97); } .ds-btn-primary:focus-visible { outline: 2px solid #FF4D00; outline-offset: 3px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "A quiet but reliable bordered action for secondary choices.",
+      "html": "<button class=\"ds-btn-secondary\">View History</button>",
+      "css": ".ds-btn-secondary { min-height: 48px; padding: 12px 16px; border: 1px solid #3D3B38; border-radius: 16px; background: #252422; color: #F0ECE8; font: 600 15px Inter, system-ui, sans-serif; transition: opacity 120ms ease, transform 120ms ease, border-color 180ms ease; } .ds-btn-secondary:hover { border-color: #8A8580; } .ds-btn-secondary:active { opacity: 0.8; transform: scale(0.97); } .ds-btn-secondary:focus-visible { outline: 2px solid #FF4D00; outline-offset: 3px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "A compact tonal field whose border carries focus and validation state.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Workout name</span><input class=\"ds-input\" value=\"Upper Body\" /></label>",
+      "css": ".ds-field { display: grid; gap: 8px; color: #F0ECE8; font-family: Inter, system-ui, sans-serif; } .ds-field-label { font-size: 13px; } .ds-input { min-height: 48px; padding: 12px 16px; border: 1px solid #3D3B38; border-radius: 12px; background: #252422; color: #F0ECE8; font: 400 15px Inter, system-ui, sans-serif; outline: none; transition: border-color 180ms ease; } .ds-input:hover { border-color: #8A8580; } .ds-input:focus-visible { border-color: #FF4D00; }"
+    },
+    {
+      "name": "Choice Chip",
+      "kind": "chip",
+      "refersTo": "chip-selected",
+      "description": "A compact selection control with a decisive filled active state.",
+      "html": "<div class=\"ds-chip-row\"><button class=\"ds-chip ds-chip-active\">All</button><button class=\"ds-chip\">Chest</button><button class=\"ds-chip\">Back</button></div>",
+      "css": ".ds-chip-row { display: flex; gap: 8px; } .ds-chip { min-height: 44px; padding: 12px 16px; border: 1px solid #3D3B38; border-radius: 9999px; background: rgba(26, 25, 23, 0.5); color: #8A8580; font: 500 13px Inter, system-ui, sans-serif; transition: opacity 120ms ease, transform 120ms ease, background 180ms ease; } .ds-chip-active { border-color: #FF4D00; background: #FF4D00; color: #FFFFFF; } .ds-chip:hover { opacity: 0.9; } .ds-chip:active { transform: scale(0.97); } .ds-chip:focus-visible { outline: 2px solid #FF4D00; outline-offset: 2px; }"
+    },
+    {
+      "name": "Workout Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "A flat, bordered workout container with compact operational hierarchy.",
+      "html": "<article class=\"ds-card\"><div><strong>Push Day</strong><span>4 exercises</span></div><p>Bench Press · Shoulder Press · Triceps</p></article>",
+      "css": ".ds-card { display: grid; gap: 12px; padding: 16px; border: 1px solid #3D3B38; border-radius: 12px; background: #252422; color: #F0ECE8; font-family: Inter, system-ui, sans-serif; } .ds-card div { display: flex; justify-content: space-between; gap: 12px; } .ds-card strong { font-size: 15px; font-weight: 500; } .ds-card span, .ds-card p { margin: 0; color: #8A8580; font-size: 13px; } .ds-card:focus-within { border-color: #FF4D00; }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "custom",
+      "description": "Equal-width compact modes on a tonal track with a quiet sliding selection.",
+      "html": "<div class=\"ds-segmented\"><button class=\"ds-segment ds-segment-active\">Workouts</button><button class=\"ds-segment\">Steps</button></div>",
+      "css": ".ds-segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 0; padding: 4px; border-radius: 12px; background: #252422; } .ds-segment { min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: transparent; color: #8A8580; font: 500 15px Inter, system-ui, sans-serif; transition: background 180ms ease, color 180ms ease, opacity 120ms ease; } .ds-segment-active { background: #3D3B38; color: #F0ECE8; } .ds-segment:hover { opacity: 0.88; } .ds-segment:focus-visible { outline: 2px solid #FF4D00; outline-offset: -2px; }"
+    },
+    {
+      "name": "Bottom Navigation",
+      "kind": "nav",
+      "description": "Three thumb-reachable destinations with a compact orange active pill.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Main\"><button class=\"ds-nav-item ds-nav-active\"><span class=\"ds-nav-icon\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11\" /></svg></span><span>Workout</span></button><button class=\"ds-nav-item\"><span class=\"ds-nav-icon\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01\" /></svg></span><span>Exercises</span></button><button class=\"ds-nav-item\"><span class=\"ds-nav-icon\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\" /><path d=\"M12 7v5l3 2\" /></svg></span><span>Log</span></button></nav>",
+      "css": ".ds-nav { display: grid; grid-template-columns: repeat(3, 1fr); min-height: 66px; padding: 8px 12px 10px; border-radius: 24px 24px 0 0; background: #252422; } .ds-nav-item { display: grid; justify-items: center; align-content: start; gap: 2px; border: 0; background: transparent; color: #8A8580; font: 600 10px Inter, system-ui, sans-serif; } .ds-nav-icon { display: grid; width: 48px; height: 34px; place-items: center; border-radius: 16px; transition: background 180ms ease, transform 180ms ease; } .ds-nav svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .ds-nav-active { color: #FF4D00; } .ds-nav-active .ds-nav-icon { background: rgba(255, 77, 0, 0.12); } .ds-nav-item:active .ds-nav-icon { transform: scale(0.97); } .ds-nav-item:focus-visible { outline: 2px solid #FF4D00; outline-offset: 2px; }"
+    },
+    {
+      "name": "Snackbar",
+      "kind": "custom",
+      "description": "Transient feedback with a restrained float and a slim orange status rail.",
+      "html": "<div class=\"ds-snackbar\" role=\"status\"><span class=\"ds-snackbar-rail\"></span><strong>Workout saved</strong><button>Undo</button></div>",
+      "css": ".ds-snackbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid #3D3B38; border-radius: 12px; background: #252422; color: #F0ECE8; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.24), 0 4px 6px -4px rgba(0, 0, 0, 0.18); font: 500 15px Inter, system-ui, sans-serif; } .ds-snackbar-rail { width: 4px; height: 32px; border-radius: 8px; background: #FF4D00; } .ds-snackbar strong { flex: 1; font-weight: 500; } .ds-snackbar button { min-height: 32px; padding: 4px 8px; border: 0; background: transparent; color: #FF4D00; font: 600 13px Inter, system-ui, sans-serif; } .ds-snackbar button:hover { opacity: 0.82; } .ds-snackbar button:active { transform: scale(0.97); } .ds-snackbar button:focus-visible { outline: 2px solid #FF4D00; outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Focused Training Floor",
+    "overview": "LiftLog is a calm, distraction-free environment for serious training. Its visual system behaves like premium gym equipment: dependable, responsive, and purpose-built. Warm industrial neutrals create a quiet field while Ignition Orange marks decisive action, active state, and progress.\n\nPolish reinforces momentum, confidence, and fast decision-making rather than entertainment. The interface stays tactile and athletic without becoming loud; it is restrained enough to disappear during a set and precise enough to earn trust under repeated use.",
+    "keyCharacteristics": [
+      "Focused, tactile, athletic, calm, and confident.",
+      "Structurally flat, with depth carried by tone, contrast, spacing, and borders.",
+      "Compact enough for fast operation, but never cramped or fragile.",
+      "Responsive motion and feedback that confirm action without delaying it.",
+      "Native-aware behavior shared coherently across iOS and Android."
+    ],
+    "rules": [
+      {
+        "name": "The Orange Is Action Rule",
+        "body": "Ignition Orange must communicate action, selection, focus, or meaningful progress; it is not ambient decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tonal Structure Rule",
+        "body": "Separate hierarchy with warm surface steps and subtle borders before reaching for shadow.",
+        "section": "colors"
+      },
+      {
+        "name": "The Instrument Readout Rule",
+        "body": "Oversized numerals belong only to live measurements such as elapsed time, countdowns, or step totals.",
+        "section": "typography"
+      },
+      {
+        "name": "The Weight Before Size Rule",
+        "body": "Prefer an established weight or role before inventing a new text size.",
+        "section": "typography"
+      },
+      {
+        "name": "The Training-Reach Rule",
+        "body": "Primary workout actions live where they are easy to reach one-handed and never depend on precision tapping.",
+        "section": "layout"
+      },
+      {
+        "name": "The Four-Point Rhythm Rule",
+        "body": "New spacing should resolve to the existing four-point cadence unless a native inset or measured control requires otherwise.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat Until Floating Rule",
+        "body": "If an element does not physically or behaviorally float above the current task, it does not receive a shadow.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Functional Curve Rule",
+        "body": "Curvature must support grip, grouping, state, or safe touch geometry; it is not decoration.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do keep the common workout action immediate, thumb-reachable, and visually obvious.",
+      "Do use Ignition Orange only for action, selection, focus, or meaningful progress.",
+      "Do establish hierarchy through warm tonal surfaces, spacing, and subtle borders.",
+      "Do use short motion to confirm state changes while preserving a responsive feel.",
+      "Do adapt navigation, insets, touch targets, and system behavior to iOS and Android conventions.",
+      "Do keep advanced features visually subordinate until the user needs them."
+    ],
+    "donts": [
+      "Don't use glossy fitness-marketing treatments, excessive gradients, glassmorphism, or neon palettes.",
+      "Don't add gamified, achievement-heavy, or entertainment-first decoration.",
+      "Don't turn every content group into an oversized card or every control into a pill.",
+      "Don't add shadows to ordinary resting surfaces.",
+      "Don't introduce generic corporate-wellness styling or lifestyle-brand imagery.",
+      "Don't let animation delay input, obscure state, or compete with the workout."
+    ]
+  }
+}

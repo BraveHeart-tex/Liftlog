@@ -21,7 +21,8 @@ export default defineConfig([
       'expo-env.d.ts',
       'nativewind-env.d.ts',
       'pnpm-lock.yaml',
-      '.expo/*'
+      '.expo/*',
+      '.agents/*'
     ]
   },
   {

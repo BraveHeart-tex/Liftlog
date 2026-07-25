@@ -10,3 +10,4 @@ nativewind-env.d.ts
 pnpm-lock.yaml
 ios
 android
+.agents
