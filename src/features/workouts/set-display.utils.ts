@@ -12,6 +12,24 @@ export function getCompletedSets(sets: Set[]) {
   return sets.filter(set => set.status === 'completed');
 }
 
+export function getWeightRepsVolume(sets: Set[]) {
+  return sets.reduce((total, set) => {
+    if (set.weightKg === null || set.reps === null) {
+      return total;
+    }
+
+    return total + set.weightKg * set.reps;
+  }, 0);
+}
+
+export function formatDisplaySetPosition(
+  group: Pick<DisplaySetGroup, 'startIndex' | 'endIndex'>
+) {
+  return group.startIndex === group.endIndex
+    ? `${group.startIndex}`
+    : `${group.startIndex}-${group.endIndex}`;
+}
+
 export function formatCompletedSets(
   sets: Set[],
   unit: WeightUnit = 'kg',

@@ -12,7 +12,10 @@ import {
 } from '@/src/lib/utils/weight.utils';
 import { View } from 'react-native';
 import { WorkoutSetSummary } from '@/src/features/workouts/components/workout-set-summary';
-import { getDisplaySetGroups } from '@/src/features/workouts/set-display.utils';
+import {
+  getDisplaySetGroups,
+  getWeightRepsVolume
+} from '@/src/features/workouts/set-display.utils';
 
 interface WorkoutExerciseSummaryProps {
   exerciseName: string;
@@ -35,13 +38,7 @@ export function WorkoutExerciseSummary({
   emptyText,
   className
 }: WorkoutExerciseSummaryProps) {
-  const exerciseVolume = completedSets.reduce((sum, set) => {
-    if (set.weightKg === null || set.reps === null) {
-      return sum;
-    }
-
-    return sum + set.weightKg * set.reps;
-  }, 0);
+  const exerciseVolume = getWeightRepsVolume(completedSets);
   const shouldShowVolume = trackingType === 'weight_reps';
   const latestSet = completedSets.at(-1);
   const setCountLabel = `${completedSets.length} ${

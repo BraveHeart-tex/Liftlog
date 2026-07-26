@@ -16,10 +16,15 @@ export default function WorkoutExerciseHistoryScreen() {
   const {
     exercise,
     history,
+    hasMoreHistory,
     isLoading,
+    isLoadingMore,
     latestPersonalRecord,
+    loadMore,
+    loadMoreError,
     monthlyProgression,
     prSetIds,
+    retryLoadMore,
     trackingType,
     weightUnit
   } = useWorkoutExerciseHistoryScreen(workoutExerciseId);
@@ -52,15 +57,20 @@ export default function WorkoutExerciseHistoryScreen() {
   return (
     <Screen withPadding={false} edges={[]}>
       <View className="flex-1">
-        <View className="px-4 pt-6 pb-2">
+        <View className="px-4 pt-4">
           <Text variant="h2">{exercise.name}</Text>
         </View>
 
         <ExerciseHistoryList
           history={history}
+          hasMoreHistory={hasMoreHistory}
+          isLoadingMore={isLoadingMore}
           latestPersonalRecord={latestPersonalRecord}
+          loadMore={loadMore}
+          loadMoreError={loadMoreError}
           monthlyProgression={monthlyProgression}
           prSetIds={prSetIds}
+          retryLoadMore={retryLoadMore}
           trackingType={trackingType}
           weightUnit={weightUnit}
         />

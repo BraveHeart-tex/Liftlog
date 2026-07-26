@@ -6,9 +6,16 @@ import {
   type TrackingType
 } from '@/src/features/progress/tracking.domain';
 import { cn } from '@/src/lib/utils/cn.utils';
-import { getDisplaySetGroups } from '@/src/features/workouts/set-display.utils';
+import {
+  formatDisplaySetPosition,
+  getDisplaySetGroups
+} from '@/src/features/workouts/set-display.utils';
 import type { WeightUnit } from '@/src/lib/utils/weight.utils';
-import { View } from 'react-native';
+import { View, type TextStyle } from 'react-native';
+
+const tabularNumericStyle = {
+  fontVariant: ['tabular-nums']
+} satisfies TextStyle;
 
 interface WorkoutSetSummaryProps {
   completedSets: Set[];
@@ -17,6 +24,7 @@ interface WorkoutSetSummaryProps {
   personalRecordSetIds?: ReadonlySet<string>;
   emptyText?: string;
   className?: string;
+  showDividers?: boolean;
 }
 
 type DisplaySetGroup = ReturnType<typeof getDisplaySetGroups>[number];
@@ -38,7 +46,8 @@ export function WorkoutSetSummary({
   trackingType = 'weight_reps',
   personalRecordSetIds,
   emptyText,
-  className
+  className,
+  showDividers = true
 }: WorkoutSetSummaryProps) {
   const displayGroups = getDisplaySetGroups(
     completedSets,
@@ -53,28 +62,34 @@ export function WorkoutSetSummary({
       {displayGroups.length > 0 ? (
         displayGroups.map((group, index) => {
           const isLast = index === displayGroups.length - 1;
-          const setLabel =
-            group.type === 'range'
-              ? `${group.setIds.length} sets`
-              : `${group.startIndex}`;
+          const setLabel = formatDisplaySetPosition(group);
 
           return (
             <View
               key={group.setIds.join('-')}
               className={cn(
-                'flex-row items-center justify-between py-2 pr-2',
-                !isLast && 'border-border border-b',
+                'flex-row items-center py-2',
+                showDividers && !isLast && 'border-border border-b',
                 isLast && 'pb-0'
               )}
             >
-              <Text variant="small" tone="muted">
+              <Text
+                variant="small"
+                tone="muted"
+                className="w-12"
+                style={tabularNumericStyle}
+              >
                 {setLabel}
               </Text>
-              <View className="flex-row items-center gap-2">
+              <View className="min-w-0 flex-1 flex-row items-center justify-end gap-2">
                 {groupHasPersonalRecord(group, personalRecordSetIds) ? (
                   <PersonalRecordBadge />
                 ) : null}
-                <Text variant="small" className="text-foreground font-medium">
+                <Text
+                  variant="small"
+                  className="text-foreground min-w-0 text-right font-medium"
+                  style={tabularNumericStyle}
+                >
                   {formatTrackingValue(
                     trackingType,
                     getSetValues(group.set),
@@ -96,7 +111,7 @@ export function WorkoutSetSummary({
 
 function PersonalRecordBadge() {
   return (
-    <View className="border-success bg-success/15 rounded-md border px-1.5 py-0.5">
+    <View className="border-success bg-success/15 rounded-md border px-2 py-1">
       <Text variant="caption" className="text-success font-medium">
         PR
       </Text>

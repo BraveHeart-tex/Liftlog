@@ -1,22 +1,19 @@
 import { StyledFlashList } from '@/src/components/styled/flash-list';
+import { Button } from '@/src/components/ui/button';
 import { EmptyState } from '@/src/components/ui/empty-state';
-import { Icon, type IconTone } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import {
   formatPersonalRecordValue,
-  formatScore,
   type TrackingType
 } from '@/src/features/progress/tracking.domain';
+import {
+  formatExerciseHistorySessionMetadata,
+  formatRollingProgression
+} from '@/src/features/workouts/exercise-history-format.utils';
 import { WorkoutSetSummary } from '@/src/features/workouts/components/workout-set-summary';
 import type { useExerciseHistory } from '@/src/features/workouts/hooks/use-exercise-history';
 import { cn } from '@/src/lib/utils/cn.utils';
 import type { WeightUnit } from '@/src/lib/utils/weight.utils';
-import {
-  MinusIcon,
-  StarIcon,
-  TrendingDownIcon,
-  TrendingUpIcon
-} from 'lucide-react-native';
 import { View } from 'react-native';
 
 function formatWorkoutDate(timestamp: number) {
@@ -38,25 +35,11 @@ interface ExerciseHistoryListProps {
   prSetIds: ExerciseHistoryData['prSetIds'];
   trackingType: TrackingType;
   weightUnit: WeightUnit;
-}
-
-function formatSignedScore(
-  trackingType: TrackingType,
-  value: number,
-  unit: WeightUnit
-) {
-  const formattedValue = formatScore(trackingType, Math.abs(value), unit);
-  const sign = value > 0 ? '+' : value < 0 ? '-' : '';
-
-  return `${sign}${formattedValue}`;
-}
-
-function getProgressionIcon(delta: number | null) {
-  if (delta === null || delta === 0) {
-    return MinusIcon;
-  }
-
-  return delta > 0 ? TrendingUpIcon : TrendingDownIcon;
+  hasMoreHistory: ExerciseHistoryData['hasMoreHistory'];
+  isLoadingMore: ExerciseHistoryData['isLoadingMore'];
+  loadMore: ExerciseHistoryData['loadMore'];
+  loadMoreError: ExerciseHistoryData['loadMoreError'];
+  retryLoadMore: ExerciseHistoryData['retryLoadMore'];
 }
 
 function getProgressionToneClassName(delta: number | null) {
@@ -67,67 +50,58 @@ function getProgressionToneClassName(delta: number | null) {
   return delta > 0 ? 'text-progress-up' : 'text-progress-down';
 }
 
-function getProgressionTone(delta: number | null): IconTone {
-  if (delta === null || delta === 0) {
-    return 'progressSame';
-  }
-
-  return delta > 0 ? 'progressUp' : 'progressDown';
-}
-
 function ExerciseHistoryWidgets({
   latestPersonalRecord,
   monthlyProgression,
   trackingType,
   weightUnit
-}: Omit<ExerciseHistoryListProps, 'history' | 'prSetIds'>) {
+}: Pick<
+  ExerciseHistoryListProps,
+  'latestPersonalRecord' | 'monthlyProgression' | 'trackingType' | 'weightUnit'
+>) {
   const progressionDelta = monthlyProgression?.delta ?? null;
-  const ProgressionIcon = getProgressionIcon(progressionDelta);
-  const progressionTone = getProgressionTone(progressionDelta);
   const progressionToneClassName =
     getProgressionToneClassName(progressionDelta);
 
   return (
-    <View className="pt-4">
-      <View className="flex-row gap-3">
-        <View className="border-border bg-card min-w-0 flex-1 rounded-lg border px-3 py-3">
-          <View className="flex-row items-center gap-2">
-            <Icon as={StarIcon} tone="warning" size="md" />
-            <View className="min-w-0 flex-1">
-              <Text variant="bodyMedium" numberOfLines={1}>
-                {latestPersonalRecord
-                  ? formatPersonalRecordValue(latestPersonalRecord, weightUnit)
-                  : 'No PR yet'}
-              </Text>
-              <Text variant="caption" tone="muted" className="mt-1">
-                Latest PR
-              </Text>
-            </View>
-          </View>
+    <View className="pt-3 pb-1">
+      <View className="border-border bg-card rounded-lg border px-3">
+        <View className="flex-row items-start gap-3 py-2">
+          <Text variant="caption" tone="muted" className="w-20">
+            Latest PR
+          </Text>
+          <Text
+            variant="small"
+            className={cn(
+              'min-w-0 flex-1',
+              latestPersonalRecord && 'text-success'
+            )}
+          >
+            {latestPersonalRecord
+              ? formatPersonalRecordValue(latestPersonalRecord, weightUnit)
+              : 'No PR yet'}
+          </Text>
         </View>
 
-        <View className="border-border bg-card min-w-0 flex-1 rounded-lg border px-3 py-3">
-          <View className="flex-row items-center gap-2">
-            <Icon as={ProgressionIcon} tone={progressionTone} size="md" />
-            <View className="min-w-0 flex-1">
-              <Text
-                variant="bodyMedium"
-                numberOfLines={1}
-                className={cn(monthlyProgression && progressionToneClassName)}
-              >
-                {monthlyProgression
-                  ? `${formatSignedScore(
-                      trackingType,
-                      monthlyProgression.delta,
-                      weightUnit
-                    )} from last month`
-                  : 'No last month data'}
-              </Text>
-              <Text variant="caption" tone="muted" className="mt-1">
-                Progression
-              </Text>
-            </View>
-          </View>
+        <View className="border-border flex-row items-start gap-3 border-t py-2">
+          <Text variant="caption" tone="muted" className="w-20">
+            Progression
+          </Text>
+          <Text
+            variant="small"
+            className={cn(
+              'min-w-0 flex-1',
+              monthlyProgression && progressionToneClassName
+            )}
+          >
+            {monthlyProgression
+              ? formatRollingProgression(
+                  trackingType,
+                  monthlyProgression.delta,
+                  weightUnit
+                )
+              : 'No prior 30-day data'}
+          </Text>
         </View>
       </View>
     </View>
@@ -140,16 +114,29 @@ export function ExerciseHistoryList({
   monthlyProgression,
   prSetIds,
   trackingType,
-  weightUnit
+  weightUnit,
+  hasMoreHistory,
+  isLoadingMore,
+  loadMore,
+  loadMoreError,
+  retryLoadMore
 }: ExerciseHistoryListProps) {
   const renderHistoryEntry = ({ item }: { item: ExerciseHistoryEntry }) => (
-    <View className="border-border bg-card mt-4 rounded-lg border p-4">
-      <View className="mb-3 flex-row items-start justify-between gap-3">
-        <Text variant="body" className="flex-1">
+    <View className="border-border border-b py-3">
+      <View className="mb-1 flex-row items-start justify-between gap-3">
+        <Text variant="bodyMedium" className="min-w-0 flex-1">
           {formatWorkoutDate(item.workout.startedAt)}
         </Text>
-        <Text variant="small" tone="muted">
-          {item.sets.length} sets
+        <Text
+          variant="small"
+          tone="muted"
+          className="min-w-0 flex-shrink text-right"
+        >
+          {formatExerciseHistorySessionMetadata(
+            item.sets,
+            trackingType,
+            weightUnit
+          )}
         </Text>
       </View>
 
@@ -158,6 +145,7 @@ export function ExerciseHistoryList({
         weightUnit={weightUnit}
         trackingType={trackingType}
         personalRecordSetIds={prSetIds}
+        showDividers={false}
       />
     </View>
   );
@@ -181,6 +169,25 @@ export function ExerciseHistoryList({
       }
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
+      onEndReached={hasMoreHistory ? loadMore : undefined}
+      onEndReachedThreshold={0.4}
+      ListFooterComponent={
+        isLoadingMore ? (
+          <Button
+            variant="ghost"
+            loading
+            disabled
+            className="mt-4"
+            accessibilityLabel="Loading more exercise history"
+          >
+            Loading more
+          </Button>
+        ) : loadMoreError ? (
+          <Button variant="ghost" className="mt-4" onPress={retryLoadMore}>
+            Retry loading history
+          </Button>
+        ) : null
+      }
       ListEmptyComponent={
         <EmptyState
           layout="section"

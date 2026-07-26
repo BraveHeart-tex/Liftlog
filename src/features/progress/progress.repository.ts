@@ -19,8 +19,6 @@ import {
   resolveTrackingType
 } from '@/src/features/progress/tracking.domain';
 
-const MAX_EXERCISE_HISTORY_WORKOUTS = 20;
-
 export function getPersonalRecordsByExerciseQuery(
   db: DrizzleDb,
   exerciseId: Exercise['id']
@@ -56,7 +54,7 @@ export function getRecentExerciseHistoryWorkoutsQuery(
         beforeStartedAt ? lt(workouts.startedAt, beforeStartedAt) : undefined
       )
     )
-    .orderBy(desc(workouts.startedAt))
+    .orderBy(desc(workouts.startedAt), desc(workouts.id))
     .limit(limit);
 }
 
@@ -78,7 +76,7 @@ export function getExerciseHistoryWorkoutsSinceQuery(
           : eq(workouts.id, '')
       )
     )
-    .orderBy(desc(workouts.startedAt));
+    .orderBy(desc(workouts.startedAt), desc(workouts.id));
 }
 
 export function getRecentExerciseHistoryWorkouts(
@@ -155,10 +153,6 @@ export function buildExerciseHistory(
 
     seenWorkoutIds.add(row.workout.id);
     workoutHistory.push(row.workout);
-
-    if (workoutHistory.length === MAX_EXERCISE_HISTORY_WORKOUTS) {
-      break;
-    }
   }
 
   if (workoutHistory.length === 0) {
