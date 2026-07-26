@@ -1,87 +1,86 @@
 import { Button } from '@/src/components/ui/button';
-import { Icon } from '@/src/components/ui/icon';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { useOnboardingActions } from '@/src/features/settings/hooks/use-onboarding-actions';
 import { cn } from '@/src/lib/utils/cn.utils';
 import type { WeightUnit } from '@/src/lib/utils/weight.utils';
-import { ArrowRightIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
+
+const weightUnitOptions: WeightUnit[] = ['kg', 'lb'];
 
 export default function OnboardingScreen() {
   const [weightUnitPreference, setWeightUnitPreference] =
     useState<WeightUnit>('kg');
 
-  const { getStarted } = useOnboardingActions({
+  const { getStarted, isStarting } = useOnboardingActions({
     weightUnitPreference
   });
 
   return (
     <Screen
-      edges={[]}
-      contentClassName="justify-between px-6 py-12"
+      scroll
+      contentClassName="justify-center"
       keyboardShouldPersistTaps="handled"
+      footer={
+        <Button
+          containerClassName="w-full"
+          disabled={isStarting}
+          onPress={getStarted}
+        >
+          Continue to Workout
+        </Button>
+      }
     >
-      <View>
+      <View className="gap-10">
         <View>
-          <Text variant="h1">Welcome to LiftLog</Text>
+          <Text variant="h1">Log workouts without the friction</Text>
           <Text variant="small" tone="muted" className="mt-2">
-            Set up your profile to get started.
+            No account. Works offline. Stored on this device.
           </Text>
         </View>
 
-        <View className="mt-10 gap-8">
-          <View>
-            <Text variant="small" className="mb-2">
-              Weight unit
-            </Text>
-            <Text variant="caption" tone="muted" className="mb-3">
-              You can change this later in settings.
-            </Text>
-            <View className="flex-row gap-3">
-              {(['kg', 'lb'] as WeightUnit[]).map(unit => (
+        <View>
+          <Text variant="small">Choose your units</Text>
+          <Text variant="caption" tone="muted" className="mt-1">
+            You can change this later in Settings.
+          </Text>
+          <View
+            accessibilityLabel="Weight unit"
+            accessibilityRole="radiogroup"
+            className="border-border bg-card mt-4 w-56 flex-row rounded-md border p-1"
+          >
+            {weightUnitOptions.map(unit => {
+              const isSelected = weightUnitPreference === unit;
+
+              return (
                 <Pressable
                   key={unit}
                   onPress={() => {
                     setWeightUnitPreference(unit);
                   }}
-                  accessibilityRole="button"
-                  accessibilityState={{
-                    selected: weightUnitPreference === unit
-                  }}
+                  accessibilityLabel={unit === 'kg' ? 'Kilograms' : 'Pounds'}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isSelected }}
                   className={cn(
-                    weightUnitPreference === unit
-                      ? 'bg-primary border-primary'
-                      : 'bg-card border-border',
-                    'flex-1 items-center rounded-lg border py-4'
+                    'min-h-12 flex-1 items-center justify-center rounded-sm px-4',
+                    isSelected && 'bg-primary'
                   )}
                 >
                   <Text
                     variant="bodyMedium"
                     className={cn(
-                      weightUnitPreference === unit
-                        ? 'text-primary-foreground'
-                        : 'text-foreground'
+                      isSelected ? 'text-primary-foreground' : 'text-foreground'
                     )}
                   >
                     {unit}
                   </Text>
                 </Pressable>
-              ))}
-            </View>
+              );
+            })}
           </View>
         </View>
       </View>
-
-      <Button
-        className="mt-10"
-        rightIcon={<Icon as={ArrowRightIcon} tone="primaryForeground" />}
-        containerClassName="w-full"
-        onPress={getStarted}
-      >
-        Get started
-      </Button>
     </Screen>
   );
 }

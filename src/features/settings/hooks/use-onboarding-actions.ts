@@ -5,7 +5,7 @@ import {
   type WeightUnit
 } from '@/src/features/settings/settings.repository';
 import { router } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 const workoutRoute = '/(tabs)/workout';
 
@@ -17,14 +17,23 @@ export function useOnboardingActions({
   weightUnitPreference
 }: UseOnboardingActionsParams) {
   const db = useDrizzle();
+  const isStartingRef = useRef(false);
+  const [isStarting, setIsStarting] = useState(false);
 
   const getStarted = useCallback(() => {
+    if (isStartingRef.current) {
+      return;
+    }
+
+    isStartingRef.current = true;
+    setIsStarting(true);
     completeOnboarding(db);
     setWeightUnit(db, weightUnitPreference);
     router.replace(workoutRoute);
   }, [db, weightUnitPreference]);
 
   return {
-    getStarted
+    getStarted,
+    isStarting
   };
 }
