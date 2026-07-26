@@ -19,6 +19,7 @@ import { useSaveWorkoutExerciseEdits } from '@/src/features/workouts/hooks/use-r
 import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
 import { triggerWorkoutEditModeHaptics } from '@/src/features/workouts/workout.haptics';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { router } from 'expo-router';
 import { CircleCheckBig, PlusIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Keyboard, View } from 'react-native';
@@ -102,6 +103,9 @@ export function ActiveWorkoutContent({
 
     if (mode === 'active') {
       triggerWorkoutEditModeHaptics();
+      router.navigate('/(tabs)/workout/active/edit-exercises');
+
+      return;
     }
 
     setDraftExerciseRows(
@@ -119,6 +123,7 @@ export function ActiveWorkoutContent({
     );
     setIsEditingExercises(true);
   }, [isEditingExercises, mode, workoutExerciseRows]);
+
   const saveExerciseEdits = useCallback(() => {
     if (!draftExerciseRows || !baselineExerciseRows) {
       setIsEditingExercises(false);
@@ -136,15 +141,18 @@ export function ActiveWorkoutContent({
       Alert.alert('Could not save exercise edits', 'Please try again.');
     }
   }, [baselineExerciseRows, draftExerciseRows, saveWorkoutExerciseEdits]);
+
   const cancelExerciseEdits = useCallback(() => {
     setDraftExerciseRows(undefined);
     setBaselineExerciseRows(undefined);
     setIsEditingExercises(false);
   }, []);
+
   const openExercisePicker = useCallback(
     () => setIsExercisePickerOpen(true),
     [setIsExercisePickerOpen]
   );
+
   const confirmFinishWorkout = useCallback(() => {
     Alert.alert(
       'Finish workout?',
@@ -160,10 +168,12 @@ export function ActiveWorkoutContent({
       ]
     );
   }, [activeWorkout.id, finishWorkout, workoutName]);
+
   const closeExercisePicker = useCallback(
     () => setIsExercisePickerOpen(false),
     [setIsExercisePickerOpen]
   );
+
   const openCreateCustomExercise = useCallback(
     (initialName?: string) => {
       Keyboard.dismiss();
@@ -173,10 +183,12 @@ export function ActiveWorkoutContent({
     },
     [setIsExercisePickerOpen]
   );
+
   const closeCreateCustomExercise = useCallback(
     () => setIsCreateCustomExerciseOpen(false),
     []
   );
+
   const saveCustomExercise = useCallback(
     (exercise: Parameters<typeof createAndSelectCustomExercise>[0]) => {
       const createdExercise = createAndSelectCustomExercise(exercise);

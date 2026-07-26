@@ -28,9 +28,14 @@ export default function WorkoutLayout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen
-        name="active"
+        name="active/index"
         singular
         options={{ ...nativeHeaderOptions, title: 'Active workout' }}
+      />
+      <Stack.Screen
+        name="active/edit-exercises"
+        singular
+        options={{ ...nativeHeaderOptions, title: 'Edit exercises' }}
       />
       <Stack.Screen
         name="exercise/[workoutExerciseId]/index"
