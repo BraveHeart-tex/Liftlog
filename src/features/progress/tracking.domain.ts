@@ -10,7 +10,8 @@ export const TRACKING_TYPES = [
   'distance_time',
   'reps',
   'reps_time',
-  'weight_time'
+  'weight_time',
+  'duration'
 ] as const;
 
 export type TrackingType = (typeof TRACKING_TYPES)[number];
@@ -149,6 +150,21 @@ export const TRACKING_TYPE_DEFINITIONS: Record<
         integer: true
       }
     ]
+  },
+  duration: {
+    label: 'Time',
+    scoreLabel: 'Time',
+    fields: [
+      {
+        key: 'durationMs',
+        label: 'Time',
+        unitLabel: 'time',
+        keyboardType: 'number-pad',
+        step: () => 1000,
+        minimum: 10,
+        integer: true
+      }
+    ]
   }
 };
 
@@ -259,6 +275,11 @@ export function getSetScore(
 
       return roundScore(weightKg / (durationMs / 1000));
     }
+    case 'duration': {
+      const durationMs = getDurationMs(set);
+
+      return durationMs === null ? null : durationMs;
+    }
   }
 }
 
@@ -297,6 +318,8 @@ export function formatTrackingValue(
       return `${reps ?? '0 reps'} in ${duration ?? '0:00.00'}`;
     case 'weight_time':
       return `${weight ?? '0 ' + weightUnit} for ${duration ?? '0:00.00'}`;
+    case 'duration':
+      return duration ?? '0:00.00';
   }
 }
 
@@ -342,6 +365,8 @@ export function formatScore(
       return `${formatNumber(score * 60, 1)} reps/min`;
     case 'weight_time':
       return `${formatWeightForUnit(score * 60, weightUnit)} ${weightUnit}/min`;
+    case 'duration':
+      return formatDurationMs(score);
   }
 }
 

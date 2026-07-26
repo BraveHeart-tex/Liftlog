@@ -1,10 +1,13 @@
 import type { DrizzleDb } from '@/src/db';
 import { appMeta, exercises, type NewExercise } from '@/src/db/schema';
 import { MUSCLE_GROUP } from '@/src/features/exercises/exercise.constants';
-import { eq } from 'drizzle-orm';
+import { rebuildPersonalRecordsForExercise } from '@/src/features/progress/progress.repository';
+import { and, eq } from 'drizzle-orm';
 
 const HAS_SEEDED_KEY = 'has_seeded';
 const LEGACY_EXERCISE_SEED_VERSION_KEY = 'exercise_seed_version';
+const PLANK_DURATION_TRACKING_SEED_KEY = 'plank_duration_tracking_seed_version';
+const PLANK_DURATION_TRACKING_SEED_VERSION = '1';
 
 const createSeedExercises = (): NewExercise[] => [
   {
@@ -285,6 +288,7 @@ const createSeedExercises = (): NewExercise[] => [
   {
     name: 'Plank',
     category: 'bodyweight',
+    trackingType: 'duration',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.abs]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.glutes,
@@ -311,6 +315,59 @@ const createSeedExercises = (): NewExercise[] => [
   }
 ];
 
+function upsertAppMeta(db: DrizzleDb, key: string, value: string): void {
+  db.insert(appMeta)
+    .values({
+      key,
+      value
+    })
+    .onConflictDoUpdate({
+      target: appMeta.key,
+      set: {
+        value
+      }
+    })
+    .run();
+}
+
+function runSeedUpgrades(db: DrizzleDb): void {
+  const plankDurationSeed = db
+    .select()
+    .from(appMeta)
+    .where(eq(appMeta.key, PLANK_DURATION_TRACKING_SEED_KEY))
+    .get();
+
+  if (plankDurationSeed?.value === PLANK_DURATION_TRACKING_SEED_VERSION) {
+    return;
+  }
+
+  const plank = db
+    .select({ id: exercises.id })
+    .from(exercises)
+    .where(
+      and(
+        eq(exercises.name, 'Plank'),
+        eq(exercises.isCustom, 0),
+        eq(exercises.trackingType, 'weight_reps')
+      )
+    )
+    .get();
+
+  if (plank) {
+    db.update(exercises)
+      .set({ trackingType: 'duration' })
+      .where(eq(exercises.id, plank.id))
+      .run();
+    rebuildPersonalRecordsForExercise(db, plank.id);
+  }
+
+  upsertAppMeta(
+    db,
+    PLANK_DURATION_TRACKING_SEED_KEY,
+    PLANK_DURATION_TRACKING_SEED_VERSION
+  );
+}
+
 export function runSeedIfNeeded(db: DrizzleDb): void {
   const hasSeeded = db
     .select()
@@ -324,22 +381,14 @@ export function runSeedIfNeeded(db: DrizzleDb): void {
     .get();
 
   if (hasSeeded?.value === 'true') {
+    runSeedUpgrades(db);
+
     return;
   }
 
   if (legacySeedMarker) {
-    db.insert(appMeta)
-      .values({
-        key: HAS_SEEDED_KEY,
-        value: 'true'
-      })
-      .onConflictDoUpdate({
-        target: appMeta.key,
-        set: {
-          value: 'true'
-        }
-      })
-      .run();
+    upsertAppMeta(db, HAS_SEEDED_KEY, 'true');
+    runSeedUpgrades(db);
 
     return;
   }
@@ -347,16 +396,16 @@ export function runSeedIfNeeded(db: DrizzleDb): void {
   db.transaction(tx => {
     tx.insert(exercises).values(createSeedExercises()).run();
     tx.insert(appMeta)
-      .values({
-        key: HAS_SEEDED_KEY,
-        value: 'true'
-      })
-      .onConflictDoUpdate({
-        target: appMeta.key,
-        set: {
+      .values([
+        {
+          key: HAS_SEEDED_KEY,
           value: 'true'
+        },
+        {
+          key: PLANK_DURATION_TRACKING_SEED_KEY,
+          value: PLANK_DURATION_TRACKING_SEED_VERSION
         }
-      })
+      ])
       .run();
   });
 }
