@@ -1,9 +1,11 @@
 import type { DrizzleDb } from '@/src/db/client';
 import {
+  exercises,
   workoutExercises,
   workouts,
   workoutTemplateExercises,
   workoutTemplates,
+  type Exercise,
   type Workout,
   type WorkoutTemplate,
   type WorkoutTemplateExercise
@@ -11,7 +13,27 @@ import {
 import { toLocalDateKey } from '@/src/lib/utils/date.utils';
 import { resolveTemplateName } from '@/src/features/workouts/workout-display.utils';
 import { normalizeSupersetRows } from '@/src/features/workouts/superset.utils';
-import { asc, desc, eq, inArray } from 'drizzle-orm';
+import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
+
+export interface WorkoutTemplateExerciseDraftRow {
+  id: WorkoutTemplateExercise['id'];
+  exerciseId: WorkoutTemplateExercise['exerciseId'];
+  supersetId: WorkoutTemplateExercise['supersetId'];
+}
+
+export type WorkoutTemplateExerciseDraftBaselineRow = Pick<
+  WorkoutTemplateExercise,
+  'id' | 'exerciseId' | 'order' | 'supersetId'
+>;
+
+export type StagedTemplateCustomExercise = Exercise;
+
+export class WorkoutTemplateExerciseDraftConflictError extends Error {
+  constructor() {
+    super('Workout template exercise draft conflicted with persisted data.');
+    this.name = 'WorkoutTemplateExerciseDraftConflictError';
+  }
+}
 
 function getWorkoutTemplateRecordById(
   db: DrizzleDb,
@@ -102,53 +124,191 @@ export function updateWorkoutTemplateName(
     .get();
 }
 
-export function updateWorkoutTemplateExercises(
+export function saveWorkoutTemplateExerciseDraft(
   db: DrizzleDb,
-  id: WorkoutTemplate['id'],
-  exerciseRows: Pick<WorkoutTemplateExercise, 'exerciseId' | 'supersetId'>[]
-): WorkoutTemplate | undefined {
-  let updatedTemplate: WorkoutTemplate | undefined;
-
+  templateId: WorkoutTemplate['id'],
+  rows: WorkoutTemplateExerciseDraftRow[],
+  baselineRows: WorkoutTemplateExerciseDraftBaselineRow[],
+  stagedCustomExercises: StagedTemplateCustomExercise[]
+): void {
   db.transaction(tx => {
-    const existingTemplate = getWorkoutTemplateRecordById(tx, id);
+    const template = getWorkoutTemplateRecordById(tx, templateId);
+    const existingTemplateExercises = tx
+      .select({
+        id: workoutTemplateExercises.id,
+        exerciseId: workoutTemplateExercises.exerciseId,
+        order: workoutTemplateExercises.order,
+        supersetId: workoutTemplateExercises.supersetId
+      })
+      .from(workoutTemplateExercises)
+      .where(eq(workoutTemplateExercises.templateId, templateId))
+      .all();
+    const baselineById = new Map(
+      baselineRows.map(row => [row.id, row] as const)
+    );
+    const draftIdSet = new Set(rows.map(row => row.id));
+    const draftExerciseIdSet = new Set(rows.map(row => row.exerciseId));
+    const stagedCustomExerciseById = new Map(
+      stagedCustomExercises.map(exercise => [exercise.id, exercise] as const)
+    );
 
-    if (!existingTemplate) {
-      return;
+    if (
+      !template ||
+      baselineById.size !== baselineRows.length ||
+      draftIdSet.size !== rows.length ||
+      draftExerciseIdSet.size !== rows.length ||
+      stagedCustomExerciseById.size !== stagedCustomExercises.length ||
+      existingTemplateExercises.length !== baselineRows.length ||
+      existingTemplateExercises.some(existingRow => {
+        const baselineRow = baselineById.get(existingRow.id);
+
+        return (
+          !baselineRow ||
+          existingRow.exerciseId !== baselineRow.exerciseId ||
+          existingRow.order !== baselineRow.order ||
+          existingRow.supersetId !== baselineRow.supersetId
+        );
+      }) ||
+      rows.some(row => {
+        const baselineRow = baselineById.get(row.id);
+
+        return baselineRow && baselineRow.exerciseId !== row.exerciseId;
+      }) ||
+      stagedCustomExercises.some(
+        exercise => !draftExerciseIdSet.has(exercise.id)
+      )
+    ) {
+      throw new WorkoutTemplateExerciseDraftConflictError();
     }
 
-    tx.delete(workoutTemplateExercises)
-      .where(eq(workoutTemplateExercises.templateId, id))
-      .run();
+    const persistedExercises =
+      draftExerciseIdSet.size > 0
+        ? tx
+            .select({
+              id: exercises.id,
+              isArchived: exercises.isArchived
+            })
+            .from(exercises)
+            .where(inArray(exercises.id, Array.from(draftExerciseIdSet)))
+            .all()
+        : [];
+    const persistedExerciseById = new Map(
+      persistedExercises.map(exercise => [exercise.id, exercise] as const)
+    );
 
-    if (exerciseRows.length > 0) {
-      const normalizedExerciseRows = normalizeSupersetRows(
-        exerciseRows.map((exerciseRow, order) => ({
-          id: String(order),
-          ...exerciseRow
-        }))
+    if (
+      rows.some(row => {
+        const persistedExercise = persistedExerciseById.get(row.exerciseId);
+
+        if (persistedExercise) {
+          return (
+            stagedCustomExerciseById.has(row.exerciseId) ||
+            (persistedExercise.isArchived !== 0 && !baselineById.has(row.id))
+          );
+        }
+
+        return !stagedCustomExerciseById.has(row.exerciseId);
+      })
+    ) {
+      throw new WorkoutTemplateExerciseDraftConflictError();
+    }
+
+    if (stagedCustomExercises.length > 0) {
+      const persistedActiveExerciseNames = tx
+        .select({ name: exercises.name })
+        .from(exercises)
+        .where(eq(exercises.isArchived, 0))
+        .all();
+      const normalizedNames = new Set(
+        persistedActiveExerciseNames.map(exercise =>
+          exercise.name.trim().toLowerCase()
+        )
       );
 
-      tx.insert(workoutTemplateExercises)
+      for (const exercise of stagedCustomExercises) {
+        const normalizedName = exercise.name.trim().toLowerCase();
+
+        if (!normalizedName || normalizedNames.has(normalizedName)) {
+          throw new WorkoutTemplateExerciseDraftConflictError();
+        }
+
+        normalizedNames.add(normalizedName);
+      }
+
+      tx.insert(exercises)
         .values(
-          normalizedExerciseRows.map((exerciseRow, order) => ({
-            templateId: id,
-            exerciseId: exerciseRow.exerciseId,
-            order,
-            supersetId: exerciseRow.supersetId
+          stagedCustomExercises.map(exercise => ({
+            ...exercise,
+            isCustom: 1,
+            isArchived: 0
           }))
         )
         .run();
     }
 
-    updatedTemplate = tx
-      .update(workoutTemplates)
-      .set({ updatedAt: Date.now() })
-      .where(eq(workoutTemplates.id, id))
-      .returning()
-      .get();
-  });
+    const normalizedRows = normalizeSupersetRows(
+      rows.map((row, order) => ({ ...row, order }))
+    );
+    const removedIds = baselineRows
+      .filter(row => !draftIdSet.has(row.id))
+      .map(row => row.id);
+    const addedRows = normalizedRows.filter(row => !baselineById.has(row.id));
+    const updatedRows = normalizedRows.filter(row => {
+      const baselineRow = baselineById.get(row.id);
 
-  return updatedTemplate;
+      return (
+        baselineRow &&
+        (baselineRow.order !== row.order ||
+          baselineRow.supersetId !== row.supersetId)
+      );
+    });
+
+    if (removedIds.length > 0) {
+      tx.delete(workoutTemplateExercises)
+        .where(inArray(workoutTemplateExercises.id, removedIds))
+        .run();
+    }
+
+    if (addedRows.length > 0) {
+      tx.insert(workoutTemplateExercises)
+        .values(
+          addedRows.map(row => ({
+            id: row.id,
+            templateId,
+            exerciseId: row.exerciseId,
+            order: row.order,
+            supersetId: row.supersetId
+          }))
+        )
+        .run();
+    }
+
+    if (updatedRows.length > 0) {
+      tx.update(workoutTemplateExercises)
+        .set({
+          order: sql`CASE id ${sql.join(
+            updatedRows.map(row => sql`WHEN ${row.id} THEN ${row.order}`),
+            sql` `
+          )} END`,
+          supersetId: sql`CASE id ${sql.join(
+            updatedRows.map(row => sql`WHEN ${row.id} THEN ${row.supersetId}`),
+            sql` `
+          )} END`
+        })
+        .where(
+          inArray(
+            workoutTemplateExercises.id,
+            updatedRows.map(row => row.id)
+          )
+        )
+        .run();
+    }
+
+    tx.update(workoutTemplates)
+      .set({ updatedAt: Date.now() })
+      .where(eq(workoutTemplates.id, templateId))
+      .run();
+  });
 }
 
 export function deleteWorkoutTemplate(

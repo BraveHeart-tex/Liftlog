@@ -1,17 +1,15 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import type { WorkoutTemplate, WorkoutTemplateExercise } from '@/src/db/schema';
+import type { WorkoutTemplate } from '@/src/db/schema';
 import {
   getExercisesByIdsQuery,
   type ExerciseListItem
 } from '@/src/features/exercises/exercise.repository';
 import { getActiveWorkoutQuery } from '@/src/features/workouts/workout.repository';
-import type { TemplateExerciseEditorRow } from '@/src/features/workouts/components/template-exercise-editor';
 import {
   createWorkoutFromTemplate,
   deleteWorkoutTemplate,
   getWorkoutTemplateByIdQuery,
   getWorkoutTemplateExercisesQuery,
-  updateWorkoutTemplateExercises,
   updateWorkoutTemplateName
 } from '@/src/features/workouts/workout-template.repository';
 import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
@@ -60,34 +58,6 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
       ),
     [exerciseResult.data]
   );
-  const orderedExercises = useMemo(
-    () =>
-      templateExerciseRows
-        .map(templateExercise => {
-          const exercise = exerciseById.get(templateExercise.exerciseId);
-
-          if (!exercise) {
-            return null;
-          }
-
-          return {
-            id: templateExercise.id,
-            exercise,
-            supersetId: templateExercise.supersetId
-          };
-        })
-        .filter(
-          (
-            row
-          ): row is {
-            id: WorkoutTemplateExercise['id'];
-            exercise: ExerciseListItem;
-            supersetId: WorkoutTemplateExercise['supersetId'];
-          } => Boolean(row)
-        ),
-    [exerciseById, templateExerciseRows]
-  );
-
   const startWorkoutFromTemplate = useCallback(() => {
     if (!template) {
       return;
@@ -128,22 +98,6 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
     [db]
   );
 
-  const saveTemplateExercises = useCallback(
-    (
-      nextTemplateId: WorkoutTemplate['id'],
-      rows: TemplateExerciseEditorRow[]
-    ) =>
-      updateWorkoutTemplateExercises(
-        db,
-        nextTemplateId,
-        rows.map(row => ({
-          exerciseId: row.exercise.id,
-          supersetId: row.supersetId
-        }))
-      ),
-    [db]
-  );
-
   const removeTemplate = useCallback(
     (nextTemplateId: WorkoutTemplate['id']) => {
       deleteWorkoutTemplate(db, nextTemplateId);
@@ -156,12 +110,10 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
     template,
     templateExerciseRows,
     exerciseById,
-    orderedExercises,
     startWorkoutFromTemplate,
     discardActiveWorkoutAndStartTemplate,
     resumeWorkout,
     renameTemplate,
-    saveTemplateExercises,
     removeTemplate,
     isLoading: Boolean(templateId) && !templateResult.isLive,
     isLoadingExercises:

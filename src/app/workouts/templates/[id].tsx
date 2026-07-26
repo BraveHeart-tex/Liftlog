@@ -6,14 +6,15 @@ import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
+import { ActiveWorkoutEditHeader } from '@/src/features/workouts/components/active-workout-edit-header';
+import { ActiveWorkoutExercisePickerSheet } from '@/src/features/workouts/components/active-workout-exercise-picker-sheet';
+import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/create-custom-exercise-sheet';
 import { DiscardWorkoutSheet } from '@/src/features/workouts/components/discard-workout-sheet';
+import { NewTemplateExerciseList } from '@/src/features/workouts/components/new-template-exercise-list';
 import { RenameTemplateSheet } from '@/src/features/workouts/components/rename-template-sheet';
-import {
-  TemplateExerciseEditor,
-  type TemplateExerciseEditorRow
-} from '@/src/features/workouts/components/template-exercise-editor';
 import { SupersetIndicator } from '@/src/features/workouts/components/superset-indicator';
 import { WorkoutTemplateActionsSheet } from '@/src/features/workouts/components/workout-template-actions-sheet';
+import { useWorkoutTemplateExerciseDraft } from '@/src/features/workouts/hooks/use-workout-template-exercise-draft';
 import { useWorkoutTemplateDetail } from '@/src/features/workouts/hooks/use-workout-template-detail';
 import {
   getSupersetLabelByRowId,
@@ -25,13 +26,14 @@ import { getRouteParamId } from '@/src/lib/utils/route.utils';
 import { usePreventRemove } from '@react-navigation/native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
+  ClipboardListIcon,
   DumbbellIcon,
   EllipsisIcon,
   PencilIcon,
-  SaveIcon
+  PlusIcon
 } from 'lucide-react-native';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { Alert, Keyboard, Pressable, View } from 'react-native';
 
 export default function WorkoutTemplateDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
@@ -83,26 +85,43 @@ function WorkoutTemplateDetailLoaded({
   const [isRenameSheetOpen, setIsRenameSheetOpen] = useState(false);
   const [isReplaceSheetOpen, setIsReplaceSheetOpen] = useState(false);
   const [isEditingExercises, setIsEditingExercises] = useState(false);
-  const [isSavingExercises, setIsSavingExercises] = useState(false);
-  const [draftExercises, setDraftExercises] = useState<
-    TemplateExerciseEditorRow[]
-  >([]);
-  const isSavingExercisesRef = useRef(false);
+  const [isExercisePickerOpen, setIsExercisePickerOpen] = useState(false);
+  const [isCreateCustomExerciseOpen, setIsCreateCustomExerciseOpen] =
+    useState(false);
+  const [initialCustomExerciseName, setInitialCustomExerciseName] =
+    useState('');
 
   const {
     activeWorkout,
     template,
     templateExerciseRows,
     exerciseById,
-    orderedExercises,
     isLoadingExercises,
     startWorkoutFromTemplate,
     discardActiveWorkoutAndStartTemplate,
     resumeWorkout,
     renameTemplate,
-    saveTemplateExercises,
     removeTemplate
   } = detail;
+  const exerciseDraft = useWorkoutTemplateExerciseDraft({
+    template,
+    templateExerciseRows,
+    exerciseById
+  });
+  const {
+    addExercises,
+    changeRows,
+    discard: discardExerciseDraft,
+    draftTemplateExercises,
+    hasChanges: hasExerciseChanges,
+    isSaving: isSavingExercises,
+    removeExercise: removeDraftExercise,
+    save: saveExerciseDraft,
+    selectedExerciseIds,
+    stageCustomExercise,
+    stagedCustomExerciseNames,
+    start: startExerciseDraft
+  } = exerciseDraft;
   const exerciseCount = templateExerciseRows.length;
   const supersetLabelByTemplateExerciseId = useMemo(() => {
     return getSupersetLabelByRowId(templateExerciseRows);
@@ -121,22 +140,30 @@ function WorkoutTemplateDetailLoaded({
       ),
     [templateExerciseRows]
   );
-  const hasExerciseChanges = useMemo(
-    () =>
-      draftExercises.length !== orderedExercises.length ||
-      draftExercises.some(
-        (row, index) =>
-          row.exercise.id !== orderedExercises[index]?.exercise.id ||
-          row.supersetId !== orderedExercises[index]?.supersetId
-      ),
-    [draftExercises, orderedExercises]
-  );
   const canSaveExercises = hasExerciseChanges && !isSavingExercises;
   const openActions = useCallback(() => setIsActionSheetOpen(true), []);
   const closeActions = useCallback(() => setIsActionSheetOpen(false), []);
   const openRenameSheet = useCallback(() => setIsRenameSheetOpen(true), []);
   const closeRenameSheet = useCallback(() => setIsRenameSheetOpen(false), []);
   const closeReplaceSheet = useCallback(() => setIsReplaceSheetOpen(false), []);
+  const openExercisePicker = useCallback(
+    () => setIsExercisePickerOpen(true),
+    []
+  );
+  const closeExercisePicker = useCallback(
+    () => setIsExercisePickerOpen(false),
+    []
+  );
+  const openCreateCustomExercise = useCallback((initialName?: string) => {
+    Keyboard.dismiss();
+    setInitialCustomExerciseName(initialName ?? '');
+    setIsExercisePickerOpen(false);
+    setIsCreateCustomExerciseOpen(true);
+  }, []);
+  const closeCreateCustomExercise = useCallback(
+    () => setIsCreateCustomExerciseOpen(false),
+    []
+  );
 
   const handleStartWorkout = () => {
     if (activeWorkout) {
@@ -173,7 +200,7 @@ function WorkoutTemplateDetailLoaded({
       triggerWorkoutEditModeHaptics();
     }
 
-    setDraftExercises(orderedExercises);
+    startExerciseDraft();
     setIsEditingExercises(true);
   };
 
@@ -182,7 +209,7 @@ function WorkoutTemplateDetailLoaded({
   };
 
   const exitExerciseEditMode = () => {
-    setDraftExercises([]);
+    discardExerciseDraft();
     setIsEditingExercises(false);
   };
 
@@ -204,31 +231,29 @@ function WorkoutTemplateDetailLoaded({
   };
 
   const saveExerciseChanges = () => {
-    if (!canSaveExercises || isSavingExercisesRef.current) {
+    if (!canSaveExercises) {
       return;
     }
 
-    isSavingExercisesRef.current = true;
-    setIsSavingExercises(true);
+    const result = saveExerciseDraft();
 
-    try {
-      const updatedTemplate = saveTemplateExercises(
-        template.id,
-        draftExercises
-      );
-
-      if (!updatedTemplate) {
-        throw new Error('Template no longer exists.');
-      }
-
+    if (result.status === 'saved') {
       exitExerciseEditMode();
-    } catch (error) {
-      console.error('Failed to update template exercises', error);
-      Alert.alert('Could not save changes', 'Please try again.');
-    } finally {
-      isSavingExercisesRef.current = false;
-      setIsSavingExercises(false);
+
+      return;
     }
+
+    if (result.status === 'unchanged') {
+      return;
+    }
+
+    console.error('Failed to update template exercises', result.error);
+    Alert.alert(
+      'Could not save exercise edits',
+      result.status === 'conflict'
+        ? 'The template or exercise library changed. Your draft was kept; review it and try again.'
+        : 'Your draft was kept. Please try again.'
+    );
   };
 
   usePreventRemove(isEditingExercises, confirmDiscardExerciseChanges);
@@ -256,167 +281,223 @@ function WorkoutTemplateDetailLoaded({
     );
   }, [removeTemplate, template.id, template.name]);
 
+  const reorderDraftExercises = useCallback(
+    (rows: typeof draftTemplateExercises) => {
+      changeRows(
+        rows.map(row => ({
+          id: row.id,
+          supersetId: row.supersetId
+        }))
+      );
+    },
+    [changeRows]
+  );
+
+  if (isEditingExercises) {
+    return (
+      <Screen withPadding={false} edges={[]}>
+        <ActiveWorkoutEditHeader
+          workoutName={template.name}
+          canSave={canSaveExercises}
+          isSaving={isSavingExercises}
+          onCancel={confirmDiscardExerciseChanges}
+          onSave={saveExerciseChanges}
+        />
+
+        {draftTemplateExercises.length === 0 ? (
+          <View className="flex-1 px-4 pb-6">
+            <EmptyState
+              layout="section"
+              icon={ClipboardListIcon}
+              title="No exercises added"
+              description="Add exercises to this template or save it empty."
+              action={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<Icon as={PlusIcon} size="sm" tone="primary" />}
+                  onPress={openExercisePicker}
+                >
+                  Add exercise
+                </Button>
+              }
+            />
+          </View>
+        ) : (
+          <>
+            <NewTemplateExerciseList
+              rows={draftTemplateExercises}
+              onDeleteExercise={removeDraftExercise}
+              onReorderExercises={reorderDraftExercises}
+            />
+            <View className="border-border pb-safe border-t px-4 pt-3">
+              <Button
+                variant="secondary"
+                size="sm"
+                containerClassName="w-full"
+                leftIcon={<Icon as={PlusIcon} size="sm" tone="foreground" />}
+                onPress={openExercisePicker}
+              >
+                Add exercise
+              </Button>
+            </View>
+          </>
+        )}
+
+        <ActiveWorkoutExercisePickerSheet
+          mode="multiple"
+          isOpen={isExercisePickerOpen}
+          multipleDescription="Choose exercises to add to this template draft."
+          selectedExerciseIds={selectedExerciseIds}
+          onClose={closeExercisePicker}
+          onSelectExercises={addExercises}
+          onCreateCustomExercise={openCreateCustomExercise}
+        />
+
+        <CreateCustomExerciseSheet
+          isOpen={isCreateCustomExerciseOpen}
+          initialName={initialCustomExerciseName}
+          description="Add it to this draft. It will be created when you save the template."
+          saveLabel="Add to draft"
+          reservedNames={stagedCustomExerciseNames}
+          onClose={closeCreateCustomExercise}
+          onSave={exercise => {
+            stageCustomExercise(exercise);
+            setIsCreateCustomExerciseOpen(false);
+          }}
+        />
+      </Screen>
+    );
+  }
+
   return (
     <Screen
-      scroll={!isEditingExercises}
-      withPadding={!isEditingExercises}
+      scroll
+      withPadding
       edges={[]}
       footer={
-        isEditingExercises ? (
-          <Button
-            containerClassName="w-full"
-            disabled={!canSaveExercises}
-            loading={isSavingExercises}
-            leftIcon={<Icon as={SaveIcon} tone="primaryForeground" />}
-            onPress={saveExerciseChanges}
-          >
-            Save changes
-          </Button>
-        ) : (
-          <Button
-            containerClassName="w-full"
-            leftIcon={<Icon as={DumbbellIcon} tone="primaryForeground" />}
-            onPress={handleStartWorkout}
-          >
-            Start workout
-          </Button>
-        )
+        <Button
+          containerClassName="w-full"
+          leftIcon={<Icon as={DumbbellIcon} tone="primaryForeground" />}
+          onPress={handleStartWorkout}
+        >
+          Start workout
+        </Button>
       }
     >
       <Stack.Screen
         options={{
-          title: isEditingExercises ? 'Edit template' : 'Template',
-          headerRight: () =>
-            isEditingExercises ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onPress={confirmDiscardExerciseChanges}
-              >
-                Cancel
-              </Button>
-            ) : (
-              <Button
-                variant="ghost"
-                size="icon"
-                accessibilityLabel="Template actions"
-                onPress={openActions}
-              >
-                <Icon as={EllipsisIcon} size="lg" tone="foreground" />
-              </Button>
-            )
+          title: 'Template',
+          headerBackVisible: true,
+          headerLeft: undefined,
+          headerTitleAlign: undefined,
+          headerRight: () => (
+            <Button
+              variant="ghost"
+              size="icon"
+              accessibilityLabel="Template actions"
+              onPress={openActions}
+            >
+              <Icon as={EllipsisIcon} size="lg" tone="foreground" />
+            </Button>
+          )
         }}
       />
 
-      <View className={cn('gap-1', isEditingExercises && 'px-4 pt-6')}>
+      <View className="gap-1">
         <Text variant="h2">{template.name}</Text>
         <Text variant="small" tone="muted">
           {exerciseCount === 1 ? '1 exercise' : `${exerciseCount} exercises`}
         </Text>
       </View>
 
-      {isEditingExercises ? (
-        <View className="mt-6 flex-1">
-          <TemplateExerciseEditor
-            rows={draftExercises}
-            onChange={setDraftExercises}
-          />
+      <View className="mt-6">
+        <View className="flex-row items-center justify-between">
+          <Text variant="overline" tone="muted" className="tracking-widest">
+            EXERCISES
+          </Text>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="min-h-0 px-0 py-0"
+            textClassName="text-primary text-sm"
+            disabled={isLoadingExercises}
+            leftIcon={<Icon as={PencilIcon} tone="primary" size="sm" />}
+            onPress={() => enterExerciseEditMode()}
+          >
+            Edit
+          </Button>
         </View>
-      ) : (
-        <View className="mt-6">
-          <View className="flex-row items-center justify-between">
-            <Text variant="overline" tone="muted" className="tracking-widest">
-              EXERCISES
-            </Text>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="min-h-0 px-0 py-0"
-              textClassName="text-primary text-sm"
-              disabled={isLoadingExercises}
-              leftIcon={<Icon as={PencilIcon} tone="primary" size="sm" />}
-              onPress={() => enterExerciseEditMode()}
-            >
-              Edit
-            </Button>
-          </View>
 
-          {templateExerciseRows.length === 0 ? (
-            <EmptyState
-              layout="section"
-              title="No exercises saved in this template."
-              className="mt-3 py-8"
-            />
-          ) : (
-            <View className="mt-3">
-              {supersetBlocks.map((block, blockIndex) => {
-                const renderExerciseCard = (
-                  templateExercise: (typeof templateExerciseRows)[number]
-                ) => {
-                  const exercise = exerciseById.get(
-                    templateExercise.exerciseId
-                  );
-                  const supersetLabel = supersetLabelByTemplateExerciseId.get(
-                    templateExercise.id
-                  );
-                  const exerciseIndex =
-                    templateExerciseIndexById.get(templateExercise.id) ?? 0;
+        {templateExerciseRows.length === 0 ? (
+          <EmptyState
+            layout="section"
+            title="No exercises saved in this template."
+            className="mt-3 py-8"
+          />
+        ) : (
+          <View className="mt-3">
+            {supersetBlocks.map((block, blockIndex) => {
+              const renderExerciseCard = (
+                templateExercise: (typeof templateExerciseRows)[number]
+              ) => {
+                const exercise = exerciseById.get(templateExercise.exerciseId);
+                const supersetLabel = supersetLabelByTemplateExerciseId.get(
+                  templateExercise.id
+                );
+                const exerciseIndex =
+                  templateExerciseIndexById.get(templateExercise.id) ?? 0;
 
-                  return (
-                    <Pressable
-                      key={templateExercise.id}
-                      onLongPress={enterExerciseEditModeFromLongPress}
-                    >
-                      <Card>
-                        <CardContent className="flex-row items-center gap-3">
-                          <View className="bg-muted h-9 w-9 items-center justify-center rounded-lg">
-                            <Text variant="caption" tone="muted">
-                              {exerciseIndex + 1}
-                            </Text>
-                          </View>
-                          <View className="flex-1">
-                            {supersetLabel ? (
-                              <Text
-                                variant="caption"
-                                tone="muted"
-                                className="mb-1"
-                              >
-                                {supersetLabel}
-                              </Text>
-                            ) : null}
-                            <Text variant="bodyMedium">
-                              {exercise?.name ?? 'Unknown exercise'}
-                            </Text>
+                return (
+                  <Pressable
+                    key={templateExercise.id}
+                    onLongPress={enterExerciseEditModeFromLongPress}
+                  >
+                    <Card>
+                      <CardContent className="flex-row items-center gap-3">
+                        <View className="bg-muted h-9 w-9 items-center justify-center rounded-lg">
+                          <Text variant="caption" tone="muted">
+                            {exerciseIndex + 1}
+                          </Text>
+                        </View>
+                        <View className="flex-1">
+                          {supersetLabel ? (
                             <Text
                               variant="caption"
                               tone="muted"
-                              className="mt-1"
+                              className="mb-1"
                             >
-                              {exercise?.category ?? 'Exercise'}
+                              {supersetLabel}
                             </Text>
-                          </View>
-                        </CardContent>
-                      </Card>
-                    </Pressable>
-                  );
-                };
-
-                return (
-                  <View key={block.id} className={cn(blockIndex > 0 && 'mt-3')}>
-                    {renderExerciseCard(block.rows[0])}
-                    {block.supersetId ? (
-                      <>
-                        <SupersetIndicator />
-                        {renderExerciseCard(block.rows[1])}
-                      </>
-                    ) : null}
-                  </View>
+                          ) : null}
+                          <Text variant="bodyMedium">
+                            {exercise?.name ?? 'Unknown exercise'}
+                          </Text>
+                          <Text variant="caption" tone="muted" className="mt-1">
+                            {exercise?.category ?? 'Exercise'}
+                          </Text>
+                        </View>
+                      </CardContent>
+                    </Card>
+                  </Pressable>
                 );
-              })}
-            </View>
-          )}
-        </View>
-      )}
+              };
+
+              return (
+                <View key={block.id} className={cn(blockIndex > 0 && 'mt-3')}>
+                  {renderExerciseCard(block.rows[0])}
+                  {block.supersetId ? (
+                    <>
+                      <SupersetIndicator />
+                      {renderExerciseCard(block.rows[1])}
+                    </>
+                  ) : null}
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </View>
 
       <RenameTemplateSheet
         isOpen={isRenameSheetOpen}
