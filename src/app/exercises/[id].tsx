@@ -1,5 +1,4 @@
 import { Button } from '@/src/components/ui/button';
-import { Card, CardContent } from '@/src/components/ui/card';
 import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
@@ -69,6 +68,8 @@ export default function ExerciseDetailScreen() {
     topSetPerformances,
     primaryMuscles,
     secondaryMuscles,
+    mostRecentHistory,
+    completedSetSummary,
     weightUnit,
     trackingType,
     isLoading,
@@ -116,6 +117,14 @@ export default function ExerciseDetailScreen() {
     templateUsageCount
   });
   const removeActionLabel = exerciseUsageCount > 0 ? 'Archive' : 'Delete';
+  const strongestSet = topSetPerformances[0];
+  const remainingTopPerformances = topSetPerformances.slice(1);
+  const bestSetRecord = personalRecordsSummary.find(
+    record => record.id === 'best-set'
+  );
+  const mostSetsRecord = personalRecordsSummary.find(
+    record => record.id === 'most-sets'
+  );
 
   const handleRenameExercise = (nextName: string) => {
     if (!isCustomExercise) {
@@ -226,163 +235,137 @@ export default function ExerciseDetailScreen() {
 
       <ExerciseProgressChart
         points={progressPoints}
+        currentPerformance={completedSetSummary}
+        currentPerformanceDate={mostRecentHistory?.workout.startedAt}
         weightUnit={weightUnit}
         trackingType={trackingType}
         isLoading={isStatsLoading}
       />
 
-      <Card className="mt-4">
-        <CardContent>
-          <Text variant="caption" tone="muted">
-            Personal records
-          </Text>
+      <View className="border-border mt-6 border-t pt-6">
+        <Text variant="bodyMedium">Records</Text>
 
-          {isStatsLoading ? (
-            <LoadingState
-              label="Loading records..."
-              size="small"
-              className="min-h-24 py-4"
-            />
-          ) : personalRecordsSummary.length === 0 ? (
-            <EmptyState
-              layout="section"
-              title="No records yet"
-              description="Complete sets for this exercise to build your records."
-              className="mt-4 py-0"
-            />
-          ) : (
-            <View className="mt-4">
-              {personalRecordsSummary.map((record, index) => (
-                <View
-                  key={record.id}
-                  className={cn(
-                    'flex-row items-center justify-between gap-3 py-3',
-                    index < personalRecordsSummary.length - 1 &&
-                      'border-border border-b'
-                  )}
-                >
-                  <View className="flex-1">
-                    <Text variant="bodyMedium">{record.value}</Text>
-                    <Text variant="caption" tone="muted" className="mt-1">
-                      {record.label}
+        {isStatsLoading ? (
+          <LoadingState
+            label="Loading records..."
+            size="small"
+            className="min-h-24 py-4"
+          />
+        ) : !strongestSet || !mostSetsRecord ? (
+          <EmptyState
+            layout="section"
+            title="No records yet"
+            description="Complete sets for this exercise to build your records."
+            className="mt-4 py-0"
+          />
+        ) : (
+          <View className="mt-3">
+            <View className="border-border border-b py-3">
+              <View className="flex-row items-center justify-between gap-3">
+                <Text variant="caption" tone="muted">
+                  Strongest set
+                </Text>
+                {bestSetRecord?.isNewRecord ? (
+                  <View className="bg-success/15 rounded-md px-2 py-1">
+                    <Text variant="caption" className="text-success">
+                      PR
                     </Text>
                   </View>
-
-                  <Text variant="caption" tone="muted">
-                    {formatWorkoutDate(record.achievedAt)}
-                  </Text>
-
-                  <View className="w-16 items-end">
-                    {record.isNewRecord ? (
-                      <View className="bg-success/15 rounded-md px-2 py-1">
-                        <Text variant="caption" className="text-success">
-                          PR
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                </View>
-              ))}
+                ) : null}
+              </View>
+              <Text variant="bodyMedium" className="mt-1">
+                {strongestSet.value}
+              </Text>
+              <Text variant="caption" tone="muted" className="mt-1">
+                {strongestSet.scoreLabel} ·{' '}
+                {formatWorkoutDate(strongestSet.achievedAt)}
+              </Text>
             </View>
-          )}
-        </CardContent>
-      </Card>
 
-      <Card className="mt-4">
-        <CardContent>
-          <Text variant="caption" tone="muted">
-            Top set performance
-          </Text>
+            <View className="border-border border-b py-3">
+              <View className="flex-row items-center justify-between gap-3">
+                <Text variant="caption" tone="muted">
+                  Most sets
+                </Text>
+                {mostSetsRecord.isNewRecord ? (
+                  <View className="bg-success/15 rounded-md px-2 py-1">
+                    <Text variant="caption" className="text-success">
+                      PR
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+              <View className="mt-1 flex-row items-center justify-between gap-4">
+                <Text variant="bodyMedium">{mostSetsRecord.value}</Text>
+                <Text variant="caption" tone="muted">
+                  {formatWorkoutDate(mostSetsRecord.achievedAt)}
+                </Text>
+              </View>
+            </View>
 
-          {isStatsLoading ? (
-            <LoadingState
-              label="Loading top sets..."
-              size="small"
-              className="min-h-24 py-4"
-            />
-          ) : topSetPerformances.length === 0 ? (
-            <EmptyState
-              layout="section"
-              title="No top sets yet"
-              description="Complete a set to see your best performances."
-              className="mt-4 py-0"
-            />
-          ) : (
-            <View className="mt-4">
-              {topSetPerformances.map((performance, index) => (
-                <View
-                  key={performance.id}
-                  className={cn(
-                    'flex-row items-center gap-3 py-3',
-                    index < topSetPerformances.length - 1 &&
-                      'border-border border-b'
-                  )}
-                >
-                  <View
-                    className={cn(
-                      'bg-muted h-10 w-10 items-center justify-center rounded-lg',
-                      index === 0 && 'bg-primary/15'
-                    )}
-                  >
-                    <Text
-                      variant="caption"
-                      className={cn(index === 0 && 'text-primary')}
+            {remainingTopPerformances.length > 0 ? (
+              <View className="pt-4">
+                <Text variant="caption" tone="muted">
+                  Other top performances
+                </Text>
+
+                <View className="mt-1">
+                  {remainingTopPerformances.map((performance, index) => (
+                    <View
+                      key={performance.id}
+                      className={cn(
+                        'flex-row gap-3 py-3',
+                        index < remainingTopPerformances.length - 1 &&
+                          'border-border border-b'
+                      )}
                     >
-                      {index + 1}
-                    </Text>
-                  </View>
+                      <Text
+                        variant="caption"
+                        tone="muted"
+                        className="w-5 pt-0.5"
+                      >
+                        {index + 2}
+                      </Text>
 
-                  <View className="flex-1">
-                    <Text variant="bodyMedium">{performance.value}</Text>
-                    <Text variant="caption" tone="muted" className="mt-1">
-                      {performance.scoreLabel} ·{' '}
-                      {formatWorkoutDate(performance.achievedAt)}
-                    </Text>
-                  </View>
-
-                  <View className="w-12 items-end">
-                    {index === 0 ? (
-                      <View className="bg-success/15 rounded-md px-2 py-1">
-                        <Text variant="caption" className="text-success">
-                          Best
+                      <View className="flex-1">
+                        <Text variant="bodyMedium">{performance.value}</Text>
+                        <Text variant="caption" tone="muted" className="mt-1">
+                          {performance.scoreLabel} ·{' '}
+                          {formatWorkoutDate(performance.achievedAt)}
                         </Text>
                       </View>
-                    ) : null}
-                  </View>
+                    </View>
+                  ))}
                 </View>
-              ))}
-            </View>
-          )}
-        </CardContent>
-      </Card>
+              </View>
+            ) : null}
+          </View>
+        )}
+      </View>
 
-      <Card className="mt-4">
-        <CardContent>
-          <Text variant="caption" tone="muted">
-            Muscle groups
+      <View className="border-border mt-6 border-t pt-6">
+        <Text variant="bodyMedium">Muscle groups</Text>
+
+        <View className="mt-3">
+          <Text variant="small" tone="muted">
+            Primary
           </Text>
+          <Text variant="body" className="mt-1">
+            {formatMuscleList(primaryMuscles)}
+          </Text>
+        </View>
 
+        {secondaryMuscles.length > 0 ? (
           <View className="mt-4">
             <Text variant="small" tone="muted">
-              Primary
+              Secondary
             </Text>
             <Text variant="body" className="mt-1">
-              {formatMuscleList(primaryMuscles)}
+              {formatMuscleList(secondaryMuscles)}
             </Text>
           </View>
-
-          {secondaryMuscles.length > 0 ? (
-            <View className="mt-4">
-              <Text variant="small" tone="muted">
-                Secondary
-              </Text>
-              <Text variant="body" className="mt-1">
-                {formatMuscleList(secondaryMuscles)}
-              </Text>
-            </View>
-          ) : null}
-        </CardContent>
-      </Card>
+        ) : null}
+      </View>
 
       <ExerciseDetailActionsSheet
         isOpen={isActionsOpen}
