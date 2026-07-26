@@ -10,6 +10,7 @@ import { Button } from '@/src/components/ui/button';
 import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
+import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { SearchInputIcon } from '@/src/components/ui/search-input-icon';
 import { Text } from '@/src/components/ui/text';
 import {
@@ -33,7 +34,8 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState
+  useState,
+  type ComponentRef
 } from 'react';
 import { Keyboard, Platform, View, type ListRenderItem } from 'react-native';
 
@@ -74,6 +76,7 @@ const ExercisePickerSearchInput = memo(function ExercisePickerSearchInput({
   onChangeQuery,
   onCommitQuery
 }: ExercisePickerSearchInputProps) {
+  const inputRef = useRef<ComponentRef<typeof BottomSheetInput>>(null);
   const [query, setQuery] = useState('');
   const deferredQuery = useDeferredValue(query);
 
@@ -96,8 +99,16 @@ const ExercisePickerSearchInput = memo(function ExercisePickerSearchInput({
     [onChangeQuery]
   );
 
+  const clearQuery = useCallback(() => {
+    setQuery('');
+    onChangeQuery('');
+    onCommitQuery('');
+    inputRef.current?.focus();
+  }, [onChangeQuery, onCommitQuery]);
+
   return (
     <BottomSheetInput
+      ref={inputRef}
       value={query}
       onChangeText={handleChangeText}
       placeholder="Search exercises"
@@ -105,6 +116,17 @@ const ExercisePickerSearchInput = memo(function ExercisePickerSearchInput({
       autoCorrect={false}
       returnKeyType="search"
       leftIcon={<SearchInputIcon />}
+      rightIcon={
+        query.length > 0 ? (
+          <PressableSurface
+            accessibilityLabel="Clear exercise search"
+            className="h-11 w-11 items-center justify-center"
+            onPress={clearQuery}
+          >
+            <Icon as={XIcon} size="sm" tone="mutedForeground" />
+          </PressableSurface>
+        ) : undefined
+      }
       density="compact"
     />
   );
@@ -326,12 +348,12 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
   })();
 
   const emptyDescription = (() => {
-    if (hasHiddenSelectedMatches) {
-      return 'Matching exercises may already be in this workout.';
+    if (trimmedQuery.length > 0) {
+      return 'Clear or change your search to try again.';
     }
 
-    if (trimmedQuery.length > 0) {
-      return `Create "${trimmedQuery}" or try a different search.`;
+    if (hasHiddenSelectedMatches) {
+      return 'Matching exercises may already be in this workout.';
     }
 
     if (selectedFilter === 'custom') {
@@ -347,7 +369,7 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
 
   const createButtonLabel =
     trimmedQuery.length > 0
-      ? `Create "${trimmedQuery}"`
+      ? `Create “${trimmedQuery}”`
       : 'Create custom exercise';
   const addButtonLabel = `Add ${pendingExercises.length} ${
     pendingExercises.length === 1 ? 'exercise' : 'exercises'
