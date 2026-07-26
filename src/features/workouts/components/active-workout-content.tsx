@@ -288,7 +288,7 @@ export function ActiveWorkoutContent({
         !isLoadingWorkoutExercises &&
         workoutExerciseRows.length > 0 && (
           <Animated.View
-            className="border-border bg-background pb-safe-offset-8 border-t px-4 pt-3"
+            className="border-border bg-background pb-safe border-t px-4 pt-3"
             entering={chromeEntering}
             exiting={chromeExiting}
             layout={chromeLayout}

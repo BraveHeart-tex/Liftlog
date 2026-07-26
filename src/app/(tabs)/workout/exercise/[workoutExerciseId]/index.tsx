@@ -9,8 +9,8 @@ import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sh
 import { RestTimerTrigger } from '@/src/features/workouts/components/rest-timer-trigger';
 import { useActiveWorkoutExerciseDetail } from '@/src/features/workouts/hooks/use-active-workout-exercise-detail';
 import { getRouteParamId } from '@/src/lib/utils/route.utils';
-import { ArrowRightIcon } from 'lucide-react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { ArrowRightIcon } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { KeyboardAvoidingView, Platform, View } from 'react-native';
 
@@ -73,7 +73,7 @@ export default function ActiveWorkoutExerciseScreen() {
         </KeyboardAvoidingView>
       </View>
       {pairedWorkoutExercise ? (
-        <View className="border-border bg-background border-t px-4 py-4">
+        <View className="border-border bg-background pb-safe border-t px-4 py-4">
           <Button
             containerClassName="w-full"
             rightIcon={<Icon as={ArrowRightIcon} tone="primaryForeground" />}
