@@ -69,6 +69,11 @@ export function WorkoutLogContent() {
     [selectedDateKey]
   );
 
+  const workoutCountLabel = `${workoutRows.length} ${
+    workoutRows.length === 1 ? 'workout' : 'workouts'
+  }`;
+  const hasWorkoutRows = workoutRows.length > 0;
+
   const listHeader = useMemo(
     () => (
       <View className="mb-6">
@@ -100,12 +105,17 @@ export function WorkoutLogContent() {
             </Text>
           </View>
           <Text variant="caption" tone="muted">
-            {`${workoutRows.length} ${
-              workoutRows.length === 1 ? 'workout' : 'workouts'
-            }`}
+            {workoutCountLabel}
           </Text>
         </Animated.View>
+      </View>
+    ),
+    [selectedDateKey, workoutCountByDateKey, workoutCountLabel]
+  );
 
+  const listFooter = useMemo(
+    () =>
+      hasWorkoutRows ? (
         <Button
           className="mt-4"
           leftIcon={<Icon as={PlusIcon} tone="primaryForeground" />}
@@ -114,9 +124,8 @@ export function WorkoutLogContent() {
         >
           Log workout
         </Button>
-      </View>
-    ),
-    [openStartSheet, selectedDateKey, workoutCountByDateKey, workoutRows.length]
+      ) : null,
+    [hasWorkoutRows, openStartSheet]
   );
 
   return (
@@ -129,6 +138,7 @@ export function WorkoutLogContent() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={listHeader}
+        ListFooterComponent={listFooter}
         ListEmptyComponent={
           areWorkoutRowsLive ? (
             <EmptyState
