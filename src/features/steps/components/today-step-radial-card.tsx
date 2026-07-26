@@ -18,6 +18,7 @@ import {
 } from 'react-native-reanimated';
 
 interface TodayStepRadialCardProps {
+  compact?: boolean;
   steps: number;
   goal: number;
   progress: number;
@@ -27,13 +28,14 @@ interface TodayStepRadialCardProps {
 }
 
 const CHART_SIZE = 236;
+const COMPACT_CHART_SIZE = 156;
 const STROKE_WIDTH = 15;
-const RADIUS = (CHART_SIZE - STROKE_WIDTH) / 2;
-const CENTER = CHART_SIZE / 2;
+const COMPACT_STROKE_WIDTH = 10;
 const MAX_SWEEP_DEGREES = 359.9;
 const START_ANGLE_DEGREES = -90;
 
 export function TodayStepRadialCard({
+  compact = false,
   steps,
   goal,
   progress,
@@ -48,22 +50,26 @@ export function TodayStepRadialCard({
   const stepValue = useSharedValue(steps);
   const [displayedSteps, setDisplayedSteps] = useState(steps);
   const isLiveStepCounterActive = liveStepCounterStatus === 'active';
+  const chartSize = compact ? COMPACT_CHART_SIZE : CHART_SIZE;
+  const strokeWidth = compact ? COMPACT_STROKE_WIDTH : STROKE_WIDTH;
+  const radius = (chartSize - strokeWidth) / 2;
+  const center = chartSize / 2;
   const progressPath = useMemo(() => {
     const path = Skia.Path.Make();
 
     path.addArc(
       {
-        x: STROKE_WIDTH / 2,
-        y: STROKE_WIDTH / 2,
-        width: CHART_SIZE - STROKE_WIDTH,
-        height: CHART_SIZE - STROKE_WIDTH
+        x: strokeWidth / 2,
+        y: strokeWidth / 2,
+        width: chartSize - strokeWidth,
+        height: chartSize - strokeWidth
       },
       START_ANGLE_DEGREES,
       MAX_SWEEP_DEGREES
     );
 
     return path;
-  }, []);
+  }, [chartSize, strokeWidth]);
 
   useEffect(() => {
     progressEnd.value = withTiming(safeProgress / 100, {
@@ -88,31 +94,31 @@ export function TodayStepRadialCard({
   );
 
   return (
-    <Card className="mt-5 overflow-hidden">
-      <CardContent className="px-5 py-5">
+    <Card className={cn('overflow-hidden', compact ? 'mt-4' : 'mt-5')}>
+      <CardContent className={compact ? 'px-4 py-4' : 'px-5 py-5'}>
         <View className="items-center">
           <View
             className="items-center justify-center"
-            style={{ width: CHART_SIZE, height: CHART_SIZE }}
+            style={{ width: chartSize, height: chartSize }}
           >
             <View
               className="absolute"
-              style={{ width: CHART_SIZE, height: CHART_SIZE }}
+              style={{ width: chartSize, height: chartSize }}
             >
-              <Canvas style={{ width: CHART_SIZE, height: CHART_SIZE }}>
+              <Canvas style={{ width: chartSize, height: chartSize }}>
                 <Circle
-                  cx={CENTER}
-                  cy={CENTER}
-                  r={RADIUS}
+                  cx={center}
+                  cy={center}
+                  r={radius}
                   color={colors.border}
                   style="stroke"
-                  strokeWidth={STROKE_WIDTH}
+                  strokeWidth={strokeWidth}
                 />
                 <Path
                   path={progressPath}
                   color={colors.primary}
                   style="stroke"
-                  strokeWidth={STROKE_WIDTH}
+                  strokeWidth={strokeWidth}
                   strokeCap="round"
                   start={0}
                   end={progressEnd}

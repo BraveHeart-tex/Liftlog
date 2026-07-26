@@ -1,9 +1,10 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { HealthStepDay } from '@/src/db/schema';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import {
-  getRecentStepDaysQuery,
-  upsertStepDays
-} from '@/src/features/steps/steps.repository';
+  SETTINGS_KEYS,
+  setSetting
+} from '@/src/features/settings/settings.repository';
 import {
   getHealthConnectAvailability,
   getStepPermissionState,
@@ -13,29 +14,31 @@ import {
   type HealthConnectAvailability,
   type StepPermissionState
 } from '@/src/features/steps/health-connect.service';
-import {
-  refreshStepNotification,
-  showStepNotification
-} from '@/src/features/steps/steps-notifications.service';
+import { useLiveStepCounter } from '@/src/features/steps/hooks/use-live-step-counter';
 import {
   getMillisecondsUntilNextLocalDay,
   getTodayDateKey
 } from '@/src/features/steps/steps-date.utils';
 import {
-  SETTINGS_KEYS,
-  setSetting
-} from '@/src/features/settings/settings.repository';
-import { useSettings } from '@/src/features/settings/hooks/use-settings';
+  getStepRecentActivityStatus,
+  type StepRecentActivityStatus
+} from '@/src/features/steps/steps-display.utils';
+import {
+  refreshStepNotification,
+  showStepNotification
+} from '@/src/features/steps/steps-notifications.service';
+import {
+  getRecentStepDaysQuery,
+  upsertStepDays
+} from '@/src/features/steps/steps.repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLiveStepCounter } from '@/src/features/steps/hooks/use-live-step-counter';
 
 type SyncState = 'idle' | 'syncing';
 
 interface StepStats {
-  average7DaySteps: number;
-  bestDay: HealthStepDay | null;
+  recentActivityStatus: StepRecentActivityStatus;
   todaySteps: number;
 }
 
@@ -47,30 +50,15 @@ const EMPTY_PERMISSION_STATE: StepPermissionState = {
   canReadHistory: false
 };
 
-function getStats(days: HealthStepDay[], todayDateKey: string): StepStats {
-  const newestFirstDays = [...days].sort((a, b) => b.startAt - a.startAt);
-  const oldestFirstDays = [...days].sort((a, b) => a.startAt - b.startAt);
+function getStats(
+  days: HealthStepDay[],
+  todayDateKey: string,
+  stepGoal: number
+): StepStats {
   const todaySteps = days.find(day => day.dateKey === todayDateKey)?.steps ?? 0;
-  const last7Days = newestFirstDays.slice(0, 7);
-  const average7DaySteps =
-    last7Days.length === 0
-      ? 0
-      : Math.round(
-          last7Days.reduce((total, day) => total + day.steps, 0) /
-            last7Days.length
-        );
-  const bestDay =
-    oldestFirstDays.reduce<HealthStepDay | null>((best, day) => {
-      if (!best || day.steps > best.steps) {
-        return day;
-      }
-
-      return best;
-    }, null) ?? null;
 
   return {
-    average7DaySteps,
-    bestDay,
+    recentActivityStatus: getStepRecentActivityStatus(days, stepGoal),
     todaySteps
   };
 }
@@ -92,9 +80,11 @@ export function useStepsScreen() {
     [stepDaysResult.data]
   );
   const [todayDateKey, setTodayDateKey] = useState(getTodayDateKey);
+  const hasStepRecords = stepDays.length > 0;
+  const hasTodayStepRecord = stepDays.some(day => day.dateKey === todayDateKey);
   const stats = useMemo(
-    () => getStats(stepDays, todayDateKey),
-    [stepDays, todayDateKey]
+    () => getStats(stepDays, todayDateKey, stepGoal),
+    [stepDays, stepGoal, todayDateKey]
   );
   const [availability, setAvailability] =
     useState<HealthConnectAvailability>('unavailable');
@@ -234,6 +224,8 @@ export function useStepsScreen() {
   return {
     availability,
     errorMessage,
+    hasStepRecords,
+    hasTodayStepRecord,
     healthConnectStepsEnabled,
     isLoading: !stepDaysResult.isLive || !hasCheckedAvailability,
     isSyncing: syncState === 'syncing',

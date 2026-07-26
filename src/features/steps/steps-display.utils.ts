@@ -1,30 +1,16 @@
 import type { HealthStepDay } from '@/src/db/schema';
-import {
-  getRecentLocalDayRanges,
-  getTodayDateKey
-} from '@/src/features/steps/steps-date.utils';
+import { getRecentLocalDayRanges } from '@/src/features/steps/steps-date.utils';
 import type { HealthConnectAvailability } from '@/src/features/steps/health-connect.service';
 import type { LiveStepCounterStatus } from '@/src/features/steps/hooks/use-live-step-counter';
-import { formatWorkoutDate } from '@/src/lib/utils/date.utils';
 
-export const STEP_GOAL_CONSISTENCY_DAY_COUNT = 7;
+export const RECENT_STEP_STATUS_DAY_COUNT = 7;
 
-export type StepAverageComparisonTone = 'success' | 'danger' | 'muted';
-
-interface StepAverageComparison {
-  detail: string;
-  percentLabel: string;
-  tone: StepAverageComparisonTone;
-}
-
-interface StepGoalConsistencyDay {
-  dateLabel: string;
-  dateKey: string;
-  hit: boolean;
-  isToday: boolean;
-  label: string;
-  progress: number;
-  steps: number;
+export interface StepRecentActivityStatus {
+  averageSteps: number | null;
+  goalPercent: number | null;
+  interpretation: string;
+  syncedDayCount: number;
+  requiredDayCount: number;
 }
 
 export function formatSteps(steps: number): string {
@@ -46,109 +32,54 @@ export function formatStepMonthDay(timestamp: number): string {
   }).format(new Date(timestamp));
 }
 
-function formatStepWeekdayInitial(timestamp: number): string {
-  return new Intl.DateTimeFormat(undefined, { weekday: 'short' })
-    .format(new Date(timestamp))
-    .slice(0, 1);
-}
+export function getStepRecentActivityStatus(
+  days: HealthStepDay[],
+  goal: number
+): StepRecentActivityStatus {
+  const ranges = getRecentLocalDayRanges(RECENT_STEP_STATUS_DAY_COUNT);
+  const daysByDateKey = new Map(days.map(day => [day.dateKey, day]));
+  const recentDays = ranges
+    .map(range => daysByDateKey.get(range.dateKey))
+    .filter((day): day is HealthStepDay => Boolean(day));
 
-export function getStepAverageComparison(
-  todaySteps: number,
-  averageSteps: number
-): StepAverageComparison {
-  if (averageSteps <= 0) {
+  if (recentDays.length < RECENT_STEP_STATUS_DAY_COUNT) {
     return {
-      detail: 'No average yet',
-      percentLabel: '0%',
-      tone: 'muted'
+      averageSteps: null,
+      goalPercent: null,
+      interpretation: 'Sync more days to compare your recent activity.',
+      syncedDayCount: recentDays.length,
+      requiredDayCount: RECENT_STEP_STATUS_DAY_COUNT
     };
   }
 
-  const difference = todaySteps - averageSteps;
-  const percent = Math.trunc((difference / averageSteps) * 100);
-  const absoluteDifference = Math.abs(difference);
+  const averageSteps = Math.round(
+    recentDays.reduce((total, day) => total + day.steps, 0) / recentDays.length
+  );
+  const goalPercent =
+    goal > 0 ? Math.max(0, Math.round((averageSteps / goal) * 100)) : null;
 
-  if (difference > 0) {
-    return {
-      detail: `${formatSteps(absoluteDifference)} above average`,
-      percentLabel: `+${percent}%`,
-      tone: 'success'
-    };
-  }
+  let interpretation =
+    averageSteps === 0
+      ? 'Your synced recent days average 0 steps.'
+      : 'Recent activity is ready.';
 
-  if (difference < 0) {
-    return {
-      detail: `${formatSteps(absoluteDifference)} below average`,
-      percentLabel: `${percent}%`,
-      tone: 'danger'
-    };
+  if (goalPercent !== null && averageSteps > 0) {
+    if (goalPercent >= 100) {
+      interpretation = 'At or above your daily goal lately.';
+    } else if (goalPercent >= 80) {
+      interpretation = 'Near your daily goal lately.';
+    } else {
+      interpretation = 'Below your daily goal lately.';
+    }
   }
 
   return {
-    detail: 'Same as average',
-    percentLabel: '0%',
-    tone: 'muted'
+    averageSteps,
+    goalPercent,
+    interpretation,
+    syncedDayCount: recentDays.length,
+    requiredDayCount: RECENT_STEP_STATUS_DAY_COUNT
   };
-}
-
-export function getStepGoalConsistencyDays(
-  days: HealthStepDay[],
-  goal: number
-): StepGoalConsistencyDay[] {
-  const daysByDateKey = new Map(days.map(day => [day.dateKey, day]));
-  const todayDateKey = getTodayDateKey();
-
-  return getRecentLocalDayRanges(STEP_GOAL_CONSISTENCY_DAY_COUNT).map(range => {
-    const day = daysByDateKey.get(range.dateKey);
-    const steps = day?.steps ?? 0;
-    const progress =
-      goal > 0 && Number.isFinite(steps / goal) ? Math.max(0, steps / goal) : 0;
-
-    return {
-      dateKey: range.dateKey,
-      dateLabel: formatWorkoutDate(range.startAt),
-      hit: goal > 0 && steps >= goal,
-      isToday: range.dateKey === todayDateKey,
-      label: formatStepWeekdayInitial(range.startAt),
-      progress,
-      steps
-    };
-  });
-}
-
-export function getStepGoalConsistencyAverageSteps(
-  days: StepGoalConsistencyDay[]
-): number {
-  if (days.length === 0) {
-    return 0;
-  }
-
-  return Math.round(
-    days.reduce((total, day) => total + day.steps, 0) / days.length
-  );
-}
-
-export function getStepGoalConsistencyHitCount(
-  days: StepGoalConsistencyDay[],
-  goal: number
-): number {
-  if (goal <= 0) {
-    return 0;
-  }
-
-  return days.filter(day => day.hit).length;
-}
-
-export function getStepGoalConsistencyFillHeight({
-  barHeight,
-  goalHeightPercent,
-  progress
-}: {
-  barHeight: number;
-  goalHeightPercent: number;
-  progress: number;
-}): number {
-  return Math.min(barHeight, progress * barHeight * (goalHeightPercent / 100));
 }
 
 export function getAvailabilityLabel(

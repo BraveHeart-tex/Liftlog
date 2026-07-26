@@ -1,69 +1,43 @@
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Text } from '@/src/components/ui/text';
-import type { HealthStepDay } from '@/src/db/schema';
 import {
-  formatStepWeekday,
   formatSteps,
-  getStepAverageComparison,
-  type StepAverageComparisonTone
+  type StepRecentActivityStatus
 } from '@/src/features/steps/steps-display.utils';
-import { cn } from '@/src/lib/utils/cn.utils';
 import { View } from 'react-native';
 
 interface StepsSummaryCardsProps {
-  average7DaySteps: number;
-  bestDay: HealthStepDay | null;
-  todaySteps: number;
+  recentActivityStatus: StepRecentActivityStatus;
+  stepGoal: number;
 }
 
-const comparisonToneClassNames: Record<StepAverageComparisonTone, string> = {
-  danger: 'text-danger',
-  muted: 'text-muted-foreground',
-  success: 'text-success'
-};
-
 export function StepsSummaryCards({
-  average7DaySteps,
-  bestDay,
-  todaySteps
+  recentActivityStatus,
+  stepGoal
 }: StepsSummaryCardsProps) {
-  const averageComparison = getStepAverageComparison(
-    todaySteps,
-    average7DaySteps
-  );
+  const averageSteps = recentActivityStatus.averageSteps;
+  const goalPercent = recentActivityStatus.goalPercent;
+  const hasRecentStatus = averageSteps !== null && goalPercent !== null;
 
   return (
-    <View className="mt-4 flex-row gap-3">
-      <Card className="flex-1">
-        <CardContent className="px-4 py-3">
+    <View className="mt-6">
+      <Card>
+        <CardContent>
           <Text variant="small" tone="muted">
-            vs 7-day avg
-          </Text>
-          <Text
-            variant="h2"
-            className={cn(
-              'mt-2',
-              comparisonToneClassNames[averageComparison.tone]
-            )}
-          >
-            {averageComparison.percentLabel}
-          </Text>
-          <Text variant="caption" tone="muted" className="mt-1">
-            {averageComparison.detail}
-          </Text>
-        </CardContent>
-      </Card>
-
-      <Card className="flex-1">
-        <CardContent className="px-4 py-3">
-          <Text variant="small" tone="muted">
-            best day
+            Recent activity
           </Text>
           <Text variant="h2" className="mt-2">
-            {formatSteps(bestDay?.steps ?? 0)}
+            {hasRecentStatus
+              ? `${formatSteps(averageSteps)} / day`
+              : 'Not enough data'}
           </Text>
           <Text variant="caption" tone="muted" className="mt-1">
-            {bestDay ? formatStepWeekday(bestDay.startAt) : 'No data'}
+            {hasRecentStatus
+              ? `${goalPercent}% of ${formatSteps(stepGoal)} goal`
+              : `${recentActivityStatus.syncedDayCount}/${recentActivityStatus.requiredDayCount} recent days synced`}
+          </Text>
+          <Text variant="caption" tone="muted" className="mt-1">
+            {recentActivityStatus.interpretation}
           </Text>
         </CardContent>
       </Card>

@@ -9,7 +9,6 @@ import { StepDayRow } from '@/src/features/steps/components/step-day-row';
 import { StepsActionsSheet } from '@/src/features/steps/components/steps-actions-sheet';
 import { StepsConnectionBadge } from '@/src/features/steps/components/steps-connection-badge';
 import { StepsEmptyState } from '@/src/features/steps/components/steps-empty-state';
-import { StepsGoalConsistencyCard } from '@/src/features/steps/components/steps-goal-consistency-card';
 import { StepsSummaryCards } from '@/src/features/steps/components/steps-summary-cards';
 import { StepsUnavailableState } from '@/src/features/steps/components/steps-unavailable-state';
 import { TodayStepRadialCard } from '@/src/features/steps/components/today-step-radial-card';
@@ -31,6 +30,8 @@ export function StepsContent() {
     availability,
     displayedTodaySteps,
     errorMessage,
+    hasStepRecords,
+    hasTodayStepRecord,
     healthConnectStepsEnabled,
     isLoading,
     isSyncing,
@@ -57,6 +58,13 @@ export function StepsContent() {
   const isConnected = !shouldConnectSteps;
   const availabilityLabel = getAvailabilityLabel(availability);
   const isStepTrackingUnavailable = availability !== 'available';
+  const shouldShowDataUnavailableState =
+    isStepTrackingUnavailable || shouldConnectSteps;
+  const shouldShowInitialSyncState =
+    !shouldShowDataUnavailableState && isSyncing && !hasStepRecords;
+  const shouldShowToday = hasTodayStepRecord;
+  const shouldUseCompactToday = hasTodayStepRecord && displayedTodaySteps === 0;
+  const shouldShowRecentActivity = hasStepRecords;
   const liveStepCounterBadgeLabel = getLiveStepCounterBadgeLabel(
     liveStepCounterStatus,
     liveStepDelta
@@ -72,10 +80,11 @@ export function StepsContent() {
     return <LoadingState label="Loading steps..." />;
   }
 
-  if (
-    stepDays.length === 0 &&
-    (isStepTrackingUnavailable || shouldConnectSteps)
-  ) {
+  if (shouldShowInitialSyncState) {
+    return <LoadingState label="Syncing steps..." />;
+  }
+
+  if (shouldShowDataUnavailableState) {
     return (
       <StyledScrollView
         className="flex-1"
@@ -139,21 +148,24 @@ export function StepsContent() {
               </View>
             ) : null}
 
-            <TodayStepRadialCard
-              steps={displayedTodaySteps}
-              goal={stepGoal}
-              progress={progress}
-              liveStepCounterBadgeLabel={liveStepCounterBadgeLabel}
-              liveStepCounterMessage={liveStepCounterMessage}
-              liveStepCounterStatus={liveStepCounterStatus}
-            />
+            {shouldShowToday ? (
+              <TodayStepRadialCard
+                compact={shouldUseCompactToday}
+                steps={displayedTodaySteps}
+                goal={stepGoal}
+                progress={progress}
+                liveStepCounterBadgeLabel={liveStepCounterBadgeLabel}
+                liveStepCounterMessage={liveStepCounterMessage}
+                liveStepCounterStatus={liveStepCounterStatus}
+              />
+            ) : null}
 
-            <StepsGoalConsistencyCard days={stepDays} goal={stepGoal} />
-            <StepsSummaryCards
-              average7DaySteps={stats.average7DaySteps}
-              bestDay={stats.bestDay}
-              todaySteps={displayedTodaySteps}
-            />
+            {shouldShowRecentActivity ? (
+              <StepsSummaryCards
+                recentActivityStatus={stats.recentActivityStatus}
+                stepGoal={stepGoal}
+              />
+            ) : null}
 
             <View className="mt-6 flex-row items-end justify-between gap-4">
               <View>
@@ -174,7 +186,7 @@ export function StepsContent() {
           <EmptyState
             layout="section"
             title="No step history"
-            description="Connect Health Connect and sync steps to fill this in."
+            description="Sync steps to fill this in."
             className="border-border bg-card rounded-lg border border-dashed px-6 py-10"
           />
         }
