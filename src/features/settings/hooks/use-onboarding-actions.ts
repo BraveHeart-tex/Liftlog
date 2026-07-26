@@ -10,31 +10,19 @@ import { useCallback } from 'react';
 const workoutRoute = '/(tabs)/workout';
 
 interface UseOnboardingActionsParams {
-  name: string;
   weightUnitPreference: WeightUnit;
-  setAttemptedSubmit: (attemptedSubmit: boolean) => void;
 }
 
 export function useOnboardingActions({
-  name,
-  weightUnitPreference,
-  setAttemptedSubmit
+  weightUnitPreference
 }: UseOnboardingActionsParams) {
   const db = useDrizzle();
 
   const getStarted = useCallback(() => {
-    const trimmedName = name.trim();
-
-    setAttemptedSubmit(true);
-
-    if (trimmedName.length === 0) {
-      return;
-    }
-
-    completeOnboarding(db, trimmedName);
+    completeOnboarding(db);
     setWeightUnit(db, weightUnitPreference);
     router.replace(workoutRoute);
-  }, [db, name, setAttemptedSubmit, weightUnitPreference]);
+  }, [db, weightUnitPreference]);
 
   return {
     getStarted

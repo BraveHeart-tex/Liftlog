@@ -1,6 +1,5 @@
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
-import { Input } from '@/src/components/ui/input';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { useOnboardingActions } from '@/src/features/settings/hooks/use-onboarding-actions';
@@ -11,24 +10,16 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 export default function OnboardingScreen() {
-  const [name, setName] = useState('');
   const [weightUnitPreference, setWeightUnitPreference] =
     useState<WeightUnit>('kg');
-  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
-  const trimmedName = name.trim();
-  const isNameValid = trimmedName.length > 0;
-  const shouldShowNameError = attemptedSubmit && !isNameValid;
   const { getStarted } = useOnboardingActions({
-    name,
-    weightUnitPreference,
-    setAttemptedSubmit
+    weightUnitPreference
   });
 
   return (
     <Screen
-      scroll
-      edges={['top', 'bottom']}
+      edges={[]}
       contentClassName="justify-between px-6 py-12"
       keyboardShouldPersistTaps="handled"
     >
@@ -41,19 +32,6 @@ export default function OnboardingScreen() {
         </View>
 
         <View className="mt-10 gap-8">
-          <View>
-            <Text variant="small">Your name</Text>
-            <Input
-              value={name}
-              onChangeText={setName}
-              placeholder="Alex"
-              autoCapitalize="words"
-              autoCorrect={false}
-              returnKeyType="done"
-              error={shouldShowNameError ? 'Name is required' : undefined}
-            />
-          </View>
-
           <View>
             <Text variant="small" className="mb-2">
               Weight unit
