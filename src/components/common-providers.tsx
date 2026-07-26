@@ -23,7 +23,7 @@ export function CommonProviders({
   useEffect(() => {
     setAudioModeAsync({
       playsInSilentMode: true,
-      interruptionMode: 'duckOthers'
+      interruptionMode: 'mixWithOthers'
     }).catch(error => {
       console.error('Failed to configure app audio mode', error);
     });
