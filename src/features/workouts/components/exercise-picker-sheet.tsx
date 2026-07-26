@@ -476,7 +476,7 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
         <StyledBottomSheetFlatList
           data={listData}
           keyExtractor={keyExtractor}
-          contentContainerClassName="px-4 pb-4"
+          contentContainerClassName={`px-4 ${isMultiple ? 'pb-6' : 'pb-4'}`}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
           onScrollBeginDrag={Keyboard.dismiss}
@@ -494,24 +494,38 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
               className="border-border bg-card mt-3 rounded-lg border border-dashed px-6 py-10"
             />
           }
+          ListFooterComponent={
+            isMultiple ? (
+              <View className="pt-3">
+                <Button
+                  variant="secondary"
+                  leftIcon={<Icon as={PlusIcon} tone="secondaryForeground" />}
+                  onPress={createCustomExercise}
+                >
+                  {createButtonLabel}
+                </Button>
+              </View>
+            ) : null
+          }
         />
       )}
 
-      <View className="border-border bg-card pb-safe gap-2 border-t px-4 pt-3">
-        <Button
-          variant="secondary"
-          leftIcon={<Icon as={PlusIcon} tone="secondaryForeground" />}
-          onPress={createCustomExercise}
-        >
-          {createButtonLabel}
-        </Button>
-        {isMultiple && (
+      <View className="border-border bg-card pb-safe border-t px-4 pt-3">
+        {isMultiple ? (
           <Button
             disabled={pendingExercises.length === 0}
             leftIcon={<Icon as={PlusIcon} tone="primaryForeground" />}
             onPress={addPendingExercises}
           >
             {addButtonLabel}
+          </Button>
+        ) : (
+          <Button
+            variant="secondary"
+            leftIcon={<Icon as={PlusIcon} tone="secondaryForeground" />}
+            onPress={createCustomExercise}
+          >
+            {createButtonLabel}
           </Button>
         )}
       </View>
