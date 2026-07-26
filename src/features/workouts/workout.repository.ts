@@ -6,6 +6,7 @@ import {
   workouts,
   workoutTemplateExercises,
   workoutTemplates,
+  type Exercise,
   type NewSet,
   type NewWorkout,
   type NewWorkoutExercise,
@@ -60,6 +61,26 @@ interface SavedHistoricalWorkoutDraft {
 interface SavedHistoricalWorkoutEditDraft {
   workout: Workout;
   affectedExerciseIds: WorkoutExercise['exerciseId'][];
+}
+
+export interface ActiveWorkoutExerciseDraftRow {
+  id: WorkoutExercise['id'];
+  exerciseId: WorkoutExercise['exerciseId'];
+  supersetId: WorkoutExercise['supersetId'];
+}
+
+export type ActiveWorkoutExerciseDraftBaselineRow = Pick<
+  WorkoutExercise,
+  'id' | 'exerciseId' | 'order' | 'supersetId'
+>;
+
+export type StagedCustomExercise = Exercise;
+
+export class ActiveWorkoutExerciseDraftConflictError extends Error {
+  constructor() {
+    super('Active workout exercise draft conflicted with persisted data.');
+    this.name = 'ActiveWorkoutExerciseDraftConflictError';
+  }
 }
 
 function getWorkoutRecordById(
@@ -837,6 +858,194 @@ export function createWorkoutExercise(
   data: NewWorkoutExercise
 ): WorkoutExercise {
   return db.insert(workoutExercises).values(data).returning().get();
+}
+
+export function saveActiveWorkoutExerciseDraft(
+  db: DrizzleDb,
+  workoutId: Workout['id'],
+  rows: ActiveWorkoutExerciseDraftRow[],
+  baselineRows: ActiveWorkoutExerciseDraftBaselineRow[],
+  stagedCustomExercises: StagedCustomExercise[]
+): void {
+  db.transaction(tx => {
+    const workout = tx
+      .select({ status: workouts.status })
+      .from(workouts)
+      .where(eq(workouts.id, workoutId))
+      .get();
+    const existingWorkoutExercises = tx
+      .select({
+        id: workoutExercises.id,
+        exerciseId: workoutExercises.exerciseId,
+        order: workoutExercises.order,
+        supersetId: workoutExercises.supersetId
+      })
+      .from(workoutExercises)
+      .where(eq(workoutExercises.workoutId, workoutId))
+      .all();
+    const baselineById = new Map(
+      baselineRows.map(row => [row.id, row] as const)
+    );
+    const draftIdSet = new Set(rows.map(row => row.id));
+    const draftExerciseIdSet = new Set(rows.map(row => row.exerciseId));
+    const stagedCustomExerciseById = new Map(
+      stagedCustomExercises.map(exercise => [exercise.id, exercise] as const)
+    );
+
+    if (
+      workout?.status !== 'in_progress' ||
+      baselineById.size !== baselineRows.length ||
+      draftIdSet.size !== rows.length ||
+      draftExerciseIdSet.size !== rows.length ||
+      stagedCustomExerciseById.size !== stagedCustomExercises.length ||
+      existingWorkoutExercises.length !== baselineRows.length ||
+      existingWorkoutExercises.some(existingRow => {
+        const baselineRow = baselineById.get(existingRow.id);
+
+        return (
+          !baselineRow ||
+          existingRow.exerciseId !== baselineRow.exerciseId ||
+          existingRow.order !== baselineRow.order ||
+          existingRow.supersetId !== baselineRow.supersetId
+        );
+      }) ||
+      rows.some(row => {
+        const baselineRow = baselineById.get(row.id);
+
+        return baselineRow && baselineRow.exerciseId !== row.exerciseId;
+      }) ||
+      stagedCustomExercises.some(
+        exercise => !draftExerciseIdSet.has(exercise.id)
+      )
+    ) {
+      throw new ActiveWorkoutExerciseDraftConflictError();
+    }
+
+    const persistedExercises =
+      draftExerciseIdSet.size > 0
+        ? tx
+            .select({
+              id: exercises.id,
+              name: exercises.name,
+              isArchived: exercises.isArchived
+            })
+            .from(exercises)
+            .where(inArray(exercises.id, Array.from(draftExerciseIdSet)))
+            .all()
+        : [];
+    const persistedExerciseById = new Map(
+      persistedExercises.map(exercise => [exercise.id, exercise] as const)
+    );
+
+    if (
+      rows.some(row => {
+        const persistedExercise = persistedExerciseById.get(row.exerciseId);
+
+        if (persistedExercise) {
+          return (
+            stagedCustomExerciseById.has(row.exerciseId) ||
+            (persistedExercise.isArchived !== 0 && !baselineById.has(row.id))
+          );
+        }
+
+        return !stagedCustomExerciseById.has(row.exerciseId);
+      })
+    ) {
+      throw new ActiveWorkoutExerciseDraftConflictError();
+    }
+
+    if (stagedCustomExercises.length > 0) {
+      const persistedActiveExerciseNames = tx
+        .select({ name: exercises.name })
+        .from(exercises)
+        .where(eq(exercises.isArchived, 0))
+        .all();
+      const normalizedNames = new Set(
+        persistedActiveExerciseNames.map(exercise =>
+          exercise.name.trim().toLowerCase()
+        )
+      );
+
+      for (const exercise of stagedCustomExercises) {
+        const normalizedName = exercise.name.trim().toLowerCase();
+
+        if (!normalizedName || normalizedNames.has(normalizedName)) {
+          throw new ActiveWorkoutExerciseDraftConflictError();
+        }
+
+        normalizedNames.add(normalizedName);
+      }
+
+      tx.insert(exercises)
+        .values(
+          stagedCustomExercises.map(exercise => ({
+            ...exercise,
+            isCustom: 1,
+            isArchived: 0
+          }))
+        )
+        .run();
+    }
+
+    const normalizedRows = normalizeSupersetRows(
+      rows.map((row, order) => ({ ...row, order }))
+    );
+    const removedIds = baselineRows
+      .filter(row => !draftIdSet.has(row.id))
+      .map(row => row.id);
+    const addedRows = normalizedRows.filter(row => !baselineById.has(row.id));
+    const updatedRows = normalizedRows.filter(row => {
+      const baselineRow = baselineById.get(row.id);
+
+      return (
+        baselineRow &&
+        (baselineRow.order !== row.order ||
+          baselineRow.supersetId !== row.supersetId)
+      );
+    });
+
+    if (removedIds.length > 0) {
+      tx.delete(workoutExercises)
+        .where(inArray(workoutExercises.id, removedIds))
+        .run();
+    }
+
+    if (addedRows.length > 0) {
+      tx.insert(workoutExercises)
+        .values(
+          addedRows.map(row => ({
+            id: row.id,
+            workoutId,
+            exerciseId: row.exerciseId,
+            order: row.order,
+            supersetId: row.supersetId,
+            notes: null
+          }))
+        )
+        .run();
+    }
+
+    if (updatedRows.length > 0) {
+      tx.update(workoutExercises)
+        .set({
+          order: sql`CASE id ${sql.join(
+            updatedRows.map(row => sql`WHEN ${row.id} THEN ${row.order}`),
+            sql` `
+          )} END`,
+          supersetId: sql`CASE id ${sql.join(
+            updatedRows.map(row => sql`WHEN ${row.id} THEN ${row.supersetId}`),
+            sql` `
+          )} END`
+        })
+        .where(
+          inArray(
+            workoutExercises.id,
+            updatedRows.map(row => row.id)
+          )
+        )
+        .run();
+    }
+  });
 }
 
 export function reorderWorkoutExercises(

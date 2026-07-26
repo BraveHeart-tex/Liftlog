@@ -57,7 +57,7 @@ export function ActiveWorkoutExerciseEditRow({
 
     Alert.alert(
       'Remove exercise?',
-      `${selectedDetails}\n\nThis will delete all sets for this exercise.`,
+      `${selectedDetails}\n\nThis exercise and its sets will be removed from the workout when you save.`,
       [
         {
           text: 'Cancel',

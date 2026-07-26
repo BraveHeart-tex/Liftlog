@@ -8,12 +8,16 @@ import { View } from 'react-native';
 
 interface ActiveWorkoutEditHeaderProps {
   workoutName: string;
+  canSave?: boolean;
+  isSaving?: boolean;
   onCancel: () => void;
   onSave: () => void;
 }
 
 export function ActiveWorkoutEditHeader({
   workoutName,
+  canSave = true,
+  isSaving = false,
   onCancel,
   onSave
 }: ActiveWorkoutEditHeaderProps) {
@@ -38,6 +42,8 @@ export function ActiveWorkoutEditHeader({
             <Button
               variant="ghost"
               size="sm"
+              disabled={!canSave}
+              loading={isSaving}
               leftIcon={<Icon as={CheckIcon} tone="foreground" size="sm" />}
               onPress={onSave}
             >

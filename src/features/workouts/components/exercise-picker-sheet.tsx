@@ -44,6 +44,7 @@ interface ExercisePickerSheetCommonProps {
   exercises: ExerciseListItem[];
   isLoading?: boolean;
   recentExerciseIds?: ExerciseListItem['id'][];
+  multipleDescription?: string;
   selectedExerciseIds: ExerciseListItem['id'][];
   onContentReadyChange?: (isReady: boolean) => void;
   onClose: () => void;
@@ -199,6 +200,7 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
   exercises,
   isLoading = false,
   recentExerciseIds = [],
+  multipleDescription = 'Choose exercises to add to this template.',
   selectedExerciseIds,
   onContentReadyChange: _onContentReadyChange,
   onClose,
@@ -459,7 +461,7 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
             </BottomSheetTitle>
             <BottomSheetDescription>
               {isMultiple
-                ? 'Choose exercises to add to this template.'
+                ? multipleDescription
                 : 'Choose an exercise for this workout.'}
             </BottomSheetDescription>
           </View>

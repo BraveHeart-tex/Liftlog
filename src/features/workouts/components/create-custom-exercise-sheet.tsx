@@ -25,6 +25,9 @@ import { Keyboard, View } from 'react-native';
 interface CreateCustomExerciseSheetProps {
   isOpen: boolean;
   initialName?: string;
+  description?: string;
+  saveLabel?: string;
+  reservedNames?: string[];
   onClose: () => void;
   onSave: (exercise: NewExercise) => void;
 }
@@ -34,6 +37,9 @@ const SNAP_POINTS = ['90%'];
 export function CreateCustomExerciseSheet({
   isOpen,
   initialName = '',
+  description = 'Add it here and attach it to this workout right away.',
+  saveLabel = 'Save',
+  reservedNames = [],
   onClose,
   onSave
 }: CreateCustomExerciseSheetProps) {
@@ -54,6 +60,9 @@ export function CreateCustomExerciseSheet({
           <CreateCustomExerciseSheetContent
             isOpen={isOpen}
             initialName={initialName}
+            description={description}
+            saveLabel={saveLabel}
+            reservedNames={reservedNames}
             onClose={handleClose}
             onSave={onSave}
           />
@@ -67,6 +76,9 @@ const CreateCustomExerciseSheetContent = memo(
   function CreateCustomExerciseSheetContent({
     isOpen,
     initialName = '',
+    description,
+    saveLabel,
+    reservedNames,
     onClose,
     onSave
   }: CreateCustomExerciseSheetProps) {
@@ -88,7 +100,7 @@ const CreateCustomExerciseSheetContent = memo(
       toggleSecondaryMuscle,
       submit,
       reset
-    } = useCustomExerciseForm({ initialName });
+    } = useCustomExerciseForm({ initialName, reservedNames });
 
     useEffect(() => {
       reset();
@@ -117,9 +129,7 @@ const CreateCustomExerciseSheetContent = memo(
       <>
         <BottomSheetHeader>
           <BottomSheetTitle>Create custom exercise</BottomSheetTitle>
-          <BottomSheetDescription>
-            Add it here and attach it to this workout right away.
-          </BottomSheetDescription>
+          <BottomSheetDescription>{description}</BottomSheetDescription>
         </BottomSheetHeader>
 
         <StyledBottomSheetScrollView
@@ -161,7 +171,7 @@ const CreateCustomExerciseSheetContent = memo(
                 leftIcon={<Icon as={SaveIcon} tone="primaryForeground" />}
                 onPress={handleSave}
               >
-                Save
+                {saveLabel}
               </Button>
             </View>
           </View>

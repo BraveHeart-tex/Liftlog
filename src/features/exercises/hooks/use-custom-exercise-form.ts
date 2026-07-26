@@ -23,13 +23,15 @@ interface UseCustomExerciseFormResult {
 
 interface UseCustomExerciseFormParams {
   initialName?: string;
+  reservedNames?: string[];
 }
 
 const DEFAULT_CATEGORY: ExerciseCategory = 'barbell';
 const DEFAULT_TRACKING_TYPE: TrackingType = 'weight_reps';
 
 export function useCustomExerciseForm({
-  initialName = ''
+  initialName = '',
+  reservedNames = []
 }: UseCustomExerciseFormParams = {}): UseCustomExerciseFormResult {
   const { hasCustomExerciseNameConflict } = useExerciseActions();
   const [name, setName] = useState(initialName);
@@ -97,7 +99,11 @@ export function useCustomExerciseForm({
 
     const hasNameConflict =
       trimmedName.length > 0 &&
-      hasCustomExerciseNameConflict(undefined, trimmedName);
+      (hasCustomExerciseNameConflict(undefined, trimmedName) ||
+        reservedNames.some(
+          reservedName =>
+            reservedName.trim().toLowerCase() === trimmedName.toLowerCase()
+        ));
 
     setHasDuplicateName(hasNameConflict);
 
@@ -121,6 +127,7 @@ export function useCustomExerciseForm({
   }, [
     category,
     hasCustomExerciseNameConflict,
+    reservedNames,
     selectedPrimaryMuscles,
     selectedSecondaryMuscles,
     trackingType,

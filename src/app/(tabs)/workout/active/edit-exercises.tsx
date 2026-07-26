@@ -3,21 +3,23 @@ import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
-import type { Workout, WorkoutExercise } from '@/src/db/schema';
+import type { Workout } from '@/src/db/schema';
 import { ActiveWorkoutEditHeader } from '@/src/features/workouts/components/active-workout-edit-header';
 import { ActiveWorkoutExerciseList } from '@/src/features/workouts/components/active-workout-exercise-list';
+import { ActiveWorkoutExercisePickerSheet } from '@/src/features/workouts/components/active-workout-exercise-picker-sheet';
+import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/create-custom-exercise-sheet';
 import { useActiveWorkoutContent as useActiveWorkoutContentData } from '@/src/features/workouts/hooks/use-active-workout-content';
+import { useActiveWorkoutExerciseDraft } from '@/src/features/workouts/hooks/use-active-workout-exercise-draft';
 import { useActiveWorkoutScreen } from '@/src/features/workouts/hooks/use-active-workout-screen';
-import { useSaveWorkoutExerciseEdits } from '@/src/features/workouts/hooks/use-reorder-workout-exercises';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { router } from 'expo-router';
-import { ArrowLeftIcon } from 'lucide-react-native';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, View } from 'react-native';
-
-type DraftExerciseRow = Pick<WorkoutExercise, 'id' | 'supersetId'>;
-
-type BaselineExerciseRow = Pick<WorkoutExercise, 'id' | 'order' | 'supersetId'>;
+import {
+  ArrowLeftIcon,
+  ClipboardListIcon,
+  PlusIcon
+} from 'lucide-react-native';
+import { useCallback, useRef, useState } from 'react';
+import { Alert, Keyboard, View } from 'react-native';
 
 export default function ActiveWorkoutEditExercisesScreen() {
   const { activeWorkout, isLoading } = useActiveWorkoutScreen();
@@ -59,58 +61,32 @@ function ActiveWorkoutEditExercisesContent({
   activeWorkout
 }: ActiveWorkoutEditExercisesContentProps) {
   const navigation = useNavigation();
-  const isSavingRef = useRef(false);
   const isConfirmedExitRef = useRef(false);
-  const [draftExerciseRows, setDraftExerciseRows] =
-    useState<DraftExerciseRow[]>();
-  const [baselineExerciseRows, setBaselineExerciseRows] =
-    useState<BaselineExerciseRow[]>();
+  const [isExercisePickerOpen, setIsExercisePickerOpen] = useState(false);
+  const [isCreateCustomExerciseOpen, setIsCreateCustomExerciseOpen] =
+    useState(false);
+  const [initialCustomExerciseName, setInitialCustomExerciseName] =
+    useState('');
   const { workoutExerciseRows, isLoadingWorkoutExercises, exerciseById } =
     useActiveWorkoutContentData({ activeWorkout });
-  const saveWorkoutExerciseEdits = useSaveWorkoutExerciseEdits(
-    activeWorkout.id
-  );
-
-  useEffect(() => {
-    if (isLoadingWorkoutExercises || baselineExerciseRows) {
-      return;
-    }
-
-    setDraftExerciseRows(
-      workoutExerciseRows.map(workoutExercise => ({
-        id: workoutExercise.id,
-        supersetId: workoutExercise.supersetId
-      }))
-    );
-    setBaselineExerciseRows(
-      workoutExerciseRows.map(workoutExercise => ({
-        id: workoutExercise.id,
-        order: workoutExercise.order,
-        supersetId: workoutExercise.supersetId
-      }))
-    );
-  }, [baselineExerciseRows, isLoadingWorkoutExercises, workoutExerciseRows]);
-
-  const hasExerciseChanges = useMemo(() => {
-    if (!draftExerciseRows || !baselineExerciseRows) {
-      return false;
-    }
-
-    return (
-      draftExerciseRows.length !== baselineExerciseRows.length ||
-      draftExerciseRows.some((row, order) => {
-        const baselineRow = baselineExerciseRows.find(
-          baseline => baseline.id === row.id
-        );
-
-        return (
-          !baselineRow ||
-          baselineRow.order !== order ||
-          baselineRow.supersetId !== row.supersetId
-        );
-      })
-    );
-  }, [baselineExerciseRows, draftExerciseRows]);
+  const {
+    addExercises,
+    changeRows,
+    draftExerciseById,
+    draftWorkoutExercises,
+    hasChanges: hasExerciseChanges,
+    isInitialized: isDraftInitialized,
+    isSaving,
+    save,
+    selectedExerciseIds,
+    stageCustomExercise,
+    stagedCustomExerciseNames
+  } = useActiveWorkoutExerciseDraft({
+    activeWorkout,
+    workoutExerciseRows,
+    exerciseById,
+    isLoadingWorkoutExercises
+  });
 
   const leaveEditScreen = useCallback(() => {
     isConfirmedExitRef.current = true;
@@ -143,33 +119,49 @@ function ActiveWorkoutEditExercisesContent({
     confirmDiscardChanges(leaveEditScreen);
   }, [confirmDiscardChanges, hasExerciseChanges, leaveEditScreen]);
 
+  const openExercisePicker = useCallback(
+    () => setIsExercisePickerOpen(true),
+    []
+  );
+  const closeExercisePicker = useCallback(
+    () => setIsExercisePickerOpen(false),
+    []
+  );
+  const openCreateCustomExercise = useCallback((initialName?: string) => {
+    Keyboard.dismiss();
+    setInitialCustomExerciseName(initialName ?? '');
+    setIsExercisePickerOpen(false);
+    setIsCreateCustomExerciseOpen(true);
+  }, []);
+  const closeCreateCustomExercise = useCallback(
+    () => setIsCreateCustomExerciseOpen(false),
+    []
+  );
   const saveExerciseEdits = useCallback(() => {
-    if (!draftExerciseRows || !baselineExerciseRows || isSavingRef.current) {
+    const result = save();
+
+    if (result.status === 'saved') {
       leaveEditScreen();
 
       return;
     }
 
-    isSavingRef.current = true;
-
-    try {
-      saveWorkoutExerciseEdits(draftExerciseRows, baselineExerciseRows);
-      leaveEditScreen();
-    } catch (error) {
-      isSavingRef.current = false;
-      isConfirmedExitRef.current = false;
-      console.error('Failed to save workout exercise edits', error);
-      Alert.alert('Could not save exercise edits', 'Please try again.');
+    if (result.status === 'unchanged') {
+      return;
     }
-  }, [
-    baselineExerciseRows,
-    draftExerciseRows,
-    leaveEditScreen,
-    saveWorkoutExerciseEdits
-  ]);
+
+    isConfirmedExitRef.current = false;
+    console.error('Failed to save workout exercise edits', result.error);
+    Alert.alert(
+      'Could not save exercise edits',
+      result.status === 'conflict'
+        ? 'The workout or exercise library changed. Your draft was kept; review it and try again.'
+        : 'Your draft was kept. Please try again.'
+    );
+  }, [leaveEditScreen, save]);
 
   usePreventRemove(hasExerciseChanges, ({ data }) => {
-    if (isSavingRef.current || isConfirmedExitRef.current) {
+    if (isConfirmedExitRef.current) {
       navigation.dispatch(data.action);
 
       return;
@@ -185,24 +177,84 @@ function ActiveWorkoutEditExercisesContent({
     <Screen withPadding={false} edges={[]}>
       <ActiveWorkoutEditHeader
         workoutName={activeWorkout.name}
+        canSave={hasExerciseChanges && !isSaving}
+        isSaving={isSaving}
         onCancel={cancelExerciseEdits}
         onSave={saveExerciseEdits}
       />
 
-      {isLoadingWorkoutExercises ? (
+      {isLoadingWorkoutExercises || !isDraftInitialized ? (
         <View className="flex-1 px-4">
           <LoadingState label="Loading exercises..." />
         </View>
+      ) : draftWorkoutExercises.length === 0 ? (
+        <View className="flex-1 px-4 pb-6">
+          <EmptyState
+            layout="section"
+            icon={ClipboardListIcon}
+            title="No exercises added"
+            description="Add exercises to this workout or save it empty."
+            action={
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<Icon as={PlusIcon} size="sm" tone="primary" />}
+                onPress={openExercisePicker}
+              >
+                Add exercise
+              </Button>
+            }
+          />
+        </View>
       ) : (
-        <ActiveWorkoutExerciseList
-          workoutExercises={workoutExerciseRows}
-          exerciseById={exerciseById}
-          isEditing
-          onEnterEditMode={() => undefined}
-          draftExerciseRows={draftExerciseRows}
-          onChangeDraftExerciseRows={setDraftExerciseRows}
-        />
+        <>
+          <ActiveWorkoutExerciseList
+            workoutExercises={draftWorkoutExercises}
+            exerciseById={draftExerciseById}
+            isEditing
+            onEnterEditMode={() => undefined}
+            draftExerciseRows={draftWorkoutExercises.map(workoutExercise => ({
+              id: workoutExercise.id,
+              supersetId: workoutExercise.supersetId
+            }))}
+            onChangeDraftExerciseRows={changeRows}
+          />
+          <View className="border-border pb-safe border-t px-4 pt-3">
+            <Button
+              variant="secondary"
+              size="sm"
+              containerClassName="w-full"
+              leftIcon={<Icon as={PlusIcon} size="sm" tone="foreground" />}
+              onPress={openExercisePicker}
+            >
+              Add exercise
+            </Button>
+          </View>
+        </>
       )}
+
+      <ActiveWorkoutExercisePickerSheet
+        mode="multiple"
+        isOpen={isExercisePickerOpen}
+        multipleDescription="Choose exercises to add to this workout draft."
+        selectedExerciseIds={selectedExerciseIds}
+        onClose={closeExercisePicker}
+        onSelectExercises={addExercises}
+        onCreateCustomExercise={openCreateCustomExercise}
+      />
+
+      <CreateCustomExerciseSheet
+        isOpen={isCreateCustomExerciseOpen}
+        initialName={initialCustomExerciseName}
+        description="Add it to this draft. It will be created when you save the workout."
+        saveLabel="Add to draft"
+        reservedNames={stagedCustomExerciseNames}
+        onClose={closeCreateCustomExercise}
+        onSave={exercise => {
+          stageCustomExercise(exercise);
+          setIsCreateCustomExerciseOpen(false);
+        }}
+      />
     </Screen>
   );
 }

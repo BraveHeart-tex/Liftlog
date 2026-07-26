@@ -3,23 +3,39 @@ import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise
 import { useActiveWorkoutExercisePicker } from '@/src/features/workouts/hooks/use-active-workout-exercise-picker';
 import { useCallback, useState } from 'react';
 
-interface ActiveWorkoutExercisePickerSheetProps {
+interface ActiveWorkoutExercisePickerSheetCommonProps {
   isOpen: boolean;
   exerciseRows?: ExerciseListItem[];
+  multipleDescription?: string;
   selectedExerciseIds: ExerciseListItem['id'][];
   onClose: () => void;
-  onSelectExercise: (exercise: ExerciseListItem) => void;
   onCreateCustomExercise: (initialName?: string) => void;
 }
 
-export function ActiveWorkoutExercisePickerSheet({
-  isOpen,
-  exerciseRows,
-  selectedExerciseIds,
-  onClose,
-  onSelectExercise,
-  onCreateCustomExercise
-}: ActiveWorkoutExercisePickerSheetProps) {
+type ActiveWorkoutExercisePickerSheetProps =
+  ActiveWorkoutExercisePickerSheetCommonProps &
+    (
+      | {
+          mode?: 'single';
+          onSelectExercise: (exercise: ExerciseListItem) => void;
+        }
+      | {
+          mode: 'multiple';
+          onSelectExercises: (exercises: ExerciseListItem[]) => void;
+        }
+    );
+
+export function ActiveWorkoutExercisePickerSheet(
+  props: ActiveWorkoutExercisePickerSheetProps
+) {
+  const {
+    isOpen,
+    exerciseRows,
+    multipleDescription,
+    selectedExerciseIds,
+    onClose,
+    onCreateCustomExercise
+  } = props;
   const [isContentReady, setIsContentReady] = useState(false);
   const shouldLoadExercises = isOpen && isContentReady;
   const {
@@ -34,17 +50,28 @@ export function ActiveWorkoutExercisePickerSheet({
   const handleContentReadyChange = useCallback((isReady: boolean) => {
     setIsContentReady(isReady);
   }, []);
+  const selectionProps =
+    props.mode === 'multiple'
+      ? {
+          mode: 'multiple' as const,
+          onSelectExercises: props.onSelectExercises
+        }
+      : {
+          mode: 'single' as const,
+          onSelectExercise: props.onSelectExercise
+        };
 
   return (
     <ExercisePickerSheet
+      {...selectionProps}
       isOpen={isOpen}
       exercises={pickerExerciseRows}
       isLoading={isOpen && (!isContentReady || isLoading)}
       recentExerciseIds={recentExerciseIds}
+      multipleDescription={multipleDescription}
       selectedExerciseIds={selectedExerciseIds}
       onContentReadyChange={handleContentReadyChange}
       onClose={onClose}
-      onSelectExercise={onSelectExercise}
       onCreateCustomExercise={onCreateCustomExercise}
     />
   );
