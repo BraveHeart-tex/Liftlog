@@ -12,9 +12,13 @@ import {
   TemplateExerciseEditor,
   type TemplateExerciseEditorRow
 } from '@/src/features/workouts/components/template-exercise-editor';
+import { SupersetIndicator } from '@/src/features/workouts/components/superset-indicator';
 import { WorkoutTemplateActionsSheet } from '@/src/features/workouts/components/workout-template-actions-sheet';
 import { useWorkoutTemplateDetail } from '@/src/features/workouts/hooks/use-workout-template-detail';
-import { getSupersetLabelByRowId } from '@/src/features/workouts/superset.utils';
+import {
+  getSupersetLabelByRowId,
+  groupSupersetBlocks
+} from '@/src/features/workouts/superset.utils';
 import { triggerWorkoutEditModeHaptics } from '@/src/features/workouts/workout.haptics';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { getRouteParamId } from '@/src/lib/utils/route.utils';
@@ -103,6 +107,20 @@ function WorkoutTemplateDetailLoaded({
   const supersetLabelByTemplateExerciseId = useMemo(() => {
     return getSupersetLabelByRowId(templateExerciseRows);
   }, [templateExerciseRows]);
+  const supersetBlocks = useMemo(
+    () => groupSupersetBlocks(templateExerciseRows),
+    [templateExerciseRows]
+  );
+  const templateExerciseIndexById = useMemo(
+    () =>
+      new Map(
+        templateExerciseRows.map((templateExercise, index) => [
+          templateExercise.id,
+          index
+        ])
+      ),
+    [templateExerciseRows]
+  );
   const hasExerciseChanges = useMemo(
     () =>
       draftExercises.length !== orderedExercises.length ||
@@ -331,36 +349,68 @@ function WorkoutTemplateDetailLoaded({
             />
           ) : (
             <View className="mt-3">
-              {templateExerciseRows.map((templateExercise, index) => {
-                const exercise = exerciseById.get(templateExercise.exerciseId);
+              {supersetBlocks.map((block, blockIndex) => {
+                const renderExerciseCard = (
+                  templateExercise: (typeof templateExerciseRows)[number]
+                ) => {
+                  const exercise = exerciseById.get(
+                    templateExercise.exerciseId
+                  );
+                  const supersetLabel = supersetLabelByTemplateExerciseId.get(
+                    templateExercise.id
+                  );
+                  const exerciseIndex =
+                    templateExerciseIndexById.get(templateExercise.id) ?? 0;
+
+                  return (
+                    <Pressable
+                      key={templateExercise.id}
+                      onLongPress={enterExerciseEditModeFromLongPress}
+                    >
+                      <Card>
+                        <CardContent className="flex-row items-center gap-3">
+                          <View className="bg-muted h-9 w-9 items-center justify-center rounded-lg">
+                            <Text variant="caption" tone="muted">
+                              {exerciseIndex + 1}
+                            </Text>
+                          </View>
+                          <View className="flex-1">
+                            {supersetLabel ? (
+                              <Text
+                                variant="caption"
+                                tone="muted"
+                                className="mb-1"
+                              >
+                                {supersetLabel}
+                              </Text>
+                            ) : null}
+                            <Text variant="bodyMedium">
+                              {exercise?.name ?? 'Unknown exercise'}
+                            </Text>
+                            <Text
+                              variant="caption"
+                              tone="muted"
+                              className="mt-1"
+                            >
+                              {exercise?.category ?? 'Exercise'}
+                            </Text>
+                          </View>
+                        </CardContent>
+                      </Card>
+                    </Pressable>
+                  );
+                };
 
                 return (
-                  <Pressable
-                    key={templateExercise.id}
-                    onLongPress={enterExerciseEditModeFromLongPress}
-                  >
-                    <Card className={cn(index > 0 && 'mt-3')}>
-                      <CardContent className="flex-row items-center gap-3">
-                        <View className="bg-muted h-9 w-9 items-center justify-center rounded-lg">
-                          <Text variant="caption" tone="muted">
-                            {index + 1}
-                          </Text>
-                        </View>
-                        <View className="flex-1">
-                          <Text variant="bodyMedium">
-                            {exercise?.name ?? 'Unknown exercise'}
-                          </Text>
-                          <Text variant="caption" tone="muted" className="mt-1">
-                            {supersetLabelByTemplateExerciseId.get(
-                              templateExercise.id
-                            ) ??
-                              exercise?.category ??
-                              'Exercise'}
-                          </Text>
-                        </View>
-                      </CardContent>
-                    </Card>
-                  </Pressable>
+                  <View key={block.id} className={cn(blockIndex > 0 && 'mt-3')}>
+                    {renderExerciseCard(block.rows[0])}
+                    {block.supersetId ? (
+                      <>
+                        <SupersetIndicator />
+                        {renderExerciseCard(block.rows[1])}
+                      </>
+                    ) : null}
+                  </View>
                 );
               })}
             </View>
