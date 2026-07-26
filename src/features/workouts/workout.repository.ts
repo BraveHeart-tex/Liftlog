@@ -31,6 +31,7 @@ import {
 import { normalizeSupersetRows } from '@/src/features/workouts/superset.utils';
 
 export const HISTORICAL_WORKOUT_DRAFT_STATUS = 'historical_draft';
+
 export const HISTORICAL_WORKOUT_EDIT_DRAFT_STATUS = 'historical_edit_draft';
 const HISTORICAL_WORKOUT_DRAFT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const HISTORICAL_SET_INTERVAL_MS = 60_000;

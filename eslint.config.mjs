@@ -73,30 +73,36 @@ export default defineConfig([
       ],
       '@stylistic/padding-line-between-statements': [
         'error',
-        { blankLine: 'always', prev: '*', next: 'return' },
         {
           blankLine: 'always',
-          prev: '*',
-          next: ['if', 'for', 'while', 'switch', 'try']
+          next: [
+            'export',
+            'return',
+            'try',
+            'if',
+            'throw',
+            'for',
+            'while',
+            'switch',
+            'function'
+          ],
+          prev: '*'
         },
         {
           blankLine: 'always',
-          prev: ['if', 'for', 'while', 'switch', 'try'],
-          next: '*'
-        },
-        { blankLine: 'always', prev: ['const', 'let', 'var'], next: '*' },
-        {
-          blankLine: 'any',
-          prev: ['const', 'let', 'var'],
-          next: ['const', 'let', 'var']
-        },
-        { blankLine: 'always', prev: 'import', next: '*' },
-        { blankLine: 'any', prev: 'import', next: 'import' },
-        { blankLine: 'always', prev: '*', next: 'function' },
-        { blankLine: 'always', prev: 'function', next: '*' },
-        { blankLine: 'always', prev: '*', next: 'throw' },
-        { blankLine: 'always', prev: ['interface', 'type'], next: '*' },
-        { blankLine: 'always', prev: '*', next: ['interface', 'type'] }
+          next: '*',
+          prev: [
+            'try',
+            'if',
+            'directive',
+            'block',
+            'block-like',
+            'for',
+            'while',
+            'switch',
+            'function'
+          ]
+        }
       ],
       curly: ['error', 'all'],
       eqeqeq: ['error', 'always', { null: 'ignore' }],

@@ -22,6 +22,7 @@ export interface RestTimerPreset {
 }
 
 export const MAX_REST_TIMER_PRESETS = 8;
+
 export const REST_TIMER_PRESET_NAME_MAX_LENGTH = 30;
 
 export const SETTINGS_KEYS = {

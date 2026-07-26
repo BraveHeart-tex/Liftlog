@@ -240,6 +240,7 @@ export function getSetScore(
 
       return computeEstimated1RM(weightKg, reps);
     }
+
     case 'distance_time': {
       const distanceMeters = assertPositiveNumber(set.distanceMeters);
       const durationMs = getDurationMs(set);
@@ -250,11 +251,13 @@ export function getSetScore(
 
       return roundScore(distanceMeters / (durationMs / 1000));
     }
+
     case 'reps': {
       const reps = assertPositiveNumber(set.reps);
 
       return reps;
     }
+
     case 'reps_time': {
       const reps = assertPositiveNumber(set.reps);
       const durationMs = getDurationMs(set);
@@ -265,6 +268,7 @@ export function getSetScore(
 
       return roundScore(reps / (durationMs / 1000));
     }
+
     case 'weight_time': {
       const weightKg = assertPositiveNumber(set.weightKg);
       const durationMs = getDurationMs(set);
@@ -275,6 +279,7 @@ export function getSetScore(
 
       return roundScore(weightKg / (durationMs / 1000));
     }
+
     case 'duration': {
       const durationMs = getDurationMs(set);
 

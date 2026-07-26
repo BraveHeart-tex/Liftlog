@@ -222,30 +222,39 @@ export const healthStepDays = sqliteTable(
 );
 
 export type AppMeta = typeof appMeta.$inferSelect;
+
 export type NewAppMeta = typeof appMeta.$inferInsert;
 
 export type Exercise = typeof exercises.$inferSelect;
+
 export type NewExercise = typeof exercises.$inferInsert;
 
 export type Workout = typeof workouts.$inferSelect;
+
 export type NewWorkout = typeof workouts.$inferInsert;
 
 export type WorkoutExercise = typeof workoutExercises.$inferSelect;
+
 export type NewWorkoutExercise = typeof workoutExercises.$inferInsert;
 
 export type WorkoutTemplate = typeof workoutTemplates.$inferSelect;
+
 export type NewWorkoutTemplate = typeof workoutTemplates.$inferInsert;
 
 export type WorkoutTemplateExercise =
   typeof workoutTemplateExercises.$inferSelect;
+
 export type NewWorkoutTemplateExercise =
   typeof workoutTemplateExercises.$inferInsert;
 
 export type Set = typeof sets.$inferSelect;
+
 export type NewSet = typeof sets.$inferInsert;
 
 export type PersonalRecord = typeof personalRecords.$inferSelect;
+
 export type NewPersonalRecord = typeof personalRecords.$inferInsert;
 
 export type HealthStepDay = typeof healthStepDays.$inferSelect;
+
 export type NewHealthStepDay = typeof healthStepDays.$inferInsert;
