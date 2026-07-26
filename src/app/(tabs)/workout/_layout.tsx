@@ -1,6 +1,10 @@
 import { useAppTheme, useTabBarTheme } from '@/src/theme/app-theme-provider';
 import { Stack } from 'expo-router';
 
+export const unstable_settings = {
+  initialRouteName: 'index'
+};
+
 export default function WorkoutLayout() {
   const { colors } = useAppTheme();
   const tabBarTheme = useTabBarTheme();

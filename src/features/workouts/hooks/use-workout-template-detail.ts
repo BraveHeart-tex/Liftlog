@@ -98,7 +98,7 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
     });
 
     if (createdWorkout) {
-      router.navigate(activeWorkoutRoute);
+      router.replace(activeWorkoutRoute, { withAnchor: true });
     }
   }, [db, template]);
 
@@ -114,12 +114,12 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
 
     if (createdWorkout) {
       useRestTimerStore.getState().cancelForWorkout(activeWorkout.id);
-      router.navigate(activeWorkoutRoute);
+      router.replace(activeWorkoutRoute, { withAnchor: true });
     }
   }, [activeWorkout, db, template]);
 
   const resumeWorkout = useCallback(() => {
-    router.navigate(activeWorkoutRoute);
+    router.replace(activeWorkoutRoute, { withAnchor: true });
   }, []);
 
   const renameTemplate = useCallback(
