@@ -2,6 +2,10 @@ import type { Exercise } from '@/src/db';
 import { toTitleCase } from '@/src/lib/utils/string.utils';
 
 export function parseMuscleList(value: Exercise['primaryMuscles']): string[] {
+  if (!value) {
+    return [];
+  }
+
   try {
     const parsed = JSON.parse(value) as unknown;
 
@@ -26,6 +30,10 @@ export function formatMuscleList(muscles: string[]) {
 export function getPrimaryMuscleLabel(
   primaryMuscles: Exercise['primaryMuscles']
 ) {
+  if (!primaryMuscles) {
+    return 'Unspecified';
+  }
+
   try {
     const parsed = JSON.parse(primaryMuscles) as string[];
 

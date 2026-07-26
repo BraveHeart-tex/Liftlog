@@ -23,8 +23,8 @@ export const exercises = sqliteTable(
     name: text('name').notNull(),
     category: text('category').notNull(),
     trackingType: text('tracking_type').notNull().default('weight_reps'),
-    primaryMuscles: text('primary_muscles').notNull().default('[]'),
-    secondaryMuscles: text('secondary_muscles').notNull().default('[]'),
+    primaryMuscles: text('primary_muscles'),
+    secondaryMuscles: text('secondary_muscles'),
     isCustom: integer('is_custom').notNull().default(0),
     isArchived: integer('is_archived').notNull().default(0),
     createdAt: integer('created_at')

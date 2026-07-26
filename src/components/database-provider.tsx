@@ -52,13 +52,38 @@ function DrizzleProvider({ children, onReady }: DrizzleProviderProps) {
   );
 }
 
-async function migrateAsync(db: SQLiteDatabase) {
-  let drizzleDb: DrizzleDb;
+interface ForeignKeyViolation {
+  table: string;
+  rowid: number | null;
+  parent: string;
+  fkid: number;
+}
+
+async function migrateAsync(sqliteDb: SQLiteDatabase) {
+  configureDatabase(sqliteDb);
+
+  const drizzleDb = createDrizzleDb(sqliteDb);
 
   try {
-    configureDatabase(db);
-    drizzleDb = createDrizzleDb(db);
-    await migrate(drizzleDb, migrations);
+    // Must run before Drizzle starts its migration transaction.
+    await sqliteDb.execAsync('PRAGMA foreign_keys = OFF;');
+
+    try {
+      await migrate(drizzleDb, migrations);
+    } finally {
+      // Always restore enforcement, including after migration failure.
+      await sqliteDb.execAsync('PRAGMA foreign_keys = ON;');
+    }
+
+    const violations = await sqliteDb.getAllAsync<ForeignKeyViolation>(
+      'PRAGMA foreign_key_check;'
+    );
+
+    if (violations.length > 0) {
+      throw new Error(
+        `Foreign key violations after migration: ${JSON.stringify(violations)}`
+      );
+    }
   } catch (error) {
     console.error('Database migration failed', error);
 
@@ -66,12 +91,12 @@ async function migrateAsync(db: SQLiteDatabase) {
   }
 
   try {
-    runSeedIfNeeded(drizzleDb);
+    await runSeedIfNeeded(drizzleDb);
 
     if (__DEV__) {
       const { runDevSeedIfNeeded } = await import('@/src/db/dev-seed');
 
-      runDevSeedIfNeeded(drizzleDb);
+      await runDevSeedIfNeeded(drizzleDb);
     }
   } catch (error) {
     console.error('Database seed failed', error);
