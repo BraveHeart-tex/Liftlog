@@ -7,7 +7,7 @@ import {
   type NewExercise
 } from '@/src/db/schema';
 import { rebuildPersonalRecordsForExercise } from '@/src/features/progress/progress.repository';
-import { and, count, eq, inArray, ne, sql } from 'drizzle-orm';
+import { and, count, eq, ne, sql } from 'drizzle-orm';
 import type { InferColumnsDataTypes } from 'drizzle-orm/column';
 
 const exerciseListFields = {
@@ -48,20 +48,6 @@ export function getExercisesQuery(db: DrizzleDb) {
     .from(exercises)
     .where(eq(exercises.isArchived, 0))
     .orderBy(sql`${exercises.name} collate nocase`);
-}
-
-export function getExercisesByIdsQuery(db: DrizzleDb, ids: Exercise['id'][]) {
-  if (ids.length === 0) {
-    return db
-      .select(exerciseListFields)
-      .from(exercises)
-      .where(inArray(exercises.id, ['']));
-  }
-
-  return db
-    .select(exerciseListFields)
-    .from(exercises)
-    .where(inArray(exercises.id, ids));
 }
 
 export function hasExerciseNameConflict(

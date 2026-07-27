@@ -66,7 +66,9 @@ export default function WorkoutDetailScreen() {
     );
   }
 
-  return <WorkoutDetailLoaded detail={detail} />;
+  return (
+    <WorkoutDetailLoaded detail={{ ...detail, workout: detail.workout }} />
+  );
 }
 
 interface WorkoutDetailLoadedProps {

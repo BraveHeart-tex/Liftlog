@@ -242,6 +242,94 @@ export function getWorkoutByIdQuery(db: DrizzleDb, id: Workout['id']) {
   return db.select().from(workouts).where(eq(workouts.id, id));
 }
 
+export interface WorkoutHistoryDetailRow {
+  workout: Workout;
+  workoutExercise: WorkoutExercise | null;
+  exercise: Exercise | null;
+  set: Set | null;
+}
+
+export interface WorkoutHistoryDetail {
+  workout: Workout | undefined;
+  workoutExerciseRows: WorkoutExercise[];
+  exerciseById: Map<Exercise['id'], Exercise>;
+  setsByWorkoutExerciseId: Map<WorkoutExercise['id'], Set[]>;
+  totalVolume: number;
+  totalCompletedSets: number;
+}
+
+export function getWorkoutHistoryDetailRowsQuery(
+  db: DrizzleDb,
+  workoutId: Workout['id']
+) {
+  return db
+    .select({
+      workout: workouts,
+      workoutExercise: workoutExercises,
+      exercise: exercises,
+      set: sets
+    })
+    .from(workouts)
+    .leftJoin(workoutExercises, eq(workoutExercises.workoutId, workouts.id))
+    .leftJoin(exercises, eq(workoutExercises.exerciseId, exercises.id))
+    .leftJoin(
+      sets,
+      and(
+        eq(sets.workoutExerciseId, workoutExercises.id),
+        eq(sets.status, 'completed')
+      )
+    )
+    .where(eq(workouts.id, workoutId))
+    .orderBy(asc(workoutExercises.order), asc(sets.order));
+}
+
+export function mapWorkoutHistoryDetailRows(
+  rows: WorkoutHistoryDetailRow[]
+): WorkoutHistoryDetail {
+  const firstRow = rows[0];
+  const workoutExerciseById = new Map<WorkoutExercise['id'], WorkoutExercise>();
+  const exerciseById = new Map<Exercise['id'], Exercise>();
+  const setsByWorkoutExerciseId = new Map<WorkoutExercise['id'], Set[]>();
+  let totalVolume = 0;
+  let totalCompletedSets = 0;
+
+  for (const row of rows) {
+    if (row.workoutExercise) {
+      workoutExerciseById.set(row.workoutExercise.id, row.workoutExercise);
+    }
+
+    if (row.exercise) {
+      exerciseById.set(row.exercise.id, row.exercise);
+    }
+
+    if (!row.set || row.set.status !== 'completed') {
+      continue;
+    }
+
+    const existingSets =
+      setsByWorkoutExerciseId.get(row.set.workoutExerciseId) ?? [];
+
+    setsByWorkoutExerciseId.set(row.set.workoutExerciseId, [
+      ...existingSets,
+      row.set
+    ]);
+    totalCompletedSets += 1;
+
+    if (row.set.weightKg !== null && row.set.reps !== null) {
+      totalVolume += row.set.weightKg * row.set.reps;
+    }
+  }
+
+  return {
+    workout: firstRow?.workout,
+    workoutExerciseRows: Array.from(workoutExerciseById.values()),
+    exerciseById,
+    setsByWorkoutExerciseId,
+    totalVolume: Math.round(totalVolume * 10) / 10,
+    totalCompletedSets
+  };
+}
+
 export function getWorkoutExercisesQuery(
   db: DrizzleDb,
   workoutId: Workout['id']
@@ -319,25 +407,6 @@ export function getSetsByWorkoutExerciseIdQuery(
     .select()
     .from(sets)
     .where(eq(sets.workoutExerciseId, workoutExerciseId))
-    .orderBy(asc(sets.order));
-}
-
-export function getSetsForWorkoutExercisesQuery(
-  db: DrizzleDb,
-  workoutExerciseIds: WorkoutExercise['id'][]
-) {
-  if (workoutExerciseIds.length === 0) {
-    return db
-      .select()
-      .from(sets)
-      .where(eq(sets.workoutExerciseId, ''))
-      .orderBy(asc(sets.order));
-  }
-
-  return db
-    .select()
-    .from(sets)
-    .where(inArray(sets.workoutExerciseId, workoutExerciseIds))
     .orderBy(asc(sets.order));
 }
 
