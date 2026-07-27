@@ -1,140 +1,34 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import type { WorkoutTemplate, WorkoutTemplateExercise } from '@/src/db/schema';
 import {
-  getExercisesByIdsQuery,
-  type ExerciseListItem
-} from '@/src/features/exercises/exercise.repository';
-import {
-  getWorkoutTemplateExercisesForTemplatesQuery,
-  getWorkoutTemplatesQuery
+  getWorkoutStartTemplateRowsQuery,
+  mapWorkoutTemplateRows
 } from '@/src/features/workouts/workout-template.repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useMemo } from 'react';
+
+export type { WorkoutStartTemplateItem } from '@/src/features/workouts/workout-template.repository';
 
 interface UseWorkoutTemplatesOptions {
   enabled?: boolean;
   limit?: number;
 }
 
-export interface WorkoutStartTemplateItem {
-  template: WorkoutTemplate;
-  exerciseRows: WorkoutTemplateExercise[];
-  exerciseCount: number;
-  exerciseSummary: string;
-}
-
-function buildTemplateSummary(
-  exerciseRows: WorkoutTemplateExercise[],
-  exerciseById: Map<ExerciseListItem['id'], ExerciseListItem>
-): string {
-  const exerciseNames = exerciseRows
-    .map(exercise => {
-      const name = exerciseById.get(exercise.exerciseId)?.name;
-
-      if (!name) {
-        return null;
-      }
-
-      return exercise.supersetId ? `Superset: ${name}` : name;
-    })
-    .filter((name): name is string => Boolean(name));
-
-  if (exerciseNames.length === 0) {
-    return 'No exercises';
-  }
-
-  if (exerciseNames.length <= 2) {
-    return exerciseNames.join(' • ');
-  }
-
-  return `${exerciseNames.slice(0, 2).join(' • ')} +${exerciseNames.length - 2} more`;
-}
-
 export function useWorkoutTemplates(options?: UseWorkoutTemplatesOptions) {
   const { enabled = true, limit } = options ?? {};
   const db = useDrizzle();
-  const templateResult = useLiveWithFallback(
-    getWorkoutTemplatesQuery(db, limit),
+  const result = useLiveWithFallback(
+    getWorkoutStartTemplateRowsQuery(db, limit),
     [db, enabled, limit],
     { enabled }
   );
 
-  const templateIds = useMemo(
-    () => templateResult.data.map(template => template.id),
-    [templateResult.data]
-  );
-  const templateIdKey = useMemo(() => templateIds.join(','), [templateIds]);
-
-  const templateExerciseResult = useLiveWithFallback(
-    getWorkoutTemplateExercisesForTemplatesQuery(db, templateIds),
-    [db, templateIdKey, enabled],
-    { enabled }
-  );
-
-  const exerciseIds = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          templateExerciseResult.data.map(
-            templateExercise => templateExercise.exerciseId
-          )
-        )
-      ),
-    [templateExerciseResult.data]
-  );
-  const exerciseIdKey = useMemo(() => exerciseIds.join(','), [exerciseIds]);
-
-  const exerciseResult = useLiveWithFallback(
-    getExercisesByIdsQuery(db, exerciseIds),
-    [db, exerciseIdKey, enabled],
-    { enabled }
-  );
-
-  const exerciseById = useMemo(
-    () =>
-      new Map<ExerciseListItem['id'], ExerciseListItem>(
-        exerciseResult.data.map(exercise => [exercise.id, exercise])
-      ),
-    [exerciseResult.data]
-  );
-
-  const templateExercisesByTemplateId = useMemo(() => {
-    const nextMap = new Map<WorkoutTemplate['id'], WorkoutTemplateExercise[]>();
-
-    for (const templateExercise of templateExerciseResult.data) {
-      const existingRows = nextMap.get(templateExercise.templateId) ?? [];
-
-      nextMap.set(templateExercise.templateId, [
-        ...existingRows,
-        templateExercise
-      ]);
-    }
-
-    return nextMap;
-  }, [templateExerciseResult.data]);
-
-  const templates = useMemo<WorkoutStartTemplateItem[]>(
-    () =>
-      templateResult.data.map(template => {
-        const exerciseRows =
-          templateExercisesByTemplateId.get(template.id) ?? [];
-
-        return {
-          template,
-          exerciseRows,
-          exerciseCount: exerciseRows.length,
-          exerciseSummary: buildTemplateSummary(exerciseRows, exerciseById)
-        };
-      }),
-    [exerciseById, templateExercisesByTemplateId, templateResult.data]
+  const templates = useMemo(
+    () => mapWorkoutTemplateRows(result.data),
+    [result.data]
   );
 
   return {
     templates,
-    isLoading:
-      enabled &&
-      (!templateResult.isLive ||
-        !templateExerciseResult.isLive ||
-        !exerciseResult.isLive)
+    isLoading: enabled && !result.isLive
   };
 }

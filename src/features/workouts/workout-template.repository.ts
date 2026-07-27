@@ -15,6 +15,28 @@ import { resolveTemplateName } from '@/src/features/workouts/workout-display.uti
 import { normalizeSupersetRows } from '@/src/features/workouts/superset.utils';
 import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
 
+export interface WorkoutStartTemplateItem {
+  template: WorkoutTemplate;
+  exerciseRows: WorkoutTemplateExercise[];
+  exerciseCount: number;
+  exerciseSummary: string;
+}
+
+export interface WorkoutTemplateListRow {
+  templateId: WorkoutTemplate['id'];
+  templateName: WorkoutTemplate['name'];
+  templateSourceWorkoutId: WorkoutTemplate['sourceWorkoutId'];
+  templateCreatedAt: WorkoutTemplate['createdAt'];
+  templateUpdatedAt: WorkoutTemplate['updatedAt'];
+  templateExerciseId: WorkoutTemplateExercise['id'] | null;
+  templateExerciseTemplateId: WorkoutTemplateExercise['templateId'] | null;
+  templateExerciseExerciseId: WorkoutTemplateExercise['exerciseId'] | null;
+  templateExerciseOrder: WorkoutTemplateExercise['order'] | null;
+  templateExerciseSupersetId: WorkoutTemplateExercise['supersetId'] | null;
+  exerciseId: Exercise['id'] | null;
+  exerciseName: Exercise['name'] | null;
+}
+
 export interface WorkoutTemplateExerciseDraftRow {
   id: WorkoutTemplateExercise['id'];
   exerciseId: WorkoutTemplateExercise['exerciseId'];
@@ -46,16 +68,130 @@ function getWorkoutTemplateRecordById(
     .get();
 }
 
-export function getWorkoutTemplatesQuery(db: DrizzleDb, limit?: number) {
-  const query = db
-    .select()
+export function getWorkoutStartTemplateRowsQuery(
+  db: DrizzleDb,
+  limit?: number
+) {
+  const orderedTemplates = db
+    .select({
+      id: workoutTemplates.id,
+      name: workoutTemplates.name,
+      sourceWorkoutId: workoutTemplates.sourceWorkoutId,
+      createdAt: workoutTemplates.createdAt,
+      updatedAt: workoutTemplates.updatedAt
+    })
     .from(workoutTemplates)
     .orderBy(
       desc(workoutTemplates.updatedAt),
       desc(workoutTemplates.createdAt)
     );
+  const limitedTemplates = (
+    limit === undefined ? orderedTemplates : orderedTemplates.limit(limit)
+  ).as('limited_workout_templates');
 
-  return limit === undefined ? query : query.limit(limit);
+  return db
+    .select({
+      templateId: limitedTemplates.id,
+      templateName: limitedTemplates.name,
+      templateSourceWorkoutId: limitedTemplates.sourceWorkoutId,
+      templateCreatedAt: limitedTemplates.createdAt,
+      templateUpdatedAt: limitedTemplates.updatedAt,
+      templateExerciseId: workoutTemplateExercises.id,
+      templateExerciseTemplateId: workoutTemplateExercises.templateId,
+      templateExerciseExerciseId: workoutTemplateExercises.exerciseId,
+      templateExerciseOrder: workoutTemplateExercises.order,
+      templateExerciseSupersetId: workoutTemplateExercises.supersetId,
+      exerciseId: exercises.id,
+      exerciseName: exercises.name
+    })
+    .from(limitedTemplates)
+    .leftJoin(
+      workoutTemplateExercises,
+      eq(workoutTemplateExercises.templateId, limitedTemplates.id)
+    )
+    .leftJoin(exercises, eq(workoutTemplateExercises.exerciseId, exercises.id))
+    .orderBy(
+      desc(limitedTemplates.updatedAt),
+      desc(limitedTemplates.createdAt),
+      asc(workoutTemplateExercises.order)
+    );
+}
+
+function buildTemplateSummary(exerciseNames: string[]): string {
+  if (exerciseNames.length === 0) {
+    return 'No exercises';
+  }
+
+  if (exerciseNames.length <= 2) {
+    return exerciseNames.join(' • ');
+  }
+
+  return `${exerciseNames.slice(0, 2).join(' • ')} +${
+    exerciseNames.length - 2
+  } more`;
+}
+
+export function mapWorkoutTemplateRows(
+  rows: WorkoutTemplateListRow[]
+): WorkoutStartTemplateItem[] {
+  const itemsByTemplateId = new Map<
+    WorkoutTemplate['id'],
+    {
+      template: WorkoutTemplate;
+      exerciseRows: WorkoutTemplateExercise[];
+      exerciseNames: string[];
+    }
+  >();
+
+  for (const row of rows) {
+    let item = itemsByTemplateId.get(row.templateId);
+
+    if (!item) {
+      item = {
+        template: {
+          id: row.templateId,
+          name: row.templateName,
+          sourceWorkoutId: row.templateSourceWorkoutId,
+          createdAt: row.templateCreatedAt,
+          updatedAt: row.templateUpdatedAt
+        },
+        exerciseRows: [],
+        exerciseNames: []
+      };
+      itemsByTemplateId.set(row.templateId, item);
+    }
+
+    if (row.templateExerciseId === null) {
+      continue;
+    }
+
+    const exerciseRow: WorkoutTemplateExercise = {
+      id: row.templateExerciseId,
+      templateId: row.templateExerciseTemplateId!,
+      exerciseId: row.templateExerciseExerciseId!,
+      order: row.templateExerciseOrder!,
+      supersetId: row.templateExerciseSupersetId
+    };
+
+    item.exerciseRows.push(exerciseRow);
+
+    if (row.exerciseName) {
+      item.exerciseNames.push(
+        row.templateExerciseSupersetId
+          ? `Superset: ${row.exerciseName}`
+          : row.exerciseName
+      );
+    }
+  }
+
+  return Array.from(itemsByTemplateId.values()).map(
+    ({ template, exerciseRows, exerciseNames }) => ({
+      template,
+      exerciseRows,
+      exerciseCount: exerciseRows.length,
+      exerciseSummary: buildTemplateSummary(exerciseNames)
+    })
+  );
 }
 
 export function getWorkoutTemplateByIdQuery(
@@ -84,21 +220,6 @@ export function getWorkoutTemplateExercisesQuery(
     .select()
     .from(workoutTemplateExercises)
     .where(eq(workoutTemplateExercises.templateId, templateId))
-    .orderBy(asc(workoutTemplateExercises.order));
-}
-
-export function getWorkoutTemplateExercisesForTemplatesQuery(
-  db: DrizzleDb,
-  templateIds: WorkoutTemplate['id'][]
-) {
-  if (templateIds.length === 0) {
-    return getWorkoutTemplateExercisesQuery(db, '');
-  }
-
-  return db
-    .select()
-    .from(workoutTemplateExercises)
-    .where(inArray(workoutTemplateExercises.templateId, templateIds))
     .orderBy(asc(workoutTemplateExercises.order));
 }
 
