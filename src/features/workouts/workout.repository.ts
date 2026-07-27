@@ -26,9 +26,11 @@ import {
   eq,
   inArray,
   lte,
+  ne,
   notInArray,
   sql
 } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/sqlite-core';
 import { normalizeSupersetRows } from '@/src/features/workouts/superset.utils';
 
 export const HISTORICAL_WORKOUT_DRAFT_STATUS = 'historical_draft';
@@ -271,6 +273,42 @@ export function getWorkoutExerciseByIdQuery(
   id: WorkoutExercise['id']
 ) {
   return db.select().from(workoutExercises).where(eq(workoutExercises.id, id));
+}
+
+export function getActiveWorkoutExerciseDetailQuery(
+  db: DrizzleDb,
+  workoutExerciseId: WorkoutExercise['id']
+) {
+  const pairedWorkoutExercises = alias(
+    workoutExercises,
+    'paired_workout_exercises'
+  );
+  const pairedExercises = alias(exercises, 'paired_exercises');
+
+  return db
+    .select({
+      workoutExercise: workoutExercises,
+      exercise: exercises,
+      workout: workouts,
+      pairedWorkoutExercise: pairedWorkoutExercises,
+      pairedExercise: pairedExercises
+    })
+    .from(workoutExercises)
+    .innerJoin(exercises, eq(workoutExercises.exerciseId, exercises.id))
+    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
+    .leftJoin(
+      pairedWorkoutExercises,
+      and(
+        eq(pairedWorkoutExercises.workoutId, workoutExercises.workoutId),
+        eq(pairedWorkoutExercises.supersetId, workoutExercises.supersetId),
+        ne(pairedWorkoutExercises.id, workoutExercises.id)
+      )
+    )
+    .leftJoin(
+      pairedExercises,
+      eq(pairedWorkoutExercises.exerciseId, pairedExercises.id)
+    )
+    .where(eq(workoutExercises.id, workoutExerciseId));
 }
 
 export function getSetsByWorkoutExerciseIdQuery(
