@@ -67,8 +67,12 @@ function ActiveWorkoutEditExercisesContent({
     useState(false);
   const [initialCustomExerciseName, setInitialCustomExerciseName] =
     useState('');
-  const { workoutExerciseRows, isLoadingWorkoutExercises, exerciseById } =
-    useActiveWorkoutContentData({ activeWorkout });
+  const {
+    workoutExerciseRows,
+    setRows,
+    isLoadingWorkoutExercises,
+    exerciseById
+  } = useActiveWorkoutContentData({ activeWorkout });
   const {
     addExercises,
     changeRows,
@@ -210,6 +214,7 @@ function ActiveWorkoutEditExercisesContent({
         <>
           <ActiveWorkoutExerciseList
             workoutExercises={draftWorkoutExercises}
+            sets={setRows}
             exerciseById={draftExerciseById}
             isEditing
             onEnterEditMode={() => undefined}

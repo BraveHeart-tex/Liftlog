@@ -1,5 +1,5 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
-import type { WorkoutExercise } from '@/src/db/schema';
+import type { Set, WorkoutExercise } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import { ActiveWorkoutExerciseCard } from '@/src/features/workouts/components/active-workout-exercise-card';
 import { ActiveWorkoutExerciseEditList } from '@/src/features/workouts/components/active-workout-exercise-edit-list';
@@ -40,6 +40,7 @@ const listExiting = new Keyframe({
 
 interface ActiveWorkoutExerciseListProps {
   workoutExercises: WorkoutExercise[];
+  sets: Set[];
   exerciseById: Map<ExerciseListItem['id'], ExerciseListItem>;
   mode?: 'active' | 'historical' | 'historical-edit';
   onEnterEditMode: () => void;
@@ -57,6 +58,7 @@ type DisplayWorkoutExerciseRow = WorkoutExerciseWithSets & {
 
 export function ActiveWorkoutExerciseList({
   workoutExercises,
+  sets,
   exerciseById,
   mode = 'active',
   onEnterEditMode,
@@ -84,7 +86,8 @@ export function ActiveWorkoutExerciseList({
       : workoutExercises;
   const workoutExercisesWithSets = useActiveWorkoutExerciseList({
     workoutExercises: visibleWorkoutExercises,
-    exerciseById
+    exerciseById,
+    sets
   });
   const supersetBlocks = useMemo(
     () =>

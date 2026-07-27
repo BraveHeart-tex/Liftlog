@@ -105,33 +105,6 @@ function getWorkoutTemplateRecordById(
     .get();
 }
 
-export function getCompletedSetCountsForWorkoutsQuery(
-  db: DrizzleDb,
-  workoutIds: Workout['id'][]
-) {
-  const baseQuery = db
-    .select({
-      workoutId: workoutExercises.workoutId,
-      setCount: count(sets.id)
-    })
-    .from(sets)
-    .innerJoin(
-      workoutExercises,
-      eq(sets.workoutExerciseId, workoutExercises.id)
-    );
-
-  return baseQuery
-    .where(
-      and(
-        workoutIds.length > 0
-          ? inArray(workoutExercises.workoutId, workoutIds)
-          : eq(workoutExercises.workoutId, ''),
-        eq(sets.status, 'completed')
-      )
-    )
-    .groupBy(workoutExercises.workoutId);
-}
-
 export function getRecentWorkoutsQuery(db: DrizzleDb, limit: number) {
   return db
     .select()
@@ -278,6 +251,21 @@ export function getWorkoutExercisesQuery(
     .orderBy(asc(workoutExercises.order));
 }
 
+export function getWorkoutExercisesWithExercisesQuery(
+  db: DrizzleDb,
+  workoutId: Workout['id']
+) {
+  return db
+    .select({
+      workoutExercise: workoutExercises,
+      exercise: exercises
+    })
+    .from(workoutExercises)
+    .innerJoin(exercises, eq(workoutExercises.exerciseId, exercises.id))
+    .where(eq(workoutExercises.workoutId, workoutId))
+    .orderBy(asc(workoutExercises.order));
+}
+
 export function getWorkoutExerciseByIdQuery(
   db: DrizzleDb,
   id: WorkoutExercise['id']
@@ -312,6 +300,18 @@ export function getSetsForWorkoutExercisesQuery(
     .select()
     .from(sets)
     .where(inArray(sets.workoutExerciseId, workoutExerciseIds))
+    .orderBy(asc(sets.order));
+}
+
+export function getSetsForWorkoutQuery(
+  db: DrizzleDb,
+  workoutId: Workout['id']
+) {
+  return db
+    .select({ set: sets })
+    .from(workoutExercises)
+    .innerJoin(sets, eq(sets.workoutExerciseId, workoutExercises.id))
+    .where(eq(workoutExercises.workoutId, workoutId))
     .orderBy(asc(sets.order));
 }
 

@@ -1,12 +1,10 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { Workout } from '@/src/db/schema';
+import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import {
-  getExercisesByIdsQuery,
-  type ExerciseListItem
-} from '@/src/features/exercises/exercise.repository';
-import {
-  getCompletedSetCountsForWorkoutsQuery,
-  getWorkoutExercisesQuery
+  getSetsForWorkoutQuery,
+  getWorkoutExercisesQuery,
+  getWorkoutExercisesWithExercisesQuery
 } from '@/src/features/workouts/workout.repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useMemo, useState } from 'react';
@@ -25,30 +23,34 @@ export function useActiveWorkoutContent({
   const hasPreloadedExerciseRows = exerciseRows !== undefined;
   const workoutExerciseResult = useLiveWithFallback(
     getWorkoutExercisesQuery(db, activeWorkout.id),
+    [db, activeWorkout.id, hasPreloadedExerciseRows],
+    { enabled: hasPreloadedExerciseRows }
+  );
+  const joinedWorkoutExerciseResult = useLiveWithFallback(
+    getWorkoutExercisesWithExercisesQuery(db, activeWorkout.id),
+    [db, activeWorkout.id, hasPreloadedExerciseRows],
+    { enabled: !hasPreloadedExerciseRows, fallbackData: [] }
+  );
+  const setResult = useLiveWithFallback(
+    getSetsForWorkoutQuery(db, activeWorkout.id),
     [db, activeWorkout.id]
   );
-  const completedSetCountResult = useLiveWithFallback(
-    getCompletedSetCountsForWorkoutsQuery(db, [activeWorkout.id]),
-    [db, activeWorkout.id]
-  );
-  const selectedExerciseIds = useMemo(
+  const workoutExerciseRows = useMemo(
     () =>
-      workoutExerciseResult.data.map(
-        workoutExercise => workoutExercise.exerciseId
-      ),
-    [workoutExerciseResult.data]
+      hasPreloadedExerciseRows
+        ? workoutExerciseResult.data
+        : joinedWorkoutExerciseResult.data.map(row => row.workoutExercise),
+    [
+      hasPreloadedExerciseRows,
+      joinedWorkoutExerciseResult.data,
+      workoutExerciseResult.data
+    ]
   );
-  const selectedExerciseIdsKey = selectedExerciseIds.join('|');
-  const selectedExerciseResult = useLiveWithFallback(
-    getExercisesByIdsQuery(db, selectedExerciseIds),
-    [db, selectedExerciseIdsKey, hasPreloadedExerciseRows],
-    {
-      enabled: !hasPreloadedExerciseRows && selectedExerciseIds.length > 0,
-      fallbackData: []
-    }
+  const joinedExerciseRows = useMemo(
+    () => joinedWorkoutExerciseResult.data.map(row => row.exercise),
+    [joinedWorkoutExerciseResult.data]
   );
-
-  const visibleExerciseRows = exerciseRows ?? selectedExerciseResult.data;
+  const visibleExerciseRows = exerciseRows ?? joinedExerciseRows;
 
   const exerciseById = useMemo(
     () =>
@@ -57,13 +59,24 @@ export function useActiveWorkoutContent({
       ),
     [visibleExerciseRows]
   );
+  const setRows = useMemo(
+    () => setResult.data.map(row => row.set),
+    [setResult.data]
+  );
+  const completedSetCount = useMemo(
+    () => setRows.filter(set => set.status === 'completed').length,
+    [setRows]
+  );
 
   return {
     isExercisePickerOpen,
     setIsExercisePickerOpen,
-    workoutExerciseRows: workoutExerciseResult.data,
-    completedSetCount: completedSetCountResult.data[0]?.setCount ?? 0,
-    isLoadingWorkoutExercises: !workoutExerciseResult.isLive,
+    workoutExerciseRows,
+    setRows,
+    completedSetCount,
+    isLoadingWorkoutExercises: hasPreloadedExerciseRows
+      ? !workoutExerciseResult.isLive
+      : !joinedWorkoutExerciseResult.isLive,
     exerciseById
   };
 }

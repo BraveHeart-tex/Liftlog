@@ -1,38 +1,23 @@
-import { useDrizzle } from '@/src/components/database-provider';
 import type { Set, WorkoutExercise } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
-import { getSetsForWorkoutExercisesQuery } from '@/src/features/workouts/workout.repository';
-import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useMemo } from 'react';
 import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
 
 interface UseActiveWorkoutExerciseListParams {
   workoutExercises: WorkoutExercise[];
   exerciseById: Map<ExerciseListItem['id'], ExerciseListItem>;
+  sets: Set[];
 }
 
 export function useActiveWorkoutExerciseList({
   workoutExercises,
-  exerciseById
+  exerciseById,
+  sets
 }: UseActiveWorkoutExerciseListParams) {
-  const db = useDrizzle();
-  const workoutExerciseIds = useMemo(
-    () => workoutExercises.map(workoutExercise => workoutExercise.id),
-    [workoutExercises]
-  );
-  const workoutExerciseIdKey = useMemo(
-    () => workoutExerciseIds.join(','),
-    [workoutExerciseIds]
-  );
-  const setResult = useLiveWithFallback(
-    getSetsForWorkoutExercisesQuery(db, workoutExerciseIds),
-    [db, workoutExerciseIdKey]
-  );
-
   return useMemo<WorkoutExerciseWithSets[]>(() => {
     const setsByWorkoutExerciseId = new Map<WorkoutExercise['id'], Set[]>();
 
-    for (const set of setResult.data) {
+    for (const set of sets) {
       const existingSets = setsByWorkoutExerciseId.get(set.workoutExerciseId);
 
       if (existingSets) {
@@ -48,5 +33,5 @@ export function useActiveWorkoutExerciseList({
       exercise: exerciseById.get(workoutExercise.exerciseId),
       sets: setsByWorkoutExerciseId.get(workoutExercise.id) ?? []
     }));
-  }, [exerciseById, setResult.data, workoutExercises]);
+  }, [exerciseById, sets, workoutExercises]);
 }

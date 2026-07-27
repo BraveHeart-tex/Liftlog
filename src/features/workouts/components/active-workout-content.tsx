@@ -66,6 +66,7 @@ export function ActiveWorkoutContent({
     isExercisePickerOpen,
     setIsExercisePickerOpen,
     workoutExerciseRows,
+    setRows,
     completedSetCount,
     isLoadingWorkoutExercises,
     exerciseById
@@ -260,6 +261,7 @@ export function ActiveWorkoutContent({
       ) : workoutExerciseRows.length > 0 ? (
         <ActiveWorkoutExerciseList
           workoutExercises={workoutExerciseRows}
+          sets={setRows}
           exerciseById={exerciseById}
           mode={mode}
           isEditing={isEditingExercises}
