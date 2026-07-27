@@ -1,18 +1,14 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { WorkoutTemplate } from '@/src/db/schema';
-import {
-  getExercisesByIdsQuery,
-  type ExerciseListItem
-} from '@/src/features/exercises/exercise.repository';
-import { getActiveWorkoutQuery } from '@/src/features/workouts/workout.repository';
+import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
 import {
   createWorkoutFromTemplate,
   deleteWorkoutTemplate,
-  getWorkoutTemplateByIdQuery,
-  getWorkoutTemplateExercisesQuery,
+  getWorkoutTemplateDetailRowsQuery,
+  mapWorkoutTemplateDetailRows,
   updateWorkoutTemplateName
 } from '@/src/features/workouts/workout-template.repository';
-import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
+import { getActiveWorkoutQuery } from '@/src/features/workouts/workout.repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { router, type Href } from 'expo-router';
 import { useCallback, useMemo } from 'react';
@@ -23,41 +19,20 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
   const db = useDrizzle();
   const resolvedTemplateId = templateId ?? '';
 
-  const templateResult = useLiveWithFallback(
-    getWorkoutTemplateByIdQuery(db, resolvedTemplateId),
+  const templateDetailResult = useLiveWithFallback(
+    getWorkoutTemplateDetailRowsQuery(db, resolvedTemplateId),
     [db, resolvedTemplateId]
   );
-  const template = templateResult.data[0];
+  const { template, templateExerciseRows, exerciseById } = useMemo(
+    () => mapWorkoutTemplateDetailRows(templateDetailResult.data),
+    [templateDetailResult.data]
+  );
 
   const activeWorkoutResult = useLiveWithFallback(getActiveWorkoutQuery(db), [
     db
   ]);
   const activeWorkout = activeWorkoutResult.data[0];
 
-  const templateExerciseResult = useLiveWithFallback(
-    getWorkoutTemplateExercisesQuery(db, resolvedTemplateId),
-    [db, resolvedTemplateId]
-  );
-  const templateExerciseRows = templateExerciseResult.data;
-
-  const exerciseIds = useMemo(
-    () =>
-      templateExerciseRows.map(templateExercise => templateExercise.exerciseId),
-    [templateExerciseRows]
-  );
-  const exerciseIdKey = useMemo(() => exerciseIds.join(','), [exerciseIds]);
-  const exerciseResult = useLiveWithFallback(
-    getExercisesByIdsQuery(db, exerciseIds),
-    [db, exerciseIdKey]
-  );
-
-  const exerciseById = useMemo(
-    () =>
-      new Map<ExerciseListItem['id'], ExerciseListItem>(
-        exerciseResult.data.map(exercise => [exercise.id, exercise])
-      ),
-    [exerciseResult.data]
-  );
   const startWorkoutFromTemplate = useCallback(() => {
     if (!template) {
       return;
@@ -115,9 +90,7 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
     resumeWorkout,
     renameTemplate,
     removeTemplate,
-    isLoading: Boolean(templateId) && !templateResult.isLive,
-    isLoadingExercises:
-      Boolean(templateId) &&
-      (!templateExerciseResult.isLive || !exerciseResult.isLive)
+    isLoading: Boolean(templateId) && !templateDetailResult.isLive,
+    isLoadingExercises: Boolean(templateId) && !templateDetailResult.isLive
   };
 }

@@ -67,7 +67,11 @@ export default function WorkoutTemplateDetailScreen() {
     );
   }
 
-  return <WorkoutTemplateDetailLoaded detail={detail} />;
+  return (
+    <WorkoutTemplateDetailLoaded
+      detail={{ ...detail, template: detail.template }}
+    />
+  );
 }
 
 interface WorkoutTemplateDetailLoadedProps {
