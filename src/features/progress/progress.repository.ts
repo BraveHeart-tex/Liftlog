@@ -9,9 +9,11 @@ import {
   type NewPersonalRecord,
   type PersonalRecord,
   type Set,
-  type Workout
+  type Workout,
+  type WorkoutExercise
 } from '@/src/db/schema';
-import { and, asc, desc, eq, gte, inArray, lt } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { unionAll } from 'drizzle-orm/sqlite-core';
 import {
   computeEstimated1RM,
   getPersonalRecordSnapshot,
@@ -37,106 +39,213 @@ export function getPersonalRecordsByExercise(
   return getPersonalRecordsByExerciseQuery(db, exerciseId).all();
 }
 
-export function getRecentExerciseHistoryWorkoutsQuery(
-  db: DrizzleDb,
-  exerciseId: Exercise['id'],
-  limit: number,
-  beforeStartedAt?: Workout['startedAt']
-) {
-  return db
-    .selectDistinct({ workout: workouts })
-    .from(workouts)
-    .innerJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
-    .where(
-      and(
-        eq(workouts.status, 'completed'),
-        eq(workoutExercises.exerciseId, exerciseId),
-        beforeStartedAt ? lt(workouts.startedAt, beforeStartedAt) : undefined
-      )
-    )
-    .orderBy(desc(workouts.startedAt), desc(workouts.id))
-    .limit(limit);
+const TWO_MONTHS_MS = 2 * 30 * 24 * 60 * 60 * 1000;
+
+interface ExerciseHistoryQueryRow {
+  workout: Workout;
+  workoutExercise: WorkoutExercise | null;
+  set: Set | null;
+  isVisible: number;
+  isProgression: number;
 }
 
-export function getExerciseHistoryWorkoutsSinceQuery(
-  db: DrizzleDb,
-  exerciseId: Exercise['id'],
-  sinceStartedAt: Workout['startedAt'] | undefined
-) {
-  return db
-    .selectDistinct({ workout: workouts })
-    .from(workouts)
-    .innerJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
-    .where(
-      and(
-        eq(workouts.status, 'completed'),
-        eq(workoutExercises.exerciseId, exerciseId),
-        sinceStartedAt !== undefined
-          ? gte(workouts.startedAt, sinceStartedAt)
-          : eq(workouts.id, '')
-      )
-    )
-    .orderBy(desc(workouts.startedAt), desc(workouts.id));
+interface ExerciseHistoryRows {
+  visibleWorkoutRows: { workout: Workout }[];
+  progressionWorkoutRows: { workout: Workout }[];
+  setRows: { workoutId: Workout['id']; set: Set }[];
 }
 
-export function getRecentExerciseHistoryWorkouts(
-  db: DrizzleDb,
-  exerciseId: Exercise['id'],
-  limit: number,
-  beforeStartedAt?: Workout['startedAt']
-) {
-  return getRecentExerciseHistoryWorkoutsQuery(
-    db,
-    exerciseId,
-    limit,
-    beforeStartedAt
-  ).all();
+interface ExerciseHistoryQueryOptions {
+  beforeStartedAt?: Workout['startedAt'];
+  includeProgression?: boolean;
+  includeLimitProbe?: boolean;
 }
 
-export function getExerciseHistorySetsQuery(
+export function getExerciseHistoryQuery(
   db: DrizzleDb,
   exerciseId: Exercise['id'],
-  workoutIds: Workout['id'][]
+  visibleWorkoutLimit: number,
+  options: ExerciseHistoryQueryOptions = {}
 ) {
-  if (workoutIds.length === 0) {
-    return db
-      .select({
-        workoutId: workoutExercises.workoutId,
-        set: sets
+  const {
+    beforeStartedAt,
+    includeProgression = false,
+    includeLimitProbe = false
+  } = options;
+  const visibleWorkoutIds = db.$with('visible_exercise_history_workouts').as(
+    db
+      .selectDistinct({
+        id: workouts.id,
+        startedAt: workouts.startedAt
       })
-      .from(sets)
-      .innerJoin(
-        workoutExercises,
-        eq(sets.workoutExerciseId, workoutExercises.id)
+      .from(workouts)
+      .innerJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
+      .where(
+        and(
+          eq(workouts.status, 'completed'),
+          eq(workoutExercises.exerciseId, exerciseId),
+          beforeStartedAt !== undefined
+            ? sql`${workouts.startedAt} < ${beforeStartedAt}`
+            : undefined
+        )
       )
-      .where(eq(workoutExercises.id, ''));
-  }
+      .orderBy(desc(workouts.startedAt), desc(workouts.id))
+      .limit(visibleWorkoutLimit + (includeLimitProbe ? 1 : 0))
+  );
+  const visiblePageWorkoutIds = db
+    .$with('visible_exercise_history_page_workouts')
+    .as(
+      db
+        .select({
+          id: visibleWorkoutIds.id,
+          startedAt: visibleWorkoutIds.startedAt
+        })
+        .from(visibleWorkoutIds)
+        .orderBy(desc(visibleWorkoutIds.startedAt), desc(visibleWorkoutIds.id))
+        .limit(visibleWorkoutLimit)
+    );
+  const latestVisibleStartedAt = db
+    .select({ startedAt: visibleWorkoutIds.startedAt })
+    .from(visibleWorkoutIds)
+    .orderBy(desc(visibleWorkoutIds.startedAt), desc(visibleWorkoutIds.id))
+    .limit(1);
+  const progressionWorkoutIds = db
+    .$with('progression_exercise_history_workouts')
+    .as(
+      db
+        .selectDistinct({
+          id: workouts.id,
+          startedAt: workouts.startedAt
+        })
+        .from(workouts)
+        .innerJoin(
+          workoutExercises,
+          eq(workouts.id, workoutExercises.workoutId)
+        )
+        .where(
+          and(
+            eq(workouts.status, 'completed'),
+            eq(workoutExercises.exerciseId, exerciseId),
+            includeProgression
+              ? sql`${workouts.startedAt} >= (${latestVisibleStartedAt}) - ${TWO_MONTHS_MS}`
+              : eq(workouts.id, '')
+          )
+        )
+    );
+  const selectedWorkoutIds = db.$with('selected_exercise_history_workouts').as(
+    unionAll(
+      db
+        .select({
+          id: visibleWorkoutIds.id,
+          isVisible: sql<number>`1`.as('is_visible'),
+          isProgression: sql<number>`0`.as('is_progression'),
+          loadSets: sql<number>`0`.as('load_sets')
+        })
+        .from(visibleWorkoutIds),
+      db
+        .select({
+          id: visiblePageWorkoutIds.id,
+          isVisible: sql<number>`1`.as('is_visible'),
+          isProgression: sql<number>`0`.as('is_progression'),
+          loadSets: sql<number>`1`.as('load_sets')
+        })
+        .from(visiblePageWorkoutIds),
+      db
+        .select({
+          id: progressionWorkoutIds.id,
+          isVisible: sql<number>`0`.as('is_visible'),
+          isProgression: sql<number>`1`.as('is_progression'),
+          loadSets: sql<number>`1`.as('load_sets')
+        })
+        .from(progressionWorkoutIds)
+    )
+  );
+  const uniqueSelectedWorkoutIds = db
+    .$with('unique_selected_exercise_history_workouts')
+    .as(
+      db
+        .select({
+          id: selectedWorkoutIds.id,
+          isVisible: sql<number>`max(${selectedWorkoutIds.isVisible})`.as(
+            'is_visible'
+          ),
+          isProgression:
+            sql<number>`max(${selectedWorkoutIds.isProgression})`.as(
+              'is_progression'
+            ),
+          loadSets: sql<number>`max(${selectedWorkoutIds.loadSets})`.as(
+            'load_sets'
+          )
+        })
+        .from(selectedWorkoutIds)
+        .groupBy(selectedWorkoutIds.id)
+    );
 
   return db
-    .select({
-      workoutId: workoutExercises.workoutId,
-      set: sets
-    })
-    .from(sets)
-    .innerJoin(
-      workoutExercises,
-      eq(sets.workoutExerciseId, workoutExercises.id)
+    .with(
+      visibleWorkoutIds,
+      visiblePageWorkoutIds,
+      progressionWorkoutIds,
+      selectedWorkoutIds,
+      uniqueSelectedWorkoutIds
     )
-    .where(
+    .select({
+      workout: workouts,
+      workoutExercise: workoutExercises,
+      set: sets,
+      isVisible: uniqueSelectedWorkoutIds.isVisible,
+      isProgression: uniqueSelectedWorkoutIds.isProgression
+    })
+    .from(uniqueSelectedWorkoutIds)
+    .innerJoin(workouts, eq(workouts.id, uniqueSelectedWorkoutIds.id))
+    .leftJoin(
+      workoutExercises,
       and(
-        inArray(workoutExercises.workoutId, workoutIds),
+        eq(workoutExercises.workoutId, workouts.id),
         eq(workoutExercises.exerciseId, exerciseId)
       )
     )
-    .orderBy(asc(workoutExercises.order), asc(sets.order));
+    .leftJoin(
+      sets,
+      and(
+        eq(sets.workoutExerciseId, workoutExercises.id),
+        eq(uniqueSelectedWorkoutIds.loadSets, 1)
+      )
+    )
+    .orderBy(
+      desc(workouts.startedAt),
+      desc(workouts.id),
+      asc(workoutExercises.order),
+      asc(sets.order)
+    );
 }
 
-export function getExerciseHistorySets(
-  db: DrizzleDb,
-  exerciseId: Exercise['id'],
-  workoutIds: Workout['id'][]
-) {
-  return getExerciseHistorySetsQuery(db, exerciseId, workoutIds).all();
+export function mapExerciseHistoryRows(
+  rows: ExerciseHistoryQueryRow[]
+): ExerciseHistoryRows {
+  const visibleWorkoutRows: { workout: Workout }[] = [];
+  const progressionWorkoutRows: { workout: Workout }[] = [];
+  const setRows: { workoutId: Workout['id']; set: Set }[] = [];
+  const visibleWorkoutIds = new Set<Workout['id']>();
+  const progressionWorkoutIds = new Set<Workout['id']>();
+
+  for (const row of rows) {
+    if (row.isVisible && !visibleWorkoutIds.has(row.workout.id)) {
+      visibleWorkoutIds.add(row.workout.id);
+      visibleWorkoutRows.push({ workout: row.workout });
+    }
+
+    if (row.isProgression && !progressionWorkoutIds.has(row.workout.id)) {
+      progressionWorkoutIds.add(row.workout.id);
+      progressionWorkoutRows.push({ workout: row.workout });
+    }
+
+    if (row.set) {
+      setRows.push({ workoutId: row.workout.id, set: row.set });
+    }
+  }
+
+  return { visibleWorkoutRows, progressionWorkoutRows, setRows };
 }
 
 export function buildExerciseHistory(

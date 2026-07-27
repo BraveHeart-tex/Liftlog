@@ -12,8 +12,8 @@ import {
 } from '@/src/features/exercises/exercise.repository';
 import {
   buildExerciseHistory,
-  getExerciseHistorySetsQuery,
-  getRecentExerciseHistoryWorkoutsQuery
+  getExerciseHistoryQuery,
+  mapExerciseHistoryRows
 } from '@/src/features/progress/progress.repository';
 import {
   TRACKING_TYPE_DEFINITIONS,
@@ -226,12 +226,10 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     { enabled: isCustomExercise }
   );
 
-  const workoutResult = useLiveWithFallback(
-    getRecentExerciseHistoryWorkoutsQuery(
-      db,
-      resolvedExerciseId,
-      EXERCISE_HISTORY_LIMIT
-    ),
+  const historyResult = useLiveWithFallback(
+    getExerciseHistoryQuery(db, resolvedExerciseId, EXERCISE_HISTORY_LIMIT, {
+      includeLimitProbe: false
+    }),
     [db, resolvedExerciseId, hasExercise],
     {
       deferInitialRead: true,
@@ -240,27 +238,15 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     }
   );
 
-  const workoutRows = workoutResult.data;
-  const workoutIds = useMemo(
-    () => Array.from(new Set(workoutRows.map(row => row.workout.id))),
-    [workoutRows]
+  const historyRows = useMemo(
+    () => mapExerciseHistoryRows(historyResult.data),
+    [historyResult.data]
   );
-
-  const workoutIdKey = useMemo(() => workoutIds.join(','), [workoutIds]);
-
-  const setResult = useLiveWithFallback(
-    getExerciseHistorySetsQuery(db, resolvedExerciseId, workoutIds),
-    [db, resolvedExerciseId, workoutIdKey],
-    {
-      deferInitialRead: true,
-      enabled: hasExercise && workoutIds.length > 0,
-      waitForInteractions: true
-    }
-  );
+  const workoutRows = historyRows.visibleWorkoutRows;
 
   const fullHistory = useMemo(
     () =>
-      buildExerciseHistory(workoutRows, setResult.data)
+      buildExerciseHistory(workoutRows, historyRows.setRows)
         .map(entry => {
           const completedSets = entry.sets.filter(
             set => set.status === 'completed'
@@ -273,7 +259,7 @@ export function useExerciseDetail(exerciseId: string | undefined) {
           };
         })
         .filter(entry => entry.sets.length > 0),
-    [setResult.data, trackingType, workoutRows]
+    [historyRows.setRows, trackingType, workoutRows]
   );
 
   const history = useMemo(() => fullHistory.slice(0, 3), [fullHistory]);
@@ -331,8 +317,6 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     weightUnit,
     trackingType,
     isLoading: Boolean(exerciseId) && !exercise && !exerciseResult.isLive,
-    isStatsLoading:
-      hasExercise &&
-      (!workoutResult.isLive || (workoutIds.length > 0 && !setResult.isLive))
+    isStatsLoading: hasExercise && !historyResult.isLive
   };
 }

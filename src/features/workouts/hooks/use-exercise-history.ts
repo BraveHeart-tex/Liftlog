@@ -3,10 +3,9 @@ import type { Exercise, Set } from '@/src/db/schema';
 import { getExerciseByIdQuery } from '@/src/features/exercises/exercise.repository';
 import {
   buildExerciseHistory,
-  getExerciseHistorySetsQuery,
-  getExerciseHistoryWorkoutsSinceQuery,
+  getExerciseHistoryQuery,
   getPersonalRecordsByExerciseQuery,
-  getRecentExerciseHistoryWorkoutsQuery
+  mapExerciseHistoryRows
 } from '@/src/features/progress/progress.repository';
 import {
   getSetScore,
@@ -45,8 +44,7 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
   const [loadMoreError, setLoadMoreError] = useState<Error>();
   const loadMoreRequestRef = useRef<
     | {
-        workoutUpdatedAt: Date | undefined;
-        setUpdatedAt: Date | undefined;
+        historyUpdatedAt: Date | undefined;
       }
     | undefined
   >(undefined);
@@ -74,52 +72,30 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
     () => new Set(prResult.data.map(personalRecord => personalRecord.setId)),
     [prResult.data]
   );
-  const visibleWorkoutResult = useLiveWithFallback(
-    getRecentExerciseHistoryWorkoutsQuery(
-      db,
-      exerciseId,
-      visibleWorkoutLimit + 1
-    ),
+  const historyResult = useLiveWithFallback(
+    getExerciseHistoryQuery(db, exerciseId, visibleWorkoutLimit, {
+      includeLimitProbe: true,
+      includeProgression: true
+    }),
     [db, exerciseId, paginationRetryKey, visibleWorkoutLimit]
   );
-  const hasMoreHistory = visibleWorkoutResult.data.length > visibleWorkoutLimit;
+  const historyRows = useMemo(
+    () => mapExerciseHistoryRows(historyResult.data),
+    [historyResult.data]
+  );
+  const hasMoreHistory =
+    historyRows.visibleWorkoutRows.length > visibleWorkoutLimit;
   const visibleWorkoutRows = useMemo(
-    () => visibleWorkoutResult.data.slice(0, visibleWorkoutLimit),
-    [visibleWorkoutLimit, visibleWorkoutResult.data]
+    () => historyRows.visibleWorkoutRows.slice(0, visibleWorkoutLimit),
+    [historyRows.visibleWorkoutRows, visibleWorkoutLimit]
   );
 
   const visibleWorkoutIds = useMemo(
     () => Array.from(new Set(visibleWorkoutRows.map(row => row.workout.id))),
     [visibleWorkoutRows]
   );
-  const latestWorkoutStartedAt = visibleWorkoutRows[0]?.workout.startedAt;
-  const oldestProgressionTimestamp =
-    latestWorkoutStartedAt !== undefined
-      ? latestWorkoutStartedAt - MONTH_MS * 2
-      : undefined;
-  const progressionWorkoutResult = useLiveWithFallback(
-    getExerciseHistoryWorkoutsSinceQuery(
-      db,
-      exerciseId,
-      oldestProgressionTimestamp
-    ),
-    [db, exerciseId, oldestProgressionTimestamp]
-  );
-  const progressionWorkoutRows = progressionWorkoutResult.data;
-  const progressionWorkoutIds = useMemo(
-    () =>
-      Array.from(new Set(progressionWorkoutRows.map(row => row.workout.id))),
-    [progressionWorkoutRows]
-  );
-  const workoutIds = useMemo(
-    () => Array.from(new Set([...visibleWorkoutIds, ...progressionWorkoutIds])),
-    [progressionWorkoutIds, visibleWorkoutIds]
-  );
-  const workoutIdKey = useMemo(() => workoutIds.join(','), [workoutIds]);
-  const setResult = useLiveWithFallback(
-    getExerciseHistorySetsQuery(db, exerciseId, workoutIds),
-    [db, exerciseId, paginationRetryKey, workoutIdKey]
-  );
+  const progressionWorkoutRows = historyRows.progressionWorkoutRows;
+  const setRows = historyRows.setRows;
 
   useEffect(() => {
     const activeRequest = loadMoreRequestRef.current;
@@ -128,7 +104,7 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
       return;
     }
 
-    const paginationError = visibleWorkoutResult.error ?? setResult.error;
+    const paginationError = historyResult.error;
 
     if (paginationError) {
       setLoadMoreError(paginationError);
@@ -140,22 +116,15 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
 
     if (
       didExerciseHistoryPageFinish(
-        activeRequest.workoutUpdatedAt,
-        activeRequest.setUpdatedAt,
-        visibleWorkoutResult.updatedAt,
-        setResult.updatedAt
+        activeRequest.historyUpdatedAt,
+        historyResult.updatedAt
       )
     ) {
       setLoadMoreError(undefined);
       setIsLoadingMore(false);
       loadMoreRequestRef.current = undefined;
     }
-  }, [
-    setResult.error,
-    setResult.updatedAt,
-    visibleWorkoutResult.error,
-    visibleWorkoutResult.updatedAt
-  ]);
+  }, [historyResult.error, historyResult.updatedAt]);
 
   const loadMore = useCallback(() => {
     if (
@@ -170,20 +139,13 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
     }
 
     loadMoreRequestRef.current = {
-      workoutUpdatedAt: visibleWorkoutResult.updatedAt,
-      setUpdatedAt: setResult.updatedAt
+      historyUpdatedAt: historyResult.updatedAt
     };
     setIsLoadingMore(true);
     setVisibleWorkoutLimit(limit =>
       getNextExerciseHistoryLimit(limit, HISTORY_PAGE_SIZE)
     );
-  }, [
-    hasMoreHistory,
-    isLoadingMore,
-    loadMoreError,
-    setResult.updatedAt,
-    visibleWorkoutResult.updatedAt
-  ]);
+  }, [hasMoreHistory, isLoadingMore, loadMoreError, historyResult.updatedAt]);
 
   const retryLoadMore = useCallback(() => {
     if (isLoadingMore || loadMoreRequestRef.current || !loadMoreError) {
@@ -191,24 +153,18 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
     }
 
     loadMoreRequestRef.current = {
-      workoutUpdatedAt: visibleWorkoutResult.updatedAt,
-      setUpdatedAt: setResult.updatedAt
+      historyUpdatedAt: historyResult.updatedAt
     };
     setLoadMoreError(undefined);
     setIsLoadingMore(true);
     setPaginationRetryKey(key => key + 1);
-  }, [
-    isLoadingMore,
-    loadMoreError,
-    setResult.updatedAt,
-    visibleWorkoutResult.updatedAt
-  ]);
+  }, [isLoadingMore, loadMoreError, historyResult.updatedAt]);
 
   const history = useMemo(
     () =>
       buildExerciseHistory(
         visibleWorkoutRows,
-        setResult.data.filter(row => visibleWorkoutIds.includes(row.workoutId))
+        setRows.filter(row => visibleWorkoutIds.includes(row.workoutId))
       )
         .map(historyEntry => ({
           ...historyEntry,
@@ -216,7 +172,7 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
         }))
         .filter(historyEntry => historyEntry.sets.length > 0)
         .slice(0, visibleWorkoutLimit),
-    [setResult.data, visibleWorkoutIds, visibleWorkoutLimit, visibleWorkoutRows]
+    [setRows, visibleWorkoutIds, visibleWorkoutLimit, visibleWorkoutRows]
   );
   const monthlyProgression = useMemo(() => {
     const latestStartedAt = progressionWorkoutRows[0]?.workout.startedAt;
@@ -229,7 +185,7 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
     const previousWindowStart = latestStartedAt - MONTH_MS * 2;
     const setsByWorkoutId = new Map<string, Set[]>();
 
-    for (const row of setResult.data) {
+    for (const row of setRows) {
       const existingSets = setsByWorkoutId.get(row.workoutId);
 
       if (existingSets) {
@@ -267,7 +223,7 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
     return {
       delta: currentBestScore - previousBestScore
     };
-  }, [progressionWorkoutRows, setResult.data, trackingType]);
+  }, [progressionWorkoutRows, setRows, trackingType]);
 
   return {
     history,

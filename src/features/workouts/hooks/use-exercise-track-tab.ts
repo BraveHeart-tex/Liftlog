@@ -1,8 +1,8 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import {
   buildExerciseHistory,
-  getExerciseHistorySets,
-  getRecentExerciseHistoryWorkouts
+  getExerciseHistoryQuery,
+  mapExerciseHistoryRows
 } from '@/src/features/progress/progress.repository';
 import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
@@ -48,21 +48,21 @@ export function useExerciseTrackTab(
     refreshRequestIdRef.current = requestId;
 
     try {
-      const workoutRows = getRecentExerciseHistoryWorkouts(
-        db,
-        exerciseId,
-        PROGRESSION_HISTORY_LIMIT,
-        historyBeforeStartedAt
+      const historyRows = mapExerciseHistoryRows(
+        getExerciseHistoryQuery(db, exerciseId, PROGRESSION_HISTORY_LIMIT, {
+          beforeStartedAt: historyBeforeStartedAt
+        }).all()
       );
-      const workoutIds = workoutRows.map(row => row.workout.id);
-      const setRows = getExerciseHistorySets(db, exerciseId, workoutIds);
 
       if (!isMountedRef.current || refreshRequestIdRef.current !== requestId) {
         return;
       }
 
       setHistory(
-        buildExerciseHistory(workoutRows, setRows)
+        buildExerciseHistory(
+          historyRows.visibleWorkoutRows,
+          historyRows.setRows
+        )
           .map(entry => ({
             ...entry,
             sets: getCompletedSets(entry.sets)

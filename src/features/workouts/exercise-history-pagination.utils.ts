@@ -24,15 +24,8 @@ export function getNextExerciseHistoryLimit(
 }
 
 export function didExerciseHistoryPageFinish(
-  previousWorkoutUpdatedAt: Date | undefined,
-  previousSetUpdatedAt: Date | undefined,
-  workoutUpdatedAt: Date | undefined,
-  setUpdatedAt: Date | undefined
+  previousUpdatedAt: Date | undefined,
+  updatedAt: Date | undefined
 ) {
-  return Boolean(
-    workoutUpdatedAt &&
-    workoutUpdatedAt !== previousWorkoutUpdatedAt &&
-    setUpdatedAt &&
-    setUpdatedAt !== previousSetUpdatedAt
-  );
+  return Boolean(updatedAt && updatedAt !== previousUpdatedAt);
 }
