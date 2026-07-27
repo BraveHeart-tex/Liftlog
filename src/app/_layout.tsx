@@ -5,10 +5,13 @@ import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { bootstrapThemeColorScheme } from '@/src/theme/bootstrap-theme';
 import { appFontAssets } from '@/src/theme/fonts';
 import {
+  expoRouterIntegration,
   init as initSentry,
   mobileReplayIntegration,
+  reactNativeTracingIntegration,
   wrap as wrapWithSentry
 } from '@sentry/react-native';
+
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { hideAsync, preventAutoHideAsync } from 'expo-splash-screen';
@@ -16,18 +19,22 @@ import { useCallback, useEffect, useState } from 'react';
 
 initSentry({
   dsn: 'https://1bdaf14c00267e50ae9ecee83e794a69@o4507100890726400.ingest.de.sentry.io/4511688205467728',
-
   sendDefaultPii: false,
-
-  // Enable Logs
   enableLogs: false,
-
-  // Configure Session Replay
-  replaysSessionSampleRate: 0.1,
+  tracesSampleRate: __DEV__ ? 1 : 0.1,
+  enableAppStartTracking: true,
+  enableNativeFramesTracking: true,
+  enableStallTracking: true,
+  enableUserInteractionTracing: true,
+  replaysSessionSampleRate: __DEV__ ? 1 : 0.01,
   replaysOnErrorSampleRate: 1,
-  integrations: [mobileReplayIntegration()],
-
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  integrations: [
+    expoRouterIntegration({
+      enableTimeToInitialDisplay: true
+    }),
+    reactNativeTracingIntegration(),
+    mobileReplayIntegration()
+  ],
   spotlight: __DEV__
 });
 
