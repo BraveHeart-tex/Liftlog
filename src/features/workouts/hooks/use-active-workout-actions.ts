@@ -1,10 +1,10 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { NewExercise, Workout, WorkoutExercise } from '@/src/db/schema';
+import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import {
-  createExercise,
-  type ExerciseListItem
-} from '@/src/features/exercises/exercise.repository';
-import { createWorkoutExercise } from '@/src/features/workouts/workout.repository';
+  addExerciseToWorkout,
+  createCustomExerciseAndAddToWorkout
+} from '@/src/features/workouts/workout.repository';
 import { useCallback } from 'react';
 
 interface UseActiveWorkoutActionsParams {
@@ -39,12 +39,7 @@ export function useActiveWorkoutActions({
       }
 
       setIsExercisePickerOpen(false);
-      createWorkoutExercise(db, {
-        workoutId: activeWorkout.id,
-        exerciseId: exercise.id,
-        order: workoutExerciseRows.length,
-        notes: null
-      });
+      addExerciseToWorkout(db, activeWorkout.id, exercise.id);
     },
     [
       activeWorkout.id,
@@ -61,26 +56,17 @@ export function useActiveWorkoutActions({
         return null;
       }
 
-      const createdExercise = createExercise(db, exercise);
-
-      createWorkoutExercise(db, {
-        workoutId: activeWorkout.id,
-        exerciseId: createdExercise.id,
-        order: workoutExerciseRows.length,
-        notes: null
-      });
+      const { exercise: createdExercise } = createCustomExerciseAndAddToWorkout(
+        db,
+        activeWorkout.id,
+        exercise
+      );
 
       setIsExercisePickerOpen(false);
 
       return createdExercise;
     },
-    [
-      activeWorkout.id,
-      db,
-      isLoadingWorkoutExercises,
-      setIsExercisePickerOpen,
-      workoutExerciseRows.length
-    ]
+    [activeWorkout.id, db, isLoadingWorkoutExercises, setIsExercisePickerOpen]
   );
 
   return {

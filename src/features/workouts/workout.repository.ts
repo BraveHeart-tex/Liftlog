@@ -7,14 +7,15 @@ import {
   workoutTemplateExercises,
   workoutTemplates,
   type Exercise,
+  type NewExercise,
   type NewSet,
   type NewWorkout,
-  type NewWorkoutExercise,
   type Set,
   type Workout,
   type WorkoutExercise,
   type WorkoutTemplate
 } from '@/src/db/schema';
+import { createExercise } from '@/src/features/exercises/exercise.repository';
 import { toLocalDateKey } from '@/src/lib/utils/date.utils';
 import { formatWorkoutName } from '@/src/features/workouts/workout-display.utils';
 import {
@@ -960,11 +961,100 @@ export function saveHistoricalWorkoutEditDraft(
   };
 }
 
-export function createWorkoutExercise(
+function requireWorkoutAllowsExerciseChanges(
   db: DrizzleDb,
-  data: NewWorkoutExercise
+  workoutId: Workout['id']
+): void {
+  const workout = db
+    .select({ id: workouts.id })
+    .from(workouts)
+    .where(
+      and(
+        eq(workouts.id, workoutId),
+        inArray(workouts.status, [
+          'in_progress',
+          HISTORICAL_WORKOUT_DRAFT_STATUS,
+          HISTORICAL_WORKOUT_EDIT_DRAFT_STATUS
+        ])
+      )
+    )
+    .get();
+
+  if (!workout) {
+    throw new Error('Workout does not exist or cannot be edited.');
+  }
+}
+
+function insertWorkoutExerciseAtNextOrder(
+  db: DrizzleDb,
+  workoutId: Workout['id'],
+  exerciseId: Exercise['id']
 ): WorkoutExercise {
-  return db.insert(workoutExercises).values(data).returning().get();
+  const existingWorkoutExercise = db
+    .select()
+    .from(workoutExercises)
+    .where(
+      and(
+        eq(workoutExercises.workoutId, workoutId),
+        eq(workoutExercises.exerciseId, exerciseId)
+      )
+    )
+    .limit(1)
+    .get();
+
+  if (existingWorkoutExercise) {
+    return existingWorkoutExercise;
+  }
+
+  const lastWorkoutExercise = db
+    .select({ order: workoutExercises.order })
+    .from(workoutExercises)
+    .where(eq(workoutExercises.workoutId, workoutId))
+    .orderBy(desc(workoutExercises.order))
+    .limit(1)
+    .get();
+
+  return db
+    .insert(workoutExercises)
+    .values({
+      workoutId,
+      exerciseId,
+      order: (lastWorkoutExercise?.order ?? -1) + 1,
+      notes: null
+    })
+    .returning()
+    .get();
+}
+
+export function addExerciseToWorkout(
+  db: DrizzleDb,
+  workoutId: Workout['id'],
+  exerciseId: Exercise['id']
+): WorkoutExercise {
+  return db.transaction(tx => {
+    requireWorkoutAllowsExerciseChanges(tx, workoutId);
+
+    return insertWorkoutExerciseAtNextOrder(tx, workoutId, exerciseId);
+  });
+}
+
+export function createCustomExerciseAndAddToWorkout(
+  db: DrizzleDb,
+  workoutId: Workout['id'],
+  data: NewExercise
+): { exercise: Exercise; workoutExercise: WorkoutExercise } {
+  return db.transaction(tx => {
+    requireWorkoutAllowsExerciseChanges(tx, workoutId);
+
+    const exercise = createExercise(tx, data);
+    const workoutExercise = insertWorkoutExerciseAtNextOrder(
+      tx,
+      workoutId,
+      exercise.id
+    );
+
+    return { exercise, workoutExercise };
+  });
 }
 
 export function saveActiveWorkoutExerciseDraft(

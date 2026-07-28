@@ -60,3 +60,5 @@ app-example
 .env.local
 
 .design-reviews
+
+.pnpm-store/
