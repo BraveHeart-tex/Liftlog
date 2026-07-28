@@ -16,8 +16,9 @@ import {
   type WorkoutTemplate
 } from '@/src/db/schema';
 import { createExercise } from '@/src/features/exercises/exercise.repository';
-import { toLocalDateKey } from '@/src/lib/utils/date.utils';
+import { normalizeSupersetRows } from '@/src/features/workouts/superset.utils';
 import { formatWorkoutName } from '@/src/features/workouts/workout-display.utils';
+import { toLocalDateKey } from '@/src/lib/utils/date.utils';
 import {
   and,
   asc,
@@ -32,7 +33,6 @@ import {
   sql
 } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
-import { normalizeSupersetRows } from '@/src/features/workouts/superset.utils';
 
 export const HISTORICAL_WORKOUT_DRAFT_STATUS = 'historical_draft';
 
@@ -145,7 +145,8 @@ export function getActiveWorkoutQuery(db: DrizzleDb) {
     .select()
     .from(workouts)
     .where(eq(workouts.status, 'in_progress'))
-    .orderBy(desc(workouts.startedAt));
+    .orderBy(desc(workouts.startedAt))
+    .limit(1);
 }
 
 export function getActiveWorkoutForRestTimerNotification(
