@@ -2,6 +2,7 @@ import { toLocalDateKey } from '@/src/lib/utils/date.utils';
 import { generateUuid } from '@/src/lib/utils/uuid.utils';
 import {
   type AnySQLiteColumn,
+  foreignKey,
   index,
   integer,
   real,
@@ -103,9 +104,7 @@ export const workoutTemplates = sqliteTable(
       .primaryKey()
       .$defaultFn(() => generateUuid()),
     name: text('name').notNull(),
-    sourceWorkoutId: text('source_workout_id').references(() => workouts.id, {
-      onDelete: 'set null'
-    }),
+    sourceWorkoutId: text('source_workout_id'),
     createdAt: integer('created_at')
       .notNull()
       .$defaultFn(() => Date.now()),
@@ -114,6 +113,11 @@ export const workoutTemplates = sqliteTable(
       .$defaultFn(() => Date.now())
   },
   table => [
+    foreignKey({
+      name: 'workout_templates_source_workout_id_fk',
+      columns: [table.sourceWorkoutId],
+      foreignColumns: [workouts.id]
+    }).onDelete('set null'),
     index('workout_templates_source_workout_id_idx').on(table.sourceWorkoutId),
     index('workout_templates_updated_at_idx').on(table.updatedAt),
     index('workout_templates_name_idx').on(table.name)

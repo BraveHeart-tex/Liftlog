@@ -1,9 +1,9 @@
 import { DatabaseErrorBoundary } from '@/src/components/database-error-boundary';
 import {
-  configureDatabase,
   createDrizzleDb,
   databaseName,
   databaseOptions,
+  runDatabaseMigrations,
   type DrizzleDb
 } from '@/src/db/client';
 import migrations from '@/src/db/migrations/migrations';
@@ -52,38 +52,11 @@ function DrizzleProvider({ children, onReady }: DrizzleProviderProps) {
   );
 }
 
-interface ForeignKeyViolation {
-  table: string;
-  rowid: number | null;
-  parent: string;
-  fkid: number;
-}
-
 async function migrateAsync(sqliteDb: SQLiteDatabase) {
-  configureDatabase(sqliteDb);
-
   const drizzleDb = createDrizzleDb(sqliteDb);
 
   try {
-    // Must run before Drizzle starts its migration transaction.
-    await sqliteDb.execAsync('PRAGMA foreign_keys = OFF;');
-
-    try {
-      await migrate(drizzleDb, migrations);
-    } finally {
-      // Always restore enforcement, including after migration failure.
-      await sqliteDb.execAsync('PRAGMA foreign_keys = ON;');
-    }
-
-    const violations = await sqliteDb.getAllAsync<ForeignKeyViolation>(
-      'PRAGMA foreign_key_check;'
-    );
-
-    if (violations.length > 0) {
-      throw new Error(
-        `Foreign key violations after migration: ${JSON.stringify(violations)}`
-      );
-    }
+    await runDatabaseMigrations(sqliteDb, () => migrate(drizzleDb, migrations));
   } catch (error) {
     console.error('Database migration failed', error);
 

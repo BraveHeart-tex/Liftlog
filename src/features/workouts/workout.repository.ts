@@ -678,22 +678,7 @@ export function updateWorkoutName(
 }
 
 export function deleteWorkout(db: DrizzleDb, id: Workout['id']): boolean {
-  const existingWorkout = getWorkoutRecordById(db, id);
-
-  if (!existingWorkout) {
-    return false;
-  }
-
-  db.transaction(tx => {
-    tx.update(workoutTemplates)
-      .set({ sourceWorkoutId: null })
-      .where(eq(workoutTemplates.sourceWorkoutId, id))
-      .run();
-
-    tx.delete(workouts).where(eq(workouts.id, id)).run();
-  });
-
-  return true;
+  return db.delete(workouts).where(eq(workouts.id, id)).run().changes > 0;
 }
 
 export function completeWorkout(db: DrizzleDb, id: Workout['id']): void {
