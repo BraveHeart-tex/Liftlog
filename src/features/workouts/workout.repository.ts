@@ -755,15 +755,26 @@ export function saveHistoricalWorkoutDraft(
       return;
     }
 
-    completedSetRows.forEach((row, index) => {
-      tx.update(sets)
-        .set({
-          completedAt:
-            existingWorkout.startedAt + (index + 1) * HISTORICAL_SET_INTERVAL_MS
-        })
-        .where(eq(sets.id, row.setId))
-        .run();
-    });
+    tx.update(sets)
+      .set({
+        completedAt: sql`CASE ${sets.id} ${sql.join(
+          completedSetRows.map(
+            (row, index) =>
+              sql`WHEN ${row.setId} THEN ${
+                existingWorkout.startedAt +
+                (index + 1) * HISTORICAL_SET_INTERVAL_MS
+              }`
+          ),
+          sql` `
+        )} END`
+      })
+      .where(
+        inArray(
+          sets.id,
+          completedSetRows.map(row => row.setId)
+        )
+      )
+      .run();
 
     savedWorkout = tx
       .update(workouts)
