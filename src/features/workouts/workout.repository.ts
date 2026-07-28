@@ -86,13 +86,6 @@ export class ActiveWorkoutExerciseDraftConflictError extends Error {
   }
 }
 
-function getWorkoutRecordById(
-  db: DrizzleDb,
-  id: Workout['id']
-): Workout | undefined {
-  return db.select().from(workouts).where(eq(workouts.id, id)).get();
-}
-
 function getSetRecordById(db: DrizzleDb, id: Set['id']): Set | undefined {
   return db.select().from(sets).where(eq(sets.id, id)).get();
 }
@@ -682,19 +675,12 @@ export function deleteWorkout(db: DrizzleDb, id: Workout['id']): boolean {
 }
 
 export function completeWorkout(db: DrizzleDb, id: Workout['id']): void {
-  const existingWorkout = getWorkoutRecordById(db, id);
-
-  if (!existingWorkout) {
-    return;
-  }
-
   db.update(workouts)
     .set({
       status: 'completed',
-      dateKey: toLocalDateKey(existingWorkout.startedAt),
       completedAt: Date.now()
     })
-    .where(eq(workouts.id, id))
+    .where(and(eq(workouts.id, id), eq(workouts.status, 'in_progress')))
     .run();
 }
 
