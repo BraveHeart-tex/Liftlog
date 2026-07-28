@@ -41,21 +41,10 @@ export function useActiveWorkoutExercisePicker({
       deferInitialRead: true
     }
   );
-  const recentExerciseIds = useMemo(() => {
-    const seenExerciseIds = new Set<ExerciseListItem['id']>();
-    const exerciseIds: ExerciseListItem['id'][] = [];
-
-    for (const row of recentExerciseRowResult.data) {
-      if (seenExerciseIds.has(row.exerciseId)) {
-        continue;
-      }
-
-      seenExerciseIds.add(row.exerciseId);
-      exerciseIds.push(row.exerciseId);
-    }
-
-    return exerciseIds;
-  }, [recentExerciseRowResult.data]);
+  const recentExerciseIds = useMemo(
+    () => recentExerciseRowResult.data.map(row => row.exerciseId),
+    [recentExerciseRowResult.data]
+  );
 
   return {
     exerciseRows: exerciseRows ?? exerciseResult.data,

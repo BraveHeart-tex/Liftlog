@@ -115,8 +115,16 @@ export function getRecentExerciseIdsQuery(
   excludedExerciseIds: string[] = [],
   limit: number
 ) {
-  return db
-    .select({ exerciseId: workoutExercises.exerciseId })
+  const rankedExerciseUsages = db
+    .select({
+      exerciseId: workoutExercises.exerciseId,
+      startedAt: workouts.startedAt,
+      exerciseOrder: workoutExercises.order,
+      usageRank: sql<number>`row_number() over (
+            partition by ${workoutExercises.exerciseId}
+            order by ${workouts.startedAt} desc, ${workoutExercises.order} asc, ${workouts.id} desc, ${workoutExercises.id} desc
+          )`.as('usage_rank')
+    })
     .from(workoutExercises)
     .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
     .innerJoin(exercises, eq(workoutExercises.exerciseId, exercises.id))
@@ -129,7 +137,17 @@ export function getRecentExerciseIdsQuery(
           : undefined
       )
     )
-    .orderBy(desc(workouts.startedAt), asc(workoutExercises.order))
+    .as('ranked_exercise_usages');
+
+  return db
+    .select({ exerciseId: rankedExerciseUsages.exerciseId })
+    .from(rankedExerciseUsages)
+    .where(eq(rankedExerciseUsages.usageRank, 1))
+    .orderBy(
+      desc(rankedExerciseUsages.startedAt),
+      asc(rankedExerciseUsages.exerciseOrder),
+      asc(rankedExerciseUsages.exerciseId)
+    )
     .limit(limit);
 }
 
