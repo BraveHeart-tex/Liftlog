@@ -8,7 +8,12 @@ import { ActiveWorkoutDuration } from '@/src/features/workouts/components/active
 import { ActiveWorkoutStats } from '@/src/features/workouts/components/active-workout-stats';
 import { usePressScale } from '@/src/lib/animations/use-press-scale.hook';
 import { PlayIcon } from 'lucide-react-native';
-import { Animated, Pressable, View } from 'react-native';
+import {
+  Animated,
+  Pressable,
+  View,
+  type GestureResponderEvent
+} from 'react-native';
 
 interface ActiveWorkoutSummaryCardProps {
   workout: Workout & {
@@ -23,6 +28,14 @@ export const ActiveWorkoutSummaryCard = ({
   onPress
 }: ActiveWorkoutSummaryCardProps) => {
   const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();
+  const stopPressPropagation = (event: GestureResponderEvent) => {
+    event.stopPropagation();
+  };
+
+  const handleResumePress = (event: GestureResponderEvent) => {
+    event.stopPropagation();
+    onPress();
+  };
 
   return (
     <Animated.View style={scaleStyle}>
@@ -54,7 +67,9 @@ export const ActiveWorkoutSummaryCard = ({
             />
             <Button
               leftIcon={<Icon as={PlayIcon} tone="primaryForeground" />}
-              onPress={onPress}
+              onPress={handleResumePress}
+              onPressIn={stopPressPropagation}
+              onPressOut={stopPressPropagation}
             >
               Resume Workout
             </Button>
