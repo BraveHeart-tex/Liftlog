@@ -17,8 +17,11 @@ import {
   deleteCompletedSet,
   deleteWorkout,
   getRecentExerciseIdsQuery,
+  saveHistoricalWorkoutDraft,
+  saveHistoricalWorkoutEditDraft,
   updateCompletedSet
 } from '@/src/features/workouts/workout.repository';
+import { rebuildPersonalRecordsForExercises } from '@/src/features/progress/progress.repository';
 import { eq } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
 import type { SQLiteDatabase } from 'expo-sqlite';
@@ -221,6 +224,100 @@ function rejectPersonalRecordRebuilds(nodeClient: NodeSQLiteDatabase) {
       SELECT RAISE(ABORT, 'unexpected personal record rebuild');
     END;
   `);
+}
+
+function seedHistoricalExercises(db: DrizzleDb) {
+  db.insert(exercises)
+    .values([
+      {
+        id: 'exercise-a',
+        name: 'Exercise A',
+        category: 'other',
+        trackingType: 'reps'
+      },
+      {
+        id: 'exercise-b',
+        name: 'Exercise B',
+        category: 'other',
+        trackingType: 'reps'
+      }
+    ])
+    .run();
+}
+
+function insertHistoricalWorkout(
+  db: DrizzleDb,
+  {
+    id,
+    status,
+    reps,
+    sourceWorkoutId
+  }: {
+    id: string;
+    status: string;
+    reps: [number, number];
+    sourceWorkoutId?: string;
+  }
+) {
+  db.insert(workouts)
+    .values({
+      id,
+      name: id,
+      status,
+      startedAt: 1_000,
+      dateKey: '1970-01-01',
+      sourceWorkoutId
+    })
+    .run();
+  db.insert(workoutExercises)
+    .values([
+      {
+        id: `${id}-exercise-a`,
+        workoutId: id,
+        exerciseId: 'exercise-a',
+        order: 0
+      },
+      {
+        id: `${id}-exercise-b`,
+        workoutId: id,
+        exerciseId: 'exercise-b',
+        order: 1
+      }
+    ])
+    .run();
+  db.insert(sets)
+    .values([
+      {
+        id: `${id}-set-a`,
+        workoutExerciseId: `${id}-exercise-a`,
+        order: 0,
+        reps: reps[0],
+        status: 'completed',
+        completedAt: 2_000
+      },
+      {
+        id: `${id}-set-b`,
+        workoutExerciseId: `${id}-exercise-b`,
+        order: 0,
+        reps: reps[1],
+        status: 'completed',
+        completedAt: 3_000
+      }
+    ])
+    .run();
+}
+
+function getHistoricalPersonalRecordRows(db: DrizzleDb) {
+  return db
+    .select({
+      exerciseId: personalRecords.exerciseId,
+      setId: personalRecords.setId,
+      reps: personalRecords.reps,
+      score: personalRecords.score
+    })
+    .from(personalRecords)
+    .orderBy(personalRecords.exerciseId, personalRecords.achievedAt)
+    .all();
 }
 
 test('production initialization enables workout delete foreign-key actions', async () => {
@@ -792,4 +889,150 @@ test('completed set commands maintain personal records atomically', async t => {
       }
     }
   );
+});
+
+test('historical saves rebuild records for all affected exercises', async t => {
+  await t.test(
+    'saves a historical draft with and without new records',
+    async () => {
+      const { db, nodeClient } = await createMigratedTestDatabase();
+
+      try {
+        seedHistoricalExercises(db);
+        insertHistoricalWorkout(db, {
+          id: 'historical-draft',
+          status: 'historical_draft',
+          reps: [10, 0]
+        });
+        db.insert(personalRecords)
+          .values([
+            {
+              id: 'stale-record-a',
+              exerciseId: 'exercise-a',
+              setId: 'historical-draft-set-a',
+              trackingType: 'reps',
+              score: 999,
+              reps: 999,
+              estimated1rm: 0,
+              achievedAt: 1
+            },
+            {
+              id: 'stale-record-b',
+              exerciseId: 'exercise-b',
+              setId: 'historical-draft-set-b',
+              trackingType: 'reps',
+              score: 999,
+              reps: 999,
+              estimated1rm: 0,
+              achievedAt: 1
+            }
+          ])
+          .run();
+
+        const result = saveHistoricalWorkoutDraft(db, 'historical-draft');
+
+        assert.equal(result?.workout.id, 'historical-draft');
+        assert.equal(result?.workout.status, 'completed');
+        assert.deepEqual(result?.affectedExerciseIds, [
+          'exercise-a',
+          'exercise-b'
+        ]);
+        assert.deepEqual(getHistoricalPersonalRecordRows(db), [
+          {
+            exerciseId: 'exercise-a',
+            setId: 'historical-draft-set-a',
+            reps: 10,
+            score: 10
+          }
+        ]);
+      } finally {
+        nodeClient.closeSync();
+      }
+    }
+  );
+
+  await t.test(
+    'saves a historical edit with and without replacement records',
+    async () => {
+      const { db, nodeClient } = await createMigratedTestDatabase();
+
+      try {
+        seedHistoricalExercises(db);
+        insertHistoricalWorkout(db, {
+          id: 'source-workout',
+          status: 'completed',
+          reps: [5, 5]
+        });
+        insertHistoricalWorkout(db, {
+          id: 'edit-draft',
+          status: 'historical_edit_draft',
+          reps: [10, 0],
+          sourceWorkoutId: 'source-workout'
+        });
+        rebuildPersonalRecordsForExercises(db, [
+          'exercise-a',
+          'exercise-b',
+          'exercise-a'
+        ]);
+
+        const result = saveHistoricalWorkoutEditDraft(db, {
+          sourceWorkoutId: 'source-workout',
+          draftWorkoutId: 'edit-draft'
+        });
+
+        assert.equal(result?.workout.id, 'source-workout');
+        assert.deepEqual(result?.affectedExerciseIds, [
+          'exercise-a',
+          'exercise-b'
+        ]);
+        assert.deepEqual(
+          getHistoricalPersonalRecordRows(db).map(record => ({
+            exerciseId: record.exerciseId,
+            reps: record.reps,
+            score: record.score
+          })),
+          [{ exerciseId: 'exercise-a', reps: 10, score: 10 }]
+        );
+      } finally {
+        nodeClient.closeSync();
+      }
+    }
+  );
+
+  await t.test('preserves set order when record timestamps tie', async () => {
+    const { db, nodeClient } = await createMigratedTestDatabase();
+
+    try {
+      seedHistoricalExercises(db);
+      insertHistoricalWorkout(db, {
+        id: 'a-later-set',
+        status: 'completed',
+        reps: [20, 0]
+      });
+      insertHistoricalWorkout(db, {
+        id: 'z-earlier-set',
+        status: 'completed',
+        reps: [10, 0]
+      });
+      db.update(sets)
+        .set({ order: 1 })
+        .where(eq(sets.id, 'a-later-set-set-a'))
+        .run();
+
+      rebuildPersonalRecordsForExercises(db, ['exercise-a']);
+
+      assert.deepEqual(
+        getHistoricalPersonalRecordRows(db).map(record => ({
+          setId: record.setId,
+          reps: record.reps
+        })),
+        [
+          { setId: 'z-earlier-set-set-a', reps: 10 },
+          { setId: 'a-later-set-set-a', reps: 20 }
+        ]
+      );
+    } finally {
+      nodeClient.closeSync();
+    }
+  });
 });

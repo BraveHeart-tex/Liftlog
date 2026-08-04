@@ -12,7 +12,7 @@ import {
   type Workout,
   type WorkoutExercise
 } from '@/src/db/schema';
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import { unionAll } from 'drizzle-orm/sqlite-core';
 import {
   computeEstimated1RM,
@@ -296,51 +296,70 @@ export function buildExerciseHistory(
   });
 }
 
-function getCompletedSetsForPersonalRecords(db: DrizzleDb, exerciseId: string) {
+function getCompletedSetsForPersonalRecords(
+  db: DrizzleDb,
+  exerciseIds: Exercise['id'][]
+) {
+  const achievedAt =
+    sql<number>`coalesce(${sets.completedAt}, ${workouts.startedAt})`.as(
+      'achieved_at'
+    );
+
   return db
     .select({
+      exerciseId: sql<Exercise['id']>`${exercises.id}`.as('exercise_id'),
+      trackingType: sql<string>`${exercises.trackingType}`.as('tracking_type'),
       set: sets,
-      workoutStartedAt: workouts.startedAt
+      achievedAt
     })
-    .from(sets)
-    .innerJoin(
-      workoutExercises,
-      eq(sets.workoutExerciseId, workoutExercises.id)
-    )
-    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
-    .where(
+    .from(exercises)
+    .leftJoin(workoutExercises, eq(exercises.id, workoutExercises.exerciseId))
+    .leftJoin(
+      workouts,
       and(
-        eq(workoutExercises.exerciseId, exerciseId),
-        inArray(workouts.status, ['completed', 'in_progress']),
-        eq(sets.status, 'completed')
+        eq(workoutExercises.workoutId, workouts.id),
+        inArray(workouts.status, ['completed', 'in_progress'])
       )
     )
+    .leftJoin(
+      sets,
+      and(
+        eq(sets.workoutExerciseId, workoutExercises.id),
+        eq(sets.status, 'completed'),
+        isNotNull(workouts.id)
+      )
+    )
+    .where(inArray(exercises.id, exerciseIds))
+    .orderBy(
+      asc(exercises.id),
+      asc(achievedAt),
+      asc(sets.order),
+      asc(workouts.id),
+      asc(workoutExercises.order),
+      asc(sets.id)
+    )
     .all();
-}
-
-function getExerciseTrackingType(db: DrizzleDb, exerciseId: Exercise['id']) {
-  const exercise = db
-    .select({ trackingType: exercises.trackingType })
-    .from(exercises)
-    .where(eq(exercises.id, exerciseId))
-    .get();
-
-  return resolveTrackingType(exercise?.trackingType);
-}
-
-function getSetAchievedAt(row: {
-  set: Set;
-  workoutStartedAt: Workout['startedAt'];
-}): number {
-  return row.set.completedAt ?? row.workoutStartedAt;
 }
 
 export function rebuildPersonalRecordsForExercise(
   db: DrizzleDb,
   exerciseId: Exercise['id']
 ): void {
+  rebuildPersonalRecordsForExercises(db, [exerciseId]);
+}
+
+export function rebuildPersonalRecordsForExercises(
+  db: DrizzleDb,
+  exerciseIds: Exercise['id'][]
+): void {
+  const uniqueExerciseIds = Array.from(new Set(exerciseIds));
+
+  if (uniqueExerciseIds.length === 0) {
+    return;
+  }
+
   db.transaction(tx => {
-    rebuildPersonalRecordsForExerciseInTransaction(tx, exerciseId);
+    rebuildPersonalRecordsForExercisesInTransaction(tx, uniqueExerciseIds);
   });
 }
 
@@ -348,38 +367,50 @@ export function rebuildPersonalRecordsForExerciseInTransaction(
   db: DrizzleDb,
   exerciseId: Exercise['id']
 ): void {
-  const completedSetRows = getCompletedSetsForPersonalRecords(db, exerciseId);
-  const trackingType = getExerciseTrackingType(db, exerciseId);
-  const sortedRows = [...completedSetRows].sort((left, right) => {
-    const achievedAtDiff = getSetAchievedAt(left) - getSetAchievedAt(right);
+  rebuildPersonalRecordsForExercisesInTransaction(db, [exerciseId]);
+}
 
-    if (achievedAtDiff !== 0) {
-      return achievedAtDiff;
-    }
+export function rebuildPersonalRecordsForExercisesInTransaction(
+  db: DrizzleDb,
+  exerciseIds: Exercise['id'][]
+): void {
+  const uniqueExerciseIds = Array.from(new Set(exerciseIds));
 
-    return left.set.order - right.set.order;
-  });
-  let bestScore = 0;
+  if (uniqueExerciseIds.length === 0) {
+    return;
+  }
+
+  const completedSetRows = getCompletedSetsForPersonalRecords(
+    db,
+    uniqueExerciseIds
+  );
+  const bestScoreByExerciseId = new Map<Exercise['id'], number>();
   const newRecords: NewPersonalRecord[] = [];
 
-  for (const row of sortedRows) {
+  for (const row of completedSetRows) {
+    if (!row.set || row.achievedAt === null) {
+      continue;
+    }
+
+    const trackingType = resolveTrackingType(row.trackingType);
     const score = getSetScore(trackingType, row.set);
+    const bestScore = bestScoreByExerciseId.get(row.exerciseId) ?? 0;
 
     if (score === null || score <= bestScore) {
       continue;
     }
 
-    bestScore = score;
+    bestScoreByExerciseId.set(row.exerciseId, score);
     newRecords.push({
-      exerciseId,
+      exerciseId: row.exerciseId,
       setId: row.set.id,
-      achievedAt: getSetAchievedAt(row),
+      achievedAt: row.achievedAt,
       ...getPersonalRecordSnapshot(trackingType, row.set, score)
     });
   }
 
   db.delete(personalRecords)
-    .where(eq(personalRecords.exerciseId, exerciseId))
+    .where(inArray(personalRecords.exerciseId, uniqueExerciseIds))
     .run();
 
   if (newRecords.length > 0) {

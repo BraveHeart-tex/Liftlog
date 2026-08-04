@@ -17,7 +17,10 @@ import {
   type WorkoutTemplate
 } from '@/src/db/schema';
 import { createExercise } from '@/src/features/exercises/exercise.repository';
-import { rebuildPersonalRecordsForExerciseInTransaction } from '@/src/features/progress/progress.repository';
+import {
+  rebuildPersonalRecordsForExerciseInTransaction,
+  rebuildPersonalRecordsForExercisesInTransaction
+} from '@/src/features/progress/progress.repository';
 import {
   getSetScore,
   resolveTrackingType
@@ -912,9 +915,7 @@ export function saveHistoricalWorkoutDraft(
       new Set(completedSetRows.map(row => row.exerciseId))
     );
 
-    for (const exerciseId of affectedExerciseIds) {
-      rebuildPersonalRecordsForExerciseInTransaction(tx, exerciseId);
-    }
+    rebuildPersonalRecordsForExercisesInTransaction(tx, affectedExerciseIds);
   });
 
   if (!savedWorkout) {
@@ -1086,9 +1087,7 @@ export function saveHistoricalWorkoutEditDraft(
       new Set([...sourceExerciseIds, ...draftExerciseIds])
     );
 
-    for (const exerciseId of affectedExerciseIds) {
-      rebuildPersonalRecordsForExerciseInTransaction(tx, exerciseId);
-    }
+    rebuildPersonalRecordsForExercisesInTransaction(tx, affectedExerciseIds);
   });
 
   if (!savedWorkout) {
