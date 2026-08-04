@@ -1,6 +1,7 @@
 import type { DrizzleDb } from '@/src/db/client';
 import {
   exercises,
+  personalRecords,
   sets,
   workoutExercises,
   workouts,
@@ -16,6 +17,11 @@ import {
   type WorkoutTemplate
 } from '@/src/db/schema';
 import { createExercise } from '@/src/features/exercises/exercise.repository';
+import { rebuildPersonalRecordsForExerciseInTransaction } from '@/src/features/progress/progress.repository';
+import {
+  getSetScore,
+  resolveTrackingType
+} from '@/src/features/progress/tracking.domain';
 import { normalizeSupersetRows } from '@/src/features/workouts/superset.utils';
 import { formatWorkoutName } from '@/src/features/workouts/workout-display.utils';
 import { toLocalDateKey } from '@/src/lib/utils/date.utils';
@@ -27,9 +33,11 @@ import {
   desc,
   eq,
   inArray,
+  lt,
   lte,
   ne,
   notInArray,
+  or,
   sql
 } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
@@ -66,6 +74,21 @@ interface SavedHistoricalWorkoutEditDraft {
   affectedExerciseIds: WorkoutExercise['exerciseId'][];
 }
 
+interface CompletedSetCommandOptions {
+  maintainPersonalRecords?: boolean;
+}
+
+interface CompletedSetMutationResult {
+  set: Set;
+  isNewPersonalRecord: boolean;
+}
+
+type NewCompletedSet = Omit<NewSet, 'status'>;
+type CompletedSetUpdates = Omit<
+  Partial<NewSet>,
+  'id' | 'workoutExerciseId' | 'status'
+>;
+
 export interface ActiveWorkoutExerciseDraftRow {
   id: WorkoutExercise['id'];
   exerciseId: WorkoutExercise['exerciseId'];
@@ -86,8 +109,116 @@ export class ActiveWorkoutExerciseDraftConflictError extends Error {
   }
 }
 
-function getSetRecordById(db: DrizzleDb, id: Set['id']): Set | undefined {
-  return db.select().from(sets).where(eq(sets.id, id)).get();
+function getWorkoutExerciseProgressContext(
+  db: DrizzleDb,
+  workoutExerciseId: WorkoutExercise['id']
+) {
+  return db
+    .select({
+      exerciseId: workoutExercises.exerciseId,
+      trackingType: exercises.trackingType,
+      workoutStartedAt: workouts.startedAt
+    })
+    .from(workoutExercises)
+    .innerJoin(exercises, eq(workoutExercises.exerciseId, exercises.id))
+    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
+    .where(eq(workoutExercises.id, workoutExerciseId))
+    .get();
+}
+
+function getSetProgressContext(db: DrizzleDb, setId: Set['id']) {
+  return db
+    .select({
+      set: sets,
+      exerciseId: workoutExercises.exerciseId,
+      trackingType: exercises.trackingType,
+      workoutStartedAt: workouts.startedAt
+    })
+    .from(sets)
+    .innerJoin(
+      workoutExercises,
+      eq(sets.workoutExerciseId, workoutExercises.id)
+    )
+    .innerJoin(exercises, eq(workoutExercises.exerciseId, exercises.id))
+    .innerJoin(workouts, eq(workoutExercises.workoutId, workouts.id))
+    .where(eq(sets.id, setId))
+    .get();
+}
+
+function getCurrentPersonalRecordScore(
+  db: DrizzleDb,
+  exerciseId: Exercise['id']
+): number | undefined {
+  return db
+    .select({ score: personalRecords.score })
+    .from(personalRecords)
+    .where(eq(personalRecords.exerciseId, exerciseId))
+    .orderBy(desc(personalRecords.score))
+    .limit(1)
+    .get()?.score;
+}
+
+function isSetInPersonalRecordChain(db: DrizzleDb, setId: Set['id']): boolean {
+  return (
+    db
+      .select({ id: personalRecords.id })
+      .from(personalRecords)
+      .where(eq(personalRecords.setId, setId))
+      .limit(1)
+      .get() !== undefined
+  );
+}
+
+function isPersonalRecordScore(
+  score: number | null,
+  previousBestScore: number | undefined
+): boolean {
+  return score !== null && score > (previousBestScore ?? 0);
+}
+
+function getPersonalRecordScoreBeforeSet(
+  db: DrizzleDb,
+  exerciseId: Exercise['id'],
+  set: Set,
+  workoutStartedAt: Workout['startedAt']
+): number | undefined {
+  const achievedAt = set.completedAt ?? workoutStartedAt;
+
+  return db
+    .select({ score: personalRecords.score })
+    .from(personalRecords)
+    .innerJoin(sets, eq(personalRecords.setId, sets.id))
+    .where(
+      and(
+        eq(personalRecords.exerciseId, exerciseId),
+        or(
+          lt(personalRecords.achievedAt, achievedAt),
+          and(
+            eq(personalRecords.achievedAt, achievedAt),
+            lt(sets.order, set.order)
+          )
+        )
+      )
+    )
+    .orderBy(desc(personalRecords.score))
+    .limit(1)
+    .get()?.score;
+}
+
+function isLatestPersonalRecordSet(
+  db: DrizzleDb,
+  exerciseId: Exercise['id'],
+  setId: Set['id']
+): boolean {
+  return (
+    db
+      .select({ setId: personalRecords.setId })
+      .from(personalRecords)
+      .where(eq(personalRecords.exerciseId, exerciseId))
+      .orderBy(desc(personalRecords.score))
+      .limit(1)
+      .get()?.setId === setId
+  );
 }
 
 function getWorkoutTemplateRecordById(
@@ -780,6 +911,10 @@ export function saveHistoricalWorkoutDraft(
     affectedExerciseIds = Array.from(
       new Set(completedSetRows.map(row => row.exerciseId))
     );
+
+    for (const exerciseId of affectedExerciseIds) {
+      rebuildPersonalRecordsForExerciseInTransaction(tx, exerciseId);
+    }
   });
 
   if (!savedWorkout) {
@@ -950,6 +1085,10 @@ export function saveHistoricalWorkoutEditDraft(
     affectedExerciseIds = Array.from(
       new Set([...sourceExerciseIds, ...draftExerciseIds])
     );
+
+    for (const exerciseId of affectedExerciseIds) {
+      rebuildPersonalRecordsForExerciseInTransaction(tx, exerciseId);
+    }
   });
 
   if (!savedWorkout) {
@@ -1484,24 +1623,144 @@ export function updateWorkoutExerciseOrderAndSupersets(
   });
 }
 
-export function createSet(db: DrizzleDb, data: NewSet): Set {
-  return db.insert(sets).values(data).returning().get();
+export function createCompletedSet(
+  db: DrizzleDb,
+  data: NewCompletedSet,
+  { maintainPersonalRecords = true }: CompletedSetCommandOptions = {}
+): CompletedSetMutationResult {
+  return db.transaction(tx => {
+    const progressContext = maintainPersonalRecords
+      ? getWorkoutExerciseProgressContext(tx, data.workoutExerciseId)
+      : undefined;
+    const currentBestScore = progressContext
+      ? getCurrentPersonalRecordScore(tx, progressContext.exerciseId)
+      : undefined;
+    const set = tx
+      .insert(sets)
+      .values({ ...data, status: 'completed' })
+      .returning()
+      .get();
+    const score = progressContext
+      ? getSetScore(resolveTrackingType(progressContext.trackingType), set)
+      : null;
+    const couldBecomeLatestPersonalRecord = isPersonalRecordScore(
+      score,
+      currentBestScore
+    );
+    const couldAffectPersonalRecordChain = progressContext
+      ? isPersonalRecordScore(
+          score,
+          getPersonalRecordScoreBeforeSet(
+            tx,
+            progressContext.exerciseId,
+            set,
+            progressContext.workoutStartedAt
+          )
+        )
+      : false;
+
+    if (progressContext && couldAffectPersonalRecordChain) {
+      rebuildPersonalRecordsForExerciseInTransaction(
+        tx,
+        progressContext.exerciseId
+      );
+    }
+
+    const isNewPersonalRecord =
+      progressContext !== undefined &&
+      couldBecomeLatestPersonalRecord &&
+      isLatestPersonalRecordSet(tx, progressContext.exerciseId, set.id);
+
+    return { set, isNewPersonalRecord };
+  });
 }
 
-export function updateSet(
+export function updateCompletedSet(
   db: DrizzleDb,
   id: Set['id'],
-  data: Partial<NewSet>
-): Set | undefined {
-  if (Object.keys(data).length === 0) {
-    return getSetRecordById(db, id);
-  }
+  data: CompletedSetUpdates,
+  { maintainPersonalRecords = true }: CompletedSetCommandOptions = {}
+): CompletedSetMutationResult | undefined {
+  return db.transaction(tx => {
+    const progressContext = getSetProgressContext(tx, id);
 
-  return db.update(sets).set(data).where(eq(sets.id, id)).returning().get();
+    if (!progressContext) {
+      return undefined;
+    }
+
+    const currentBestScore = maintainPersonalRecords
+      ? getCurrentPersonalRecordScore(tx, progressContext.exerciseId)
+      : undefined;
+    const wasInPersonalRecordChain = maintainPersonalRecords
+      ? isSetInPersonalRecordChain(tx, id)
+      : false;
+    const set = tx
+      .update(sets)
+      .set({ ...data, status: 'completed' })
+      .where(eq(sets.id, id))
+      .returning()
+      .get();
+    const score = maintainPersonalRecords
+      ? getSetScore(resolveTrackingType(progressContext.trackingType), set)
+      : null;
+    const couldBecomeLatestPersonalRecord = isPersonalRecordScore(
+      score,
+      currentBestScore
+    );
+    const couldAffectPersonalRecordChain =
+      maintainPersonalRecords &&
+      isPersonalRecordScore(
+        score,
+        getPersonalRecordScoreBeforeSet(
+          tx,
+          progressContext.exerciseId,
+          set,
+          progressContext.workoutStartedAt
+        )
+      );
+
+    if (wasInPersonalRecordChain || couldAffectPersonalRecordChain) {
+      rebuildPersonalRecordsForExerciseInTransaction(
+        tx,
+        progressContext.exerciseId
+      );
+    }
+
+    const isNewPersonalRecord =
+      couldBecomeLatestPersonalRecord &&
+      isLatestPersonalRecordSet(tx, progressContext.exerciseId, set.id);
+
+    return { set, isNewPersonalRecord };
+  });
 }
 
-export function deleteSet(db: DrizzleDb, id: Set['id']): void {
-  db.delete(sets).where(eq(sets.id, id)).run();
+export function deleteCompletedSet(
+  db: DrizzleDb,
+  id: Set['id'],
+  { maintainPersonalRecords = true }: CompletedSetCommandOptions = {}
+): Set | undefined {
+  return db.transaction(tx => {
+    const progressContext = getSetProgressContext(tx, id);
+
+    if (!progressContext) {
+      return undefined;
+    }
+
+    const wasInPersonalRecordChain = maintainPersonalRecords
+      ? isSetInPersonalRecordChain(tx, id)
+      : false;
+
+    tx.delete(sets).where(eq(sets.id, id)).run();
+
+    if (wasInPersonalRecordChain) {
+      rebuildPersonalRecordsForExerciseInTransaction(
+        tx,
+        progressContext.exerciseId
+      );
+    }
+
+    return progressContext.set;
+  });
 }
 
 export function repeatWorkout(

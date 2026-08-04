@@ -1,6 +1,5 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { Workout } from '@/src/db/schema';
-import { rebuildPersonalRecordsForExercise } from '@/src/features/progress/progress.repository';
 import {
   deleteWorkout,
   saveHistoricalWorkoutDraft
@@ -16,10 +15,6 @@ export function useHistoricalWorkoutDraftActions() {
 
       if (!savedDraft) {
         return undefined;
-      }
-
-      for (const exerciseId of savedDraft.affectedExerciseIds) {
-        rebuildPersonalRecordsForExercise(db, exerciseId);
       }
 
       return savedDraft.workout;

@@ -1,18 +1,9 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import type { Set } from '@/src/db/schema';
 import {
-  getPersonalRecordsByExercise,
-  maybeRebuildPersonalRecords,
-  rebuildPersonalRecordsForExercise
-} from '@/src/features/progress/progress.repository';
-import {
-  getSetScore,
-  resolveTrackingType
-} from '@/src/features/progress/tracking.domain';
-import {
-  createSet,
-  deleteSet,
-  updateSet
+  createCompletedSet,
+  deleteCompletedSet,
+  updateCompletedSet
 } from '@/src/features/workouts/workout.repository';
 import {
   ImpactFeedbackStyle,
@@ -20,7 +11,6 @@ import {
   impactAsync,
   notificationAsync
 } from 'expo-haptics';
-import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task.utils';
 import { useCallback } from 'react';
 import type {
   SetValues,
@@ -64,8 +54,6 @@ export function useExerciseTrackActions({
   rebuildProgressOnChange = true
 }: UseExerciseTrackActionsParams) {
   const db = useDrizzle();
-  const exerciseId = item.workoutExercise.exerciseId;
-  const trackingType = resolveTrackingType(item.exercise?.trackingType);
 
   const triggerFeedback = useCallback(
     (isPR: boolean) => {
@@ -82,85 +70,26 @@ export function useExerciseTrackActions({
     [enableFeedback]
   );
 
-  const checkAndCreatePR = useCallback(
-    (setId: Set['id'], values: SetValues): boolean => {
-      const score = getSetScore(trackingType, {
-        weightKg: values.weightKg ?? null,
-        reps: values.reps ?? null,
-        distanceMeters: values.distanceMeters ?? null,
-        durationMs: values.durationMs ?? null,
-        durationSeconds: null
-      });
-
-      if (score === null) {
-        rebuildPersonalRecordsForExercise(db, exerciseId);
-
-        return false;
-      }
-
-      const currentPR = getPersonalRecordsByExercise(db, exerciseId)[0];
-      const isNewPR = !currentPR || score > currentPR.score;
-
-      rebuildPersonalRecordsForExercise(db, exerciseId);
-
-      if (!isNewPR) {
-        return false;
-      }
-
-      return getPersonalRecordsByExercise(db, exerciseId)[0]?.setId === setId;
-    },
-    [db, exerciseId, trackingType]
-  );
-
-  const checkAndCreatePRForNewSet = useCallback(
-    (setId: Set['id'], values: SetValues): boolean => {
-      const score = getSetScore(trackingType, {
-        weightKg: values.weightKg ?? null,
-        reps: values.reps ?? null,
-        distanceMeters: values.distanceMeters ?? null,
-        durationMs: values.durationMs ?? null,
-        durationSeconds: null
-      });
-
-      if (score === null) {
-        return false;
-      }
-
-      maybeRebuildPersonalRecords(db, exerciseId, score);
-
-      return getPersonalRecordsByExercise(db, exerciseId)[0]?.setId === setId;
-    },
-    [db, exerciseId, trackingType]
-  );
-
   const addSet = useCallback(
     ({ order, ...values }: AddSetValues) => {
-      const newSet = createSet(db, {
-        workoutExerciseId: item.workoutExercise.id,
-        ...getSetStorageValues(values),
-        order,
-        status: 'completed',
-        completedAt: completedAt ?? Date.now()
-      });
+      const result = createCompletedSet(
+        db,
+        {
+          workoutExerciseId: item.workoutExercise.id,
+          ...getSetStorageValues(values),
+          order,
+          completedAt: completedAt ?? Date.now()
+        },
+        { maintainPersonalRecords: rebuildProgressOnChange }
+      );
 
-      if (!rebuildProgressOnChange) {
-        return newSet;
+      if (rebuildProgressOnChange) {
+        triggerFeedback(result.isNewPersonalRecord);
       }
 
-      scheduleIdleTask(() => {
-        try {
-          const isPR = checkAndCreatePRForNewSet(newSet.id, values);
-
-          triggerFeedback(isPR);
-        } catch (error) {
-          console.error('Failed to update personal records for new set', error);
-        }
-      });
-
-      return newSet;
+      return result.set;
     },
     [
-      checkAndCreatePRForNewSet,
       completedAt,
       db,
       item.workoutExercise.id,
@@ -176,33 +105,25 @@ export function useExerciseTrackActions({
         preserveExistingSetCompletedAt && existingSet?.completedAt != null
           ? existingSet.completedAt
           : (completedAt ?? Date.now());
-      const updatedSet = updateSet(db, setId, {
-        ...getSetStorageValues(values),
-        status: 'completed',
-        completedAt: nextCompletedAt
-      });
+      const result = updateCompletedSet(
+        db,
+        setId,
+        {
+          ...getSetStorageValues(values),
+          completedAt: nextCompletedAt
+        },
+        { maintainPersonalRecords: rebuildProgressOnChange }
+      );
 
-      if (!rebuildProgressOnChange) {
-        setEditingSetId(null);
-
-        return updatedSet;
+      if (rebuildProgressOnChange && result) {
+        triggerFeedback(result.isNewPersonalRecord);
       }
 
-      scheduleIdleTask(() => {
-        try {
-          const isPR = checkAndCreatePR(setId, values);
-
-          triggerFeedback(isPR);
-        } catch (error) {
-          console.error('Failed to update personal records for set', error);
-        }
-      });
       setEditingSetId(null);
 
-      return updatedSet;
+      return result?.set;
     },
     [
-      checkAndCreatePR,
       completedAt,
       db,
       item.sets,
@@ -215,26 +136,15 @@ export function useExerciseTrackActions({
 
   const deleteExistingSet = useCallback(
     (setId: Set['id']) => {
-      deleteSet(db, setId);
-
-      if (rebuildProgressOnChange) {
-        scheduleIdleTask(() => {
-          try {
-            rebuildPersonalRecordsForExercise(db, exerciseId);
-          } catch (error) {
-            console.error(
-              'Failed to update personal records after deleting set',
-              error
-            );
-          }
-        });
-      }
+      deleteCompletedSet(db, setId, {
+        maintainPersonalRecords: rebuildProgressOnChange
+      });
 
       if (setId === editingSetId) {
         setEditingSetId(null);
       }
     },
-    [db, editingSetId, exerciseId, rebuildProgressOnChange, setEditingSetId]
+    [db, editingSetId, rebuildProgressOnChange, setEditingSetId]
   );
 
   return {

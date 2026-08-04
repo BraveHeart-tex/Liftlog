@@ -339,6 +339,15 @@ export function rebuildPersonalRecordsForExercise(
   db: DrizzleDb,
   exerciseId: Exercise['id']
 ): void {
+  db.transaction(tx => {
+    rebuildPersonalRecordsForExerciseInTransaction(tx, exerciseId);
+  });
+}
+
+export function rebuildPersonalRecordsForExerciseInTransaction(
+  db: DrizzleDb,
+  exerciseId: Exercise['id']
+): void {
   const completedSetRows = getCompletedSetsForPersonalRecords(db, exerciseId);
   const trackingType = getExerciseTrackingType(db, exerciseId);
   const sortedRows = [...completedSetRows].sort((left, right) => {
@@ -369,35 +378,13 @@ export function rebuildPersonalRecordsForExercise(
     });
   }
 
-  db.transaction(tx => {
-    tx.delete(personalRecords)
-      .where(eq(personalRecords.exerciseId, exerciseId))
-      .run();
-
-    if (newRecords.length > 0) {
-      tx.insert(personalRecords).values(newRecords).run();
-    }
-  });
-}
-
-export function maybeRebuildPersonalRecords(
-  db: DrizzleDb,
-  exerciseId: Exercise['id'],
-  newSetScore: number
-): void {
-  const currentBest = db
-    .select({ score: personalRecords.score })
-    .from(personalRecords)
+  db.delete(personalRecords)
     .where(eq(personalRecords.exerciseId, exerciseId))
-    .orderBy(desc(personalRecords.score))
-    .limit(1)
-    .get();
+    .run();
 
-  if (currentBest && newSetScore <= currentBest.score) {
-    return;
+  if (newRecords.length > 0) {
+    db.insert(personalRecords).values(newRecords).run();
   }
-
-  rebuildPersonalRecordsForExercise(db, exerciseId);
 }
 
 export { computeEstimated1RM };
