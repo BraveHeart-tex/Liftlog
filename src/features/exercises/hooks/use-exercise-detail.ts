@@ -7,8 +7,7 @@ import type {
 } from '@/src/features/exercises/exercise.types';
 import {
   getExerciseByIdQuery,
-  getExerciseTemplateUsageCountQuery,
-  getExerciseUsageCountQuery
+  getExerciseUsageSummaryQuery
 } from '@/src/features/exercises/exercise.repository';
 import {
   buildExerciseHistory,
@@ -215,13 +214,7 @@ export function useExerciseDetail(exerciseId: string | undefined) {
   const isCustomExercise = exercise?.isCustom === 1;
 
   const exerciseUsageResult = useLiveWithFallback(
-    getExerciseUsageCountQuery(db, resolvedExerciseId),
-    [db, resolvedExerciseId, isCustomExercise],
-    { enabled: isCustomExercise }
-  );
-
-  const templateUsageResult = useLiveWithFallback(
-    getExerciseTemplateUsageCountQuery(db, resolvedExerciseId),
+    getExerciseUsageSummaryQuery(db, resolvedExerciseId),
     [db, resolvedExerciseId, isCustomExercise],
     { enabled: isCustomExercise }
   );
@@ -292,11 +285,9 @@ export function useExerciseDetail(exerciseId: string | undefined) {
 
   return {
     exercise,
-    exerciseUsageCount:
-      (exerciseUsageResult.data[0]?.count ?? 0) +
-      (templateUsageResult.data[0]?.count ?? 0),
-    workoutUsageCount: exerciseUsageResult.data[0]?.count ?? 0,
-    templateUsageCount: templateUsageResult.data[0]?.count ?? 0,
+    exerciseUsageCount: exerciseUsageResult.data[0]?.totalUsageCount ?? 0,
+    workoutUsageCount: exerciseUsageResult.data[0]?.workoutUsageCount ?? 0,
+    templateUsageCount: exerciseUsageResult.data[0]?.templateUsageCount ?? 0,
     history,
     progressPoints,
     personalRecordsSummary,

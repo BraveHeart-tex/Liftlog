@@ -153,24 +153,36 @@ function deleteExercise(db: DrizzleDb, id: Exercise['id']): void {
   db.delete(exercises).where(eq(exercises.id, id)).run();
 }
 
-export function getExerciseUsageCountQuery(
+export function getExerciseUsageSummaryQuery(
   db: DrizzleDb,
   exerciseId: Exercise['id']
 ) {
-  return db
-    .select({ count: count(workoutExercises.id) })
+  const workoutUsage = db
+    .select({
+      count: count(workoutExercises.id).as('workout_usage_count')
+    })
     .from(workoutExercises)
-    .where(eq(workoutExercises.exerciseId, exerciseId));
-}
-
-export function getExerciseTemplateUsageCountQuery(
-  db: DrizzleDb,
-  exerciseId: Exercise['id']
-) {
-  return db
-    .select({ count: count(workoutTemplateExercises.id) })
+    .where(eq(workoutExercises.exerciseId, exerciseId))
+    .as('workout_usage');
+  const templateUsage = db
+    .select({
+      count: count(workoutTemplateExercises.id).as('template_usage_count')
+    })
     .from(workoutTemplateExercises)
-    .where(eq(workoutTemplateExercises.exerciseId, exerciseId));
+    .where(eq(workoutTemplateExercises.exerciseId, exerciseId))
+    .as('template_usage');
+
+  return db
+    .select({
+      workoutUsageCount: workoutUsage.count,
+      templateUsageCount: templateUsage.count,
+      totalUsageCount:
+        sql<number>`${workoutUsage.count} + ${templateUsage.count}`.as(
+          'total_usage_count'
+        )
+    })
+    .from(workoutUsage)
+    .crossJoin(templateUsage);
 }
 
 function getExerciseUsageCount(
@@ -178,8 +190,7 @@ function getExerciseUsageCount(
   exerciseId: Exercise['id']
 ): number {
   return (
-    (getExerciseUsageCountQuery(db, exerciseId).get()?.count ?? 0) +
-    (getExerciseTemplateUsageCountQuery(db, exerciseId).get()?.count ?? 0)
+    getExerciseUsageSummaryQuery(db, exerciseId).get()?.totalUsageCount ?? 0
   );
 }
 

@@ -4,6 +4,7 @@ import {
   sets,
   workoutExercises,
   workouts,
+  workoutTemplateExercises,
   workoutTemplates
 } from '@/src/db/schema';
 import {
@@ -11,6 +12,7 @@ import {
   runDatabaseMigrations,
   type DrizzleDb
 } from '@/src/db/client';
+import { getExerciseUsageSummaryQuery } from '@/src/features/exercises/exercise.repository';
 import {
   completeWorkout,
   createCompletedSet,
@@ -323,6 +325,131 @@ function getHistoricalPersonalRecordRows(db: DrizzleDb) {
     .orderBy(personalRecords.exerciseId, personalRecords.achievedAt)
     .all();
 }
+
+test('exercise usage summary counts workout and template usage independently', async t => {
+  const cases = [
+    {
+      name: 'no usage',
+      workoutUsageCount: 0,
+      templateUsageCount: 0
+    },
+    {
+      name: 'workout-only usage',
+      workoutUsageCount: 2,
+      templateUsageCount: 0
+    },
+    {
+      name: 'template-only usage',
+      workoutUsageCount: 0,
+      templateUsageCount: 2
+    },
+    {
+      name: 'usage in both tables',
+      workoutUsageCount: 2,
+      templateUsageCount: 3
+    }
+  ];
+
+  for (const testCase of cases) {
+    await t.test(testCase.name, async () => {
+      const { db, nodeClient } = await createMigratedTestDatabase();
+
+      try {
+        db.insert(exercises)
+          .values({
+            id: 'usage-exercise',
+            name: 'Usage exercise',
+            category: 'other'
+          })
+          .run();
+        db.insert(workouts)
+          .values({
+            id: 'usage-workout',
+            name: 'Usage workout',
+            status: 'completed',
+            startedAt: 1,
+            dateKey: '1970-01-01'
+          })
+          .run();
+        db.insert(workoutTemplates)
+          .values({
+            id: 'usage-template',
+            name: 'Usage template',
+            createdAt: 1,
+            updatedAt: 1
+          })
+          .run();
+
+        if (testCase.workoutUsageCount > 0) {
+          db.insert(workoutExercises)
+            .values(
+              Array.from(
+                { length: testCase.workoutUsageCount },
+                (_, index) => ({
+                  id: `workout-usage-${index}`,
+                  workoutId: 'usage-workout',
+                  exerciseId: 'usage-exercise',
+                  order: index
+                })
+              )
+            )
+            .run();
+        }
+
+        if (testCase.templateUsageCount > 0) {
+          db.insert(workoutTemplateExercises)
+            .values(
+              Array.from(
+                { length: testCase.templateUsageCount },
+                (_, index) => ({
+                  id: `template-usage-${index}`,
+                  templateId: 'usage-template',
+                  exerciseId: 'usage-exercise',
+                  order: index
+                })
+              )
+            )
+            .run();
+        }
+
+        const query = getExerciseUsageSummaryQuery(db, 'usage-exercise');
+
+        assert.deepEqual(
+          new Set(
+            (
+              query as typeof query & { getUsedTables: () => string[] }
+            ).getUsedTables()
+          ),
+          new Set(['workout_exercises', 'workout_template_exercises'])
+        );
+        assert.deepEqual(query.get(), {
+          workoutUsageCount: testCase.workoutUsageCount,
+          templateUsageCount: testCase.templateUsageCount,
+          totalUsageCount:
+            testCase.workoutUsageCount + testCase.templateUsageCount
+        });
+
+        const generatedQuery = query.toSQL();
+        const queryPlan = nodeClient.getAllSync<{ detail: string }>(
+          `EXPLAIN QUERY PLAN ${generatedQuery.sql}`,
+          generatedQuery.params as SQLInputValue[]
+        );
+        const queryPlanDetails = queryPlan.map(row => row.detail).join('\n');
+
+        assert.match(
+          queryPlanDetails,
+          /workout_exercises_exercise_id_workout_id_idx/
+        );
+        assert.match(
+          queryPlanDetails,
+          /workout_template_exercises_exercise_id_template_id_idx/
+        );
+      } finally {
+        nodeClient.closeSync();
+      }
+    });
+  }
+});
 
 test('production initialization enables workout delete foreign-key actions', async () => {
   const nodeClient = new NodeSQLiteDatabase();
