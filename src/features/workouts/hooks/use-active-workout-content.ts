@@ -67,6 +67,11 @@ export function useActiveWorkoutContent({
     () => setRows.filter(set => set.status === 'completed').length,
     [setRows]
   );
+  const activeWorkoutExerciseResult = hasPreloadedExerciseRows
+    ? workoutExerciseResult
+    : joinedWorkoutExerciseResult;
+  const workoutExerciseLoadError =
+    activeWorkoutExerciseResult.error ?? setResult.error;
 
   return {
     isExercisePickerOpen,
@@ -74,9 +79,10 @@ export function useActiveWorkoutContent({
     workoutExerciseRows,
     setRows,
     completedSetCount,
-    isLoadingWorkoutExercises: hasPreloadedExerciseRows
-      ? !workoutExerciseResult.isLive
-      : !joinedWorkoutExerciseResult.isLive,
+    isLoadingWorkoutExercises:
+      (!activeWorkoutExerciseResult.isLive || !setResult.isLive) &&
+      !workoutExerciseLoadError,
+    workoutExerciseLoadError,
     exerciseById
   };
 }

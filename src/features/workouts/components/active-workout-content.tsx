@@ -20,7 +20,7 @@ import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.sto
 import { triggerWorkoutEditModeHaptics } from '@/src/features/workouts/workout.haptics';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { router } from 'expo-router';
-import { CircleCheckBig, PlusIcon } from 'lucide-react-native';
+import { ArrowLeftIcon, CircleCheckBig, PlusIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Keyboard, View } from 'react-native';
 import Animated, {
@@ -69,6 +69,7 @@ export function ActiveWorkoutContent({
     setRows,
     completedSetCount,
     isLoadingWorkoutExercises,
+    workoutExerciseLoadError,
     exerciseById
   } = useActiveWorkoutContentData({ activeWorkout, exerciseRows });
   const { selectExercise, createAndSelectCustomExercise } =
@@ -85,8 +86,7 @@ export function ActiveWorkoutContent({
   const restTimerStatus = useRestTimerStore(state => state.status);
 
   const workoutName = activeWorkout.name;
-  const hasWorkoutExercises =
-    !isLoadingWorkoutExercises && workoutExerciseRows.length > 0;
+  const hasWorkoutExercises = workoutExerciseRows.length > 0;
   const canFinishWorkout = completedSetCount > 0;
   const canSaveHistoricalWorkout = completedSetCount > 0;
   const shouldShowWorkoutChrome =
@@ -243,18 +243,34 @@ export function ActiveWorkoutContent({
   );
 
   const headerKey = isEditingExercises ? 'edit' : mode;
+  const shouldAnimateLocalState = mode !== 'active';
 
   return (
     <Screen withPadding={false} edges={[]}>
       <Animated.View
         key={headerKey}
-        entering={headerEntering}
-        exiting={headerExiting}
+        entering={shouldAnimateLocalState ? headerEntering : undefined}
+        exiting={shouldAnimateLocalState ? headerExiting : undefined}
       >
         {headerContent}
       </Animated.View>
 
-      {isLoadingWorkoutExercises ? (
+      {workoutExerciseLoadError ? (
+        <View className="flex-1 px-4 pb-6">
+          <EmptyState
+            title="Could not load exercises"
+            description="Something went wrong while loading this workout."
+            action={
+              <Button
+                leftIcon={<Icon as={ArrowLeftIcon} tone="primaryForeground" />}
+                onPress={() => router.replace('/(tabs)/workout')}
+              >
+                Go back
+              </Button>
+            }
+          />
+        </View>
+      ) : isLoadingWorkoutExercises ? (
         <View className="flex-1 px-4">
           <LoadingState label="Loading exercises..." />
         </View>
@@ -287,13 +303,13 @@ export function ActiveWorkoutContent({
       )}
 
       {shouldShowWorkoutChrome &&
-        !isLoadingWorkoutExercises &&
+        !workoutExerciseLoadError &&
         workoutExerciseRows.length > 0 && (
           <Animated.View
             className="border-border bg-background pb-safe border-t px-4 pt-3"
-            entering={chromeEntering}
-            exiting={chromeExiting}
-            layout={chromeLayout}
+            entering={shouldAnimateLocalState ? chromeEntering : undefined}
+            exiting={shouldAnimateLocalState ? chromeExiting : undefined}
+            layout={shouldAnimateLocalState ? chromeLayout : undefined}
           >
             {mode === 'active' ? (
               <RestTimerWidget

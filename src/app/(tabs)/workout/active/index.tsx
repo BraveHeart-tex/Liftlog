@@ -9,7 +9,26 @@ import { router } from 'expo-router';
 import { ArrowLeftIcon } from 'lucide-react-native';
 
 export default function ActiveWorkoutScreen() {
-  const { activeWorkout, isLoading } = useActiveWorkoutScreen();
+  const { activeWorkout, error, isLoading } = useActiveWorkoutScreen();
+
+  if (error) {
+    return (
+      <Screen withPadding={false} edges={[]} contentClassName="px-6">
+        <EmptyState
+          title="Could not load workout"
+          description="Something went wrong while loading your active workout."
+          action={
+            <Button
+              leftIcon={<Icon as={ArrowLeftIcon} tone="primaryForeground" />}
+              onPress={() => router.replace('/(tabs)/workout')}
+            >
+              Go back
+            </Button>
+          }
+        />
+      </Screen>
+    );
+  }
 
   if (isLoading) {
     return (

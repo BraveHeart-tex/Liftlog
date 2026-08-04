@@ -67,6 +67,7 @@ export function ActiveWorkoutExerciseList({
   isEditing
 }: ActiveWorkoutExerciseListProps) {
   const { weightUnit } = useSettings();
+  const shouldAnimateLocalState = mode !== 'active';
   const visibleWorkoutExercises =
     isEditing && draftExerciseRows
       ? draftExerciseRows
@@ -115,8 +116,8 @@ export function ActiveWorkoutExerciseList({
       <Animated.View
         key="edit-exercise-list"
         className="flex-1"
-        entering={listEntering}
-        exiting={listExiting}
+        entering={shouldAnimateLocalState ? listEntering : undefined}
+        exiting={shouldAnimateLocalState ? listExiting : undefined}
       >
         <ActiveWorkoutExerciseEditList
           rows={workoutExercisesWithSets}
@@ -130,8 +131,8 @@ export function ActiveWorkoutExerciseList({
     <Animated.View
       key="workout-exercise-card-list"
       className="flex-1"
-      entering={listEntering}
-      exiting={listExiting}
+      entering={shouldAnimateLocalState ? listEntering : undefined}
+      exiting={shouldAnimateLocalState ? listExiting : undefined}
     >
       <StyledScrollView
         className="flex-1"

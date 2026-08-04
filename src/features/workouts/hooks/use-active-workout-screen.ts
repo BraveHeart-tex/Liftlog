@@ -10,6 +10,7 @@ export function useActiveWorkoutScreen() {
 
   return {
     activeWorkout: activeWorkoutResult.data[0],
-    isLoading: !activeWorkoutResult.isLive
+    error: activeWorkoutResult.error,
+    isLoading: !activeWorkoutResult.isLive && !activeWorkoutResult.error
   };
 }
