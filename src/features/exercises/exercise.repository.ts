@@ -6,8 +6,8 @@ import {
   type Exercise,
   type NewExercise
 } from '@/src/db/schema';
-import { rebuildPersonalRecordsForExercise } from '@/src/features/progress/progress.repository';
-import { and, count, eq, ne, sql } from 'drizzle-orm';
+import { rebuildPersonalRecordsForExerciseInTransaction } from '@/src/features/progress/progress.repository';
+import { and, count, eq, exists, ne, or, sql } from 'drizzle-orm';
 import type { InferColumnsDataTypes } from 'drizzle-orm/column';
 
 const exerciseListFields = {
@@ -29,13 +29,6 @@ interface CustomExerciseDetailsUpdate {
   trackingType: Exercise['trackingType'];
   primaryMuscles: string[];
   secondaryMuscles: string[];
-}
-
-function getExerciseRecordById(
-  db: DrizzleDb,
-  id: Exercise['id']
-): Exercise | undefined {
-  return db.select().from(exercises).where(eq(exercises.id, id)).get();
 }
 
 export function getExerciseByIdQuery(db: DrizzleDb, id: Exercise['id']) {
@@ -89,35 +82,17 @@ export function createExercise(db: DrizzleDb, data: NewExercise): Exercise {
     .get();
 }
 
-function updateExercise(
-  db: DrizzleDb,
-  id: Exercise['id'],
-  data: Partial<NewExercise>
-): Exercise | undefined {
-  if (Object.keys(data).length === 0) {
-    return getExerciseRecordById(db, id);
-  }
-
-  return db
-    .update(exercises)
-    .set(data)
-    .where(eq(exercises.id, id))
-    .returning()
-    .get();
-}
-
 export function updateCustomExerciseName(
   db: DrizzleDb,
   id: Exercise['id'],
   name: Exercise['name']
 ): Exercise | undefined {
-  const exercise = getExerciseRecordById(db, id);
-
-  if (!exercise || exercise.isCustom !== 1) {
-    return undefined;
-  }
-
-  return updateExercise(db, id, { name });
+  return db
+    .update(exercises)
+    .set({ name })
+    .where(and(eq(exercises.id, id), eq(exercises.isCustom, 1)))
+    .returning()
+    .get();
 }
 
 export function updateCustomExerciseDetails(
@@ -125,32 +100,51 @@ export function updateCustomExerciseDetails(
   id: Exercise['id'],
   details: CustomExerciseDetailsUpdate
 ): Exercise | undefined {
-  const exercise = getExerciseRecordById(db, id);
+  return db.transaction(tx => {
+    const exercise = tx
+      .select({
+        isCustom: exercises.isCustom,
+        trackingType: exercises.trackingType
+      })
+      .from(exercises)
+      .where(eq(exercises.id, id))
+      .get();
 
-  if (!exercise || exercise.isCustom !== 1) {
-    return undefined;
-  }
+    if (!exercise || exercise.isCustom !== 1) {
+      return undefined;
+    }
 
-  const updatedExercise = updateExercise(db, id, {
-    category: details.category,
-    trackingType: details.trackingType,
-    primaryMuscles: JSON.stringify(details.primaryMuscles),
-    secondaryMuscles: JSON.stringify(details.secondaryMuscles)
+    const updatedExercise = tx
+      .update(exercises)
+      .set({
+        category: details.category,
+        trackingType: details.trackingType,
+        primaryMuscles: JSON.stringify(details.primaryMuscles),
+        secondaryMuscles: JSON.stringify(details.secondaryMuscles)
+      })
+      .where(and(eq(exercises.id, id), eq(exercises.isCustom, 1)))
+      .returning()
+      .get();
+
+    if (updatedExercise && exercise.trackingType !== details.trackingType) {
+      rebuildPersonalRecordsForExerciseInTransaction(tx, id);
+    }
+
+    return updatedExercise;
   });
-
-  if (updatedExercise && exercise.trackingType !== details.trackingType) {
-    rebuildPersonalRecordsForExercise(db, id);
-  }
-
-  return updatedExercise;
 }
 
 function archiveExercise(db: DrizzleDb, id: Exercise['id']): void {
-  db.update(exercises).set({ isArchived: 1 }).where(eq(exercises.id, id)).run();
+  db.update(exercises)
+    .set({ isArchived: 1 })
+    .where(and(eq(exercises.id, id), eq(exercises.isCustom, 1)))
+    .run();
 }
 
 function deleteExercise(db: DrizzleDb, id: Exercise['id']): void {
-  db.delete(exercises).where(eq(exercises.id, id)).run();
+  db.delete(exercises)
+    .where(and(eq(exercises.id, id), eq(exercises.isCustom, 1)))
+    .run();
 }
 
 export function getExerciseUsageSummaryQuery(
@@ -185,20 +179,44 @@ export function getExerciseUsageSummaryQuery(
     .crossJoin(templateUsage);
 }
 
-function getExerciseUsageCount(
+export function getExerciseUsageExistsQuery(
   db: DrizzleDb,
   exerciseId: Exercise['id']
-): number {
-  return (
-    getExerciseUsageSummaryQuery(db, exerciseId).get()?.totalUsageCount ?? 0
-  );
+) {
+  const workoutUsage = db
+    .select({ id: workoutExercises.id })
+    .from(workoutExercises)
+    .where(eq(workoutExercises.exerciseId, exerciseId))
+    .limit(1);
+  const templateUsage = db
+    .select({ id: workoutTemplateExercises.id })
+    .from(workoutTemplateExercises)
+    .where(eq(workoutTemplateExercises.exerciseId, exerciseId))
+    .limit(1);
+
+  return db
+    .select({
+      isUsed: sql<number>`${or(
+        exists(workoutUsage),
+        exists(templateUsage)
+      )}`.as('is_used')
+    })
+    .from(sql`(select 1) as usage_probe`);
+}
+
+function isExerciseUsed(db: DrizzleDb, exerciseId: Exercise['id']): boolean {
+  return getExerciseUsageExistsQuery(db, exerciseId).get()?.isUsed === 1;
 }
 
 export function removeCustomExercise(
   db: DrizzleDb,
   id: Exercise['id']
 ): 'archived' | 'deleted' | 'not_custom' | 'not_found' {
-  const exercise = getExerciseRecordById(db, id);
+  const exercise = db
+    .select({ isCustom: exercises.isCustom })
+    .from(exercises)
+    .where(eq(exercises.id, id))
+    .get();
 
   if (!exercise) {
     return 'not_found';
@@ -208,7 +226,7 @@ export function removeCustomExercise(
     return 'not_custom';
   }
 
-  if (getExerciseUsageCount(db, id) > 0) {
+  if (isExerciseUsed(db, id)) {
     archiveExercise(db, id);
 
     return 'archived';

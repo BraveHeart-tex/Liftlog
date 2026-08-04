@@ -12,7 +12,12 @@ import {
   runDatabaseMigrations,
   type DrizzleDb
 } from '@/src/db/client';
-import { getExerciseUsageSummaryQuery } from '@/src/features/exercises/exercise.repository';
+import {
+  getExerciseUsageExistsQuery,
+  removeCustomExercise,
+  updateCustomExerciseDetails,
+  updateCustomExerciseName
+} from '@/src/features/exercises/exercise.repository';
 import {
   completeWorkout,
   createCompletedSet,
@@ -61,7 +66,8 @@ interface ForeignKeyListRow {
 class NodeSQLiteStatement {
   constructor(
     private readonly statement: StatementSync,
-    private readonly database: DatabaseSync
+    private readonly database: DatabaseSync,
+    private readonly onExecute: () => void
   ) {}
 
   executeSync(params: SQLInputValue[] = []) {
@@ -73,6 +79,7 @@ class NodeSQLiteStatement {
   }
 
   private execute(params: SQLInputValue[], rawResult: boolean) {
+    this.onExecute();
     const rows = this.statement.all(...params);
     const metadata = this.database
       .prepare(
@@ -100,6 +107,15 @@ class NodeSQLiteStatement {
 
 class NodeSQLiteDatabase {
   private readonly database = new DatabaseSync(':memory:');
+  private executedPreparedStatementCount = 0;
+
+  getPreparedStatementCount() {
+    return this.executedPreparedStatementCount;
+  }
+
+  resetPreparedStatementCount() {
+    this.executedPreparedStatementCount = 0;
+  }
 
   closeSync() {
     this.database.close();
@@ -116,7 +132,12 @@ class NodeSQLiteDatabase {
   prepareSync(source: string) {
     return new NodeSQLiteStatement(
       this.database.prepare(source),
-      this.database
+      this.database,
+      () => {
+        if (!/^\s*(begin|commit|rollback)\b/i.test(source)) {
+          this.executedPreparedStatementCount += 1;
+        }
+      }
     );
   }
 
@@ -326,27 +347,31 @@ function getHistoricalPersonalRecordRows(db: DrizzleDb) {
     .all();
 }
 
-test('exercise usage summary counts workout and template usage independently', async t => {
+test('exercise usage query checks workout and template references together', async t => {
   const cases = [
     {
       name: 'no usage',
       workoutUsageCount: 0,
-      templateUsageCount: 0
+      templateUsageCount: 0,
+      isUsed: 0
     },
     {
       name: 'workout-only usage',
       workoutUsageCount: 2,
-      templateUsageCount: 0
+      templateUsageCount: 0,
+      isUsed: 1
     },
     {
       name: 'template-only usage',
       workoutUsageCount: 0,
-      templateUsageCount: 2
+      templateUsageCount: 2,
+      isUsed: 1
     },
     {
       name: 'usage in both tables',
       workoutUsageCount: 2,
-      templateUsageCount: 3
+      templateUsageCount: 3,
+      isUsed: 1
     }
   ];
 
@@ -412,22 +437,11 @@ test('exercise usage summary counts workout and template usage independently', a
             .run();
         }
 
-        const query = getExerciseUsageSummaryQuery(db, 'usage-exercise');
+        const query = getExerciseUsageExistsQuery(db, 'usage-exercise');
 
-        assert.deepEqual(
-          new Set(
-            (
-              query as typeof query & { getUsedTables: () => string[] }
-            ).getUsedTables()
-          ),
-          new Set(['workout_exercises', 'workout_template_exercises'])
-        );
-        assert.deepEqual(query.get(), {
-          workoutUsageCount: testCase.workoutUsageCount,
-          templateUsageCount: testCase.templateUsageCount,
-          totalUsageCount:
-            testCase.workoutUsageCount + testCase.templateUsageCount
-        });
+        nodeClient.resetPreparedStatementCount();
+        assert.deepEqual(query.get(), { isUsed: testCase.isUsed });
+        assert.equal(nodeClient.getPreparedStatementCount(), 1);
 
         const generatedQuery = query.toSQL();
         const queryPlan = nodeClient.getAllSync<{ detail: string }>(
@@ -448,6 +462,217 @@ test('exercise usage summary counts workout and template usage independently', a
         nodeClient.closeSync();
       }
     });
+  }
+});
+
+test('custom exercise updates use reduced statement paths', async () => {
+  const { db, nodeClient } = await createMigratedTestDatabase();
+
+  try {
+    db.insert(exercises)
+      .values([
+        {
+          id: 'custom-exercise',
+          name: 'Custom exercise',
+          category: 'other',
+          trackingType: 'reps',
+          isCustom: 1
+        },
+        {
+          id: 'built-in-exercise',
+          name: 'Built-in exercise',
+          category: 'other',
+          trackingType: 'reps'
+        }
+      ])
+      .run();
+
+    nodeClient.resetPreparedStatementCount();
+    assert.equal(
+      updateCustomExerciseName(db, 'custom-exercise', 'Renamed')?.name,
+      'Renamed'
+    );
+    assert.equal(nodeClient.getPreparedStatementCount(), 1);
+
+    nodeClient.resetPreparedStatementCount();
+    assert.equal(
+      updateCustomExerciseName(db, 'built-in-exercise', 'Blocked'),
+      undefined
+    );
+    assert.equal(nodeClient.getPreparedStatementCount(), 1);
+
+    nodeClient.resetPreparedStatementCount();
+    assert.equal(
+      updateCustomExerciseDetails(db, 'custom-exercise', {
+        category: 'arms',
+        trackingType: 'reps',
+        primaryMuscles: ['biceps'],
+        secondaryMuscles: []
+      })?.category,
+      'arms'
+    );
+    assert.equal(nodeClient.getPreparedStatementCount(), 2);
+
+    nodeClient.resetPreparedStatementCount();
+    assert.equal(
+      updateCustomExerciseDetails(db, 'custom-exercise', {
+        category: 'cardio',
+        trackingType: 'duration',
+        primaryMuscles: [],
+        secondaryMuscles: []
+      })?.trackingType,
+      'duration'
+    );
+    assert.equal(nodeClient.getPreparedStatementCount(), 4);
+  } finally {
+    nodeClient.closeSync();
+  }
+});
+
+test('tracking-type update rolls back when personal-record rebuild fails', async () => {
+  const { db, nodeClient } = await createMigratedTestDatabase();
+
+  try {
+    seedTrackedExercise(db);
+    db.update(exercises)
+      .set({ isCustom: 1 })
+      .where(eq(exercises.id, 'exercise-1'))
+      .run();
+    createTrackedSet(db, 'set-1', 10, 0);
+    rejectPersonalRecordRebuilds(nodeClient);
+
+    assert.throws(
+      () =>
+        updateCustomExerciseDetails(db, 'exercise-1', {
+          category: 'cardio',
+          trackingType: 'duration',
+          primaryMuscles: [],
+          secondaryMuscles: []
+        }),
+      /unexpected personal record rebuild/
+    );
+
+    assert.deepEqual(
+      db
+        .select({
+          category: exercises.category,
+          trackingType: exercises.trackingType
+        })
+        .from(exercises)
+        .where(eq(exercises.id, 'exercise-1'))
+        .get(),
+      { category: 'chest', trackingType: 'reps' }
+    );
+  } finally {
+    nodeClient.closeSync();
+  }
+});
+
+test('custom exercise removal preserves results with three-statement paths', async () => {
+  const { db, nodeClient } = await createMigratedTestDatabase();
+
+  try {
+    db.insert(exercises)
+      .values([
+        {
+          id: 'unused-custom',
+          name: 'Unused custom',
+          category: 'other',
+          isCustom: 1
+        },
+        {
+          id: 'referenced-custom',
+          name: 'Referenced custom',
+          category: 'other',
+          isCustom: 1
+        },
+        {
+          id: 'built-in',
+          name: 'Built-in',
+          category: 'other'
+        }
+      ])
+      .run();
+    db.insert(workouts)
+      .values({
+        id: 'removal-workout',
+        name: 'Removal workout',
+        status: 'completed',
+        startedAt: 1,
+        dateKey: '1970-01-01'
+      })
+      .run();
+    db.insert(workoutExercises)
+      .values({
+        id: 'removal-workout-exercise',
+        workoutId: 'removal-workout',
+        exerciseId: 'referenced-custom',
+        order: 0
+      })
+      .run();
+
+    nodeClient.resetPreparedStatementCount();
+    assert.equal(removeCustomExercise(db, 'missing'), 'not_found');
+    assert.equal(nodeClient.getPreparedStatementCount(), 1);
+
+    nodeClient.resetPreparedStatementCount();
+    assert.equal(removeCustomExercise(db, 'built-in'), 'not_custom');
+    assert.equal(nodeClient.getPreparedStatementCount(), 1);
+
+    nodeClient.resetPreparedStatementCount();
+    assert.equal(removeCustomExercise(db, 'referenced-custom'), 'archived');
+    assert.equal(nodeClient.getPreparedStatementCount(), 3);
+
+    nodeClient.resetPreparedStatementCount();
+    assert.equal(removeCustomExercise(db, 'unused-custom'), 'deleted');
+    assert.equal(nodeClient.getPreparedStatementCount(), 3);
+  } finally {
+    nodeClient.closeSync();
+  }
+});
+
+test('custom exercise removal archives after a defensive delete fallback', async () => {
+  const { db, nodeClient } = await createMigratedTestDatabase();
+
+  try {
+    db.insert(exercises)
+      .values({
+        id: 'fallback-custom',
+        name: 'Fallback custom',
+        category: 'other',
+        isCustom: 1
+      })
+      .run();
+    nodeClient.execSync(`
+      CREATE TRIGGER reject_custom_exercise_delete
+      BEFORE DELETE ON exercises
+      WHEN OLD.id = 'fallback-custom'
+      BEGIN
+        SELECT RAISE(ABORT, 'FOREIGN KEY constraint failed');
+      END;
+    `);
+
+    const originalConsoleError = console.error;
+    console.error = () => undefined;
+    nodeClient.resetPreparedStatementCount();
+
+    try {
+      assert.equal(removeCustomExercise(db, 'fallback-custom'), 'archived');
+    } finally {
+      console.error = originalConsoleError;
+    }
+
+    assert.equal(nodeClient.getPreparedStatementCount(), 4);
+    assert.equal(
+      db
+        .select({ isArchived: exercises.isArchived })
+        .from(exercises)
+        .where(eq(exercises.id, 'fallback-custom'))
+        .get()?.isArchived,
+      1
+    );
+  } finally {
+    nodeClient.closeSync();
   }
 });
 
