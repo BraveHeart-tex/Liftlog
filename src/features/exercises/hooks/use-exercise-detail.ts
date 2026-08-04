@@ -246,19 +246,10 @@ export function useExerciseDetail(exerciseId: string | undefined) {
 
   const fullHistory = useMemo(
     () =>
-      buildExerciseHistory(workoutRows, historyRows.setRows)
-        .map(entry => {
-          const completedSets = entry.sets.filter(
-            set => set.status === 'completed'
-          );
-
-          return {
-            ...entry,
-            sets: completedSets,
-            bestSetId: getBestSetId(completedSets, trackingType)
-          };
-        })
-        .filter(entry => entry.sets.length > 0),
+      buildExerciseHistory(workoutRows, historyRows.setRows).map(entry => ({
+        ...entry,
+        bestSetId: getBestSetId(entry.sets, trackingType)
+      })),
     [historyRows.setRows, trackingType, workoutRows]
   );
 

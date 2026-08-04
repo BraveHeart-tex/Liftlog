@@ -6,10 +6,7 @@ import {
 } from '@/src/features/progress/progress.repository';
 import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
-import {
-  formatCompletedSets,
-  getCompletedSets
-} from '@/src/features/workouts/set-display.utils';
+import { formatCompletedSets } from '@/src/features/workouts/set-display.utils';
 import { convertWeightToKg } from '@/src/lib/utils/weight.utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getProgressionSuggestion } from '@/src/features/workouts/components/progression-suggestion.utils';
@@ -62,13 +59,7 @@ export function useExerciseTrackTab(
         buildExerciseHistory(
           historyRows.visibleWorkoutRows,
           historyRows.setRows
-        )
-          .map(entry => ({
-            ...entry,
-            sets: getCompletedSets(entry.sets)
-          }))
-          .filter(entry => entry.sets.length > 0)
-          .slice(0, PROGRESSION_HISTORY_LIMIT)
+        ).slice(0, PROGRESSION_HISTORY_LIMIT)
       );
     } catch (error) {
       if (!isMountedRef.current || refreshRequestIdRef.current !== requestId) {

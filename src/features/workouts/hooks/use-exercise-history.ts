@@ -20,10 +20,6 @@ import {
 } from '@/src/features/workouts/exercise-history-pagination.utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-function getCompletedSets(sets: Set[]) {
-  return sets.filter(set => set.status === 'completed');
-}
-
 const HISTORY_PAGE_SIZE = 20;
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -165,13 +161,7 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
       buildExerciseHistory(
         visibleWorkoutRows,
         setRows.filter(row => visibleWorkoutIds.includes(row.workoutId))
-      )
-        .map(historyEntry => ({
-          ...historyEntry,
-          sets: getCompletedSets(historyEntry.sets)
-        }))
-        .filter(historyEntry => historyEntry.sets.length > 0)
-        .slice(0, visibleWorkoutLimit),
+      ).slice(0, visibleWorkoutLimit),
     [setRows, visibleWorkoutIds, visibleWorkoutLimit, visibleWorkoutRows]
   );
   const monthlyProgression = useMemo(() => {
@@ -207,14 +197,8 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
         ? (setsByWorkoutId.get(row.workout.id) ?? [])
         : []
     );
-    const currentBestScore = getBestScore(
-      getCompletedSets(currentSets),
-      trackingType
-    );
-    const previousBestScore = getBestScore(
-      getCompletedSets(previousSets),
-      trackingType
-    );
+    const currentBestScore = getBestScore(currentSets, trackingType);
+    const previousBestScore = getBestScore(previousSets, trackingType);
 
     if (currentBestScore === 0 || previousBestScore === 0) {
       return null;

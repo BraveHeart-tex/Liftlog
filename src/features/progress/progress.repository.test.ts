@@ -1,8 +1,4 @@
-import type {
-  Set as WorkoutSet,
-  Workout,
-  WorkoutExercise
-} from '@/src/db/schema';
+import type { Set as WorkoutSet, Workout } from '@/src/db/schema';
 import {
   buildExerciseHistory,
   getExerciseHistoryQuery,
@@ -45,50 +41,34 @@ function createSet(
   };
 }
 
-function createWorkoutExercise(id: string): WorkoutExercise {
-  return {
-    id,
-    workoutId: 'workout-1',
-    exerciseId: 'exercise-1',
-    order: 1,
-    supersetId: null,
-    notes: null
-  };
-}
-
 test('maps joined history rows without dropping duplicate exercise sets', () => {
   const workout1 = createWorkout('workout-1', 3);
   const workout2 = createWorkout('workout-2', 2);
   const workout3 = createWorkout('workout-3', 1);
-  const workoutExercise = createWorkoutExercise('workout-exercise-1');
-  const completedSet = createSet('set-1', workoutExercise.id);
-  const pendingSet = createSet('set-2', workoutExercise.id, 'pending');
+  const completedSet = createSet('set-1', 'workout-exercise-1');
+  const secondCompletedSet = createSet('set-2', 'workout-exercise-1');
 
   const rows: Parameters<typeof mapExerciseHistoryRows>[0] = [
     {
       workout: workout1,
-      workoutExercise,
       set: completedSet,
       isVisible: 1,
       isProgression: 1
     },
     {
       workout: workout1,
-      workoutExercise,
-      set: pendingSet,
+      set: secondCompletedSet,
       isVisible: 1,
       isProgression: 1
     },
     {
       workout: workout2,
-      workoutExercise: null,
       set: null,
       isVisible: 1,
       isProgression: 1
     },
     {
       workout: workout3,
-      workoutExercise: null,
       set: null,
       isVisible: 0,
       isProgression: 1
@@ -109,7 +89,7 @@ test('maps joined history rows without dropping duplicate exercise sets', () => 
     mapped.setRows.map(row => [row.workoutId, row.set.id, row.set.status]),
     [
       ['workout-1', 'set-1', 'completed'],
-      ['workout-1', 'set-2', 'pending']
+      ['workout-1', 'set-2', 'completed']
     ]
   );
 
@@ -129,7 +109,6 @@ test('maps joined history rows without dropping duplicate exercise sets', () => 
 test('visible history can retain a limit-plus-one probe separately from the page', () => {
   const rows = [1, 2, 3].map(index => ({
     workout: createWorkout(`workout-${index}`, 4 - index),
-    workoutExercise: null,
     set: null,
     isVisible: 1,
     isProgression: 0
@@ -145,7 +124,7 @@ test('visible history can retain a limit-plus-one probe separately from the page
   );
 });
 
-test('limits workout IDs before joining sets and excludes the probe sets', () => {
+test('limits workout IDs before joining sets and controls probe set loading', () => {
   const query = getExerciseHistoryQuery(
     new QueryBuilder() as never,
     'exercise-1',
@@ -164,6 +143,13 @@ test('limits workout IDs before joining sets and excludes the probe sets', () =>
   assert.match(generatedSql, /max\("load_sets"\) as "load_sets"/i);
   assert.match(
     generatedSql,
-    /left join "sets" on \([\s\S]*"sets"\."workout_exercise_id"[\s\S]*"load_sets" = \?/i
+    /left join "sets" on \([\s\S]*"sets"\."workout_exercise_id"[\s\S]*"sets"\."status" = \?[\s\S]*"load_sets" = \?/i
+  );
+  assert.doesNotMatch(
+    generatedSql.slice(
+      outerSelectIndex,
+      generatedSql.indexOf(' from ', outerSelectIndex)
+    ),
+    /"workout_exercises"/i
   );
 });

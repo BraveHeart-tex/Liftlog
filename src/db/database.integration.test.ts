@@ -21,7 +21,11 @@ import {
   saveHistoricalWorkoutEditDraft,
   updateCompletedSet
 } from '@/src/features/workouts/workout.repository';
-import { rebuildPersonalRecordsForExercises } from '@/src/features/progress/progress.repository';
+import {
+  getExerciseHistoryQuery,
+  mapExerciseHistoryRows,
+  rebuildPersonalRecordsForExercises
+} from '@/src/features/progress/progress.repository';
 import { eq } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
 import type { SQLiteDatabase } from 'expo-sqlite';
@@ -118,8 +122,8 @@ class NodeSQLiteDatabase {
     return (this.database.prepare(source).get() as T | undefined) ?? null;
   }
 
-  getAllSync<T>(source: string): T[] {
-    return this.database.prepare(source).all() as T[];
+  getAllSync<T>(source: string, params: SQLInputValue[] = []): T[] {
+    return this.database.prepare(source).all(...params) as T[];
   }
 
   async getFirstAsync<T>(source: string): Promise<T | null> {
@@ -685,6 +689,158 @@ test('recent exercises are deduplicated before the limit', async () => {
         .map(row => row.exerciseId),
       ['exercise-a', 'exercise-c', 'exercise-d']
     );
+  } finally {
+    nodeClient.closeSync();
+  }
+});
+
+test('exercise history selects workouts and sets by completed sets', async () => {
+  const { db, nodeClient } = await createMigratedTestDatabase();
+
+  try {
+    db.insert(exercises)
+      .values({
+        id: 'exercise-history',
+        name: 'History exercise',
+        category: 'other'
+      })
+      .run();
+    db.insert(workouts)
+      .values([
+        {
+          id: 'pending-only',
+          name: 'Pending only',
+          status: 'completed',
+          startedAt: 500,
+          dateKey: '1970-01-01'
+        },
+        {
+          id: 'mixed',
+          name: 'Mixed',
+          status: 'completed',
+          startedAt: 400,
+          dateKey: '1970-01-01'
+        },
+        {
+          id: 'completed',
+          name: 'Completed',
+          status: 'completed',
+          startedAt: 300,
+          dateKey: '1970-01-01'
+        },
+        {
+          id: 'probe',
+          name: 'Probe',
+          status: 'completed',
+          startedAt: 200,
+          dateKey: '1970-01-01'
+        }
+      ])
+      .run();
+    db.insert(workoutExercises)
+      .values(
+        ['pending-only', 'mixed', 'completed', 'probe'].map(workoutId => ({
+          id: `${workoutId}-exercise`,
+          workoutId,
+          exerciseId: 'exercise-history',
+          order: 0
+        }))
+      )
+      .run();
+    db.insert(sets)
+      .values([
+        {
+          id: 'pending-only-set',
+          workoutExerciseId: 'pending-only-exercise',
+          order: 0,
+          status: 'pending'
+        },
+        {
+          id: 'mixed-pending',
+          workoutExerciseId: 'mixed-exercise',
+          order: 0,
+          status: 'pending'
+        },
+        {
+          id: 'mixed-completed-1',
+          workoutExerciseId: 'mixed-exercise',
+          order: 1,
+          status: 'completed'
+        },
+        {
+          id: 'mixed-completed-2',
+          workoutExerciseId: 'mixed-exercise',
+          order: 2,
+          status: 'completed'
+        },
+        {
+          id: 'completed-set-1',
+          workoutExerciseId: 'completed-exercise',
+          order: 0,
+          status: 'completed'
+        },
+        {
+          id: 'completed-set-2',
+          workoutExerciseId: 'completed-exercise',
+          order: 1,
+          status: 'completed'
+        },
+        {
+          id: 'probe-set',
+          workoutExerciseId: 'probe-exercise',
+          order: 0,
+          status: 'completed'
+        }
+      ])
+      .run();
+
+    const query = getExerciseHistoryQuery(db, 'exercise-history', 2, {
+      includeLimitProbe: true,
+      includeProgression: true
+    });
+    // Node SQLite object rows collapse duplicate join column names.
+    nodeClient.execSync(`
+      PRAGMA short_column_names = OFF;
+      PRAGMA full_column_names = ON;
+    `);
+    const mapped = mapExerciseHistoryRows(query.all());
+    nodeClient.execSync(`
+      PRAGMA full_column_names = OFF;
+      PRAGMA short_column_names = ON;
+    `);
+
+    assert.deepEqual(
+      mapped.visibleWorkoutRows.map(row => row.workout.id),
+      ['mixed', 'completed', 'probe']
+    );
+    assert.deepEqual(
+      mapped.progressionWorkoutRows.map(row => row.workout.id),
+      ['mixed', 'completed', 'probe']
+    );
+    assert.deepEqual(
+      mapped.setRows.map(row => [row.workoutId, row.set.id]),
+      [
+        ['mixed', 'mixed-completed-1'],
+        ['mixed', 'mixed-completed-2'],
+        ['completed', 'completed-set-1'],
+        ['completed', 'completed-set-2'],
+        ['probe', 'probe-set']
+      ]
+    );
+    assert.ok(mapped.setRows.every(row => row.set.status === 'completed'));
+
+    const generatedQuery = query.toSQL();
+    const queryPlan = nodeClient.getAllSync<{ detail: string }>(
+      `EXPLAIN QUERY PLAN ${generatedQuery.sql}`,
+      generatedQuery.params as SQLInputValue[]
+    );
+    const queryPlanDetails = queryPlan.map(row => row.detail).join('\n');
+
+    assert.match(
+      queryPlanDetails,
+      /workout_exercises_exercise_id_workout_id_idx/
+    );
+    assert.match(queryPlanDetails, /sets_workout_exercise_id_status_order_idx/);
   } finally {
     nodeClient.closeSync();
   }

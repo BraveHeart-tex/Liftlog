@@ -9,8 +9,7 @@ import {
   type NewPersonalRecord,
   type PersonalRecord,
   type Set,
-  type Workout,
-  type WorkoutExercise
+  type Workout
 } from '@/src/db/schema';
 import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import { unionAll } from 'drizzle-orm/sqlite-core';
@@ -43,7 +42,6 @@ const TWO_MONTHS_MS = 2 * 30 * 24 * 60 * 60 * 1000;
 
 interface ExerciseHistoryQueryRow {
   workout: Workout;
-  workoutExercise: WorkoutExercise | null;
   set: Set | null;
   isVisible: number;
   isProgression: number;
@@ -80,6 +78,13 @@ export function getExerciseHistoryQuery(
       })
       .from(workouts)
       .innerJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
+      .innerJoin(
+        sets,
+        and(
+          eq(sets.workoutExerciseId, workoutExercises.id),
+          eq(sets.status, 'completed')
+        )
+      )
       .where(
         and(
           eq(workouts.status, 'completed'),
@@ -121,6 +126,13 @@ export function getExerciseHistoryQuery(
         .innerJoin(
           workoutExercises,
           eq(workouts.id, workoutExercises.workoutId)
+        )
+        .innerJoin(
+          sets,
+          and(
+            eq(sets.workoutExerciseId, workoutExercises.id),
+            eq(sets.status, 'completed')
+          )
         )
         .where(
           and(
@@ -191,7 +203,6 @@ export function getExerciseHistoryQuery(
     )
     .select({
       workout: workouts,
-      workoutExercise: workoutExercises,
       set: sets,
       isVisible: uniqueSelectedWorkoutIds.isVisible,
       isProgression: uniqueSelectedWorkoutIds.isProgression
@@ -209,6 +220,7 @@ export function getExerciseHistoryQuery(
       sets,
       and(
         eq(sets.workoutExerciseId, workoutExercises.id),
+        eq(sets.status, 'completed'),
         eq(uniqueSelectedWorkoutIds.loadSets, 1)
       )
     )
