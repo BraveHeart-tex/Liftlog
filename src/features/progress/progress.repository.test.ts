@@ -17,6 +17,7 @@ function createWorkout(id: string, startedAt: number): Workout {
     dateKey: '2026-07-28',
     completedAt: startedAt + 1,
     notes: null,
+    sourceSnapshot: null,
     sourceWorkoutId: null
   };
 }
@@ -37,7 +38,8 @@ function createSet(
     durationSeconds: null,
     rpe: null,
     status,
-    completedAt: status === 'completed' ? 2 : null
+    completedAt: status === 'completed' ? 2 : null,
+    sourceSetId: null
   };
 }
 

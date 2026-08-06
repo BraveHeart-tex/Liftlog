@@ -59,6 +59,7 @@ export const workouts = sqliteTable(
       .$defaultFn(() => toLocalDateKey(Date.now())),
     completedAt: integer('completed_at'),
     notes: text('notes'),
+    sourceSnapshot: text('source_snapshot'),
     sourceWorkoutId: text('source_workout_id').references(
       (): AnySQLiteColumn => workouts.id,
       { onDelete: 'set null' }
@@ -89,7 +90,8 @@ export const workoutExercises = sqliteTable(
       .references(() => exercises.id, { onDelete: 'restrict' }),
     order: integer('order').notNull(),
     supersetId: text('superset_id'),
-    notes: text('notes')
+    notes: text('notes'),
+    sourceWorkoutExerciseId: text('source_workout_exercise_id')
   },
   table => [
     index('workout_exercises_workout_id_order_idx').on(
@@ -99,6 +101,9 @@ export const workoutExercises = sqliteTable(
     index('workout_exercises_exercise_id_workout_id_idx').on(
       table.exerciseId,
       table.workoutId
+    ),
+    index('workout_exercises_source_workout_exercise_id_idx').on(
+      table.sourceWorkoutExerciseId
     )
   ]
 );
@@ -174,14 +179,16 @@ export const sets = sqliteTable(
     durationSeconds: integer('duration_seconds'),
     rpe: integer('rpe'),
     status: text('status').notNull().default('pending'),
-    completedAt: integer('completed_at')
+    completedAt: integer('completed_at'),
+    sourceSetId: text('source_set_id')
   },
   table => [
     index('sets_workout_exercise_id_status_order_idx').on(
       table.workoutExerciseId,
       table.status,
       table.order
-    )
+    ),
+    index('sets_source_set_id_idx').on(table.sourceSetId)
   ]
 );
 

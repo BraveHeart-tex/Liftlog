@@ -12,6 +12,7 @@ import {
 } from '@/src/db/exercise-name-migration';
 import migrations from '@/src/db/migrations/migrations';
 import { runSeedIfNeeded } from '@/src/db/seed';
+import { cleanupLegacyHistoricalWorkoutEditDrafts } from '@/src/features/workouts/workout.repository';
 import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
 import {
   type SQLiteDatabase,
@@ -77,6 +78,7 @@ async function migrateAsync(sqliteDb: SQLiteDatabase) {
     );
     backfillNormalizedExerciseNames(drizzleDb);
     await runDatabaseMigrations(sqliteDb, () => migrate(drizzleDb, migrations));
+    cleanupLegacyHistoricalWorkoutEditDrafts(drizzleDb);
   } catch (error) {
     console.error('Database migration failed', error);
 

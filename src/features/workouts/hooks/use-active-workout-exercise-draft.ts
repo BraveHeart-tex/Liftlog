@@ -178,7 +178,8 @@ export function useActiveWorkoutExerciseDraft({
               exerciseId: exercise.id,
               order: currentRows.length + index,
               supersetId: null,
-              notes: null
+              notes: null,
+              sourceWorkoutExerciseId: null
             },
             exercise
           }))
@@ -214,7 +215,8 @@ export function useActiveWorkoutExerciseDraft({
                   exerciseId: stagedCustomExercise.id,
                   order: currentRows.length,
                   supersetId: null,
-                  notes: null
+                  notes: null,
+                  sourceWorkoutExerciseId: null
                 },
                 exercise: stagedCustomExercise,
                 stagedCustomExercise
