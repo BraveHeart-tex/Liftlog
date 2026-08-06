@@ -1,6 +1,7 @@
 import { DatabaseProvider } from '@/src/components/database-provider';
 import { ScreenErrorBoundary } from '@/src/components/screen-error-boundary';
 import { SnackbarHost } from '@/src/components/ui/snackbar';
+import { SettingsProvider } from '@/src/features/settings/settings-provider';
 import { StepsSyncHost } from '@/src/features/steps/components/steps-sync-host';
 import { RestTimerHost } from '@/src/features/workouts/components/rest-timer-host';
 import { AppThemeProvider } from '@/src/theme/app-theme-provider';
@@ -34,12 +35,14 @@ export function CommonProviders({
       <AppThemeProvider>
         <DatabaseProvider onError={onDatabaseError} onReady={onDatabaseReady}>
           <ScreenErrorBoundary>
-            <BottomSheetModalProvider>
-              {children}
-              <StepsSyncHost />
-              <RestTimerHost />
-              <SnackbarHost />
-            </BottomSheetModalProvider>
+            <SettingsProvider>
+              <BottomSheetModalProvider>
+                {children}
+                <StepsSyncHost />
+                <RestTimerHost />
+                <SnackbarHost />
+              </BottomSheetModalProvider>
+            </SettingsProvider>
           </ScreenErrorBoundary>
         </DatabaseProvider>
       </AppThemeProvider>

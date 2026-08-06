@@ -30,7 +30,11 @@ interface UseLiveWithFallbackOptions<Rows extends unknown[]> {
   initialData?: Rows;
   deferInitialRead?: boolean;
   waitForInteractions?: boolean;
+  debugLabel?: string;
 }
+
+const activeDebugSubscriptions = new Map<string, number>();
+const debugQueryRuns = new Map<string, number>();
 
 export function useLiveWithFallback<Query extends LiveRowsQuery>(
   query: Query,
@@ -42,7 +46,8 @@ export function useLiveWithFallback<Query extends LiveRowsQuery>(
     fallbackData,
     initialData,
     deferInitialRead = false,
-    waitForInteractions = false
+    waitForInteractions = false,
+    debugLabel
   } = options ?? {};
   const fallbackRows = (fallbackData ?? initialData ?? []) as QueryRows<Query>;
 
@@ -83,10 +88,33 @@ export function useLiveWithFallback<Query extends LiveRowsQuery>(
     let isCurrent = true;
     let requestId = 0;
 
+    if (__DEV__ && debugLabel) {
+      const activeCount = (activeDebugSubscriptions.get(debugLabel) ?? 0) + 1;
+
+      activeDebugSubscriptions.set(debugLabel, activeCount);
+
+      if (activeCount > 1) {
+        console.warn(
+          `[live-query:${debugLabel}] ${activeCount} active subscriptions`
+        );
+      }
+    }
+
     const watchedTableNames = new Set(getUsedTables.call(query));
 
     const runQuery = () => {
       const currentRequestId = ++requestId;
+
+      if (__DEV__ && debugLabel) {
+        const runCount = (debugQueryRuns.get(debugLabel) ?? 0) + 1;
+
+        debugQueryRuns.set(debugLabel, runCount);
+
+        if (process.env.EXPO_PUBLIC_DEBUG_LIVE_QUERIES === '1') {
+          // eslint-disable-next-line no-console
+          console.debug(`[live-query:${debugLabel}] run ${runCount}`);
+        }
+      }
 
       query.then(
         rows => {
@@ -130,6 +158,17 @@ export function useLiveWithFallback<Query extends LiveRowsQuery>(
       isCurrent = false;
       cancelScheduledInitialRun?.();
       listener.remove();
+
+      if (__DEV__ && debugLabel) {
+        const activeCount = activeDebugSubscriptions.get(debugLabel) ?? 1;
+
+        if (activeCount <= 1) {
+          activeDebugSubscriptions.delete(debugLabel);
+          debugQueryRuns.delete(debugLabel);
+        } else {
+          activeDebugSubscriptions.set(debugLabel, activeCount - 1);
+        }
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
