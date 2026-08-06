@@ -1,9 +1,6 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import { completeOnboarding } from '@/src/features/settings/onboarding.service';
-import {
-  setWeightUnit,
-  type WeightUnit
-} from '@/src/features/settings/settings.repository';
+import { completeOnboardingWithPreferences } from '@/src/features/settings/onboarding.repository';
+import type { WeightUnit } from '@/src/features/settings/settings.repository';
 import { router } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 
@@ -27,9 +24,20 @@ export function useOnboardingActions({
 
     isStartingRef.current = true;
     setIsStarting(true);
-    completeOnboarding(db);
-    setWeightUnit(db, weightUnitPreference);
-    router.replace(workoutRoute);
+
+    try {
+      const result = completeOnboardingWithPreferences(db, {
+        weightUnit: weightUnitPreference
+      });
+
+      if (result.status === 'success') {
+        router.replace(workoutRoute);
+      }
+    } catch (error) {
+      isStartingRef.current = false;
+      setIsStarting(false);
+      console.error('Failed to complete onboarding', error);
+    }
   }, [db, weightUnitPreference]);
 
   return {

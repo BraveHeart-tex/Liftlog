@@ -1,5 +1,5 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import { isOnboardingCompleted } from '@/src/features/settings/onboarding.service';
+import { isOnboardingCompleted } from '@/src/features/settings/onboarding.repository';
 import type { Href } from 'expo-router';
 
 export function useIndexRedirect() {
