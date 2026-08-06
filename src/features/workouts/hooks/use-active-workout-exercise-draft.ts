@@ -1,5 +1,6 @@
 import type { NewExercise, Workout, WorkoutExercise } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
+import { normalizeExerciseName } from '@/src/features/exercises/exercise-name.utils';
 import { useSaveActiveWorkoutExerciseDraft } from '@/src/features/workouts/hooks/use-reorder-workout-exercises';
 import {
   ActiveWorkoutExerciseDraftConflictError,
@@ -192,6 +193,7 @@ export function useActiveWorkoutExerciseDraft({
       const stagedCustomExercise: StagedCustomExercise = {
         id: generateUuid(),
         name: exercise.name,
+        normalizedName: normalizeExerciseName(exercise.name),
         category: exercise.category,
         trackingType: exercise.trackingType ?? 'weight_reps',
         primaryMuscles: exercise.primaryMuscles ?? '[]',

@@ -4,6 +4,7 @@ import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import type { NewExercise } from '@/src/db/schema';
 import { ExerciseMetadataForm } from '@/src/features/exercises/components/exercise-metadata-form';
+import { ExerciseNameConflictError } from '@/src/features/exercises/exercise.repository';
 import { useCustomExerciseForm } from '@/src/features/exercises/hooks/use-custom-exercise-form';
 import { useExerciseActions } from '@/src/features/exercises/hooks/use-exercise-actions';
 import { router } from 'expo-router';
@@ -28,6 +29,7 @@ export default function NewExerciseScreen() {
     setTrackingType,
     togglePrimaryMuscle,
     toggleSecondaryMuscle,
+    reportNameConflict,
     submit: buildExercise
   } = useCustomExerciseForm();
 
@@ -53,7 +55,19 @@ export default function NewExerciseScreen() {
     }
 
     Keyboard.dismiss();
-    createExercise(newExercise);
+
+    try {
+      createExercise(newExercise);
+    } catch (error) {
+      if (error instanceof ExerciseNameConflictError) {
+        reportNameConflict();
+        setErrorScrollRequestId(current => current + 1);
+
+        return;
+      }
+
+      throw error;
+    }
   };
 
   return (

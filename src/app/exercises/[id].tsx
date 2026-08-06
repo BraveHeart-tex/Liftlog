@@ -7,6 +7,7 @@ import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { ExerciseDetailActionsSheet } from '@/src/features/exercises/components/exercise-detail-actions-sheet';
 import { ExerciseProgressChart } from '@/src/features/exercises/components/exercise-progress-chart';
+import { ExerciseNameConflictError } from '@/src/features/exercises/exercise.repository';
 import { useExerciseActions } from '@/src/features/exercises/hooks/use-exercise-actions';
 import { useExerciseDetail } from '@/src/features/exercises/hooks/use-exercise-detail';
 import { formatMuscleList } from '@/src/features/exercises/muscle.utils';
@@ -142,6 +143,10 @@ export default function ExerciseDetailScreen() {
         return 'Only custom exercises can be renamed.';
       }
     } catch (error) {
+      if (error instanceof ExerciseNameConflictError) {
+        return 'An exercise with this name already exists.';
+      }
+
       console.error('Failed to rename custom exercise', error);
 
       return 'Could not rename exercise. Try again.';

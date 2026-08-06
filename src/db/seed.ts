@@ -1,6 +1,7 @@
 import type { DrizzleDb } from '@/src/db';
 import { appMeta, exercises, type NewExercise } from '@/src/db/schema';
 import { MUSCLE_GROUP } from '@/src/features/exercises/exercise.constants';
+import { normalizeExerciseName } from '@/src/features/exercises/exercise-name.utils';
 import { rebuildPersonalRecordsForExercise } from '@/src/features/progress/progress.repository';
 import { and, eq } from 'drizzle-orm';
 
@@ -394,7 +395,14 @@ export function runSeedIfNeeded(db: DrizzleDb): void {
   }
 
   db.transaction(tx => {
-    tx.insert(exercises).values(createSeedExercises()).run();
+    tx.insert(exercises)
+      .values(
+        createSeedExercises().map(exercise => ({
+          ...exercise,
+          normalizedName: normalizeExerciseName(exercise.name)
+        }))
+      )
+      .run();
     tx.insert(appMeta)
       .values([
         {

@@ -1,5 +1,6 @@
 import type { NewExercise } from '@/src/db/schema';
 import type { ExerciseCategory } from '@/src/features/exercises/exercise.constants';
+import { normalizeExerciseName } from '@/src/features/exercises/exercise-name.utils';
 import { useExerciseActions } from '@/src/features/exercises/hooks/use-exercise-actions';
 import type { TrackingType } from '@/src/features/progress/tracking.domain';
 import { useCallback, useState } from 'react';
@@ -18,6 +19,7 @@ interface UseCustomExerciseFormResult {
   togglePrimaryMuscle: (muscle: string) => void;
   toggleSecondaryMuscle: (muscle: string) => void;
   submit: () => NewExercise | null;
+  reportNameConflict: () => void;
   reset: () => void;
 }
 
@@ -102,7 +104,8 @@ export function useCustomExerciseForm({
       (hasCustomExerciseNameConflict(undefined, trimmedName) ||
         reservedNames.some(
           reservedName =>
-            reservedName.trim().toLowerCase() === trimmedName.toLowerCase()
+            normalizeExerciseName(reservedName) ===
+            normalizeExerciseName(trimmedName)
         ));
 
     setHasDuplicateName(hasNameConflict);
@@ -144,6 +147,11 @@ export function useCustomExerciseForm({
     setHasDuplicateName(false);
   }, [initialName]);
 
+  const reportNameConflict = useCallback(() => {
+    setAttemptedSubmit(true);
+    setHasDuplicateName(true);
+  }, []);
+
   return {
     name,
     category,
@@ -158,6 +166,7 @@ export function useCustomExerciseForm({
     togglePrimaryMuscle,
     toggleSecondaryMuscle,
     submit,
+    reportNameConflict,
     reset
   };
 }

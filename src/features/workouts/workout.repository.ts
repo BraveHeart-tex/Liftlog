@@ -16,7 +16,11 @@ import {
   type WorkoutExercise,
   type WorkoutTemplate
 } from '@/src/db/schema';
-import { createExercise } from '@/src/features/exercises/exercise.repository';
+import {
+  createExercise,
+  isExerciseNameUniqueConstraintError
+} from '@/src/features/exercises/exercise.repository';
+import { normalizeExerciseName } from '@/src/features/exercises/exercise-name.utils';
 import {
   rebuildPersonalRecordsForExerciseInTransaction,
   rebuildPersonalRecordsForExercisesInTransaction
@@ -1291,19 +1295,10 @@ export function saveActiveWorkoutExerciseDraft(
     }
 
     if (stagedCustomExercises.length > 0) {
-      const persistedActiveExerciseNames = tx
-        .select({ name: exercises.name })
-        .from(exercises)
-        .where(eq(exercises.isArchived, 0))
-        .all();
-      const normalizedNames = new Set(
-        persistedActiveExerciseNames.map(exercise =>
-          exercise.name.trim().toLowerCase()
-        )
-      );
+      const normalizedNames = new Set<string>();
 
       for (const exercise of stagedCustomExercises) {
-        const normalizedName = exercise.name.trim().toLowerCase();
+        const normalizedName = normalizeExerciseName(exercise.name);
 
         if (!normalizedName || normalizedNames.has(normalizedName)) {
           throw new ActiveWorkoutExerciseDraftConflictError();
@@ -1312,15 +1307,40 @@ export function saveActiveWorkoutExerciseDraft(
         normalizedNames.add(normalizedName);
       }
 
-      tx.insert(exercises)
-        .values(
-          stagedCustomExercises.map(exercise => ({
-            ...exercise,
-            isCustom: 1,
-            isArchived: 0
-          }))
+      const persistedNameConflict = tx
+        .select({ id: exercises.id })
+        .from(exercises)
+        .where(
+          and(
+            eq(exercises.isArchived, 0),
+            inArray(exercises.normalizedName, Array.from(normalizedNames))
+          )
         )
-        .run();
+        .limit(1)
+        .get();
+
+      if (persistedNameConflict) {
+        throw new ActiveWorkoutExerciseDraftConflictError();
+      }
+
+      try {
+        tx.insert(exercises)
+          .values(
+            stagedCustomExercises.map(exercise => ({
+              ...exercise,
+              normalizedName: normalizeExerciseName(exercise.name),
+              isCustom: 1,
+              isArchived: 0
+            }))
+          )
+          .run();
+      } catch (error) {
+        if (isExerciseNameUniqueConstraintError(error)) {
+          throw new ActiveWorkoutExerciseDraftConflictError();
+        }
+
+        throw error;
+      }
     }
 
     const normalizedRows = normalizeSupersetRows(

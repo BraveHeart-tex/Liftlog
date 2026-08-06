@@ -7,8 +7,10 @@ import {
   integer,
   real,
   sqliteTable,
-  text
+  text,
+  uniqueIndex
 } from 'drizzle-orm/sqlite-core';
+import { sql } from 'drizzle-orm';
 
 export const appMeta = sqliteTable('app_meta', {
   key: text('key').primaryKey(),
@@ -22,6 +24,7 @@ export const exercises = sqliteTable(
       .primaryKey()
       .$defaultFn(() => generateUuid()),
     name: text('name').notNull(),
+    normalizedName: text('normalized_name').notNull(),
     category: text('category').notNull(),
     trackingType: text('tracking_type').notNull().default('weight_reps'),
     primaryMuscles: text('primary_muscles'),
@@ -33,7 +36,10 @@ export const exercises = sqliteTable(
       .$defaultFn(() => Date.now())
   },
   table => [
-    index('exercises_is_archived_name_idx').on(table.isArchived, table.name)
+    index('exercises_is_archived_name_idx').on(table.isArchived, table.name),
+    uniqueIndex('exercises_active_normalized_name_uidx')
+      .on(table.normalizedName)
+      .where(sql`${table.isArchived} = 0`)
   ]
 );
 
@@ -231,7 +237,7 @@ export type NewAppMeta = typeof appMeta.$inferInsert;
 
 export type Exercise = typeof exercises.$inferSelect;
 
-export type NewExercise = typeof exercises.$inferInsert;
+export type NewExercise = Omit<typeof exercises.$inferInsert, 'normalizedName'>;
 
 export type Workout = typeof workouts.$inferSelect;
 

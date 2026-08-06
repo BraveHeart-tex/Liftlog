@@ -6,6 +6,10 @@ import {
   runDatabaseMigrations,
   type DrizzleDb
 } from '@/src/db/client';
+import {
+  assertNoExerciseNameMigrationConflicts,
+  backfillNormalizedExerciseNames
+} from '@/src/db/exercise-name-migration';
 import migrations from '@/src/db/migrations/migrations';
 import { runSeedIfNeeded } from '@/src/db/seed';
 import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
@@ -23,6 +27,17 @@ import {
 } from 'react';
 
 const DrizzleContext = createContext<DrizzleDb | null>(null);
+
+const NORMALIZED_EXERCISE_NAME_BACKFILL_MIGRATION_INDEX = 11;
+
+const migrationsThroughExerciseNameBackfill = {
+  ...migrations,
+  journal: {
+    entries: migrations.journal.entries.filter(
+      entry => entry.idx <= NORMALIZED_EXERCISE_NAME_BACKFILL_MIGRATION_INDEX
+    )
+  }
+};
 
 export function useDrizzle() {
   const context = useContext(DrizzleContext);
@@ -56,6 +71,11 @@ async function migrateAsync(sqliteDb: SQLiteDatabase) {
   const drizzleDb = createDrizzleDb(sqliteDb);
 
   try {
+    await assertNoExerciseNameMigrationConflicts(sqliteDb);
+    await runDatabaseMigrations(sqliteDb, () =>
+      migrate(drizzleDb, migrationsThroughExerciseNameBackfill)
+    );
+    backfillNormalizedExerciseNames(drizzleDb);
     await runDatabaseMigrations(sqliteDb, () => migrate(drizzleDb, migrations));
   } catch (error) {
     console.error('Database migration failed', error);

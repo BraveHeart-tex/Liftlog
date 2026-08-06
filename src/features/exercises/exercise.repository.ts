@@ -7,6 +7,7 @@ import {
   type NewExercise
 } from '@/src/db/schema';
 import { rebuildPersonalRecordsForExerciseInTransaction } from '@/src/features/progress/progress.repository';
+import { normalizeExerciseName } from '@/src/features/exercises/exercise-name.utils';
 import { and, count, eq, exists, ne, or, sql } from 'drizzle-orm';
 import type { InferColumnsDataTypes } from 'drizzle-orm/column';
 
@@ -31,6 +32,22 @@ interface CustomExerciseDetailsUpdate {
   secondaryMuscles: string[];
 }
 
+export class ExerciseNameConflictError extends Error {
+  constructor() {
+    super('An active exercise with this normalized name already exists.');
+    this.name = 'ExerciseNameConflictError';
+  }
+}
+
+export function isExerciseNameUniqueConstraintError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message.includes(
+      'UNIQUE constraint failed: exercises.normalized_name'
+    )
+  );
+}
+
 export function getExerciseByIdQuery(db: DrizzleDb, id: Exercise['id']) {
   return db.select().from(exercises).where(eq(exercises.id, id)).limit(1);
 }
@@ -48,7 +65,7 @@ export function hasExerciseNameConflict(
   id: Exercise['id'] | undefined,
   name: Exercise['name']
 ): boolean {
-  const normalizedName = name.trim().toLowerCase();
+  const normalizedName = normalizeExerciseName(name);
 
   if (normalizedName.length === 0) {
     return false;
@@ -61,7 +78,7 @@ export function hasExerciseNameConflict(
       and(
         eq(exercises.isArchived, 0),
         ...(id ? [ne(exercises.id, id)] : []),
-        sql`lower(trim(${exercises.name})) = ${normalizedName}`
+        eq(exercises.normalizedName, normalizedName)
       )
     )
     .limit(1)
@@ -71,15 +88,24 @@ export function hasExerciseNameConflict(
 }
 
 export function createExercise(db: DrizzleDb, data: NewExercise): Exercise {
-  return db
-    .insert(exercises)
-    .values({
-      ...data,
-      isCustom: 1,
-      isArchived: 0
-    })
-    .returning()
-    .get();
+  try {
+    return db
+      .insert(exercises)
+      .values({
+        ...data,
+        normalizedName: normalizeExerciseName(data.name),
+        isCustom: 1,
+        isArchived: 0
+      })
+      .returning()
+      .get();
+  } catch (error) {
+    if (isExerciseNameUniqueConstraintError(error)) {
+      throw new ExerciseNameConflictError();
+    }
+
+    throw error;
+  }
 }
 
 export function updateCustomExerciseName(
@@ -87,12 +113,20 @@ export function updateCustomExerciseName(
   id: Exercise['id'],
   name: Exercise['name']
 ): Exercise | undefined {
-  return db
-    .update(exercises)
-    .set({ name })
-    .where(and(eq(exercises.id, id), eq(exercises.isCustom, 1)))
-    .returning()
-    .get();
+  try {
+    return db
+      .update(exercises)
+      .set({ name, normalizedName: normalizeExerciseName(name) })
+      .where(and(eq(exercises.id, id), eq(exercises.isCustom, 1)))
+      .returning()
+      .get();
+  } catch (error) {
+    if (isExerciseNameUniqueConstraintError(error)) {
+      throw new ExerciseNameConflictError();
+    }
+
+    throw error;
+  }
 }
 
 export function updateCustomExerciseDetails(

@@ -1,0 +1,2 @@
+ALTER TABLE `exercises` ADD `normalized_name` text;--> statement-breakpoint
+CREATE UNIQUE INDEX `exercises_active_normalized_name_uidx` ON `exercises` (`normalized_name`) WHERE "exercises"."is_archived" = 0;

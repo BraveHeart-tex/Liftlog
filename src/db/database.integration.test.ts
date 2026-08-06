@@ -8,17 +8,26 @@ import {
   workoutTemplates
 } from '@/src/db/schema';
 import {
+  assertNoExerciseNameMigrationConflicts,
+  backfillNormalizedExerciseNames,
+  ExerciseNameMigrationConflictError
+} from '@/src/db/exercise-name-migration';
+import {
   createDrizzleDb,
   runDatabaseMigrations,
   type DrizzleDb
 } from '@/src/db/client';
 import {
+  createExercise,
+  ExerciseNameConflictError,
   getExerciseUsageExistsQuery,
+  hasExerciseNameConflict,
   removeCustomExercise,
   updateCustomExerciseDetails,
   updateCustomExerciseName
 } from '@/src/features/exercises/exercise.repository';
 import {
+  ActiveWorkoutExerciseDraftConflictError,
   completeWorkout,
   createCompletedSet,
   deleteCompletedSet,
@@ -26,8 +35,13 @@ import {
   getRecentExerciseIdsQuery,
   saveHistoricalWorkoutDraft,
   saveHistoricalWorkoutEditDraft,
+  saveActiveWorkoutExerciseDraft,
   updateCompletedSet
 } from '@/src/features/workouts/workout.repository';
+import {
+  saveWorkoutTemplateExerciseDraft,
+  WorkoutTemplateExerciseDraftConflictError
+} from '@/src/features/workouts/workout-template.repository';
 import {
   getExerciseHistoryQuery,
   mapExerciseHistoryRows,
@@ -184,6 +198,10 @@ async function createMigratedTestDatabase() {
   const db = createDrizzleDb(sqliteClient);
 
   await runDatabaseMigrations(sqliteClient, () =>
+    migrate(db, loadMigrations(11))
+  );
+  backfillNormalizedExerciseNames(db);
+  await runDatabaseMigrations(sqliteClient, () =>
     migrate(db, loadMigrations())
   );
 
@@ -195,6 +213,7 @@ function seedTrackedExercise(db: DrizzleDb) {
     .values({
       id: 'exercise-1',
       name: 'Push-up',
+      normalizedName: 'push-up',
       category: 'chest',
       trackingType: 'reps'
     })
@@ -259,12 +278,14 @@ function seedHistoricalExercises(db: DrizzleDb) {
       {
         id: 'exercise-a',
         name: 'Exercise A',
+        normalizedName: 'exercise a',
         category: 'other',
         trackingType: 'reps'
       },
       {
         id: 'exercise-b',
         name: 'Exercise B',
+        normalizedName: 'exercise b',
         category: 'other',
         trackingType: 'reps'
       }
@@ -384,6 +405,7 @@ test('exercise usage query checks workout and template references together', asy
           .values({
             id: 'usage-exercise',
             name: 'Usage exercise',
+            normalizedName: 'usage exercise',
             category: 'other'
           })
           .run();
@@ -474,6 +496,7 @@ test('custom exercise updates use reduced statement paths', async () => {
         {
           id: 'custom-exercise',
           name: 'Custom exercise',
+          normalizedName: 'custom exercise',
           category: 'other',
           trackingType: 'reps',
           isCustom: 1
@@ -481,6 +504,7 @@ test('custom exercise updates use reduced statement paths', async () => {
         {
           id: 'built-in-exercise',
           name: 'Built-in exercise',
+          normalizedName: 'built-in exercise',
           category: 'other',
           trackingType: 'reps'
         }
@@ -524,6 +548,229 @@ test('custom exercise updates use reduced statement paths', async () => {
       'duration'
     );
     assert.equal(nodeClient.getPreparedStatementCount(), 4);
+  } finally {
+    nodeClient.closeSync();
+  }
+});
+
+test('exercise name migration reports active normalized duplicates before schema changes', async () => {
+  const nodeClient = new NodeSQLiteDatabase();
+  const sqliteClient = nodeClient as unknown as SQLiteDatabase;
+  const db = createDrizzleDb(sqliteClient);
+
+  try {
+    await runDatabaseMigrations(sqliteClient, () =>
+      migrate(db, loadMigrations(10))
+    );
+    nodeClient.execSync(`
+      INSERT INTO exercises (id, name, category, is_archived, created_at)
+      VALUES
+        ('duplicate-a', ' ÜBUNG ', 'other', 0, 1),
+        ('duplicate-b', 'übung', 'other', 0, 1),
+        ('archived-duplicate', 'Übung', 'other', 1, 1);
+    `);
+
+    await assert.rejects(
+      assertNoExerciseNameMigrationConflicts(sqliteClient),
+      error => {
+        assert.ok(error instanceof ExerciseNameMigrationConflictError);
+        assert.deepEqual(error.conflicts, [
+          {
+            normalizedName: 'übung',
+            exercises: [
+              { id: 'duplicate-a', name: ' ÜBUNG ' },
+              { id: 'duplicate-b', name: 'übung' }
+            ]
+          }
+        ]);
+
+        return true;
+      }
+    );
+    assert.equal(
+      nodeClient
+        .getAllSync<{ name: string }>("PRAGMA table_info('exercises')")
+        .some(column => column.name === 'normalized_name'),
+      false
+    );
+  } finally {
+    nodeClient.closeSync();
+  }
+});
+
+test('exercise name migration backfills Unicode normalized names', async () => {
+  const nodeClient = new NodeSQLiteDatabase();
+  const sqliteClient = nodeClient as unknown as SQLiteDatabase;
+  const db = createDrizzleDb(sqliteClient);
+
+  try {
+    await runDatabaseMigrations(sqliteClient, () =>
+      migrate(db, loadMigrations(10))
+    );
+    nodeClient.execSync(`
+      INSERT INTO exercises (id, name, category, is_archived, created_at)
+      VALUES
+        ('active', ' ÜBUNG ', 'other', 0, 1),
+        ('archived', 'Übung', 'other', 1, 1);
+    `);
+
+    await assertNoExerciseNameMigrationConflicts(sqliteClient);
+    await runDatabaseMigrations(sqliteClient, () =>
+      migrate(db, loadMigrations(11))
+    );
+    backfillNormalizedExerciseNames(db);
+    await runDatabaseMigrations(sqliteClient, () =>
+      migrate(db, loadMigrations())
+    );
+
+    assert.deepEqual(
+      db
+        .select({
+          id: exercises.id,
+          normalizedName: exercises.normalizedName
+        })
+        .from(exercises)
+        .all(),
+      [
+        { id: 'active', normalizedName: 'übung' },
+        { id: 'archived', normalizedName: 'übung' }
+      ]
+    );
+  } finally {
+    nodeClient.closeSync();
+  }
+});
+
+test('exercise name writes enforce and translate active normalized conflicts', async () => {
+  const { db, nodeClient } = await createMigratedTestDatabase();
+
+  try {
+    const created = createExercise(db, {
+      id: 'unicode-name',
+      name: ' ÜBUNG ',
+      category: 'other'
+    });
+
+    assert.equal(created.normalizedName, 'übung');
+    assert.equal(hasExerciseNameConflict(db, undefined, 'übung'), true);
+    assert.equal(hasExerciseNameConflict(db, created.id, '  ÜBUNG  '), false);
+    assert.throws(
+      () =>
+        createExercise(db, {
+          id: 'duplicate-name',
+          name: 'übung',
+          category: 'other'
+        }),
+      ExerciseNameConflictError
+    );
+    assert.throws(
+      () =>
+        nodeClient.execSync(`
+          INSERT INTO exercises (id, name, category, created_at)
+          VALUES ('missing-normalized-name', 'Missing', 'other', 1);
+        `),
+      /NOT NULL constraint failed: exercises.normalized_name/
+    );
+
+    createExercise(db, {
+      id: 'rename-target',
+      name: 'Different',
+      category: 'other'
+    });
+    assert.throws(
+      () => updateCustomExerciseName(db, 'rename-target', 'Übung'),
+      ExerciseNameConflictError
+    );
+    assert.doesNotThrow(() =>
+      db
+        .insert(exercises)
+        .values({
+          id: 'archived-name',
+          name: 'übung',
+          normalizedName: 'übung',
+          category: 'other',
+          isArchived: 1
+        })
+        .run()
+    );
+  } finally {
+    nodeClient.closeSync();
+  }
+});
+
+test('staged exercise saves report normalized name conflicts', async () => {
+  const { db, nodeClient } = await createMigratedTestDatabase();
+
+  try {
+    createExercise(db, {
+      id: 'existing-exercise',
+      name: 'Übung',
+      category: 'other'
+    });
+    db.insert(workouts)
+      .values({
+        id: 'active-workout',
+        name: 'Active',
+        status: 'in_progress',
+        startedAt: 1,
+        dateKey: '1970-01-01'
+      })
+      .run();
+    db.insert(workoutTemplates)
+      .values({
+        id: 'template',
+        name: 'Template',
+        createdAt: 1,
+        updatedAt: 1
+      })
+      .run();
+    const stagedExercise = {
+      id: 'staged-exercise',
+      name: ' üBUNG ',
+      normalizedName: 'übung',
+      category: 'other',
+      trackingType: 'weight_reps',
+      primaryMuscles: '[]',
+      secondaryMuscles: '[]',
+      isCustom: 1,
+      isArchived: 0,
+      createdAt: 1
+    };
+
+    assert.throws(
+      () =>
+        saveActiveWorkoutExerciseDraft(
+          db,
+          'active-workout',
+          [
+            {
+              id: 'workout-exercise',
+              exerciseId: stagedExercise.id,
+              supersetId: null
+            }
+          ],
+          [],
+          [stagedExercise]
+        ),
+      ActiveWorkoutExerciseDraftConflictError
+    );
+    assert.throws(
+      () =>
+        saveWorkoutTemplateExerciseDraft(
+          db,
+          'template',
+          [
+            {
+              id: 'template-exercise',
+              exerciseId: stagedExercise.id,
+              supersetId: null
+            }
+          ],
+          [],
+          [stagedExercise]
+        ),
+      WorkoutTemplateExerciseDraftConflictError
+    );
   } finally {
     nodeClient.closeSync();
   }
@@ -577,18 +824,21 @@ test('custom exercise removal preserves results with three-statement paths', asy
         {
           id: 'unused-custom',
           name: 'Unused custom',
+          normalizedName: 'unused custom',
           category: 'other',
           isCustom: 1
         },
         {
           id: 'referenced-custom',
           name: 'Referenced custom',
+          normalizedName: 'referenced custom',
           category: 'other',
           isCustom: 1
         },
         {
           id: 'built-in',
           name: 'Built-in',
+          normalizedName: 'built-in',
           category: 'other'
         }
       ])
@@ -639,6 +889,7 @@ test('custom exercise removal archives after a defensive delete fallback', async
       .values({
         id: 'fallback-custom',
         name: 'Fallback custom',
+        normalizedName: 'fallback custom',
         category: 'other',
         isCustom: 1
       })
@@ -686,13 +937,10 @@ test('production initialization enables workout delete foreign-key actions', asy
       migrate(db, loadMigrations(9))
     );
 
-    db.insert(exercises)
-      .values({
-        id: 'exercise-1',
-        name: 'Squat',
-        category: 'legs'
-      })
-      .run();
+    nodeClient.execSync(`
+      INSERT INTO exercises (id, name, category, created_at)
+      VALUES ('exercise-1', 'Squat', 'legs', 1);
+    `);
     db.insert(workouts)
       .values({
         id: 'workout-1',
@@ -727,6 +975,10 @@ test('production initialization enables workout delete foreign-key actions', asy
       })
       .run();
 
+    await runDatabaseMigrations(sqliteClient, () =>
+      migrate(db, loadMigrations(11))
+    );
+    backfillNormalizedExerciseNames(db);
     await runDatabaseMigrations(sqliteClient, () =>
       migrate(db, loadMigrations())
     );
@@ -907,12 +1159,42 @@ test('recent exercises are deduplicated before the limit', async () => {
 
     db.insert(exercises)
       .values([
-        { id: 'exercise-a', name: 'A', category: 'other' },
-        { id: 'exercise-b', name: 'B', category: 'other' },
-        { id: 'exercise-c', name: 'C', category: 'other' },
-        { id: 'exercise-d', name: 'D', category: 'other' },
-        { id: 'exercise-archived', name: 'Archived', category: 'other' },
-        { id: 'exercise-in-progress', name: 'In Progress', category: 'other' }
+        {
+          id: 'exercise-a',
+          name: 'A',
+          normalizedName: 'a',
+          category: 'other'
+        },
+        {
+          id: 'exercise-b',
+          name: 'B',
+          normalizedName: 'b',
+          category: 'other'
+        },
+        {
+          id: 'exercise-c',
+          name: 'C',
+          normalizedName: 'c',
+          category: 'other'
+        },
+        {
+          id: 'exercise-d',
+          name: 'D',
+          normalizedName: 'd',
+          category: 'other'
+        },
+        {
+          id: 'exercise-archived',
+          name: 'Archived',
+          normalizedName: 'archived',
+          category: 'other'
+        },
+        {
+          id: 'exercise-in-progress',
+          name: 'In Progress',
+          normalizedName: 'in progress',
+          category: 'other'
+        }
       ])
       .run();
     db.update(exercises)
@@ -1054,6 +1336,7 @@ test('exercise history selects workouts and sets by completed sets', async () =>
       .values({
         id: 'exercise-history',
         name: 'History exercise',
+        normalizedName: 'history exercise',
         category: 'other'
       })
       .run();

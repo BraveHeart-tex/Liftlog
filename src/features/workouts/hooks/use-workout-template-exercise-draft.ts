@@ -5,6 +5,7 @@ import type {
   WorkoutTemplateExercise
 } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
+import { normalizeExerciseName } from '@/src/features/exercises/exercise-name.utils';
 import type { TemplateExerciseEditorRow } from '@/src/features/workouts/components/template-exercise-editor';
 import {
   saveWorkoutTemplateExerciseDraft,
@@ -229,6 +230,7 @@ export function useWorkoutTemplateExerciseDraft({
       const stagedCustomExercise: StagedTemplateCustomExercise = {
         id: generateUuid(),
         name: exercise.name,
+        normalizedName: normalizeExerciseName(exercise.name),
         category: exercise.category,
         trackingType: exercise.trackingType ?? 'weight_reps',
         primaryMuscles: exercise.primaryMuscles ?? '[]',

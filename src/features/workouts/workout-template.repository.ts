@@ -11,9 +11,11 @@ import {
   type WorkoutTemplateExercise
 } from '@/src/db/schema';
 import { toLocalDateKey } from '@/src/lib/utils/date.utils';
+import { isExerciseNameUniqueConstraintError } from '@/src/features/exercises/exercise.repository';
+import { normalizeExerciseName } from '@/src/features/exercises/exercise-name.utils';
 import { resolveTemplateName } from '@/src/features/workouts/workout-display.utils';
 import { normalizeSupersetRows } from '@/src/features/workouts/superset.utils';
-import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 
 export interface WorkoutStartTemplateItem {
   template: WorkoutTemplate;
@@ -50,6 +52,7 @@ export interface WorkoutTemplateDetailRow {
   templateExerciseSupersetId: WorkoutTemplateExercise['supersetId'] | null;
   exerciseId: Exercise['id'] | null;
   exerciseName: Exercise['name'] | null;
+  exerciseNormalizedName: Exercise['normalizedName'] | null;
   exerciseCategory: Exercise['category'] | null;
   exerciseTrackingType: Exercise['trackingType'] | null;
   exercisePrimaryMuscles: Exercise['primaryMuscles'] | null;
@@ -163,6 +166,7 @@ export function getWorkoutTemplateDetailRowsQuery(
       templateExerciseSupersetId: workoutTemplateExercises.supersetId,
       exerciseId: exercises.id,
       exerciseName: exercises.name,
+      exerciseNormalizedName: exercises.normalizedName,
       exerciseCategory: exercises.category,
       exerciseTrackingType: exercises.trackingType,
       exercisePrimaryMuscles: exercises.primaryMuscles,
@@ -293,6 +297,7 @@ export function mapWorkoutTemplateDetailRows(
     exerciseById.set(row.exerciseId, {
       id: row.exerciseId,
       name: row.exerciseName!,
+      normalizedName: row.exerciseNormalizedName!,
       category: row.exerciseCategory!,
       trackingType: row.exerciseTrackingType!,
       primaryMuscles: row.exercisePrimaryMuscles,
@@ -439,19 +444,10 @@ export function saveWorkoutTemplateExerciseDraft(
     }
 
     if (stagedCustomExercises.length > 0) {
-      const persistedActiveExerciseNames = tx
-        .select({ name: exercises.name })
-        .from(exercises)
-        .where(eq(exercises.isArchived, 0))
-        .all();
-      const normalizedNames = new Set(
-        persistedActiveExerciseNames.map(exercise =>
-          exercise.name.trim().toLowerCase()
-        )
-      );
+      const normalizedNames = new Set<string>();
 
       for (const exercise of stagedCustomExercises) {
-        const normalizedName = exercise.name.trim().toLowerCase();
+        const normalizedName = normalizeExerciseName(exercise.name);
 
         if (!normalizedName || normalizedNames.has(normalizedName)) {
           throw new WorkoutTemplateExerciseDraftConflictError();
@@ -460,15 +456,40 @@ export function saveWorkoutTemplateExerciseDraft(
         normalizedNames.add(normalizedName);
       }
 
-      tx.insert(exercises)
-        .values(
-          stagedCustomExercises.map(exercise => ({
-            ...exercise,
-            isCustom: 1,
-            isArchived: 0
-          }))
+      const persistedNameConflict = tx
+        .select({ id: exercises.id })
+        .from(exercises)
+        .where(
+          and(
+            eq(exercises.isArchived, 0),
+            inArray(exercises.normalizedName, Array.from(normalizedNames))
+          )
         )
-        .run();
+        .limit(1)
+        .get();
+
+      if (persistedNameConflict) {
+        throw new WorkoutTemplateExerciseDraftConflictError();
+      }
+
+      try {
+        tx.insert(exercises)
+          .values(
+            stagedCustomExercises.map(exercise => ({
+              ...exercise,
+              normalizedName: normalizeExerciseName(exercise.name),
+              isCustom: 1,
+              isArchived: 0
+            }))
+          )
+          .run();
+      } catch (error) {
+        if (isExerciseNameUniqueConstraintError(error)) {
+          throw new WorkoutTemplateExerciseDraftConflictError();
+        }
+
+        throw error;
+      }
     }
 
     const normalizedRows = normalizeSupersetRows(
