@@ -19,7 +19,7 @@ export default function HistoricalWorkoutEditScreen() {
   }>();
   const draftWorkoutId = getRouteParamId(id);
   const sourceWorkoutId = getRouteParamId(rawSourceWorkoutId);
-  const { draftWorkout, sourceWorkout, exerciseRows, isLoading } =
+  const { draftWorkout, sourceWorkout, isLoading } =
     useHistoricalWorkoutEditScreen({ draftWorkoutId, sourceWorkoutId });
   const { saveDraft, discardDraft } = useHistoricalWorkoutEditActions();
 
@@ -128,7 +128,6 @@ export default function HistoricalWorkoutEditScreen() {
   return (
     <ActiveWorkoutContent
       activeWorkout={draftWorkout}
-      exerciseRows={exerciseRows}
       mode="historical-edit"
       onDiscardHistoricalWorkout={discardEditDraft}
       onSaveHistoricalWorkout={saveEditDraft}

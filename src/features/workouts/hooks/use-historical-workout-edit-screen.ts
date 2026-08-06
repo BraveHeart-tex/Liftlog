@@ -1,5 +1,4 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import { getExercisesQuery } from '@/src/features/exercises/exercise.repository';
 import {
   getHistoricalWorkoutEditDraftQuery,
   getWorkoutByIdQuery
@@ -24,12 +23,10 @@ export function useHistoricalWorkoutEditScreen({
     getWorkoutByIdQuery(db, resolvedSourceWorkoutId),
     [db, resolvedSourceWorkoutId]
   );
-  const exerciseResult = useLiveWithFallback(getExercisesQuery(db), [db]);
 
   return {
     draftWorkout: draftWorkoutResult.data[0],
     sourceWorkout: sourceWorkoutResult.data[0],
-    exerciseRows: exerciseResult.data,
     isLoading:
       Boolean(draftWorkoutId) &&
       (!draftWorkoutResult.isLive ||

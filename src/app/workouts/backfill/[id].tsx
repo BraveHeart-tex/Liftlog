@@ -15,7 +15,7 @@ import { Alert } from 'react-native';
 export default function HistoricalWorkoutDraftScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const workoutId = getRouteParamId(id);
-  const { historicalWorkout, exerciseRows, isLoading } =
+  const { historicalWorkout, isLoading } =
     useHistoricalWorkoutDraftScreen(workoutId);
   const { saveDraft, discardDraft } = useHistoricalWorkoutDraftActions();
 
@@ -121,7 +121,6 @@ export default function HistoricalWorkoutDraftScreen() {
   return (
     <ActiveWorkoutContent
       activeWorkout={historicalWorkout}
-      exerciseRows={exerciseRows}
       mode="historical"
       onDiscardHistoricalWorkout={discardHistoricalWorkout}
       onSaveHistoricalWorkout={saveHistoricalWorkout}
