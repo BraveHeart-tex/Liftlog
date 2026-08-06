@@ -7,7 +7,6 @@ import { appFontAssets } from '@/src/theme/fonts';
 import {
   expoRouterIntegration,
   init as initSentry,
-  mobileReplayIntegration,
   reactNativeTracingIntegration,
   wrap as wrapWithSentry
 } from '@sentry/react-native';
@@ -26,14 +25,11 @@ initSentry({
   enableNativeFramesTracking: true,
   enableStallTracking: true,
   enableUserInteractionTracing: true,
-  replaysSessionSampleRate: __DEV__ ? 1 : 0.5,
-  replaysOnErrorSampleRate: 1,
   integrations: [
     expoRouterIntegration({
       enableTimeToInitialDisplay: true
     }),
-    reactNativeTracingIntegration(),
-    mobileReplayIntegration()
+    reactNativeTracingIntegration()
   ],
   spotlight: __DEV__
 });
