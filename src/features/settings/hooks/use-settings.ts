@@ -4,20 +4,11 @@ import { getTimerParts } from '@/src/lib/utils/date.utils';
 import { pluralize } from '@/src/lib/utils/string.utils';
 import { useCallback, useMemo } from 'react';
 import {
-  SETTINGS_DEFAULTS,
-  SETTINGS_KEYS,
   addRestTimerPreset as addRestTimerPresetRepo,
   deleteRestTimerPreset as deleteRestTimerPresetRepo,
-  getHealthConnectStepsEnabled,
-  getRestTimerDuration,
-  getRestTimerPresets,
-  getRestTimerPresetsFromValue,
   getSettingsQuery,
-  getStepGoal,
-  getStepsNotificationEnabled,
-  getWeightUnit,
-  parseBooleanSetting,
-  parseStepGoal,
+  getSettingsSnapshot,
+  mapSettingsRows,
   setHealthConnectStepsEnabled as setHealthConnectStepsEnabledRepo,
   setRestTimerDuration as setRestTimerDurationRepo,
   setStepGoal as setStepGoalRepo,
@@ -30,95 +21,22 @@ import {
 
 export function useSettings() {
   const db = useDrizzle();
-  const initialSettings = useMemo(() => {
-    const restTimerDuration = getRestTimerDuration(db);
-
-    return {
-      weightUnit: getWeightUnit(db),
-      restTimerDuration,
-      restTimerPresets: getRestTimerPresets(db),
-      healthConnectStepsEnabled: getHealthConnectStepsEnabled(db),
-      stepsNotificationEnabled: getStepsNotificationEnabled(db),
-      stepGoal: getStepGoal(db)
-    };
-  }, [db]);
-  const { data: rows, isLive } = useLiveWithFallback(getSettingsQuery(db), [
-    db
-  ]);
-
-  const weightUnit: WeightUnit = useMemo(() => {
-    if (!isLive) {
-      return initialSettings.weightUnit;
-    }
-
-    const row = rows.find(row => row.key === SETTINGS_KEYS.weightUnit);
-
-    return row?.value === 'lb' ? 'lb' : 'kg';
-  }, [initialSettings.weightUnit, isLive, rows]);
-
-  const restTimerDuration: number = useMemo(() => {
-    if (!isLive) {
-      return initialSettings.restTimerDuration;
-    }
-
-    const row = rows.find(row => row.key === SETTINGS_KEYS.restTimerDuration);
-
-    if (!row) {
-      return SETTINGS_DEFAULTS.restTimerDuration;
-    }
-
-    const parsed = parseInt(row.value, 10);
-
-    return Number.isFinite(parsed) && parsed >= 10
-      ? parsed
-      : SETTINGS_DEFAULTS.restTimerDuration;
-  }, [initialSettings.restTimerDuration, isLive, rows]);
-
-  const healthConnectStepsEnabled = useMemo(() => {
-    if (!isLive) {
-      return initialSettings.healthConnectStepsEnabled;
-    }
-
-    const row = rows.find(
-      row => row.key === SETTINGS_KEYS.healthConnectStepsEnabled
-    );
-
-    return parseBooleanSetting(row?.value);
-  }, [initialSettings.healthConnectStepsEnabled, isLive, rows]);
-
-  const restTimerPresets = useMemo(() => {
-    if (!isLive) {
-      return initialSettings.restTimerPresets;
-    }
-
-    const row = rows.find(row => row.key === SETTINGS_KEYS.restTimerPresets);
-
-    return row
-      ? getRestTimerPresetsFromValue(row.value)
-      : initialSettings.restTimerPresets;
-  }, [initialSettings.restTimerPresets, isLive, rows]);
-
-  const stepsNotificationEnabled = useMemo(() => {
-    if (!isLive) {
-      return initialSettings.stepsNotificationEnabled;
-    }
-
-    const row = rows.find(
-      row => row.key === SETTINGS_KEYS.stepsNotificationEnabled
-    );
-
-    return parseBooleanSetting(row?.value);
-  }, [initialSettings.stepsNotificationEnabled, isLive, rows]);
-
-  const stepGoal = useMemo(() => {
-    if (!isLive) {
-      return initialSettings.stepGoal;
-    }
-
-    const row = rows.find(row => row.key === SETTINGS_KEYS.stepGoal);
-
-    return parseStepGoal(row?.value);
-  }, [initialSettings.stepGoal, isLive, rows]);
+  const initialSettings = useMemo(() => getSettingsSnapshot(db), [db]);
+  const { data: rows, isLive } = useLiveWithFallback(
+    getSettingsQuery(db),
+    [db],
+    { deferInitialRead: true }
+  );
+  const liveSettings = useMemo(() => mapSettingsRows(rows), [rows]);
+  const settings = isLive ? liveSettings : initialSettings;
+  const {
+    weightUnit,
+    restTimerDuration,
+    restTimerPresets,
+    healthConnectStepsEnabled,
+    stepsNotificationEnabled,
+    stepGoal
+  } = settings;
 
   const setWeightUnit = useCallback(
     (unit: WeightUnit) => {

@@ -11,7 +11,7 @@ import {
 } from '@/src/features/workouts/rest-timer.constants';
 import { generateUuid } from '@/src/lib/utils/uuid.utils';
 import type { WeightUnit } from '@/src/lib/utils/weight.utils';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 export type { WeightUnit };
 
@@ -43,12 +43,35 @@ export const SETTINGS_DEFAULTS = {
   stepGoal: 10000
 };
 
+export interface Settings {
+  weightUnit: WeightUnit;
+  restTimerDuration: number;
+  restTimerPresets: RestTimerPreset[];
+  healthConnectStepsEnabled: boolean;
+  stepsNotificationEnabled: boolean;
+  stepGoal: number;
+}
+
+type SettingsRow = Pick<typeof appMeta.$inferSelect, 'key' | 'value'>;
+
+const SETTINGS_QUERY_KEYS = [
+  SETTINGS_KEYS.weightUnit,
+  SETTINGS_KEYS.restTimerDuration,
+  SETTINGS_KEYS.restTimerPresets,
+  SETTINGS_KEYS.healthConnectStepsEnabled,
+  SETTINGS_KEYS.stepsNotificationEnabled,
+  SETTINGS_KEYS.stepGoal
+];
+
 export function getSetting(db: DrizzleDb, key: string): string | undefined {
   return db.select().from(appMeta).where(eq(appMeta.key, key)).get()?.value;
 }
 
 export function getSettingsQuery(db: DrizzleDb) {
-  return db.select().from(appMeta);
+  return db
+    .select({ key: appMeta.key, value: appMeta.value })
+    .from(appMeta)
+    .where(inArray(appMeta.key, SETTINGS_QUERY_KEYS));
 }
 
 export function setSetting(db: DrizzleDb, key: string, value: string): void {
@@ -69,8 +92,12 @@ export function setWeightUnit(db: DrizzleDb, unit: WeightUnit): void {
 }
 
 export function getRestTimerDuration(db: DrizzleDb): number {
-  const value = getSetting(db, SETTINGS_KEYS.restTimerDuration);
+  return parseRestTimerDuration(
+    getSetting(db, SETTINGS_KEYS.restTimerDuration)
+  );
+}
 
+function parseRestTimerDuration(value: string | undefined): number {
   if (!value) {
     return SETTINGS_DEFAULTS.restTimerDuration;
   }
@@ -232,6 +259,34 @@ export function parseStepGoal(value: string | undefined): number {
   const parsed = parseInt(value, 10);
 
   return isValidStepGoal(parsed) ? parsed : SETTINGS_DEFAULTS.stepGoal;
+}
+
+export function mapSettingsRows(rows: SettingsRow[]): Settings {
+  const valuesByKey = new Map(rows.map(row => [row.key, row.value]));
+
+  return {
+    weightUnit:
+      valuesByKey.get(SETTINGS_KEYS.weightUnit) === 'lb'
+        ? 'lb'
+        : SETTINGS_DEFAULTS.weightUnit,
+    restTimerDuration: parseRestTimerDuration(
+      valuesByKey.get(SETTINGS_KEYS.restTimerDuration)
+    ),
+    restTimerPresets: parseRestTimerPresets(
+      valuesByKey.get(SETTINGS_KEYS.restTimerPresets)
+    ),
+    healthConnectStepsEnabled: parseBooleanSetting(
+      valuesByKey.get(SETTINGS_KEYS.healthConnectStepsEnabled)
+    ),
+    stepsNotificationEnabled: parseBooleanSetting(
+      valuesByKey.get(SETTINGS_KEYS.stepsNotificationEnabled)
+    ),
+    stepGoal: parseStepGoal(valuesByKey.get(SETTINGS_KEYS.stepGoal))
+  };
+}
+
+export function getSettingsSnapshot(db: DrizzleDb): Settings {
+  return mapSettingsRows(getSettingsQuery(db).all());
 }
 
 export function getHealthConnectStepsEnabled(db: DrizzleDb): boolean {
