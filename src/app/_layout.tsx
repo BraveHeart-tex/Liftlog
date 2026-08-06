@@ -21,12 +21,12 @@ initSentry({
   dsn: 'https://1bdaf14c00267e50ae9ecee83e794a69@o4507100890726400.ingest.de.sentry.io/4511688205467728',
   sendDefaultPii: false,
   enableLogs: false,
-  tracesSampleRate: __DEV__ ? 1 : 0.1,
+  tracesSampleRate: __DEV__ ? 1 : 0.5,
   enableAppStartTracking: true,
   enableNativeFramesTracking: true,
   enableStallTracking: true,
   enableUserInteractionTracing: true,
-  replaysSessionSampleRate: __DEV__ ? 1 : 0.01,
+  replaysSessionSampleRate: __DEV__ ? 1 : 0.5,
   replaysOnErrorSampleRate: 1,
   integrations: [
     expoRouterIntegration({
