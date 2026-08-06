@@ -46,9 +46,14 @@ export function useExerciseTrackTab(
 
     try {
       const historyRows = mapExerciseHistoryRows(
-        getExerciseHistoryQuery(db, exerciseId, PROGRESSION_HISTORY_LIMIT, {
-          beforeStartedAt: historyBeforeStartedAt
-        }).all()
+        await getExerciseHistoryQuery(
+          db,
+          exerciseId,
+          PROGRESSION_HISTORY_LIMIT,
+          {
+            beforeStartedAt: historyBeforeStartedAt
+          }
+        )
       );
 
       if (!isMountedRef.current || refreshRequestIdRef.current !== requestId) {
