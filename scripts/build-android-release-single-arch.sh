@@ -2,12 +2,12 @@
 set -euo pipefail
 
 ARCHITECTURE="${1:-arm64-v8a}"
+
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 ANDROID_DIR="$PROJECT_ROOT/android"
 EXPO_BIN="$PROJECT_ROOT/node_modules/.bin/expo"
 OUTPUT_DIR="$ANDROID_DIR/app/build/outputs/apk/release"
-ENV_FILE="$PROJECT_ROOT/.env.local"
 
 notify() {
   local message="$1"
@@ -35,12 +35,6 @@ if [[ ! -x "$EXPO_BIN" ]]; then
   exit 1
 fi
 
-if [[ -f "$ENV_FILE" ]]; then
-  set -a
-  source "$ENV_FILE"
-  set +a
-fi
-
 if [[ -z "${SENTRY_AUTH_TOKEN:-}" ]]; then
   echo "SENTRY_AUTH_TOKEN is not set" >&2
   exit 1
@@ -56,6 +50,7 @@ fi
 cd "$ANDROID_DIR"
 
 ./gradlew clean
+
 ./gradlew :app:assembleRelease \
   -PreactNativeArchitectures="$ARCHITECTURE" \
   -Pandroid.enableMinifyInReleaseBuilds=true \

@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "android:clean": "pnpm run prebuild:clean && pnpm run android:device",
-    "android:release:single-arch": "scripts/build-android-release-single-arch.sh",
+    "android:release:single-arch": "dotenvx run -f .env.local -- scripts/build-android-release-single-arch.sh",
     "android:device": "EXPO_UNSTABLE_ATLAS=true expo run:android --device",
     "android": "expo run:android",
     "format": "pnpm run prettier:fix",
@@ -79,6 +79,7 @@
   "devDependencies": {
     "@commitlint/cli": "20.5.0",
     "@commitlint/config-conventional": "20.5.0",
+    "@dotenvx/dotenvx": "2.19.2",
     "@faker-js/faker": "10.4.0",
     "@stylistic/eslint-plugin": "5.10.0",
     "@tailwindcss/postcss": "^4.2.2",
