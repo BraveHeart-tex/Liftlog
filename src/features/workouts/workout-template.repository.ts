@@ -11,11 +11,13 @@ import {
   type WorkoutTemplateExercise
 } from '@/src/db/schema';
 import { toLocalDateKey } from '@/src/lib/utils/date.utils';
-import { isExerciseNameUniqueConstraintError } from '@/src/features/exercises/exercise.repository';
-import { normalizeExerciseName } from '@/src/features/exercises/exercise-name.utils';
+import {
+  isExerciseNameUniqueConstraintError,
+  validateStagedCustomExerciseNames
+} from '@/src/features/exercises/exercise.repository';
 import { resolveTemplateName } from '@/src/features/workouts/workout-display.utils';
 import { normalizeSupersetRows } from '@/src/features/workouts/superset.utils';
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
 
 export interface WorkoutStartTemplateItem {
   template: WorkoutTemplate;
@@ -443,41 +445,18 @@ export function saveWorkoutTemplateExerciseDraft(
       throw new WorkoutTemplateExerciseDraftConflictError();
     }
 
-    if (stagedCustomExercises.length > 0) {
-      const normalizedNames = new Set<string>();
+    const normalizedStagedCustomExercises = validateStagedCustomExerciseNames(
+      tx,
+      stagedCustomExercises,
+      () => new WorkoutTemplateExerciseDraftConflictError()
+    );
 
-      for (const exercise of stagedCustomExercises) {
-        const normalizedName = normalizeExerciseName(exercise.name);
-
-        if (!normalizedName || normalizedNames.has(normalizedName)) {
-          throw new WorkoutTemplateExerciseDraftConflictError();
-        }
-
-        normalizedNames.add(normalizedName);
-      }
-
-      const persistedNameConflict = tx
-        .select({ id: exercises.id })
-        .from(exercises)
-        .where(
-          and(
-            eq(exercises.isArchived, 0),
-            inArray(exercises.normalizedName, Array.from(normalizedNames))
-          )
-        )
-        .limit(1)
-        .get();
-
-      if (persistedNameConflict) {
-        throw new WorkoutTemplateExerciseDraftConflictError();
-      }
-
+    if (normalizedStagedCustomExercises.length > 0) {
       try {
         tx.insert(exercises)
           .values(
-            stagedCustomExercises.map(exercise => ({
+            normalizedStagedCustomExercises.map(exercise => ({
               ...exercise,
-              normalizedName: normalizeExerciseName(exercise.name),
               isCustom: 1,
               isArchived: 0
             }))

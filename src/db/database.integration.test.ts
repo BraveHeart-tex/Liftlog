@@ -81,7 +81,7 @@ class NodeSQLiteStatement {
   constructor(
     private readonly statement: StatementSync,
     private readonly database: DatabaseSync,
-    private readonly onExecute: () => void
+    private readonly onExecute: (params: SQLInputValue[]) => void
   ) {}
 
   executeSync(params: SQLInputValue[] = []) {
@@ -93,7 +93,7 @@ class NodeSQLiteStatement {
   }
 
   private execute(params: SQLInputValue[], rawResult: boolean) {
-    this.onExecute();
+    this.onExecute(params);
     const rows = this.statement.all(...params);
     const metadata = this.database
       .prepare(
@@ -122,6 +122,9 @@ class NodeSQLiteStatement {
 class NodeSQLiteDatabase {
   private readonly database = new DatabaseSync(':memory:');
   private executedPreparedStatementCount = 0;
+  private recordedPreparedStatements:
+    | { source: string; params: SQLInputValue[] }[]
+    | undefined;
 
   getPreparedStatementCount() {
     return this.executedPreparedStatementCount;
@@ -129,6 +132,18 @@ class NodeSQLiteDatabase {
 
   resetPreparedStatementCount() {
     this.executedPreparedStatementCount = 0;
+  }
+
+  startRecordingPreparedStatements() {
+    this.recordedPreparedStatements = [];
+  }
+
+  stopRecordingPreparedStatements() {
+    const recordedPreparedStatements = this.recordedPreparedStatements ?? [];
+
+    this.recordedPreparedStatements = undefined;
+
+    return recordedPreparedStatements;
   }
 
   closeSync() {
@@ -147,10 +162,15 @@ class NodeSQLiteDatabase {
     return new NodeSQLiteStatement(
       this.database.prepare(source),
       this.database,
-      () => {
+      params => {
         if (!/^\s*(begin|commit|rollback)\b/i.test(source)) {
           this.executedPreparedStatementCount += 1;
         }
+
+        this.recordedPreparedStatements?.push({
+          source,
+          params: [...params]
+        });
       }
     );
   }
@@ -698,79 +718,225 @@ test('exercise name writes enforce and translate active normalized conflicts', a
   }
 });
 
-test('staged exercise saves report normalized name conflicts', async () => {
+test('staged exercise saves scope name checks to staged names', async () => {
   const { db, nodeClient } = await createMigratedTestDatabase();
 
   try {
-    createExercise(db, {
-      id: 'existing-exercise',
-      name: 'Übung',
-      category: 'other'
-    });
+    db.insert(exercises)
+      .values(
+        Array.from({ length: 1_000 }, (_, index) => ({
+          id: `catalog-exercise-${index}`,
+          name: `Catalog exercise ${index}`,
+          normalizedName: `catalog exercise ${index}`,
+          category: 'other'
+        }))
+      )
+      .run();
     db.insert(workouts)
-      .values({
-        id: 'active-workout',
-        name: 'Active',
-        status: 'in_progress',
-        startedAt: 1,
-        dateKey: '1970-01-01'
-      })
+      .values([
+        {
+          id: 'active-workout',
+          name: 'Active',
+          status: 'in_progress',
+          startedAt: 1,
+          dateKey: '1970-01-01'
+        },
+        {
+          id: 'conflicting-active-workout',
+          name: 'Conflicting active',
+          status: 'in_progress',
+          startedAt: 1,
+          dateKey: '1970-01-01'
+        }
+      ])
       .run();
     db.insert(workoutTemplates)
-      .values({
-        id: 'template',
-        name: 'Template',
-        createdAt: 1,
-        updatedAt: 1
-      })
+      .values([
+        {
+          id: 'template',
+          name: 'Template',
+          createdAt: 1,
+          updatedAt: 1
+        },
+        {
+          id: 'conflicting-template',
+          name: 'Conflicting template',
+          createdAt: 1,
+          updatedAt: 1
+        }
+      ])
       .run();
-    const stagedExercise = {
-      id: 'staged-exercise',
-      name: ' üBUNG ',
-      normalizedName: 'übung',
+    const stagedExercise = (id: string, name: string) => ({
+      id,
+      name,
+      normalizedName: 'stale',
       category: 'other',
-      trackingType: 'weight_reps',
+      trackingType: 'weight_reps' as const,
       primaryMuscles: '[]',
       secondaryMuscles: '[]',
       isCustom: 1,
       isArchived: 0,
       createdAt: 1
+    });
+    const stopRecordingActiveNameQueries = () =>
+      nodeClient
+        .stopRecordingPreparedStatements()
+        .filter(
+          statement =>
+            statement.source.includes('from "exercises"') &&
+            statement.source.includes('"is_archived" = ?')
+        );
+    const assertScopedNameQuery = (normalizedNames: string[]) => {
+      const activeNameQueries = stopRecordingActiveNameQueries();
+
+      assert.equal(activeNameQueries.length, 1);
+      assert.match(activeNameQueries[0].source, /"normalized_name" in \(/);
+      assert.deepEqual(
+        activeNameQueries[0].params.filter(
+          (param): param is string => typeof param === 'string'
+        ),
+        normalizedNames
+      );
     };
 
+    const activeStagedExercises = [
+      stagedExercise('active-staged-1', ' New active exercise 1 '),
+      stagedExercise('active-staged-2', 'New active exercise 2')
+    ];
+
+    nodeClient.startRecordingPreparedStatements();
+    saveActiveWorkoutExerciseDraft(
+      db,
+      'active-workout',
+      activeStagedExercises.map((exercise, index) => ({
+        id: `active-workout-exercise-${index}`,
+        exerciseId: exercise.id,
+        supersetId: null
+      })),
+      [],
+      activeStagedExercises
+    );
+    assertScopedNameQuery(['new active exercise 1', 'new active exercise 2']);
+
+    const templateStagedExercises = [
+      stagedExercise('template-staged-1', ' New template exercise 1 '),
+      stagedExercise('template-staged-2', 'New template exercise 2')
+    ];
+
+    nodeClient.startRecordingPreparedStatements();
+    saveWorkoutTemplateExerciseDraft(
+      db,
+      'template',
+      templateStagedExercises.map((exercise, index) => ({
+        id: `template-exercise-${index}`,
+        exerciseId: exercise.id,
+        supersetId: null
+      })),
+      [],
+      templateStagedExercises
+    );
+    assertScopedNameQuery([
+      'new template exercise 1',
+      'new template exercise 2'
+    ]);
+
+    const duplicateActiveExercises = [
+      stagedExercise('active-duplicate-1', 'Duplicate active exercise'),
+      stagedExercise('active-duplicate-2', ' DUPLICATE ACTIVE EXERCISE ')
+    ];
+
+    nodeClient.startRecordingPreparedStatements();
     assert.throws(
       () =>
         saveActiveWorkoutExerciseDraft(
           db,
-          'active-workout',
-          [
-            {
-              id: 'workout-exercise',
-              exerciseId: stagedExercise.id,
-              supersetId: null
-            }
-          ],
+          'conflicting-active-workout',
+          duplicateActiveExercises.map((exercise, index) => ({
+            id: `duplicate-active-workout-exercise-${index}`,
+            exerciseId: exercise.id,
+            supersetId: null
+          })),
           [],
-          [stagedExercise]
+          duplicateActiveExercises
         ),
       ActiveWorkoutExerciseDraftConflictError
     );
+    assert.equal(stopRecordingActiveNameQueries().length, 0);
+
+    const duplicateTemplateExercises = [
+      stagedExercise('template-duplicate-1', 'Duplicate template exercise'),
+      stagedExercise('template-duplicate-2', ' DUPLICATE TEMPLATE EXERCISE ')
+    ];
+
+    nodeClient.startRecordingPreparedStatements();
     assert.throws(
       () =>
         saveWorkoutTemplateExerciseDraft(
           db,
-          'template',
-          [
-            {
-              id: 'template-exercise',
-              exerciseId: stagedExercise.id,
-              supersetId: null
-            }
-          ],
+          'conflicting-template',
+          duplicateTemplateExercises.map((exercise, index) => ({
+            id: `duplicate-template-exercise-${index}`,
+            exerciseId: exercise.id,
+            supersetId: null
+          })),
           [],
-          [stagedExercise]
+          duplicateTemplateExercises
         ),
       WorkoutTemplateExerciseDraftConflictError
     );
+    assert.equal(stopRecordingActiveNameQueries().length, 0);
+
+    const conflictingActiveExercises = [
+      stagedExercise('active-conflict-1', ' CATALOG EXERCISE 777 '),
+      stagedExercise('active-conflict-2', 'Unpersisted active exercise')
+    ];
+
+    nodeClient.startRecordingPreparedStatements();
+    assert.throws(
+      () =>
+        saveActiveWorkoutExerciseDraft(
+          db,
+          'conflicting-active-workout',
+          conflictingActiveExercises.map((exercise, index) => ({
+            id: `conflicting-workout-exercise-${index}`,
+            exerciseId: exercise.id,
+            supersetId: null
+          })),
+          [],
+          conflictingActiveExercises
+        ),
+      ActiveWorkoutExerciseDraftConflictError
+    );
+    assertScopedNameQuery([
+      'catalog exercise 777',
+      'unpersisted active exercise'
+    ]);
+
+    const conflictingTemplateExercises = [
+      stagedExercise('template-conflict-1', ' CATALOG EXERCISE 888 '),
+      stagedExercise('template-conflict-2', 'Unpersisted template exercise')
+    ];
+
+    nodeClient.startRecordingPreparedStatements();
+    assert.throws(
+      () =>
+        saveWorkoutTemplateExerciseDraft(
+          db,
+          'conflicting-template',
+          conflictingTemplateExercises.map((exercise, index) => ({
+            id: `conflicting-template-exercise-${index}`,
+            exerciseId: exercise.id,
+            supersetId: null
+          })),
+          [],
+          conflictingTemplateExercises
+        ),
+      WorkoutTemplateExerciseDraftConflictError
+    );
+    assertScopedNameQuery([
+      'catalog exercise 888',
+      'unpersisted template exercise'
+    ]);
   } finally {
     nodeClient.closeSync();
   }

@@ -8,7 +8,7 @@ import {
 } from '@/src/db/schema';
 import { rebuildPersonalRecordsForExerciseInTransaction } from '@/src/features/progress/progress.repository';
 import { normalizeExerciseName } from '@/src/features/exercises/exercise-name.utils';
-import { and, count, eq, exists, ne, or, sql } from 'drizzle-orm';
+import { and, count, eq, exists, inArray, ne, or, sql } from 'drizzle-orm';
 import type { InferColumnsDataTypes } from 'drizzle-orm/column';
 
 const exerciseListFields = {
@@ -46,6 +46,51 @@ export function isExerciseNameUniqueConstraintError(error: unknown): boolean {
       'UNIQUE constraint failed: exercises.normalized_name'
     )
   );
+}
+
+export function validateStagedCustomExerciseNames<T extends { name: string }>(
+  db: DrizzleDb,
+  stagedExercises: T[],
+  createConflictError: () => Error
+): (T & { normalizedName: string })[] {
+  const normalizedExercises = stagedExercises.map(exercise => ({
+    ...exercise,
+    normalizedName: normalizeExerciseName(exercise.name)
+  }));
+  const normalizedNames = new Set<string>();
+
+  for (const exercise of normalizedExercises) {
+    if (
+      exercise.normalizedName.length === 0 ||
+      normalizedNames.has(exercise.normalizedName)
+    ) {
+      throw createConflictError();
+    }
+
+    normalizedNames.add(exercise.normalizedName);
+  }
+
+  if (normalizedNames.size === 0) {
+    return normalizedExercises;
+  }
+
+  const persistedNameConflict = db
+    .select({ id: exercises.id })
+    .from(exercises)
+    .where(
+      and(
+        eq(exercises.isArchived, 0),
+        inArray(exercises.normalizedName, Array.from(normalizedNames))
+      )
+    )
+    .limit(1)
+    .get();
+
+  if (persistedNameConflict) {
+    throw createConflictError();
+  }
+
+  return normalizedExercises;
 }
 
 export function getExerciseByIdQuery(db: DrizzleDb, id: Exercise['id']) {

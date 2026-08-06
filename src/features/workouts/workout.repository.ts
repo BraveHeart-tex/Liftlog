@@ -18,9 +18,9 @@ import {
 } from '@/src/db/schema';
 import {
   createExercise,
-  isExerciseNameUniqueConstraintError
+  isExerciseNameUniqueConstraintError,
+  validateStagedCustomExerciseNames
 } from '@/src/features/exercises/exercise.repository';
-import { normalizeExerciseName } from '@/src/features/exercises/exercise-name.utils';
 import {
   rebuildPersonalRecordsForExerciseInTransaction,
   rebuildPersonalRecordsForExercisesInTransaction
@@ -1294,41 +1294,18 @@ export function saveActiveWorkoutExerciseDraft(
       throw new ActiveWorkoutExerciseDraftConflictError();
     }
 
-    if (stagedCustomExercises.length > 0) {
-      const normalizedNames = new Set<string>();
+    const normalizedStagedCustomExercises = validateStagedCustomExerciseNames(
+      tx,
+      stagedCustomExercises,
+      () => new ActiveWorkoutExerciseDraftConflictError()
+    );
 
-      for (const exercise of stagedCustomExercises) {
-        const normalizedName = normalizeExerciseName(exercise.name);
-
-        if (!normalizedName || normalizedNames.has(normalizedName)) {
-          throw new ActiveWorkoutExerciseDraftConflictError();
-        }
-
-        normalizedNames.add(normalizedName);
-      }
-
-      const persistedNameConflict = tx
-        .select({ id: exercises.id })
-        .from(exercises)
-        .where(
-          and(
-            eq(exercises.isArchived, 0),
-            inArray(exercises.normalizedName, Array.from(normalizedNames))
-          )
-        )
-        .limit(1)
-        .get();
-
-      if (persistedNameConflict) {
-        throw new ActiveWorkoutExerciseDraftConflictError();
-      }
-
+    if (normalizedStagedCustomExercises.length > 0) {
       try {
         tx.insert(exercises)
           .values(
-            stagedCustomExercises.map(exercise => ({
+            normalizedStagedCustomExercises.map(exercise => ({
               ...exercise,
-              normalizedName: normalizeExerciseName(exercise.name),
               isCustom: 1,
               isArchived: 0
             }))
