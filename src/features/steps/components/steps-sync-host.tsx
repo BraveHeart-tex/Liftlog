@@ -1,7 +1,7 @@
 import { useDrizzle } from '@/src/components/database-provider';
 import {
   getTodayStepDay,
-  upsertStepDays
+  saveStepSyncResult
 } from '@/src/features/steps/steps.repository';
 import { syncStepDaysFromHealthConnect } from '@/src/features/steps/health-connect.service';
 import {
@@ -37,11 +37,16 @@ function AndroidStepsSyncHost() {
 
     void syncStepDaysFromHealthConnect({ isInitial: false })
       .then(result => {
-        if (result.days.length === 0) {
+        const firstDay = result.days[0];
+
+        if (!firstDay) {
           return;
         }
 
-        upsertStepDays(db, result.days);
+        saveStepSyncResult(db, {
+          days: result.days,
+          syncedAt: firstDay.syncedAt
+        });
       })
       .catch(error => {
         console.error('Launch step sync failed', error);

@@ -2,10 +2,6 @@ import { useDrizzle } from '@/src/components/database-provider';
 import type { HealthStepDay } from '@/src/db/schema';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import {
-  SETTINGS_KEYS,
-  setSetting
-} from '@/src/features/settings/settings.repository';
-import {
   getHealthConnectAvailability,
   getStepPermissionState,
   openStepHealthConnectSettings,
@@ -29,7 +25,7 @@ import {
 } from '@/src/features/steps/steps-notifications.service';
 import {
   getRecentStepDaysQuery,
-  upsertStepDays
+  saveStepSyncResult
 } from '@/src/features/steps/steps.repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useFocusEffect } from 'expo-router';
@@ -152,12 +148,16 @@ export function useStepsScreen() {
 
         const result = await syncStepDaysFromHealthConnect({ isInitial });
 
-        if (result.days.length === 0) {
+        const firstDay = result.days[0];
+
+        if (!firstDay) {
           return;
         }
 
-        upsertStepDays(db, result.days);
-        setSetting(db, SETTINGS_KEYS.stepsLastSyncAt, String(Date.now()));
+        saveStepSyncResult(db, {
+          days: result.days,
+          syncedAt: firstDay.syncedAt
+        });
 
         const today = result.days.at(-1);
 
