@@ -8,6 +8,7 @@ export type RowPhase = 'editing' | 'saving' | 'awaiting_sync' | 'error';
 
 export interface DraftRowState {
   key: string;
+  order: Set['order'];
   phase: RowPhase;
   createdSetId?: Set['id'];
 }

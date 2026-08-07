@@ -22,22 +22,37 @@ import type { SetFormRow as SetFormRowModel } from '@/src/features/workouts/comp
 import { getFieldHeaderLabel } from '@/src/features/workouts/components/set-form/set-form.utils';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { CheckIcon } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
 import { View, type LayoutChangeEvent } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, {
   Easing,
-  FadeInDown,
+  FadeIn,
+  FadeInUp,
   FadeOut,
-  LinearTransition
+  LinearTransition,
+  useReducedMotion
 } from 'react-native-reanimated';
 
-const STAGGER_STEP_MS = 40;
-const MAX_STAGGER_MS = 200;
 const TRAILING_REGION_WIDTH = 56;
-const rowExiting = FadeOut.duration(MOTION_DURATION_MS.exit).easing(
-  Easing.in(Easing.cubic)
-);
+const rowEaseOut = Easing.bezier(0.23, 1, 0.32, 1);
+const rowEntering = FadeInUp.duration(MOTION_DURATION_MS.standard)
+  .easing(rowEaseOut)
+  .withInitialValues({
+    opacity: 0,
+    transform: [{ translateY: 8 }]
+  });
+const reducedMotionRowEntering = FadeIn.duration(
+  MOTION_DURATION_MS.standard
+).easing(rowEaseOut);
+const rowExiting = FadeOut.duration(MOTION_DURATION_MS.exit).easing(rowEaseOut);
 const rowLayout = LinearTransition.springify().dampingRatio(1).stiffness(200);
+const saveStateEntering = FadeIn.duration(MOTION_DURATION_MS.pressIn).easing(
+  rowEaseOut
+);
+const saveStateExiting = FadeOut.duration(MOTION_DURATION_MS.pressOut).easing(
+  rowEaseOut
+);
 const emptyInputSelection = { start: 0, end: 0 };
 
 interface SetFormRowProps {
@@ -81,6 +96,7 @@ export function SetFormRow({
   onRowFocus,
   onRowLayout
 }: SetFormRowProps) {
+  const reduceMotion = useReducedMotion();
   const isValid = Boolean(row.validatedValues);
   const fieldTone = getRowFieldTone(row, isValid);
   const isCopyDisabled = !isValid || row.isSaving || hasPendingCopy;
@@ -91,17 +107,17 @@ export function SetFormRow({
         weightUnit
       )
     : '-';
-  const rowEntering = row.animateOnMount
-    ? FadeInDown.duration(MOTION_DURATION_MS.standard)
-        .easing(Easing.out(Easing.cubic))
-        .delay(Math.min((row.setNumber - 1) * STAGGER_STEP_MS, MAX_STAGGER_MS))
+  const entering = row.animateOnMount
+    ? reduceMotion
+      ? reducedMotionRowEntering
+      : rowEntering
     : undefined;
 
   return (
     <Animated.View
-      entering={rowEntering}
+      entering={entering}
       exiting={rowExiting}
-      layout={rowLayout}
+      layout={reduceMotion ? undefined : rowLayout}
       onLayout={event => onRowLayout?.(row.key, event.nativeEvent.layout)}
     >
       <ReanimatedSwipeable
@@ -111,6 +127,7 @@ export function SetFormRow({
           <SetFormRowActions
             setNumber={row.setNumber}
             isCopyDisabled={isCopyDisabled}
+            shouldCloseBeforeDelete={row.kind === 'persisted'}
             swipeable={swipeable}
             onCopy={() => {
               void onCopy(row);
@@ -321,35 +338,50 @@ function SetFormTrailingRegion({
   isValid: boolean;
   onCommit: SetFormRowProps['onCommit'];
 }) {
+  const [shouldAnimateSaveState, setShouldAnimateSaveState] = useState(false);
   const showCommitAction = isValid && !row.isCommitted && !row.isSaving;
+
+  useEffect(() => {
+    setShouldAnimateSaveState(true);
+  }, []);
 
   return (
     <View className="h-12 w-12">
       <SetFormSaveSurface tone={fieldTone} colors={fieldColors}>
         {row.isSaving ? (
-          <View
+          <Animated.View
+            key="saving"
+            entering={shouldAnimateSaveState ? saveStateEntering : undefined}
+            exiting={shouldAnimateSaveState ? saveStateExiting : undefined}
             accessible
             accessibilityLabel={`Saving set ${row.setNumber}`}
             accessibilityRole="progressbar"
-            className="h-12 w-12 items-center justify-center"
+            className="absolute inset-0 items-center justify-center"
           >
             <StyledActivityIndicator className="text-primary" size="small" />
-          </View>
+          </Animated.View>
         ) : (
-          <Button
-            variant={showCommitAction ? 'secondary' : 'ghost'}
-            size="icon"
-            disabled={!showCommitAction}
-            accessibilityLabel={`Commit set ${row.setNumber}`}
-            className="h-12 w-12 border-transparent bg-transparent"
-            onPress={() => void onCommit(row)}
+          <Animated.View
+            key="commit"
+            entering={shouldAnimateSaveState ? saveStateEntering : undefined}
+            exiting={shouldAnimateSaveState ? saveStateExiting : undefined}
+            className="absolute inset-0"
           >
-            <Icon
-              as={CheckIcon}
-              tone={showCommitAction ? 'primary' : 'mutedForeground'}
-              size="md"
-            />
-          </Button>
+            <Button
+              variant={showCommitAction ? 'secondary' : 'ghost'}
+              size="icon"
+              disabled={!showCommitAction}
+              accessibilityLabel={`Commit set ${row.setNumber}`}
+              className="h-12 w-12 border-transparent bg-transparent"
+              onPress={() => void onCommit(row)}
+            >
+              <Icon
+                as={CheckIcon}
+                tone={showCommitAction ? 'primary' : 'mutedForeground'}
+                size="md"
+              />
+            </Button>
+          </Animated.View>
         )}
       </SetFormSaveSurface>
     </View>

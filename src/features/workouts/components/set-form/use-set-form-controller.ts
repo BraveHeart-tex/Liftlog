@@ -70,8 +70,19 @@ export function useSetFormController({
     useState<ActiveDurationPickerState | null>(null);
   const nextDraftIndexRef = useRef(0);
   const pendingCopyRef = useRef(false);
+  const copiedSetOrderToAnimateRef = useRef<Set['order'] | null>(null);
+  const draftRowKeyByCreatedSetIdRef = useRef(
+    new Map<Set['id'], DraftSetFormRow['key']>()
+  );
+  const pendingDraftRowKeyByOrderRef = useRef(
+    new Map<Set['order'], DraftSetFormRow['key']>()
+  );
 
   const liveSetIds = useMemo(() => new Set(sets.map(set => set.id)), [sets]);
+  const liveSetOrders = useMemo(
+    () => new Set(sets.map(set => set.order)),
+    [sets]
+  );
   const setById = useMemo(
     () => new Map(sets.map(set => [set.id, set])),
     [sets]
@@ -87,6 +98,7 @@ export function useSetFormController({
 
         if (isSynced && row.createdSetId !== undefined) {
           removedDraftKeys.push(row.key);
+          pendingDraftRowKeyByOrderRef.current.delete(row.order);
         }
 
         return !isSynced;
@@ -164,9 +176,15 @@ export function useSetFormController({
     () =>
       draftRows.filter(
         row =>
-          !(row.createdSetId !== undefined && liveSetIds.has(row.createdSetId))
+          !(
+            row.createdSetId !== undefined && liveSetIds.has(row.createdSetId)
+          ) &&
+          !(
+            liveSetOrders.has(row.order) &&
+            pendingDraftRowKeyByOrderRef.current.get(row.order) === row.key
+          )
       ),
-    [draftRows, liveSetIds]
+    [draftRows, liveSetIds, liveSetOrders]
   );
 
   const rows = useMemo<SetFormRow[]>(() => {
@@ -193,11 +211,14 @@ export function useSetFormController({
         return {
           fieldValues,
           hasSavedChanges,
-          animateOnMount: false,
+          animateOnMount: copiedSetOrderToAnimateRef.current === set.order,
           isCommitted:
             isSaving || (set.status === 'completed' && !hasSavedChanges),
           isSaving,
-          key: set.id,
+          key:
+            draftRowKeyByCreatedSetIdRef.current.get(set.id) ??
+            pendingDraftRowKeyByOrderRef.current.get(set.order) ??
+            set.id,
           kind: 'persisted',
           order: set.order,
           phase: edit?.phase ?? 'editing',
@@ -219,7 +240,6 @@ export function useSetFormController({
         );
         const isSaving =
           draftRow.phase === 'saving' || draftRow.phase === 'awaiting_sync';
-        const order = sets.length + index;
 
         return {
           fieldValues,
@@ -228,7 +248,7 @@ export function useSetFormController({
           isSaving,
           key: draftRow.key,
           kind: 'draft',
-          order,
+          order: draftRow.order,
           phase: draftRow.phase,
           previousSet: previousSets[visiblePersistedSets.length + index],
           setNumber: visiblePersistedSets.length + index + 1,
@@ -242,7 +262,6 @@ export function useSetFormController({
     draftValuesByKey,
     persistedEditsBySetId,
     previousSets,
-    sets.length,
     trackingDefinition.fields,
     trackingType,
     visibleDraftRows,
@@ -260,6 +279,17 @@ export function useSetFormController({
         ) ?? 0)
       : 0;
   const hasPendingCopy = pendingCopyRowKeys.size > 0;
+
+  useEffect(() => {
+    const copiedSetOrder = copiedSetOrderToAnimateRef.current;
+
+    if (
+      copiedSetOrder !== null &&
+      sets.some(set => set.order === copiedSetOrder)
+    ) {
+      copiedSetOrderToAnimateRef.current = null;
+    }
+  }, [sets]);
 
   const updateFieldValue = (
     row: SetFormRow,
@@ -393,6 +423,7 @@ export function useSetFormController({
           : currentRow
       )
     );
+    pendingDraftRowKeyByOrderRef.current.set(row.order, row.key);
 
     try {
       const createdSet = await Promise.resolve(
@@ -401,6 +432,8 @@ export function useSetFormController({
           { shouldScrollAfterMutation: false }
         )
       );
+
+      draftRowKeyByCreatedSetIdRef.current.set(createdSet.id, row.key);
 
       setDraftRows(currentRows =>
         currentRows.map(currentRow =>
@@ -415,6 +448,7 @@ export function useSetFormController({
       );
     } catch (error) {
       console.error('Failed to add set', error);
+      pendingDraftRowKeyByOrderRef.current.delete(row.order);
       setDraftRows(currentRows =>
         currentRows.map(currentRow =>
           currentRow.key === row.key
@@ -444,6 +478,8 @@ export function useSetFormController({
     }
 
     pendingCopyRef.current = true;
+    const copiedSetOrder = getNextSetOrder();
+    copiedSetOrderToAnimateRef.current = copiedSetOrder;
     setPendingCopyRowKeys(currentKeys => {
       const nextKeys = new Set(currentKeys);
 
@@ -455,12 +491,13 @@ export function useSetFormController({
     try {
       await Promise.resolve(
         onAddSet(
-          { ...row.validatedValues, order: getNextSetOrder() },
+          { ...row.validatedValues, order: copiedSetOrder },
           { shouldScrollAfterMutation: true }
         )
       );
     } catch (error) {
       console.error('Failed to copy set', error);
+      copiedSetOrderToAnimateRef.current = null;
       Alert.alert('Could not copy set', 'Please try again.');
     } finally {
       pendingCopyRef.current = false;
@@ -549,11 +586,12 @@ export function useSetFormController({
 
   const addDraftRow = () => {
     const nextDraftKey = `draft-${nextDraftIndexRef.current}`;
+    const nextOrder = getNextSetOrder();
 
     nextDraftIndexRef.current += 1;
     setDraftRows(currentRows => [
       ...currentRows,
-      { key: nextDraftKey, phase: 'editing' }
+      { key: nextDraftKey, order: nextOrder, phase: 'editing' }
     ]);
   };
 

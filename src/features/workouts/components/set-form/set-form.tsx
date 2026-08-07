@@ -13,10 +13,18 @@ import { SetFormEmptyState } from '@/src/features/workouts/components/set-form/s
 import type { SetFormFieldColors } from '@/src/features/workouts/components/set-form/set-form-field-surface';
 import { SetFormRow } from '@/src/features/workouts/components/set-form/set-form-row';
 import { useSetFormController } from '@/src/features/workouts/components/set-form/use-set-form-controller';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { PlusIcon } from 'lucide-react-native';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, type LayoutChangeEvent } from 'react-native';
+import Animated, {
+  Easing,
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+  useReducedMotion
+} from 'react-native-reanimated';
 
 const lightFeedbackColors = {
   danger: '#e8294a',
@@ -27,6 +35,15 @@ const darkFeedbackColors = {
   danger: '#c41535',
   success: '#1f9e4a'
 } as const;
+
+const formEaseOut = Easing.bezier(0.23, 1, 0.32, 1);
+const formStateEntering = FadeIn.duration(MOTION_DURATION_MS.standard).easing(
+  formEaseOut
+);
+const formStateExiting = FadeOut.duration(MOTION_DURATION_MS.exit).easing(
+  formEaseOut
+);
+const formLayout = LinearTransition.springify().dampingRatio(1).stiffness(200);
 
 interface SetFormProps {
   trackingType: TrackingType;
@@ -59,6 +76,9 @@ export function SetForm({
   onUpdateSet,
   onDeleteSet
 }: SetFormProps) {
+  const reduceMotion = useReducedMotion();
+  const [shouldAnimateStateChange, setShouldAnimateStateChange] =
+    useState(false);
   const { weightUnit } = useSettings();
   const { colors, colorScheme } = useAppTheme();
   const trackingDefinition = TRACKING_TYPE_DEFINITIONS[trackingType];
@@ -93,32 +113,42 @@ export function SetForm({
     onDeleteSet
   });
   const hasRows = controller.rows.length > 0;
+  const layoutTransition = reduceMotion ? undefined : formLayout;
+
+  useEffect(() => {
+    setShouldAnimateStateChange(true);
+  }, []);
 
   return (
     <View className="flex-1">
-      {hasRows ? (
-        <>
-          <View className="gap-2">
-            {controller.rows.map(row => (
-              <SetFormRow
-                key={row.key}
-                row={row}
-                trackingType={trackingType}
-                trackingFields={trackingDefinition.fields}
-                weightUnit={weightUnit}
-                fieldColors={animatedFieldColors}
-                hasPendingCopy={controller.hasPendingCopy}
-                onFieldChange={controller.updateFieldValue}
-                onCommit={controller.commitRow}
-                onCopy={controller.copyRow}
-                onDelete={controller.deleteRow}
-                onOpenDurationPicker={controller.openDurationPicker}
-                onRowFocus={onRowFocus}
-                onRowLayout={onRowLayout}
-              />
-            ))}
-          </View>
+      <View className="gap-2">
+        {controller.rows.map(row => (
+          <SetFormRow
+            key={row.key}
+            row={row}
+            trackingType={trackingType}
+            trackingFields={trackingDefinition.fields}
+            weightUnit={weightUnit}
+            fieldColors={animatedFieldColors}
+            hasPendingCopy={controller.hasPendingCopy}
+            onFieldChange={controller.updateFieldValue}
+            onCommit={controller.commitRow}
+            onCopy={controller.copyRow}
+            onDelete={controller.deleteRow}
+            onOpenDurationPicker={controller.openDurationPicker}
+            onRowFocus={onRowFocus}
+            onRowLayout={onRowLayout}
+          />
+        ))}
+      </View>
 
+      {hasRows ? (
+        <Animated.View
+          key="controls"
+          entering={shouldAnimateStateChange ? formStateEntering : undefined}
+          exiting={shouldAnimateStateChange ? formStateExiting : undefined}
+          layout={layoutTransition}
+        >
           <Button
             onPress={controller.addDraftRow}
             className="mt-4 bg-transparent"
@@ -129,13 +159,27 @@ export function SetForm({
           </Button>
 
           {sets.length > 0 ? (
-            <Text variant="caption" tone="muted" className="mt-3 text-center">
-              Swipe left on a row to copy or delete it.
-            </Text>
+            <Animated.View
+              entering={
+                shouldAnimateStateChange ? formStateEntering : undefined
+              }
+              exiting={shouldAnimateStateChange ? formStateExiting : undefined}
+            >
+              <Text variant="caption" tone="muted" className="mt-3 text-center">
+                Swipe left on a row to copy or delete it.
+              </Text>
+            </Animated.View>
           ) : null}
-        </>
+        </Animated.View>
       ) : (
-        <SetFormEmptyState onAddSet={controller.addDraftRow} />
+        <Animated.View
+          key="empty"
+          entering={shouldAnimateStateChange ? formStateEntering : undefined}
+          exiting={shouldAnimateStateChange ? formStateExiting : undefined}
+          layout={layoutTransition}
+        >
+          <SetFormEmptyState onAddSet={controller.addDraftRow} />
+        </Animated.View>
       )}
       <SetDurationPickerSheet
         isOpen={Boolean(controller.activeDurationPicker)}

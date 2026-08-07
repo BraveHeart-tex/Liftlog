@@ -7,6 +7,7 @@ import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSw
 interface SetFormRowActionsProps {
   setNumber: number;
   isCopyDisabled: boolean;
+  shouldCloseBeforeDelete: boolean;
   swipeable: SwipeableMethods;
   onCopy: () => void;
   onDelete: () => void;
@@ -15,6 +16,7 @@ interface SetFormRowActionsProps {
 export function SetFormRowActions({
   setNumber,
   isCopyDisabled,
+  shouldCloseBeforeDelete,
   swipeable,
   onCopy,
   onDelete
@@ -44,7 +46,10 @@ export function SetFormRowActions({
         accessibilityLabel={`Delete set ${setNumber}`}
         className="border-danger/30 bg-danger/10 h-16 w-16 rounded-lg"
         onPress={() => {
-          swipeable.close();
+          if (shouldCloseBeforeDelete) {
+            swipeable.close();
+          }
+
           onDelete();
         }}
       >
