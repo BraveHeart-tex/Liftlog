@@ -7,6 +7,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import type { ReactNode } from 'react';
 import {
   View,
+  type AccessibilityState,
   type GestureResponderEvent,
   type StyleProp,
   type TextStyle
@@ -52,6 +53,7 @@ interface ButtonProps {
   disabled?: boolean;
   loading?: boolean;
   accessibilityLabel?: string;
+  accessibilityState?: AccessibilityState;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
   className?: string;
@@ -106,6 +108,7 @@ export function Button({
   disabled = false,
   loading = false,
   accessibilityLabel,
+  accessibilityState,
   leftIcon,
   rightIcon,
   className,
@@ -127,7 +130,7 @@ export function Button({
   return (
     <PressableSurface
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ busy: loading }}
+      accessibilityState={{ ...accessibilityState, busy: loading }}
       containerClassName={cn(
         // TODO: Remove this block after migrating every button to use containerClassName
         className?.includes('w-full') && 'w-full',

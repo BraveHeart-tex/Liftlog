@@ -70,7 +70,7 @@ export const BottomSheetInput = forwardRef<
   return (
     <View className={cn('w-full', className)}>
       {label ? (
-        <Text variant="small" className={labelClassName}>
+        <Text variant="overline" className={labelClassName}>
           {label}
         </Text>
       ) : null}

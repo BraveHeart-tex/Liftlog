@@ -4,6 +4,15 @@ import {
   formatWeightForUnit,
   type WeightUnit
 } from '@/src/lib/utils/weight.utils';
+import {
+  DumbbellIcon,
+  Repeat2Icon,
+  RouteIcon,
+  TimerIcon,
+  TimerResetIcon,
+  WeightIcon,
+  type LucideIcon
+} from 'lucide-react-native';
 
 export const TRACKING_TYPES = [
   'weight_reps',
@@ -37,6 +46,8 @@ interface TrackingTypeDefinition {
   label: string;
   fields: TrackingFieldDefinition[];
   scoreLabel: string;
+  description: string;
+  icon: LucideIcon;
 }
 
 const trackingTypeSet = new Set<TrackingType>(TRACKING_TYPES);
@@ -65,7 +76,9 @@ export const TRACKING_TYPE_DEFINITIONS: Record<
         minimum: 1,
         integer: true
       }
-    ]
+    ],
+    description: 'e.g. 80 kg x 8',
+    icon: DumbbellIcon
   },
   distance_time: {
     label: 'Distance and time',
@@ -88,7 +101,9 @@ export const TRACKING_TYPE_DEFINITIONS: Record<
         minimum: 10,
         integer: true
       }
-    ]
+    ],
+    description: 'e.g. 1km - 8:30',
+    icon: RouteIcon
   },
   reps: {
     label: 'Reps',
@@ -103,7 +118,9 @@ export const TRACKING_TYPE_DEFINITIONS: Record<
         minimum: 1,
         integer: true
       }
-    ]
+    ],
+    description: 'e.g. 15 reps',
+    icon: Repeat2Icon
   },
   reps_time: {
     label: 'Reps and time',
@@ -127,7 +144,9 @@ export const TRACKING_TYPE_DEFINITIONS: Record<
         minimum: 10,
         integer: true
       }
-    ]
+    ],
+    description: 'e.g. 12 reps - 40s',
+    icon: TimerResetIcon
   },
   weight_time: {
     label: 'Weight and time',
@@ -149,7 +168,9 @@ export const TRACKING_TYPE_DEFINITIONS: Record<
         minimum: 10,
         integer: true
       }
-    ]
+    ],
+    description: 'e.g. 80kg - 40s',
+    icon: WeightIcon
   },
   duration: {
     label: 'Time',
@@ -164,7 +185,9 @@ export const TRACKING_TYPE_DEFINITIONS: Record<
         minimum: 10,
         integer: true
       }
-    ]
+    ],
+    description: 'e.g. 60s',
+    icon: TimerIcon
   }
 };
 

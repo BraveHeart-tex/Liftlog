@@ -64,7 +64,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
   return (
     <View className={cn('w-full', wrapperClassName)}>
       {label ? (
-        <Text variant="small" className={labelClassName}>
+        <Text variant="overline" className={labelClassName}>
           {label}
         </Text>
       ) : null}
