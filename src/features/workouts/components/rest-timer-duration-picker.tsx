@@ -1,9 +1,11 @@
 import { Text } from '@/src/components/ui/text';
 import { WheelPicker } from '@/src/components/ui/wheel-picker';
 import { cn } from '@/src/lib/utils/cn.utils';
+import { nativeFontSizes } from '@/src/theme/sizes';
 import type {
   OnValueChanged,
-  OnValueChanging
+  OnValueChanging,
+  RenderItemProps
 } from '@quidone/react-native-wheel-picker';
 import { View } from 'react-native';
 
@@ -19,6 +21,38 @@ const secondItems = Array.from({ length: 60 }, (_, value) => ({
   label: String(value).padStart(2, '0'),
   value
 }));
+
+type TimerPickerItem = (typeof minuteItems)[number];
+
+type DurationPickerItemProps = RenderItemProps<TimerPickerItem> & {
+  isSelected: boolean;
+  unit: 'MIN' | 'SEC';
+};
+
+function DurationPickerItem({
+  item,
+  itemTextStyle,
+  isSelected,
+  unit
+}: DurationPickerItemProps) {
+  return (
+    <View className="flex-1 items-center justify-center">
+      <View className="flex-row items-baseline gap-2">
+        <Text variant="h2" style={itemTextStyle}>
+          {item.label}
+        </Text>
+        {isSelected ? (
+          <Text
+            variant="caption"
+            className="text-secondary-foreground font-bold"
+          >
+            {unit}
+          </Text>
+        ) : null}
+      </View>
+    </View>
+  );
+}
 
 interface RestTimerDurationPickerProps {
   minutes: number;
@@ -66,8 +100,18 @@ export function RestTimerDurationPicker({
   };
 
   return (
-    <View className={cn('flex-row items-center justify-center', className)}>
-      <View className="relative w-32">
+    <View
+      className={cn(
+        'relative h-[190px] w-full flex-row items-center justify-center overflow-hidden rounded-lg',
+        className
+      )}
+    >
+      <View
+        pointerEvents="none"
+        className="bg-secondary absolute inset-x-0 top-[62px] h-[66px] rounded-lg"
+      />
+
+      <View className="relative h-[190px] max-w-[132px] flex-1 justify-center">
         <WheelPicker
           data={minuteItems}
           value={minutes}
@@ -77,35 +121,28 @@ export function RestTimerDurationPicker({
           visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
           itemHeight={PICKER_ITEM_HEIGHT}
           width="100%"
-          overlayItemClassName="rounded-xl border border-border bg-secondary/40"
-          itemTextClassName="text-4xl font-semibold"
-          itemTextStyle={{ fontVariant: ['tabular-nums'] }}
+          overlayItemClassName="bg-transparent"
+          itemTextStyle={{
+            fontSize: nativeFontSizes.restTimerPicker,
+            fontVariant: ['tabular-nums']
+          }}
+          renderItem={itemProps => (
+            <DurationPickerItem
+              {...itemProps}
+              isSelected={itemProps.item.value === minutes}
+              unit="MIN"
+            />
+          )}
         />
-        <View
-          pointerEvents="none"
-          className="absolute top-0 right-3 bottom-0 z-10 justify-center"
-        >
-          <Text
-            variant="overline"
-            tone="muted"
-            className="text-[10px] font-bold"
-          >
-            MIN
-          </Text>
-        </View>
       </View>
 
-      <View className="w-8 items-center justify-center">
-        <Text
-          variant="h2"
-          tone="muted"
-          className="pb-1 text-center font-semibold"
-        >
+      <View className="w-8 shrink-0 items-center justify-center">
+        <Text variant="h2" tone="muted" className="text-center font-semibold">
           :
         </Text>
       </View>
 
-      <View className="relative w-32">
+      <View className="relative h-[190px] max-w-[132px] flex-1 justify-center">
         <WheelPicker
           data={secondItems}
           value={seconds}
@@ -115,22 +152,19 @@ export function RestTimerDurationPicker({
           visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
           itemHeight={PICKER_ITEM_HEIGHT}
           width="100%"
-          overlayItemClassName="rounded-xl border border-border bg-secondary/40"
-          itemTextClassName="text-4xl font-semibold"
-          itemTextStyle={{ fontVariant: ['tabular-nums'] }}
+          overlayItemClassName="bg-transparent"
+          itemTextStyle={{
+            fontSize: nativeFontSizes.restTimerPicker,
+            fontVariant: ['tabular-nums']
+          }}
+          renderItem={itemProps => (
+            <DurationPickerItem
+              {...itemProps}
+              isSelected={itemProps.item.value === seconds}
+              unit="SEC"
+            />
+          )}
         />
-        <View
-          pointerEvents="none"
-          className="absolute top-0 right-3 bottom-0 z-10 justify-center"
-        >
-          <Text
-            variant="overline"
-            tone="muted"
-            className="text-[10px] font-bold"
-          >
-            SEC
-          </Text>
-        </View>
       </View>
     </View>
   );

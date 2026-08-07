@@ -1,3 +1,5 @@
 export const MIN_REST_TIMER_SECONDS = 10;
 
 export const MAX_REST_TIMER_SECONDS = 3600;
+
+export const REST_TIMER_INCREMENT_SECONDS = 30;

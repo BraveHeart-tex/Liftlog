@@ -17,5 +17,6 @@ export const nativeFontSizes = {
   stepRadialMeta: 14,
   stepGoalInput: 48,
   restTimerInput: 20,
+  restTimerPicker: 44,
   restTimerDisplay: 72
 } as const;

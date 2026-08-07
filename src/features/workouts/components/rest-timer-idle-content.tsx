@@ -173,7 +173,6 @@ export function RestTimerIdleContent({
           minutes={minutes}
           seconds={seconds}
           renderWhen={renderWheels}
-          className="-mt-4"
           onMinutesChanging={handleMinutesChanging}
           onMinutesChange={handleMinutesChange}
           onSecondsChanging={handleSecondsChanging}
@@ -183,11 +182,12 @@ export function RestTimerIdleContent({
 
       <Button
         containerClassName="w-full"
+        size="lg"
         disabled={!canStart}
         leftIcon={<Icon as={PlayIcon} tone="primaryForeground" />}
         onPress={handleStart}
       >
-        Start
+        Start rest
       </Button>
 
       <RestTimerPresetList

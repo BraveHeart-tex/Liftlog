@@ -1,10 +1,10 @@
 import {
   BottomSheet,
-  BottomSheetHeader,
-  BottomSheetTitle
+  BottomSheetHeader
 } from '@/src/components/ui/bottom-sheet';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
+import { Text } from '@/src/components/ui/text';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import { RestTimerIdleContent } from '@/src/features/workouts/components/rest-timer-idle-content';
 import { RestTimerPausedContent } from '@/src/features/workouts/components/rest-timer-paused-content';
@@ -16,7 +16,11 @@ import {
 import { cn } from '@/src/lib/utils/cn.utils';
 import { XIcon } from 'lucide-react-native';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
+
+const ACTIVE_CONTENT_MAX_HEIGHT = 695;
+const ACTIVE_SHEET_CHROME_HEIGHT = 149;
+const ACTIVE_CONTENT_MIN_HEIGHT = 420;
 
 interface RestTimerSheetProps {
   isOpen: boolean;
@@ -89,13 +93,27 @@ const RestTimerSheetContent = memo(function RestTimerSheetContent({
   renderWheels
 }: RestTimerSheetContentProps) {
   const { restTimerDuration: defaultDuration } = useSettings();
+  const { height: windowHeight } = useWindowDimensions();
   const status = useRestTimerStore(state => state.status);
+  const activeContext = useRestTimerStore(state => state.context);
   const syncDefaultDuration = useRestTimerStore(
     state => state.syncDefaultDuration
   );
   const syncOnOpen = useRestTimerStore(state => state.syncOnOpen);
   const wasOpenRef = useRef(false);
   const [openToken, setOpenToken] = useState(0);
+  const activeContentHeight = Math.min(
+    Math.max(
+      windowHeight - ACTIVE_SHEET_CHROME_HEIGHT,
+      ACTIVE_CONTENT_MIN_HEIGHT
+    ),
+    ACTIVE_CONTENT_MAX_HEIGHT
+  );
+  const subtitle =
+    status === 'idle'
+      ? 'Set the next rest interval'
+      : (activeContext.exerciseName ??
+        (status === 'paused' ? 'Rest paused' : 'Rest in progress'));
 
   useEffect(() => {
     syncDefaultDuration(defaultDuration);
@@ -116,14 +134,34 @@ const RestTimerSheetContent = memo(function RestTimerSheetContent({
 
   return (
     <>
-      <BottomSheetHeader className="flex-row items-center justify-between">
-        <BottomSheetTitle>Rest Timer</BottomSheetTitle>
-        <Button variant="secondary" size="icon" onPress={onClose}>
+      <BottomSheetHeader className="flex-row items-center justify-between pt-2 pb-3">
+        <View className="min-w-0 flex-1 gap-1 pr-3">
+          <Text variant="h2">Rest timer</Text>
+          <Text
+            variant="small"
+            numberOfLines={1}
+            className="text-secondary-foreground font-medium"
+          >
+            {subtitle}
+          </Text>
+        </View>
+        <Button
+          variant="secondary"
+          size="icon"
+          accessibilityLabel="Close rest timer"
+          onPress={onClose}
+        >
           <Icon as={XIcon} size="lg" tone="foreground" />
         </Button>
       </BottomSheetHeader>
 
-      <View className="gap-6 px-4 pt-4 pb-6">
+      <View
+        className={cn(
+          'pb-safe-offset-2 px-4 pt-2',
+          status === 'idle' && 'gap-4'
+        )}
+        style={status === 'idle' ? undefined : { height: activeContentHeight }}
+      >
         <View
           pointerEvents={status === 'idle' ? 'auto' : 'none'}
           accessibilityElementsHidden={status !== 'idle'}
@@ -131,8 +169,8 @@ const RestTimerSheetContent = memo(function RestTimerSheetContent({
             status === 'idle' ? 'auto' : 'no-hide-descendants'
           }
           className={cn(
-            'gap-6',
-            status !== 'idle' && 'absolute inset-x-4 top-4 opacity-0'
+            'gap-4',
+            status !== 'idle' && 'absolute inset-x-4 top-2 opacity-0'
           )}
         >
           <RestTimerIdleContent

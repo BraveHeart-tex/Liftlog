@@ -2,6 +2,7 @@ import { Button } from '@/src/components/ui/button';
 import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
 import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sheet';
+import { REST_TIMER_INCREMENT_SECONDS } from '@/src/features/workouts/rest-timer.constants';
 import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { cn } from '@/src/lib/utils/cn.utils';
@@ -18,7 +19,6 @@ import Animated, {
   withTiming
 } from 'react-native-reanimated';
 
-const ADD_TIME_SECONDS = 30;
 const widgetEntering = FadeInDown.duration(MOTION_DURATION_MS.standard);
 const widgetExiting = FadeOutUp.duration(MOTION_DURATION_MS.exit);
 
@@ -38,7 +38,7 @@ export function RestTimerWidget({ className }: RestTimerWidgetProps) {
   const openSheet = useCallback(() => setIsSheetOpen(true), []);
   const closeSheet = useCallback(() => setIsSheetOpen(false), []);
   const addThirtySeconds = useCallback(() => {
-    addTime(ADD_TIME_SECONDS);
+    addTime(REST_TIMER_INCREMENT_SECONDS);
   }, [addTime]);
 
   useEffect(() => {

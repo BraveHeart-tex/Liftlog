@@ -1,11 +1,9 @@
-import { Badge } from '@/src/components/ui/badge';
-import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { formatTime } from '@/src/lib/utils/format-time.utils';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { nativeFontSizes } from '@/src/theme/sizes';
 import { Canvas, Circle, Path, Skia } from '@shopify/react-native-skia';
-import { PauseIcon } from 'lucide-react-native';
 import { useEffect, useMemo } from 'react';
 import { View } from 'react-native';
 import {
@@ -21,10 +19,11 @@ interface RestTimerCountdownProps {
   activeDuration: number;
 }
 
-const CHART_SIZE = 236;
+const CHART_SIZE = 286;
 const STROKE_WIDTH = 14;
-const RADIUS = (CHART_SIZE - STROKE_WIDTH) / 2;
+const RADIUS = 119;
 const CENTER = CHART_SIZE / 2;
+const RING_INSET = CENTER - RADIUS;
 const START_ANGLE_DEGREES = -90;
 const MAX_SWEEP_DEGREES = 359.9;
 
@@ -41,7 +40,7 @@ export function RestTimerCountdown({
   secondsRemaining,
   activeDuration
 }: RestTimerCountdownProps) {
-  const { colors, colorScheme } = useAppTheme();
+  const { colors } = useAppTheme();
   const progress = getSafeProgress(secondsRemaining, activeDuration);
   const progressEnd = useSharedValue(progress);
   const ringColor = status === 'paused' ? colors.accent : colors.info;
@@ -75,10 +74,10 @@ export function RestTimerCountdown({
 
     path.addArc(
       {
-        x: STROKE_WIDTH / 2,
-        y: STROKE_WIDTH / 2,
-        width: CHART_SIZE - STROKE_WIDTH,
-        height: CHART_SIZE - STROKE_WIDTH
+        x: RING_INSET,
+        y: RING_INSET,
+        width: RADIUS * 2,
+        height: RADIUS * 2
       },
       START_ANGLE_DEGREES,
       MAX_SWEEP_DEGREES
@@ -109,7 +108,6 @@ export function RestTimerCountdown({
             <Path
               path={progressPath}
               color={ringColor}
-              opacity={colorScheme === 'light' ? 0.5 : 1}
               style="stroke"
               strokeWidth={STROKE_WIDTH}
               strokeCap="round"
@@ -119,20 +117,20 @@ export function RestTimerCountdown({
           </Canvas>
         </View>
 
-        <View className="w-44 items-center px-2">
-          {status === 'paused' ? (
-            <View className="mb-4 w-full items-center justify-center">
-              <Badge className="bg-accent/15 mx-auto px-3 py-1">
-                <Icon as={PauseIcon} size="sm" tone="accent" />
-                <Text variant="caption" className="text-accent font-semibold">
-                  PAUSED
-                </Text>
-              </Badge>
-            </View>
-          ) : null}
+        <View className="w-[220px] items-center gap-1 px-2">
+          <Text
+            variant="caption"
+            className={cn(
+              'font-bold tracking-wider',
+              status === 'paused' ? 'text-primary' : 'text-info'
+            )}
+          >
+            {status === 'paused' ? 'PAUSED' : 'RESTING'}
+          </Text>
 
           <Text
-            className="text-foreground text-center font-medium"
+            variant="h2"
+            className="text-foreground text-center font-semibold tracking-[-0.04em]"
             numberOfLines={1}
             adjustsFontSizeToFit
             minimumFontScale={0.72}
@@ -144,7 +142,11 @@ export function RestTimerCountdown({
             {formatTime(secondsRemaining)}
           </Text>
 
-          <Text variant="caption" tone="muted" className="mt-1 text-center">
+          <Text
+            variant="small"
+            className="text-secondary-foreground text-center font-medium"
+            style={{ fontVariant: ['tabular-nums'] }}
+          >
             of {formatTime(activeDuration)}
           </Text>
         </View>
