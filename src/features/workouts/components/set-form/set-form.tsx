@@ -22,6 +22,7 @@ import Animated, {
   Easing,
   FadeIn,
   FadeOut,
+  Keyframe,
   LinearTransition,
   useReducedMotion
 } from 'react-native-reanimated';
@@ -43,6 +44,28 @@ const formStateEntering = FadeIn.duration(MOTION_DURATION_MS.standard).easing(
 const formStateExiting = FadeOut.duration(MOTION_DURATION_MS.exit).easing(
   formEaseOut
 );
+const emptyStateEntering = new Keyframe({
+  0: {
+    opacity: 0,
+    transform: [{ scale: 0.97 }]
+  },
+  100: {
+    opacity: 1,
+    transform: [{ scale: 1 }],
+    easing: formEaseOut
+  }
+}).duration(MOTION_DURATION_MS.standard);
+const emptyStateExiting = new Keyframe({
+  0: {
+    opacity: 1,
+    transform: [{ scale: 1 }]
+  },
+  100: {
+    opacity: 0,
+    transform: [{ scale: 0.97 }],
+    easing: formEaseOut
+  }
+}).duration(MOTION_DURATION_MS.exit);
 const formLayout = LinearTransition.springify().dampingRatio(1).stiffness(200);
 
 interface SetFormProps {
@@ -174,8 +197,20 @@ export function SetForm({
       ) : (
         <Animated.View
           key="empty"
-          entering={shouldAnimateStateChange ? formStateEntering : undefined}
-          exiting={shouldAnimateStateChange ? formStateExiting : undefined}
+          entering={
+            shouldAnimateStateChange
+              ? reduceMotion
+                ? formStateEntering
+                : emptyStateEntering
+              : undefined
+          }
+          exiting={
+            shouldAnimateStateChange
+              ? reduceMotion
+                ? formStateExiting
+                : emptyStateExiting
+              : undefined
+          }
           layout={layoutTransition}
         >
           <SetFormEmptyState onAddSet={controller.addDraftRow} />
