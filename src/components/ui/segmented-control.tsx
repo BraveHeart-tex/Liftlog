@@ -1,5 +1,6 @@
 import { Text } from '@/src/components/ui/text';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { triggerSegmentSelectionHaptics } from '@/src/lib/haptics/navigation.haptics';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, View, type LayoutChangeEvent } from 'react-native';
@@ -68,6 +69,15 @@ export function SegmentedControl<T extends string>({
     setWidth(nextWidth);
   }
 
+  function handleOptionPress(optionValue: T) {
+    if (optionValue === value) {
+      return;
+    }
+
+    triggerSegmentSelectionHaptics();
+    onChange(optionValue);
+  }
+
   return (
     <View
       onLayout={handleLayout}
@@ -91,7 +101,7 @@ export function SegmentedControl<T extends string>({
             key={option.value}
             accessibilityRole="tab"
             accessibilityState={{ selected: isActive }}
-            onPress={() => onChange(option.value)}
+            onPress={() => handleOptionPress(option.value)}
             onPressIn={() => setPressedValue(option.value)}
             onPressOut={() => setPressedValue(null)}
             className={cn(

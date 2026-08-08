@@ -1,6 +1,7 @@
 import { useTabBarTheme } from '@/src/theme/app-theme-provider';
 import { appFonts } from '@/src/theme/fonts';
 import { iconSizes, nativeFontSizes } from '@/src/theme/sizes';
+import { triggerBottomTabNavigationHaptics } from '@/src/lib/haptics/navigation.haptics';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Tabs, usePathname } from 'expo-router';
 import { ClockIcon, DumbbellIcon, ListIcon } from 'lucide-react-native';
@@ -126,6 +127,7 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           });
 
           if (!focused && !event.defaultPrevented) {
+            triggerBottomTabNavigationHaptics();
             navigation.navigate(route.name, route.params);
           }
         };
