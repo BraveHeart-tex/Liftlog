@@ -38,15 +38,15 @@
       ],
       "expo-font",
       "expo-notifications",
-      "expo-health-connect",
       "./plugins/with-step-activity-permissions",
+      "react-native-health-connect",
       "react-native-notify-kit",
       [
         "expo-build-properties",
         {
           "android": {
-            "compileSdkVersion": 35,
-            "targetSdkVersion": 35,
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
             "minSdkVersion": 26
           }
         }
