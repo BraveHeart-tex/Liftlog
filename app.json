@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "liftlog",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.borakaraca94.liftlog"
@@ -18,7 +17,6 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.borakaraca94.liftlog",
       "permissions": [
@@ -61,7 +59,8 @@
           "project": "liftlog",
           "organization": "krc-94"
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
