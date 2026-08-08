@@ -156,17 +156,13 @@ const SaveWorkoutTemplateSheetContent = memo(
         <View className="border-border mt-4 border-t" />
         <BottomSheetSafeFooter>
           <View className="flex-1">
-            <Button
-              variant="ghost"
-              containerClassName="w-full"
-              onPress={handleClose}
-            >
+            <Button variant="ghost" fullWidth onPress={handleClose}>
               Cancel
             </Button>
           </View>
           <View className="flex-1">
             <Button
-              containerClassName="w-full"
+              fullWidth
               loading={isSavingTemplate}
               leftIcon={<Icon as={BookmarkIcon} tone="primaryForeground" />}
               onPress={submitTemplate}

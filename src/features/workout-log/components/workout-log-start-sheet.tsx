@@ -59,7 +59,7 @@ export function WorkoutLogStartSheet({
 
       <BottomSheetContent className="gap-4">
         <Button
-          containerClassName="w-full"
+          fullWidth
           leftIcon={<Icon as={PlusIcon} tone="primaryForeground" />}
           onPress={handleStartBlank}
         >

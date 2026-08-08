@@ -323,7 +323,7 @@ export function ActiveWorkoutContent({
                   <Button
                     variant="secondary"
                     size="sm"
-                    containerClassName="w-full"
+                    fullWidth
                     disabled={isLoadingWorkoutExercises}
                     leftIcon={
                       <Icon as={PlusIcon} size="sm" tone="foreground" />

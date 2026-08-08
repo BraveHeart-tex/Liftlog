@@ -228,7 +228,7 @@ function ActiveWorkoutEditExercisesContent({
             <Button
               variant="secondary"
               size="sm"
-              containerClassName="w-full"
+              fullWidth
               leftIcon={<Icon as={PlusIcon} size="sm" tone="foreground" />}
               onPress={openExercisePicker}
             >

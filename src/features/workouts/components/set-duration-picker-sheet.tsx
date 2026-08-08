@@ -231,17 +231,13 @@ const SetDurationPickerSheetContent = memo(
 
             <BottomSheetSafeFooter className="pb-safe-offset-4 pt-6">
               <View className="flex-1">
-                <Button
-                  variant="secondary"
-                  containerClassName="w-full"
-                  onPress={onClose}
-                >
+                <Button variant="secondary" fullWidth onPress={onClose}>
                   Cancel
                 </Button>
               </View>
               <View className="flex-1">
                 <Button
-                  containerClassName="w-full"
+                  fullWidth
                   disabled={!canConfirm}
                   leftIcon={<Icon as={CheckIcon} tone="primaryForeground" />}
                   onPress={handleConfirm}

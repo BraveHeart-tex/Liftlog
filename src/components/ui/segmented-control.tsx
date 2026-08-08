@@ -50,7 +50,7 @@ export function SegmentedControl<T extends string>({
   );
 
   const trackWidth = width - PADDING * 2;
-  const itemWidth = trackWidth / options.length;
+  const itemWidth = options.length > 0 ? trackWidth / options.length : 0;
 
   useEffect(() => {
     const nextTranslateX = activeIndex * itemWidth;
@@ -84,6 +84,10 @@ export function SegmentedControl<T extends string>({
 
     triggerSegmentSelectionHaptics();
     onChange(optionValue);
+  }
+
+  if (options.length === 0) {
+    return null;
   }
 
   return (

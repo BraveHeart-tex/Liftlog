@@ -9,9 +9,9 @@ type NativePressableProps = Omit<
   'className' | 'children'
 >;
 
-type HapticFeedback = 'selection' | 'light' | 'medium' | 'heavy';
+export type HapticFeedback = 'selection' | 'light' | 'medium' | 'heavy';
 
-interface PressableSurfaceProps extends NativePressableProps {
+export interface PressableSurfaceProps extends NativePressableProps {
   children: ReactNode;
   containerClassName?: string;
   className?: string;

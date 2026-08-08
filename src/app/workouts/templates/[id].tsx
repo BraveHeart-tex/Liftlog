@@ -338,7 +338,7 @@ function WorkoutTemplateDetailLoaded({
               <Button
                 variant="secondary"
                 size="sm"
-                containerClassName="w-full"
+                fullWidth
                 leftIcon={<Icon as={PlusIcon} size="sm" tone="foreground" />}
                 onPress={openExercisePicker}
               >
@@ -381,7 +381,7 @@ function WorkoutTemplateDetailLoaded({
       edges={[]}
       footer={
         <Button
-          containerClassName="w-full"
+          fullWidth
           leftIcon={<Icon as={DumbbellIcon} tone="primaryForeground" />}
           onPress={handleStartWorkout}
         >

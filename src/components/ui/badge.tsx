@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority';
-import type { ReactNode } from 'react';
+import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { Text } from '@/src/components/ui/text';
@@ -31,10 +31,9 @@ const badgeVariants = (variants: BadgeVariants = {}) =>
 
 type BadgeVariant = NonNullable<BadgeVariants['variant']>;
 
-interface BadgeProps {
+interface BadgeProps extends ComponentPropsWithoutRef<typeof View> {
   variant?: BadgeVariant;
   children: ReactNode;
-  className?: string;
 }
 
 const badgeTextVariants = cva('font-medium', {
@@ -56,10 +55,11 @@ const badgeTextVariants = cva('font-medium', {
 export function Badge({
   variant = 'default',
   children,
-  className
+  className,
+  ...props
 }: BadgeProps) {
   return (
-    <View className={cn(badgeVariants({ variant }), className)}>
+    <View {...props} className={cn(badgeVariants({ variant }), className)}>
       {typeof children === 'string' ? (
         <Text variant="caption" className={cn(badgeTextVariants({ variant }))}>
           {children}

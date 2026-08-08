@@ -75,7 +75,7 @@ export default function ActiveWorkoutExerciseScreen() {
       {pairedWorkoutExercise ? (
         <View className="border-border bg-background pb-safe border-t px-4 py-4">
           <Button
-            containerClassName="w-full"
+            fullWidth
             rightIcon={<Icon as={ArrowRightIcon} tone="primaryForeground" />}
             onPress={() =>
               router.replace({

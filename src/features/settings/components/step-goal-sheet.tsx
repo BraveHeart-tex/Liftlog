@@ -185,7 +185,7 @@ const StepGoalSheetContent = memo(function StepGoalSheetContent({
         <Button
           className="rounded-xl"
           disabled={!canSave}
-          containerClassName="w-full"
+          fullWidth
           leftIcon={<Icon as={SaveIcon} tone="primaryForeground" />}
           onPress={handleSave}
         >

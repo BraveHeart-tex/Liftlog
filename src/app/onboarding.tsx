@@ -23,11 +23,7 @@ export default function OnboardingScreen() {
       contentClassName="justify-center"
       keyboardShouldPersistTaps="handled"
       footer={
-        <Button
-          containerClassName="w-full"
-          disabled={isStarting}
-          onPress={getStarted}
-        >
+        <Button fullWidth disabled={isStarting} onPress={getStarted}>
           Continue to Workout
         </Button>
       }

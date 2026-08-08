@@ -85,9 +85,9 @@
     "semantic_hash": "a2f63074359e1d2090d99e7845d726df"
   },
   "src/app/(tabs)/exercises/index.tsx": {
-    "mtime": 1785061256.7001317,
-    "ast_hash": "32665fa5d83921d0ceec401f027ad4f1",
-    "semantic_hash": "32665fa5d83921d0ceec401f027ad4f1"
+    "mtime": 1786202934.3563728,
+    "ast_hash": "31f2fc02255ee1fd16e6d40cc8f09d20",
+    "semantic_hash": ""
   },
   "src/app/(tabs)/log/_layout.tsx": {
     "mtime": 1783203206.2105317,
@@ -105,9 +105,9 @@
     "semantic_hash": "572c0a028f551b4f412fea986d4331a1"
   },
   "src/app/(tabs)/workout/active/edit-exercises.tsx": {
-    "mtime": 1785270220.187732,
-    "ast_hash": "fe1737ab162f2761945cdf676ebe3198",
-    "semantic_hash": "fe1737ab162f2761945cdf676ebe3198"
+    "mtime": 1786202933.7730002,
+    "ast_hash": "890693b427ba6d94bac9094bdaa12b97",
+    "semantic_hash": ""
   },
   "src/app/(tabs)/workout/active/index.tsx": {
     "mtime": 1785869528.0542588,
@@ -120,14 +120,14 @@
     "semantic_hash": "36c1548b276e6579649fd83a4e156ae6"
   },
   "src/app/(tabs)/workout/exercise/[workoutExerciseId]/index.tsx": {
-    "mtime": 1785060694.3603606,
-    "ast_hash": "1e94521918e5c832641723fc23389b86",
-    "semantic_hash": "1e94521918e5c832641723fc23389b86"
+    "mtime": 1786202933.853199,
+    "ast_hash": "1800b3d1f84d0cc357cc90ff2a1d1a79",
+    "semantic_hash": ""
   },
   "src/app/(tabs)/workout/index.tsx": {
-    "mtime": 1785869504.3688903,
-    "ast_hash": "a9e717c0808b749bbc0cb4d88ca7ba57",
-    "semantic_hash": "a9e717c0808b749bbc0cb4d88ca7ba57"
+    "mtime": 1786202933.9607131,
+    "ast_hash": "5797cd2bf1eb97b7cfae0e61176f34f6",
+    "semantic_hash": ""
   },
   "src/app/_layout.tsx": {
     "mtime": 1786045025.498351,
@@ -155,9 +155,9 @@
     "semantic_hash": "294c159713b596fa3edcbe86fa07cab0"
   },
   "src/app/onboarding.tsx": {
-    "mtime": 1785100875.2055633,
-    "ast_hash": "0b0428d218b8e01a5266e9a13755bd92",
-    "semantic_hash": "0b0428d218b8e01a5266e9a13755bd92"
+    "mtime": 1786202978.3851514,
+    "ast_hash": "907f4eedb43864b3573eb43e3ccfb1a9",
+    "semantic_hash": ""
   },
   "src/app/settings.tsx": {
     "mtime": 1783281744.0489492,
@@ -165,9 +165,9 @@
     "semantic_hash": "7ab03f3092ce2e0da523637d23315ebb"
   },
   "src/app/workouts/[id].tsx": {
-    "mtime": 1785270220.1881487,
-    "ast_hash": "273378f429b0fa541d8ae9448d2eb194",
-    "semantic_hash": "273378f429b0fa541d8ae9448d2eb194"
+    "mtime": 1786202933.1917455,
+    "ast_hash": "640fd839a3ccc81a6db8839feb37e863",
+    "semantic_hash": ""
   },
   "src/app/workouts/backfill/[id].tsx": {
     "mtime": 1786047550.0001805,
@@ -190,9 +190,9 @@
     "semantic_hash": "2119a5f9abddd74cadbfc98e9294f3db"
   },
   "src/app/workouts/templates/[id].tsx": {
-    "mtime": 1785270220.188547,
-    "ast_hash": "443ad013c7d236c0b4838ae100591397",
-    "semantic_hash": "443ad013c7d236c0b4838ae100591397"
+    "mtime": 1786202933.4648228,
+    "ast_hash": "654f9548990cf8fbcc67624104fc9acf",
+    "semantic_hash": ""
   },
   "src/app/workouts/templates/new.tsx": {
     "mtime": 1783203206.2170322,
@@ -260,13 +260,13 @@
     "semantic_hash": "60285ca6954fd8cdb839af4a2d0b0d8f"
   },
   "src/components/ui/badge.tsx": {
-    "mtime": 1783203206.1679413,
-    "ast_hash": "9e907b44f7810cd9d393ceb40d5fbd77",
-    "semantic_hash": "9e907b44f7810cd9d393ceb40d5fbd77"
+    "mtime": 1786202862.853687,
+    "ast_hash": "0a8c2ce4a2b484bc4097571f6885e3ba",
+    "semantic_hash": ""
   },
   "src/components/ui/bottom-sheet-input.tsx": {
-    "mtime": 1786201861.443898,
-    "ast_hash": "bcc3c583b1b1b93c81f1a8b63b483e15",
+    "mtime": 1786202932.8824236,
+    "ast_hash": "b9ec8c4359697c4ac2094f58935d10a4",
     "semantic_hash": ""
   },
   "src/components/ui/bottom-sheet.tsx": {
@@ -275,14 +275,14 @@
     "semantic_hash": "1b9784b06306881f05359fd3579b0c56"
   },
   "src/components/ui/button.tsx": {
-    "mtime": 1786201691.6525095,
-    "ast_hash": "f1caa174c2dde91687632a1e239629cf",
+    "mtime": 1786202947.8258839,
+    "ast_hash": "0d7ca5600057e5c39eaa962cad0af1a8",
     "semantic_hash": ""
   },
   "src/components/ui/card.tsx": {
-    "mtime": 1783203206.1708274,
-    "ast_hash": "aca1940a073c0d1fee0f7584d94960de",
-    "semantic_hash": "aca1940a073c0d1fee0f7584d94960de"
+    "mtime": 1786202947.9142926,
+    "ast_hash": "73127da0e92de2560f00412c3d19f35d",
+    "semantic_hash": ""
   },
   "src/components/ui/chip.tsx": {
     "mtime": 1786201691.7163823,
@@ -300,8 +300,8 @@
     "semantic_hash": "69601df5afede79f7e98af07c776a18c"
   },
   "src/components/ui/input.tsx": {
-    "mtime": 1786201861.423882,
-    "ast_hash": "47b697b7f61a3aa63e46ebb6c39e068e",
+    "mtime": 1786202907.451767,
+    "ast_hash": "47818939b42f595689b6f9ff2227d0d2",
     "semantic_hash": ""
   },
   "src/components/ui/loading-state.tsx": {
@@ -310,9 +310,9 @@
     "semantic_hash": "ac1110b7079ebeb2a8035e1a9ffe64bd"
   },
   "src/components/ui/pressable-surface.tsx": {
-    "mtime": 1785061256.7073338,
-    "ast_hash": "99aa9db0bbbc92320373973f780def67",
-    "semantic_hash": "99aa9db0bbbc92320373973f780def67"
+    "mtime": 1786202862.5681882,
+    "ast_hash": "18dee51f0006a03de9302ce8a9b74222",
+    "semantic_hash": ""
   },
   "src/components/ui/pulsating-dot.tsx": {
     "mtime": 1786201750.9640632,
@@ -320,9 +320,9 @@
     "semantic_hash": ""
   },
   "src/components/ui/rename-sheet.tsx": {
-    "mtime": 1785061256.7082233,
-    "ast_hash": "a617be5afb01f38bd2763f305ded05b9",
-    "semantic_hash": "a617be5afb01f38bd2763f305ded05b9"
+    "mtime": 1786202933.559887,
+    "ast_hash": "543cbd916798987e03ce95362a14c458",
+    "semantic_hash": ""
   },
   "src/components/ui/reorderable-list.tsx": {
     "mtime": 1786196166.9593916,
@@ -335,13 +335,13 @@
     "semantic_hash": "630bd3cbb8610f0f0d2bbd03920febb6"
   },
   "src/components/ui/search-input-icon.tsx": {
-    "mtime": 1783203206.1710892,
-    "ast_hash": "b8994b64926f15c9e9f98c1251fde6bc",
-    "semantic_hash": "b8994b64926f15c9e9f98c1251fde6bc"
+    "mtime": 1786202947.9639385,
+    "ast_hash": "e4bcd33935837919ea93e55d782366c2",
+    "semantic_hash": ""
   },
   "src/components/ui/segmented-control.tsx": {
-    "mtime": 1786201799.3105469,
-    "ast_hash": "850acd3f398e537a70cbc2052ce1fa92",
+    "mtime": 1786202863.0158758,
+    "ast_hash": "8879f739c6503c095ef0f3e0a43e27cd",
     "semantic_hash": ""
   },
   "src/components/ui/snackbar.tsx": {
@@ -680,14 +680,14 @@
     "semantic_hash": "b594e71c27696196c60ff1d721e5095a"
   },
   "src/features/settings/components/rest-timer-setting-sheet.tsx": {
-    "mtime": 1786176445.4808702,
-    "ast_hash": "4433cb5cbb89ac85d3dcabc79a84f8f6",
-    "semantic_hash": "4433cb5cbb89ac85d3dcabc79a84f8f6"
+    "mtime": 1786202935.1704814,
+    "ast_hash": "eeff1c48770cb9b995b08f1377534f2b",
+    "semantic_hash": ""
   },
   "src/features/settings/components/step-goal-sheet.tsx": {
-    "mtime": 1785061256.7176225,
-    "ast_hash": "d5674826fc572ba39f1bcb328fbdb1f1",
-    "semantic_hash": "d5674826fc572ba39f1bcb328fbdb1f1"
+    "mtime": 1786202935.2851055,
+    "ast_hash": "3dd524e9f5f8fee95b478cf5b049e3e1",
+    "semantic_hash": ""
   },
   "src/features/settings/components/steps-section.tsx": {
     "mtime": 1786201505.1297255,
@@ -765,9 +765,9 @@
     "semantic_hash": ""
   },
   "src/features/steps/components/steps-empty-state.tsx": {
-    "mtime": 1783440874.6292818,
-    "ast_hash": "f3dcc31563e3a546ca886139b50a383c",
-    "semantic_hash": "f3dcc31563e3a546ca886139b50a383c"
+    "mtime": 1786202934.6340609,
+    "ast_hash": "f3c173a33c8161b710fc0702a13ab2de",
+    "semantic_hash": ""
   },
   "src/features/steps/components/steps-summary-cards.tsx": {
     "mtime": 1785065224.0966463,
@@ -855,9 +855,9 @@
     "semantic_hash": "f2096bd549d5cb80afa96777642da812"
   },
   "src/features/workout-log/components/workout-log-content.tsx": {
-    "mtime": 1785062697.3478346,
-    "ast_hash": "393efaedd56d855c77b8804be453708e",
-    "semantic_hash": "393efaedd56d855c77b8804be453708e"
+    "mtime": 1786202933.290752,
+    "ast_hash": "ebd7f40096275ad65da3681275c2dabb",
+    "semantic_hash": ""
   },
   "src/features/workout-log/components/workout-log-row.tsx": {
     "mtime": 1783203206.1737657,
@@ -865,9 +865,9 @@
     "semantic_hash": "5f6395da7c0727f122ca21685e2f5965"
   },
   "src/features/workout-log/components/workout-log-start-sheet.tsx": {
-    "mtime": 1785061256.722747,
-    "ast_hash": "504015c9f0bdc34fde295e279ea95b04",
-    "semantic_hash": "504015c9f0bdc34fde295e279ea95b04"
+    "mtime": 1786202932.9677627,
+    "ast_hash": "ecb84c0aa9b6a917e951788b980b9bff",
+    "semantic_hash": ""
   },
   "src/features/workout-log/hooks/use-workout-log.ts": {
     "mtime": 1783203206.1722581,
@@ -885,9 +885,9 @@
     "semantic_hash": "44255bf11aa50506149b04c353f44024"
   },
   "src/features/workouts/components/active-workout-content.tsx": {
-    "mtime": 1785869892.7405233,
-    "ast_hash": "667b619e31967cce0f22508b65e9123d",
-    "semantic_hash": "667b619e31967cce0f22508b65e9123d"
+    "mtime": 1786202934.4998577,
+    "ast_hash": "b8c235ec8f96d703b10b6e2d330feb40",
+    "semantic_hash": ""
   },
   "src/features/workouts/components/active-workout-duration.tsx": {
     "mtime": 1783203206.2165177,
@@ -950,9 +950,9 @@
     "semantic_hash": "2f6f24643b6a5c15e646a0f327d2e2fa"
   },
   "src/features/workouts/components/discard-workout-sheet.tsx": {
-    "mtime": 1783440894.9761174,
-    "ast_hash": "41c6bc52feed804367415c523d6a3f38",
-    "semantic_hash": "41c6bc52feed804367415c523d6a3f38"
+    "mtime": 1786202935.4829729,
+    "ast_hash": "b4abcf7534f6918bdac6678b90cc86a2",
+    "semantic_hash": ""
   },
   "src/features/workouts/components/exercise-history-list.test.ts": {
     "mtime": 1785098286.1691613,
@@ -990,9 +990,9 @@
     "semantic_hash": "23f6403051528e533ccf7c94a43b605b"
   },
   "src/features/workouts/components/new-template-content.tsx": {
-    "mtime": 1785061256.7277758,
-    "ast_hash": "b5a42bd73a914b027110414546c3f427",
-    "semantic_hash": "b5a42bd73a914b027110414546c3f427"
+    "mtime": 1786202934.1968815,
+    "ast_hash": "43e5e49ec14a346ff69db14f1df891e0",
+    "semantic_hash": ""
   },
   "src/features/workouts/components/new-template-exercise-list.tsx": {
     "mtime": 1786196001.649115,
@@ -1050,14 +1050,14 @@
     "semantic_hash": "bcef01dd3b8c1148c50dd93febf9ee66"
   },
   "src/features/workouts/components/rest-timer-idle-content.tsx": {
-    "mtime": 1786176445.4815216,
-    "ast_hash": "19d686da3176f86ea901b11b2b98e325",
-    "semantic_hash": "19d686da3176f86ea901b11b2b98e325"
+    "mtime": 1786202935.0341957,
+    "ast_hash": "b2a724e8a10ba7739db3151658155b6a",
+    "semantic_hash": ""
   },
   "src/features/workouts/components/rest-timer-paused-content.tsx": {
-    "mtime": 1786135807.3163974,
-    "ast_hash": "67b4e0afbc77c8052060c7fd18465a60",
-    "semantic_hash": "67b4e0afbc77c8052060c7fd18465a60"
+    "mtime": 1786202933.6902406,
+    "ast_hash": "befb1704811921d33ed216c3a6a5008b",
+    "semantic_hash": ""
   },
   "src/features/workouts/components/rest-timer-preset-editor-sheet.tsx": {
     "mtime": 1786176445.4818563,
@@ -1070,9 +1070,9 @@
     "semantic_hash": "622be753d212b246697faba35c3f75ae"
   },
   "src/features/workouts/components/rest-timer-running-content.tsx": {
-    "mtime": 1786135807.3170447,
-    "ast_hash": "87a72178bae2105f91fa799f88f6fc4d",
-    "semantic_hash": "87a72178bae2105f91fa799f88f6fc4d"
+    "mtime": 1786202934.0794032,
+    "ast_hash": "21e3b71cd5cbb58cdb9f8fea09a17465",
+    "semantic_hash": ""
   },
   "src/features/workouts/components/rest-timer-sheet.tsx": {
     "mtime": 1786176445.4823437,
@@ -1090,9 +1090,9 @@
     "semantic_hash": "d7593bb196f0db44be8a283c3c500541"
   },
   "src/features/workouts/components/save-workout-template-sheet.tsx": {
-    "mtime": 1785061256.732804,
-    "ast_hash": "9601903d624e504b1b9bcd8d2ce2c338",
-    "semantic_hash": "9601903d624e504b1b9bcd8d2ce2c338"
+    "mtime": 1786202934.874039,
+    "ast_hash": "8b69545c87f16b358cdb01a9504a51b4",
+    "semantic_hash": ""
   },
   "src/features/workouts/components/set-duration-field.tsx": {
     "mtime": 1783203206.224833,
@@ -1100,9 +1100,9 @@
     "semantic_hash": "20094328fc7338b0adddd165f132f3a5"
   },
   "src/features/workouts/components/set-duration-picker-sheet.tsx": {
-    "mtime": 1786176445.4826488,
-    "ast_hash": "e39567f84ff6706c0fdf45422d5f5e42",
-    "semantic_hash": "e39567f84ff6706c0fdf45422d5f5e42"
+    "mtime": 1786202934.749088,
+    "ast_hash": "37e5fc2b11efd51423e88bbc74a389f1",
+    "semantic_hash": ""
   },
   "src/features/workouts/components/set-duration-wheel.tsx": {
     "mtime": 1786176445.4829655,
@@ -1150,9 +1150,9 @@
     "semantic_hash": "e3d03fb205107b57cf5950db2f8f272f"
   },
   "src/features/workouts/components/stopwatch-content.tsx": {
-    "mtime": 1785061256.7342746,
-    "ast_hash": "41feb339e34dbd2ca1c69045274b583b",
-    "semantic_hash": "41feb339e34dbd2ca1c69045274b583b"
+    "mtime": 1786202935.6437657,
+    "ast_hash": "79b771a539d70938396896a3ee1643b0",
+    "semantic_hash": ""
   },
   "src/features/workouts/components/superset-indicator.tsx": {
     "mtime": 1783444055.3367367,
@@ -1682,6 +1682,11 @@
   "pnpm-workspace.yaml": {
     "mtime": 1782236261.4039252,
     "ast_hash": "fd36bd9fb9e8cffc01db7f0fd040a14e",
+    "semantic_hash": ""
+  },
+  "src/components/ui/input-field-layout.tsx": {
+    "mtime": 1786202907.17147,
+    "ast_hash": "c7e3ef7afca4a8cb6b834340f72375b5",
     "semantic_hash": ""
   }
 }

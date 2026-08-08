@@ -36,7 +36,7 @@ export function StepsEmptyState({
         size="lg"
         className="mt-10"
         loading={isSyncing}
-        containerClassName="w-full"
+        fullWidth
         leftIcon={<Icon as={HeartPulseIcon} tone="primaryForeground" />}
         onPress={onConnect}
       >

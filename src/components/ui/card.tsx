@@ -1,20 +1,37 @@
 import { cn } from '@/src/lib/utils/cn.utils';
-import type { ReactNode } from 'react';
+import {
+  forwardRef,
+  type ComponentPropsWithoutRef,
+  type ReactNode
+} from 'react';
 import { View } from 'react-native';
 
-type CardProps<TChildren = ReactNode> = {
-  children: TChildren;
-  className?: string;
+type CardProps = ComponentPropsWithoutRef<typeof View> & {
+  children: ReactNode;
 };
 
-export function Card({ children, className }: CardProps) {
+export const Card = forwardRef<View, CardProps>(function Card(
+  { children, className, ...props },
+  ref
+) {
   return (
-    <View className={cn('border-border bg-card rounded-md border', className)}>
+    <View
+      ref={ref}
+      {...props}
+      className={cn('border-border bg-card rounded-md border', className)}
+    >
       {children}
     </View>
   );
-}
+});
 
-export function CardContent({ children, className }: CardProps) {
-  return <View className={cn('p-4', className)}>{children}</View>;
-}
+export const CardContent = forwardRef<View, CardProps>(function CardContent(
+  { children, className, ...props },
+  ref
+) {
+  return (
+    <View ref={ref} {...props} className={cn('p-4', className)}>
+      {children}
+    </View>
+  );
+});

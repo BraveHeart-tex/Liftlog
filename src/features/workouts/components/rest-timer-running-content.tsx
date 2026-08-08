@@ -51,7 +51,7 @@ export function RestTimerRunningContent() {
             <Button
               variant="secondary"
               size="lg"
-              containerClassName="w-full"
+              fullWidth
               textStyle={{ fontVariant: ['tabular-nums'] }}
               accessibilityLabel="Add 30 seconds to rest timer"
               onPress={handleAddTime}
@@ -62,7 +62,7 @@ export function RestTimerRunningContent() {
           <View className="flex-1">
             <Button
               size="lg"
-              containerClassName="w-full"
+              fullWidth
               onPress={handlePause}
               leftIcon={
                 <Icon as={PauseIcon} tone="primaryForeground" size="md" />
@@ -75,7 +75,7 @@ export function RestTimerRunningContent() {
 
         <Button
           variant="ghost"
-          containerClassName="w-full"
+          fullWidth
           textClassName="text-danger text-small"
           leftIcon={<Icon as={XIcon} tone="danger" size="sm" />}
           onPress={handleCancel}

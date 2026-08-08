@@ -119,7 +119,7 @@ export function WorkoutLogContent() {
         <Button
           className="mt-4"
           leftIcon={<Icon as={PlusIcon} tone="primaryForeground" />}
-          containerClassName="w-full"
+          fullWidth
           onPress={openStartSheet}
         >
           Log workout

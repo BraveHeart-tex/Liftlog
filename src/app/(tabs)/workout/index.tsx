@@ -39,7 +39,7 @@ export default function WorkoutStartScreen() {
           <Button
             className="mt-6"
             leftIcon={<Icon as={DumbbellIcon} tone="primaryForeground" />}
-            containerClassName="w-full"
+            fullWidth
             onPress={startWorkout}
           >
             Start Workout

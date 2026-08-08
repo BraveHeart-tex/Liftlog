@@ -1,17 +1,14 @@
 import { StyledActivityIndicator } from '@/src/components/styled/activity-indicator';
-import { PressableSurface } from '@/src/components/ui/pressable-surface';
+import {
+  PressableSurface,
+  type PressableSurfaceProps
+} from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { appFonts } from '@/src/theme/fonts';
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { ReactNode } from 'react';
-import {
-  View,
-  type AccessibilityState,
-  type GestureResponderEvent,
-  type StyleProp,
-  type TextStyle
-} from 'react-native';
+import { View, type StyleProp, type TextStyle } from 'react-native';
 
 const buttonVariantConfig = cva(
   'flex-row items-center justify-center rounded-lg border',
@@ -47,23 +44,17 @@ type ButtonVariant = NonNullable<ButtonVariants['variant']>;
 
 type ButtonSize = NonNullable<ButtonVariants['size']>;
 
-interface ButtonProps {
+interface ButtonProps extends Omit<PressableSurfaceProps, 'children'> {
   variant?: ButtonVariant;
   size?: ButtonSize;
-  disabled?: boolean;
   loading?: boolean;
-  accessibilityLabel?: string;
-  accessibilityState?: AccessibilityState;
+  loadingLabel?: string;
+  fullWidth?: boolean;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
-  className?: string;
-  containerClassName?: string;
   textClassName?: string;
   textStyle?: StyleProp<TextStyle>;
   children: ReactNode;
-  onPress?: (event: GestureResponderEvent) => void;
-  onPressIn?: (event: GestureResponderEvent) => void;
-  onPressOut?: (event: GestureResponderEvent) => void;
 }
 
 const buttonTextVariants = cva('text-body-medium', {
@@ -107,6 +98,8 @@ export function Button({
   size = 'md',
   disabled = false,
   loading = false,
+  loadingLabel = 'Loading...',
+  fullWidth = false,
   accessibilityLabel,
   accessibilityState,
   leftIcon,
@@ -116,9 +109,8 @@ export function Button({
   textClassName,
   textStyle,
   children,
-  onPress,
-  onPressIn,
-  onPressOut
+  pressedClassName,
+  ...pressableProps
 }: ButtonProps) {
   const isBlocked = disabled || loading;
   const isIconButton = size === 'icon';
@@ -131,19 +123,14 @@ export function Button({
     <PressableSurface
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ ...accessibilityState, busy: loading }}
-      containerClassName={cn(
-        // TODO: Remove this block after migrating every button to use containerClassName
-        className?.includes('w-full') && 'w-full',
-        containerClassName
-      )}
+      containerClassName={cn(fullWidth && 'w-full', containerClassName)}
       className={cn(buttonVariants({ variant, size }), className)}
       disabled={isBlocked}
       pressedClassName={cn(
-        variant === 'destructive' ? 'bg-danger/15' : 'opacity-80'
+        pressedClassName ??
+          (variant === 'destructive' ? 'bg-danger/15' : 'opacity-80')
       )}
-      onPress={onPress}
-      onPressIn={onPressIn}
-      onPressOut={onPressOut}
+      {...pressableProps}
     >
       {loading ? (
         <View className="flex-row items-center justify-center gap-2">
@@ -157,7 +144,7 @@ export function Button({
               className={cn(buttonTextVariants({ variant }), textClassName)}
               style={[buttonTextStyle, textStyle]}
             >
-              Loading...
+              {loadingLabel}
             </Text>
           )}
         </View>

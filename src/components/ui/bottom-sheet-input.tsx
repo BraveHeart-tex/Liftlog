@@ -1,5 +1,5 @@
 import { StyledBottomSheetTextInput } from '@/src/components/styled/bottom-sheet';
-import { Text } from '@/src/components/ui/text';
+import { InputFieldLayout } from '@/src/components/ui/input-field-layout';
 import { cn } from '@/src/lib/utils/cn.utils';
 import {
   forwardRef,
@@ -12,7 +12,6 @@ import {
 } from 'react';
 import {
   AccessibilityInfo,
-  View,
   type AccessibilityState,
   type TextInput
 } from 'react-native';
@@ -76,8 +75,6 @@ export const BottomSheetInput = forwardRef<
   const hasError = Boolean(error);
   const isEditable = editable ?? !disabled;
   const previousError = useRef<string | undefined>(undefined);
-  const containerDensityClassName =
-    density === 'compact' ? 'min-h-11 px-3 py-2' : 'min-h-12 px-4 py-3';
 
   useEffect(() => {
     if (error && error !== previousError.current) {
@@ -98,92 +95,49 @@ export const BottomSheetInput = forwardRef<
   };
 
   return (
-    <View className={cn('w-full', className)}>
-      {label ? (
-        <Text variant="overline" className={labelClassName}>
-          {label}
-        </Text>
-      ) : null}
-
-      <View
+    <InputFieldLayout
+      density={density}
+      label={label}
+      hint={hint}
+      error={error}
+      leftIcon={leftIcon}
+      rightIcon={rightIcon}
+      leftIconContainerClassName={leftIconContainerClassName}
+      rightIconContainerClassName={rightIconContainerClassName}
+      withContainerDefaults={withContainerDefaults}
+      className={className}
+      containerClassName={containerClassName}
+      labelClassName={labelClassName}
+      hintClassName={hintClassName}
+      errorClassName={errorClassName}
+      disabled={disabled}
+      focused={focused}
+    >
+      <StyledBottomSheetTextInput
+        {...props}
+        ref={ref}
         className={cn(
-          withContainerDefaults &&
-            cn(
-              'border-border bg-input mt-2 flex-row items-center rounded-md border',
-              containerDensityClassName
-            ),
-          focused && !hasError && 'border-ring',
-          hasError && 'border-danger',
-          disabled && 'opacity-60',
-          containerClassName
+          'text-body text-foreground flex-1',
+          props.multiline && 'min-h-20',
+          disabled && 'text-muted-foreground',
+          inputClassName
         )}
-      >
-        {leftIcon ? (
-          <View
-            className={cn(
-              'mr-3 items-center justify-center',
-              leftIconContainerClassName
-            )}
-          >
-            {leftIcon}
-          </View>
-        ) : null}
-
-        <StyledBottomSheetTextInput
-          ref={ref}
-          className={cn(
-            'text-body text-foreground flex-1',
-            props.multiline && 'min-h-20',
-            disabled && 'text-muted-foreground',
-            inputClassName
-          )}
-          textAlignVertical={props.multiline ? 'top' : 'center'}
-          editable={isEditable}
-          accessibilityLabel={label ?? accessibilityLabel}
-          accessibilityHint={supportingText || undefined}
-          accessibilityState={inputAccessibilityState}
-          onBlur={event => {
-            setFocused(false);
-            onBlur?.(event);
-          }}
-          onFocus={event => {
-            setFocused(true);
-            onFocus?.(event);
-          }}
-          placeholderClassName="text-muted-foreground"
-          selectionClassName="text-primary"
-          {...props}
-        />
-
-        {rightIcon ? (
-          <View
-            className={cn(
-              'ml-3 items-center justify-center',
-              rightIconContainerClassName
-            )}
-          >
-            {rightIcon}
-          </View>
-        ) : null}
-      </View>
-
-      {error ? (
-        <Text
-          variant="caption"
-          tone="danger"
-          className={cn('mt-2', errorClassName)}
-        >
-          {error}
-        </Text>
-      ) : hint ? (
-        <Text
-          variant="caption"
-          tone="muted"
-          className={cn('mt-2', hintClassName)}
-        >
-          {hint}
-        </Text>
-      ) : null}
-    </View>
+        textAlignVertical={props.multiline ? 'top' : 'center'}
+        editable={isEditable}
+        accessibilityLabel={label ?? accessibilityLabel}
+        accessibilityHint={supportingText || undefined}
+        accessibilityState={inputAccessibilityState}
+        onBlur={event => {
+          setFocused(false);
+          onBlur?.(event);
+        }}
+        onFocus={event => {
+          setFocused(true);
+          onFocus?.(event);
+        }}
+        placeholderClassName="text-muted-foreground"
+        selectionClassName="text-primary"
+      />
+    </InputFieldLayout>
   );
 });

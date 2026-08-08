@@ -190,7 +190,7 @@ export function StopwatchContent({
         <View className="flex-1">
           <Button
             variant="secondary"
-            containerClassName="w-full"
+            fullWidth
             disabled={!canReset}
             leftIcon={
               <Icon
@@ -206,7 +206,7 @@ export function StopwatchContent({
         </View>
         <View className="flex-1">
           <Button
-            containerClassName="w-full"
+            fullWidth
             disabled={!canSave}
             leftIcon={
               <Icon as={SaveIcon} tone={'primaryForeground'} size="sm" />
