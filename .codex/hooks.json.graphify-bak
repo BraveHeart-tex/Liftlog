@@ -24,17 +24,6 @@
           }
         ]
       }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/bora/.local/bin/graphify hook-check"
-          }
-        ]
-      }
     ]
   }
 }
