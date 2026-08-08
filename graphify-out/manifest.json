@@ -55,8 +55,8 @@
     "semantic_hash": "12d4f1a199d5da5bf16e0854171f8503"
   },
   "package.json": {
-    "mtime": 1786207505.578111,
-    "ast_hash": "0e52f8934b38f6bde2978b9da1a5e3ed",
+    "mtime": 1786219522.585884,
+    "ast_hash": "f4eb952f2f347b796d51c43109d60c2a",
     "semantic_hash": ""
   },
   "postcss.config.mjs": {
@@ -678,11 +678,6 @@
     "mtime": 1786205454.652613,
     "ast_hash": "bac4588da57f7f840193797c9ec2520c",
     "semantic_hash": ""
-  },
-  "src/features/settings/components/theme-option-card.tsx": {
-    "mtime": 1783203206.19008,
-    "ast_hash": "6e114a9a0e781d9bf0b722d28c24fd5f",
-    "semantic_hash": "6e114a9a0e781d9bf0b722d28c24fd5f"
   },
   "src/features/settings/components/theme-selection-section.tsx": {
     "mtime": 1786205454.6530652,
@@ -1575,8 +1570,8 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1786207341.7918205,
-    "ast_hash": "bd9007883c08b5531747fbde47908ee8",
+    "mtime": 1786207592.3626704,
+    "ast_hash": "268fe582a9580c4909063f02e63008a2",
     "semantic_hash": ""
   },
   "docs/bottom-sheet.md": {
