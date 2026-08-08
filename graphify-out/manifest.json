@@ -715,8 +715,8 @@
     "semantic_hash": ""
   },
   "src/features/settings/settings.repository.ts": {
-    "mtime": 1786220692.438547,
-    "ast_hash": "b03402e36ab91b565310e92b9b10e1f9",
+    "mtime": 1786221053.4494827,
+    "ast_hash": "a2e5e0872e454d5f3636cdf4b258959b",
     "semantic_hash": ""
   },
   "src/features/steps/components/step-day-row.tsx": {
@@ -1550,8 +1550,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/ci.yml": {
-    "mtime": 1786207341.8481588,
-    "ast_hash": "fb9e94b519a1fe99720361ac180434eb",
+    "mtime": 1786222984.7896867,
+    "ast_hash": "9ca30bd8652150b013947367f5da3b32",
     "semantic_hash": ""
   },
   "AGENTS.md": {
@@ -1657,6 +1657,16 @@
   "tests/tsconfig.json": {
     "mtime": 1786207505.441917,
     "ast_hash": "77c43d0bbea8380b16e3f5e70d4a26b7",
+    "semantic_hash": ""
+  },
+  ".husky/post-checkout": {
+    "mtime": 1786221822.211384,
+    "ast_hash": "5bedf188795d80255ef5acdf20a54de8",
+    "semantic_hash": ""
+  },
+  ".husky/post-commit": {
+    "mtime": 1786221822.2111452,
+    "ast_hash": "70539000008325fa4d04a0d2a1cfc725",
     "semantic_hash": ""
   }
 }
