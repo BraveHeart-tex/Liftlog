@@ -1,5 +1,10 @@
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
+import {
+  ReorderableHandle,
+  ReorderableList,
+  type ReorderableListRenderItem
+} from '@/src/components/ui/reorderable-list';
 import { Text } from '@/src/components/ui/text';
 import type { WorkoutExercise } from '@/src/db/schema';
 import { ActiveWorkoutExerciseEditRow } from '@/src/features/workouts/components/active-workout-exercise-edit-row';
@@ -16,17 +21,8 @@ import {
 } from '@/src/features/workouts/superset.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { GripIcon, UnlinkIcon } from 'lucide-react-native';
-import type { ComponentRef } from 'react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
-import Animated, { useAnimatedRef } from 'react-native-reanimated';
-import Sortable, {
-  type DragStartParams,
-  type SortableGridDragEndParams,
-  type SortableGridRenderItem
-} from 'react-native-sortables';
-
-const DRAG_ACTIVATION_DELAY_MS = 0;
 
 type EditableWorkoutExerciseRow = WorkoutExerciseWithSets & {
   id: WorkoutExercise['id'];
@@ -55,16 +51,10 @@ export const ActiveWorkoutExerciseEditList = memo(
     const [orderedRows, setOrderedRows] = useState(() =>
       groupSupersetBlocks(editableRows)
     );
-    const [draggingBlockKey, setDraggingBlockKey] = useState<string | null>(
-      null
-    );
     const blocks = useMemo(
       () => groupSupersetBlocks(editableRows),
       [editableRows]
     );
-    const scrollableRef =
-      useAnimatedRef<ComponentRef<typeof Animated.ScrollView>>();
-
     const rowIds = rows
       .map(r => `${r.workoutExercise.id}:${r.workoutExercise.supersetId ?? ''}`)
       .join(',');
@@ -112,9 +102,9 @@ export const ActiveWorkoutExerciseEditList = memo(
     );
 
     const renderRow = useCallback<
-      SortableGridRenderItem<SupersetBlock<EditableWorkoutExerciseRow>>
+      ReorderableListRenderItem<SupersetBlock<EditableWorkoutExerciseRow>>
     >(
-      ({ item, index }) => {
+      ({ item, index, isDragging, isReordering }) => {
         const flatRows = flattenSupersetBlocks(orderedRows);
         const canLinkWithNext =
           item.rows.length === 1 &&
@@ -135,20 +125,23 @@ export const ActiveWorkoutExerciseEditList = memo(
                 <View className="mb-1 flex-row items-center justify-between gap-2">
                   <View className="flex-row items-center gap-2">
                     {shouldShowDragHandle ? (
-                      <Sortable.Handle>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          disabled={draggingBlockKey === item.id}
-                          accessibilityLabel={`Drag Superset ${supersetLabel}`}
-                        >
-                          <Icon
-                            as={GripIcon}
-                            size={iconSizes.sm}
-                            tone="mutedForeground"
-                          />
-                        </Button>
-                      </Sortable.Handle>
+                      <ReorderableHandle>
+                        {({ onPressIn }) => (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={isDragging}
+                            accessibilityLabel={`Drag Superset ${supersetLabel}`}
+                            onPressIn={onPressIn}
+                          >
+                            <Icon
+                              as={GripIcon}
+                              size={iconSizes.sm}
+                              tone="mutedForeground"
+                            />
+                          </Button>
+                        )}
+                      </ReorderableHandle>
                     ) : null}
                     <Text variant="caption" tone="muted">
                       Superset {supersetLabel}
@@ -190,7 +183,7 @@ export const ActiveWorkoutExerciseEditList = memo(
                 <ActiveWorkoutExerciseEditRow
                   key={row.workoutExercise.id}
                   item={row}
-                  isDragging={false}
+                  isDragging={isDragging}
                   label={supersetLabel}
                   onRemove={() => {
                     const nextWorkoutExerciseRows = normalizeSupersetRows(
@@ -218,7 +211,7 @@ export const ActiveWorkoutExerciseEditList = memo(
 
             {canLinkWithNext ? (
               <PairWithNextControl
-                isReordering={draggingBlockKey !== null}
+                isReordering={isReordering}
                 onPress={() => {
                   const nextWorkoutExerciseRows = linkAdjacentSupersetRows(
                     flatRows.map(row => row.workoutExercise),
@@ -237,7 +230,6 @@ export const ActiveWorkoutExerciseEditList = memo(
         );
       },
       [
-        draggingBlockKey,
         onChangeRows,
         orderedRows,
         setRowsFromWorkoutExercises,
@@ -250,58 +242,19 @@ export const ActiveWorkoutExerciseEditList = memo(
       []
     );
 
-    const handleDragEnd = useCallback(
-      ({
-        data,
-        fromIndex,
-        toIndex
-      }: SortableGridDragEndParams<
-        SupersetBlock<EditableWorkoutExerciseRow>
-      >) => {
-        setDraggingBlockKey(null);
-
-        if (fromIndex === toIndex) {
-          return;
-        }
-
-        setOrderedRows(data);
-        onChangeRows(
-          flattenSupersetBlocks(data).map(row => row.workoutExercise)
-        );
-      },
-      [onChangeRows]
-    );
-
-    const handleDragStart = useCallback(({ key }: DragStartParams) => {
-      setDraggingBlockKey(key);
-    }, []);
-
     return (
-      <Animated.ScrollView className="flex-1 px-4" ref={scrollableRef}>
-        <Sortable.Grid
-          columns={1}
-          customHandle
-          data={orderedRows}
-          dimensionsAnimationType="none"
-          dragActivationDelay={DRAG_ACTIVATION_DELAY_MS}
-          activationAnimationDuration={120}
-          dropAnimationDuration={120}
-          itemEntering={null}
-          itemExiting={null}
-          keyExtractor={getRowKey}
-          renderItem={renderRow}
-          scrollableRef={scrollableRef}
-          strategy="insert"
-          overDrag="vertical"
-          activeItemScale={1.02}
-          activeItemOpacity={0.96}
-          inactiveItemOpacity={1}
-          inactiveItemScale={1}
-          hapticsEnabled={false}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        />
-      </Animated.ScrollView>
+      <ReorderableList
+        className="flex-1 px-4"
+        data={orderedRows}
+        keyExtractor={getRowKey}
+        onReorder={data => {
+          setOrderedRows(data);
+          onChangeRows(
+            flattenSupersetBlocks(data).map(row => row.workoutExercise)
+          );
+        }}
+        renderItem={renderRow}
+      />
     );
   }
 );

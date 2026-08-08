@@ -1,5 +1,9 @@
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
+import {
+  ReorderableList,
+  type ReorderableListRenderItem
+} from '@/src/components/ui/reorderable-list';
 import { Text } from '@/src/components/ui/text';
 import { NewTemplateExerciseRow } from '@/src/features/workouts/components/new-template-exercise-row';
 import { PairWithNextControl } from '@/src/features/workouts/components/pair-with-next-control';
@@ -14,17 +18,8 @@ import {
 } from '@/src/features/workouts/superset.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { UnlinkIcon } from 'lucide-react-native';
-import type { ComponentRef } from 'react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { View } from 'react-native';
-import Animated, { useAnimatedRef } from 'react-native-reanimated';
-import Sortable, {
-  type DragStartParams,
-  type SortableGridDragEndParams,
-  type SortableGridRenderItem
-} from 'react-native-sortables';
-
-const DRAG_ACTIVATION_DELAY_MS = 0;
 
 interface NewTemplateExerciseListProps {
   rows: TemplateExerciseEditorRow[];
@@ -38,15 +33,12 @@ export function NewTemplateExerciseList({
   onReorderExercises
 }: NewTemplateExerciseListProps) {
   const blocks = useMemo(() => groupSupersetBlocks(rows), [rows]);
-  const [draggingBlockKey, setDraggingBlockKey] = useState<string | null>(null);
   const shouldShowDragHandle = blocks.length > 1;
-  const scrollableRef =
-    useAnimatedRef<ComponentRef<typeof Animated.ScrollView>>();
 
   const renderExercise = useCallback<
-    SortableGridRenderItem<SupersetBlock<TemplateExerciseEditorRow>>
+    ReorderableListRenderItem<SupersetBlock<TemplateExerciseEditorRow>>
   >(
-    ({ item, index }) => {
+    ({ item, index, isDragging, isReordering }) => {
       const canLinkWithNext =
         item.rows.length === 1 &&
         blocks[index + 1]?.rows.length === 1 &&
@@ -89,7 +81,7 @@ export function NewTemplateExerciseList({
               <NewTemplateExerciseRow
                 key={row.id}
                 exercise={row.exercise}
-                isDragging={false}
+                isDragging={isDragging}
                 label={supersetLabel}
                 onDelete={() => onDeleteExercise(row.id)}
                 shouldShowDragHandle={
@@ -101,7 +93,7 @@ export function NewTemplateExerciseList({
 
           {canLinkWithNext ? (
             <PairWithNextControl
-              isReordering={draggingBlockKey !== null}
+              isReordering={isReordering}
               onPress={() =>
                 onReorderExercises(
                   linkAdjacentSupersetRows(rows, item.rows[0].id)
@@ -112,34 +104,8 @@ export function NewTemplateExerciseList({
         </View>
       );
     },
-    [
-      blocks,
-      draggingBlockKey,
-      onDeleteExercise,
-      onReorderExercises,
-      rows,
-      shouldShowDragHandle
-    ]
+    [blocks, onDeleteExercise, onReorderExercises, rows, shouldShowDragHandle]
   );
-
-  const handleDragEnd = useCallback(
-    ({
-      data,
-      fromIndex,
-      toIndex
-    }: SortableGridDragEndParams<SupersetBlock<TemplateExerciseEditorRow>>) => {
-      setDraggingBlockKey(null);
-
-      if (fromIndex !== toIndex) {
-        onReorderExercises(flattenSupersetBlocks(data));
-      }
-    },
-    [onReorderExercises]
-  );
-
-  const handleDragStart = useCallback(({ key }: DragStartParams) => {
-    setDraggingBlockKey(key);
-  }, []);
 
   const keyExtractor = useCallback(
     (block: SupersetBlock<TemplateExerciseEditorRow>) => block.id,
@@ -147,30 +113,12 @@ export function NewTemplateExerciseList({
   );
 
   return (
-    <Animated.ScrollView className="mt-2 flex-1 px-4" ref={scrollableRef}>
-      <Sortable.Grid
-        columns={1}
-        customHandle
-        data={blocks}
-        dimensionsAnimationType="none"
-        dragActivationDelay={DRAG_ACTIVATION_DELAY_MS}
-        activationAnimationDuration={120}
-        dropAnimationDuration={120}
-        itemEntering={null}
-        itemExiting={null}
-        keyExtractor={keyExtractor}
-        renderItem={renderExercise}
-        scrollableRef={scrollableRef}
-        strategy="insert"
-        overDrag="vertical"
-        activeItemScale={1.02}
-        activeItemOpacity={0.96}
-        inactiveItemOpacity={1}
-        inactiveItemScale={1}
-        hapticsEnabled={false}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      />
-    </Animated.ScrollView>
+    <ReorderableList
+      className="mt-2 flex-1 px-4"
+      data={blocks}
+      keyExtractor={keyExtractor}
+      onReorder={data => onReorderExercises(flattenSupersetBlocks(data))}
+      renderItem={renderExercise}
+    />
   );
 }

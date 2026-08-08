@@ -1,5 +1,6 @@
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
+import { ReorderableHandle } from '@/src/components/ui/reorderable-list';
 import { Text } from '@/src/components/ui/text';
 import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import { getCategoryLabel } from '@/src/features/workouts/components/workout-components.utils';
@@ -7,7 +8,6 @@ import { cn } from '@/src/lib/utils/cn.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { GripIcon, TrashIcon } from 'lucide-react-native';
 import { View } from 'react-native';
-import Sortable from 'react-native-sortables';
 
 interface NewTemplateExerciseRowProps {
   exercise: ExerciseListItem;
@@ -61,16 +61,19 @@ export function NewTemplateExerciseRow({
       </View>
 
       {shouldShowDragHandle && (
-        <Sortable.Handle>
-          <Button
-            variant="ghost"
-            size="icon"
-            disabled={isDragging}
-            accessibilityLabel={`Reorder ${exercise.name}`}
-          >
-            <Icon as={GripIcon} size={iconSizes.sm} tone="mutedForeground" />
-          </Button>
-        </Sortable.Handle>
+        <ReorderableHandle>
+          {({ onPressIn }) => (
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={isDragging}
+              accessibilityLabel={`Reorder ${exercise.name}`}
+              onPressIn={onPressIn}
+            >
+              <Icon as={GripIcon} size={iconSizes.sm} tone="mutedForeground" />
+            </Button>
+          )}
+        </ReorderableHandle>
       )}
     </View>
   );

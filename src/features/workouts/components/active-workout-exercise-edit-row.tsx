@@ -1,5 +1,6 @@
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
+import { ReorderableHandle } from '@/src/components/ui/reorderable-list';
 import { Text } from '@/src/components/ui/text';
 import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
@@ -9,7 +10,6 @@ import { formatWeightForUnit } from '@/src/lib/utils/weight.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { GripIcon, TrashIcon } from 'lucide-react-native';
 import { Alert, View } from 'react-native';
-import Sortable from 'react-native-sortables';
 
 interface ActiveWorkoutExerciseEditRowProps {
   item: WorkoutExerciseWithSets;
@@ -104,16 +104,19 @@ export function ActiveWorkoutExerciseEditRow({
       </View>
 
       {shouldShowDragHandle && (
-        <Sortable.Handle>
-          <Button
-            variant="ghost"
-            size="icon"
-            disabled={isDragging}
-            accessibilityLabel="Drag exercise"
-          >
-            <Icon as={GripIcon} size={iconSizes.sm} tone="mutedForeground" />
-          </Button>
-        </Sortable.Handle>
+        <ReorderableHandle>
+          {({ onPressIn }) => (
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={isDragging}
+              accessibilityLabel="Drag exercise"
+              onPressIn={onPressIn}
+            >
+              <Icon as={GripIcon} size={iconSizes.sm} tone="mutedForeground" />
+            </Button>
+          )}
+        </ReorderableHandle>
       )}
     </View>
   );
