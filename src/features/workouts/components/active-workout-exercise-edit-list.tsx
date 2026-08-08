@@ -117,7 +117,6 @@ export const ActiveWorkoutExerciseEditList = memo(
       ({ item, index }) => {
         const flatRows = flattenSupersetBlocks(orderedRows);
         const canLinkWithNext =
-          !draggingBlockKey &&
           item.rows.length === 1 &&
           orderedRows[index + 1]?.rows.length === 1 &&
           !item.rows[0].workoutExercise.supersetId &&
@@ -219,6 +218,7 @@ export const ActiveWorkoutExerciseEditList = memo(
 
             {canLinkWithNext ? (
               <PairWithNextControl
+                isReordering={draggingBlockKey !== null}
                 onPress={() => {
                   const nextWorkoutExerciseRows = linkAdjacentSupersetRows(
                     flatRows.map(row => row.workoutExercise),

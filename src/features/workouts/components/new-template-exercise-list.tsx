@@ -48,7 +48,6 @@ export function NewTemplateExerciseList({
   >(
     ({ item, index }) => {
       const canLinkWithNext =
-        !draggingBlockKey &&
         item.rows.length === 1 &&
         blocks[index + 1]?.rows.length === 1 &&
         !item.rows[0].supersetId &&
@@ -102,6 +101,7 @@ export function NewTemplateExerciseList({
 
           {canLinkWithNext ? (
             <PairWithNextControl
+              isReordering={draggingBlockKey !== null}
               onPress={() =>
                 onReorderExercises(
                   linkAdjacentSupersetRows(rows, item.rows[0].id)
