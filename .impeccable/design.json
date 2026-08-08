@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-23T21:30:00Z",
+  "generatedAt": "2026-08-08T00:00:00Z",
   "title": "Design System: LiftLog",
   "extensions": {
     "colorMeta": {
@@ -202,7 +202,7 @@
       "muted-ash": {
         "role": "neutral",
         "displayName": "Muted Ash",
-        "canonical": "#8A8580",
+        "canonical": "#8F8A85",
         "tonalRamp": [
           "oklch(15% 0.01 60)",
           "oklch(27% 0.01 60)",
@@ -307,7 +307,7 @@
       "failure-red": {
         "role": "tertiary",
         "displayName": "Failure Red",
-        "canonical": "#E8294A",
+        "canonical": "#F65170",
         "tonalRamp": [
           "oklch(15% 0.22 20)",
           "oklch(27% 0.22 20)",
@@ -474,12 +474,12 @@
     "motion": [
       {
         "name": "press-in",
-        "value": "100ms",
+        "value": "120ms",
         "purpose": "Fast tactile press response."
       },
       {
         "name": "press-out",
-        "value": "120ms",
+        "value": "100ms",
         "purpose": "Quick release back to rest."
       },
       {
@@ -494,7 +494,7 @@
       },
       {
         "name": "press-scale",
-        "value": "0.97 after 75ms; spring speed 30, bounciness 0",
+        "value": "scale 0.97; 120ms press-in / 100ms press-out; cubic-bezier(0.23, 1, 0.32, 1)",
         "purpose": "Subtle physical confirmation on reusable pressable surfaces."
       },
       {
@@ -511,7 +511,7 @@
       "refersTo": "button-primary",
       "description": "The decisive action control: firm, bright, and immediately legible.",
       "html": "<button class=\"ds-btn-primary\">Start Workout</button>",
-      "css": ".ds-btn-primary { min-height: 48px; padding: 12px 16px; border: 1px solid #FF4D00; border-radius: 16px; background: #FF4D00; color: #FFFFFF; font: 600 15px Inter, system-ui, sans-serif; transition: opacity 120ms ease, transform 120ms ease; } .ds-btn-primary:hover { opacity: 0.92; } .ds-btn-primary:active { opacity: 0.8; transform: scale(0.97); } .ds-btn-primary:focus-visible { outline: 2px solid #FF4D00; outline-offset: 3px; }"
+      "css": ".ds-btn-primary { min-height: 48px; padding: 12px 16px; border: 1px solid #FF4D00; border-radius: 16px; background: #FF4D00; color: #FFFFFF; font: 600 15px 'Instrument Sans', system-ui, sans-serif; transition: opacity 120ms ease, transform 120ms ease; } .ds-btn-primary:hover { opacity: 0.92; } .ds-btn-primary:active { opacity: 0.8; transform: scale(0.97); } .ds-btn-primary:focus-visible { outline: 2px solid #FF4D00; outline-offset: 3px; }"
     },
     {
       "name": "Secondary Button",
@@ -519,7 +519,7 @@
       "refersTo": "button-secondary",
       "description": "A quiet but reliable bordered action for secondary choices.",
       "html": "<button class=\"ds-btn-secondary\">View History</button>",
-      "css": ".ds-btn-secondary { min-height: 48px; padding: 12px 16px; border: 1px solid #3D3B38; border-radius: 16px; background: #252422; color: #F0ECE8; font: 600 15px Inter, system-ui, sans-serif; transition: opacity 120ms ease, transform 120ms ease, border-color 180ms ease; } .ds-btn-secondary:hover { border-color: #8A8580; } .ds-btn-secondary:active { opacity: 0.8; transform: scale(0.97); } .ds-btn-secondary:focus-visible { outline: 2px solid #FF4D00; outline-offset: 3px; }"
+      "css": ".ds-btn-secondary { min-height: 48px; padding: 12px 16px; border: 1px solid #3D3B38; border-radius: 16px; background: #252422; color: #F0ECE8; font: 600 15px 'Instrument Sans', system-ui, sans-serif; transition: opacity 120ms ease, transform 120ms ease, border-color 180ms ease; } .ds-btn-secondary:hover { border-color: #8F8A85; } .ds-btn-secondary:active { opacity: 0.8; transform: scale(0.97); } .ds-btn-secondary:focus-visible { outline: 2px solid #FF4D00; outline-offset: 3px; }"
     },
     {
       "name": "Text Input",
@@ -527,7 +527,7 @@
       "refersTo": "input",
       "description": "A compact tonal field whose border carries focus and validation state.",
       "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Workout name</span><input class=\"ds-input\" value=\"Upper Body\" /></label>",
-      "css": ".ds-field { display: grid; gap: 8px; color: #F0ECE8; font-family: Inter, system-ui, sans-serif; } .ds-field-label { font-size: 13px; } .ds-input { min-height: 48px; padding: 12px 16px; border: 1px solid #3D3B38; border-radius: 12px; background: #252422; color: #F0ECE8; font: 400 15px Inter, system-ui, sans-serif; outline: none; transition: border-color 180ms ease; } .ds-input:hover { border-color: #8A8580; } .ds-input:focus-visible { border-color: #FF4D00; }"
+      "css": ".ds-field { display: grid; gap: 8px; color: #F0ECE8; font-family: 'Instrument Sans', system-ui, sans-serif; } .ds-field-label { font-size: 13px; } .ds-input { min-height: 48px; padding: 12px 16px; border: 1px solid #3D3B38; border-radius: 12px; background: #252422; color: #F0ECE8; font: 400 15px 'Instrument Sans', system-ui, sans-serif; outline: none; transition: border-color 180ms ease; } .ds-input:hover { border-color: #8F8A85; } .ds-input:focus-visible { border-color: #FF4D00; }"
     },
     {
       "name": "Choice Chip",
@@ -535,7 +535,7 @@
       "refersTo": "chip-selected",
       "description": "A compact selection control with a decisive filled active state.",
       "html": "<div class=\"ds-chip-row\"><button class=\"ds-chip ds-chip-active\">All</button><button class=\"ds-chip\">Chest</button><button class=\"ds-chip\">Back</button></div>",
-      "css": ".ds-chip-row { display: flex; gap: 8px; } .ds-chip { min-height: 44px; padding: 12px 16px; border: 1px solid #3D3B38; border-radius: 9999px; background: rgba(26, 25, 23, 0.5); color: #8A8580; font: 500 13px Inter, system-ui, sans-serif; transition: opacity 120ms ease, transform 120ms ease, background 180ms ease; } .ds-chip-active { border-color: #FF4D00; background: #FF4D00; color: #FFFFFF; } .ds-chip:hover { opacity: 0.9; } .ds-chip:active { transform: scale(0.97); } .ds-chip:focus-visible { outline: 2px solid #FF4D00; outline-offset: 2px; }"
+      "css": ".ds-chip-row { display: flex; gap: 8px; } .ds-chip { min-height: 44px; padding: 12px 16px; border: 1px solid #3D3B38; border-radius: 9999px; background: rgba(26, 25, 23, 0.5); color: #8F8A85; font: 500 13px 'Instrument Sans', system-ui, sans-serif; transition: opacity 120ms ease, transform 120ms ease, background 180ms ease; } .ds-chip-active { border-color: #FF4D00; background: #FF4D00; color: #FFFFFF; } .ds-chip:hover { opacity: 0.9; } .ds-chip:active { transform: scale(0.97); } .ds-chip:focus-visible { outline: 2px solid #FF4D00; outline-offset: 2px; }"
     },
     {
       "name": "Workout Card",
@@ -543,28 +543,28 @@
       "refersTo": "card",
       "description": "A flat, bordered workout container with compact operational hierarchy.",
       "html": "<article class=\"ds-card\"><div><strong>Push Day</strong><span>4 exercises</span></div><p>Bench Press · Shoulder Press · Triceps</p></article>",
-      "css": ".ds-card { display: grid; gap: 12px; padding: 16px; border: 1px solid #3D3B38; border-radius: 12px; background: #252422; color: #F0ECE8; font-family: Inter, system-ui, sans-serif; } .ds-card div { display: flex; justify-content: space-between; gap: 12px; } .ds-card strong { font-size: 15px; font-weight: 500; } .ds-card span, .ds-card p { margin: 0; color: #8A8580; font-size: 13px; } .ds-card:focus-within { border-color: #FF4D00; }"
+      "css": ".ds-card { display: grid; gap: 12px; padding: 16px; border: 1px solid #3D3B38; border-radius: 12px; background: #252422; color: #F0ECE8; font-family: 'Instrument Sans', system-ui, sans-serif; } .ds-card div { display: flex; justify-content: space-between; gap: 12px; } .ds-card strong { font-size: 15px; font-weight: 500; } .ds-card span, .ds-card p { margin: 0; color: #8F8A85; font-size: 13px; } .ds-card:focus-within { border-color: #FF4D00; }"
     },
     {
       "name": "Segmented Control",
       "kind": "custom",
       "description": "Equal-width compact modes on a tonal track with a quiet sliding selection.",
       "html": "<div class=\"ds-segmented\"><button class=\"ds-segment ds-segment-active\">Workouts</button><button class=\"ds-segment\">Steps</button></div>",
-      "css": ".ds-segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 0; padding: 4px; border-radius: 12px; background: #252422; } .ds-segment { min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: transparent; color: #8A8580; font: 500 15px Inter, system-ui, sans-serif; transition: background 180ms ease, color 180ms ease, opacity 120ms ease; } .ds-segment-active { background: #3D3B38; color: #F0ECE8; } .ds-segment:hover { opacity: 0.88; } .ds-segment:focus-visible { outline: 2px solid #FF4D00; outline-offset: -2px; }"
+      "css": ".ds-segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 0; padding: 4px; border-radius: 12px; background: #252422; } .ds-segment { min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: transparent; color: #8F8A85; font: 500 15px 'Instrument Sans', system-ui, sans-serif; transition: background 180ms ease, color 180ms ease, opacity 120ms ease; } .ds-segment-active { background: #3D3B38; color: #F0ECE8; } .ds-segment:hover { opacity: 0.88; } .ds-segment:focus-visible { outline: 2px solid #FF4D00; outline-offset: -2px; }"
     },
     {
       "name": "Bottom Navigation",
       "kind": "nav",
       "description": "Three thumb-reachable destinations with a compact orange active pill.",
       "html": "<nav class=\"ds-nav\" aria-label=\"Main\"><button class=\"ds-nav-item ds-nav-active\"><span class=\"ds-nav-icon\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11\" /></svg></span><span>Workout</span></button><button class=\"ds-nav-item\"><span class=\"ds-nav-icon\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01\" /></svg></span><span>Exercises</span></button><button class=\"ds-nav-item\"><span class=\"ds-nav-icon\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\" /><path d=\"M12 7v5l3 2\" /></svg></span><span>Log</span></button></nav>",
-      "css": ".ds-nav { display: grid; grid-template-columns: repeat(3, 1fr); min-height: 66px; padding: 8px 12px 10px; border-radius: 24px 24px 0 0; background: #252422; } .ds-nav-item { display: grid; justify-items: center; align-content: start; gap: 2px; border: 0; background: transparent; color: #8A8580; font: 600 10px Inter, system-ui, sans-serif; } .ds-nav-icon { display: grid; width: 48px; height: 34px; place-items: center; border-radius: 16px; transition: background 180ms ease, transform 180ms ease; } .ds-nav svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .ds-nav-active { color: #FF4D00; } .ds-nav-active .ds-nav-icon { background: rgba(255, 77, 0, 0.12); } .ds-nav-item:active .ds-nav-icon { transform: scale(0.97); } .ds-nav-item:focus-visible { outline: 2px solid #FF4D00; outline-offset: 2px; }"
+      "css": ".ds-nav { display: grid; grid-template-columns: repeat(3, 1fr); min-height: 66px; padding: 8px 12px 10px; border-radius: 24px 24px 0 0; background: #252422; } .ds-nav-item { display: grid; justify-items: center; align-content: start; gap: 2px; border: 0; background: transparent; color: #8F8A85; font: 600 10px 'Instrument Sans', system-ui, sans-serif; } .ds-nav-icon { display: grid; width: 48px; height: 34px; place-items: center; border-radius: 16px; transition: background 180ms ease, transform 180ms ease; } .ds-nav svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .ds-nav-active { color: #FF4D00; } .ds-nav-active .ds-nav-icon { background: rgba(255, 77, 0, 0.12); } .ds-nav-item:active .ds-nav-icon { transform: scale(0.97); } .ds-nav-item:focus-visible { outline: 2px solid #FF4D00; outline-offset: 2px; }"
     },
     {
       "name": "Snackbar",
       "kind": "custom",
       "description": "Transient feedback with a restrained float and a slim orange status rail.",
       "html": "<div class=\"ds-snackbar\" role=\"status\"><span class=\"ds-snackbar-rail\"></span><strong>Workout saved</strong><button>Undo</button></div>",
-      "css": ".ds-snackbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid #3D3B38; border-radius: 12px; background: #252422; color: #F0ECE8; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.24), 0 4px 6px -4px rgba(0, 0, 0, 0.18); font: 500 15px Inter, system-ui, sans-serif; } .ds-snackbar-rail { width: 4px; height: 32px; border-radius: 8px; background: #FF4D00; } .ds-snackbar strong { flex: 1; font-weight: 500; } .ds-snackbar button { min-height: 32px; padding: 4px 8px; border: 0; background: transparent; color: #FF4D00; font: 600 13px Inter, system-ui, sans-serif; } .ds-snackbar button:hover { opacity: 0.82; } .ds-snackbar button:active { transform: scale(0.97); } .ds-snackbar button:focus-visible { outline: 2px solid #FF4D00; outline-offset: 2px; }"
+      "css": ".ds-snackbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid #3D3B38; border-radius: 12px; background: #252422; color: #F0ECE8; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.24), 0 4px 6px -4px rgba(0, 0, 0, 0.18); font: 500 15px 'Instrument Sans', system-ui, sans-serif; } .ds-snackbar-rail { width: 4px; height: 32px; border-radius: 8px; background: #FF4D00; } .ds-snackbar strong { flex: 1; font-weight: 500; } .ds-snackbar button { min-height: 32px; padding: 4px 8px; border: 0; background: transparent; color: #FF4D00; font: 600 13px 'Instrument Sans', system-ui, sans-serif; } .ds-snackbar button:hover { opacity: 0.82; } .ds-snackbar button:active { transform: scale(0.97); } .ds-snackbar button:focus-visible { outline: 2px solid #FF4D00; outline-offset: 2px; }"
     }
   ],
   "narrative": {

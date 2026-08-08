@@ -15,14 +15,14 @@ colors:
   chalk-stone: '#EDE8E2'
   steel-dust: '#C5BFB8'
   dark-steel: '#3A3330'
-  muted-ash: '#8A8580'
+  muted-ash: '#8F8A85'
   muted-clay: '#6B6460'
   chalk-edge: '#DDD8D2'
   rep-green: '#34C76A'
   rep-green-deep: '#1F9E4A'
   timer-amber: '#F5A623'
   timer-ochre: '#B06A00'
-  failure-red: '#E8294A'
+  failure-red: '#F65170'
   failure-crimson: '#C41535'
   rest-blue: '#4DB8FF'
   rest-blue-deep: '#0070C0'
@@ -32,35 +32,35 @@ colors:
   drop-ember: '#C93A00'
 typography:
   display:
-    fontFamily: 'Inter, system-ui, sans-serif'
+    fontFamily: 'Instrument Sans, system-ui, sans-serif'
     fontSize: '28px'
     fontWeight: 700
   headline:
-    fontFamily: 'Inter, system-ui, sans-serif'
+    fontFamily: 'Instrument Sans, system-ui, sans-serif'
     fontSize: '24px'
     fontWeight: 600
   title:
-    fontFamily: 'Inter, system-ui, sans-serif'
+    fontFamily: 'Instrument Sans, system-ui, sans-serif'
     fontSize: '19px'
     fontWeight: 500
   body:
-    fontFamily: 'Inter, system-ui, sans-serif'
+    fontFamily: 'Instrument Sans, system-ui, sans-serif'
     fontSize: '15px'
     fontWeight: 400
   body-medium:
-    fontFamily: 'Inter, system-ui, sans-serif'
+    fontFamily: 'Instrument Sans, system-ui, sans-serif'
     fontSize: '15px'
     fontWeight: 500
   label:
-    fontFamily: 'Inter, system-ui, sans-serif'
+    fontFamily: 'Instrument Sans, system-ui, sans-serif'
     fontSize: '13px'
     fontWeight: 400
   caption:
-    fontFamily: 'Inter, system-ui, sans-serif'
+    fontFamily: 'Instrument Sans, system-ui, sans-serif'
     fontSize: '12px'
     fontWeight: 500
   overline:
-    fontFamily: 'Inter, system-ui, sans-serif'
+    fontFamily: 'Instrument Sans, system-ui, sans-serif'
     fontSize: '12px'
     fontWeight: 500
     letterSpacing: '0.05em'
@@ -176,11 +176,11 @@ The palette pairs warm, material neutrals with a single high-energy orange signa
 
 ## Typography
 
-**Display Font:** Inter (with the native system sans-serif fallback)  
-**Body Font:** Inter (with the native system sans-serif fallback)  
-**Label Font:** Inter (with the native system sans-serif fallback)
+**Display Font:** Instrument Sans (with the native system sans-serif fallback)  
+**Body Font:** Instrument Sans (with the native system sans-serif fallback)  
+**Label Font:** Instrument Sans (with the native system sans-serif fallback)
 
-**Character:** Inter keeps the interface compact, legible, and neutral under repeated active use. Weight changes establish hierarchy; the system avoids decorative display typography.
+**Character:** Instrument Sans keeps the interface compact, legible, and neutral under repeated active use. Weight changes establish hierarchy; the system avoids decorative display typography.
 
 ### Hierarchy
 
@@ -245,7 +245,7 @@ The component system is firm, tactile, and purpose-built. Controls communicate r
 - **Secondary:** Steel Plate or Clean White surface with a subtle theme border and primary text.
 - **Ghost:** Transparent surface for low-emphasis actions.
 - **Destructive:** Tinted failure surface and border with semantic red text.
-- **State:** Presses reduce opacity and scale toward 0.97 after a short touch delay; disabled and loading states block duplicate action and visibly reduce emphasis.
+- **State:** Presses reduce opacity and scale to 0.97 over 120ms, then return over 100ms; disabled and loading states block duplicate action and visibly reduce emphasis.
 
 ### Chips
 
