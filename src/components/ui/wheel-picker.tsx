@@ -1,112 +1,43 @@
-import { Text } from '@/src/components/ui/text';
-import { cn } from '@/src/lib/utils/cn.utils';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
-import WheelPickerBase, {
-  withVirtualized,
-  type WheelPickerProps as BaseWheelPickerProps,
-  type PickerItem,
-  type RenderItemProps
-} from '@quidone/react-native-wheel-picker';
-import { styled } from 'nativewind';
-import type { ReactNode } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import {
+  DrumPicker,
+  type DrumPickerProps,
+  type DrumPickerRef
+} from 'react-native-drum-picker';
+import { forwardRef, type ReactElement, type RefAttributes } from 'react';
 
-const VirtualizedWheelPicker = withVirtualized(WheelPickerBase);
+type WheelPickerComponent = <ItemT = string>(
+  props: DrumPickerProps<ItemT> & RefAttributes<DrumPickerRef>
+) => ReactElement | null;
 
-interface WheelPickerClassNameProps {
-  className?: string;
-  itemTextClassName?: string;
-  overlayItemClassName?: string;
-  contentContainerClassName?: string;
-  renderWhen?: boolean;
-}
+const WheelPickerBase = forwardRef<DrumPickerRef, DrumPickerProps<unknown>>(
+  function WheelPicker(
+    {
+      textColor,
+      selectedTextColor,
+      showSelectionIndicator = false,
+      backgroundColor = 'transparent',
+      itemBackgroundColor = 'transparent',
+      containerBackgroundColor = 'transparent',
+      ...props
+    },
+    ref
+  ) {
+    const { colors } = useAppTheme();
 
-type WheelPickerItem = PickerItem<unknown>;
-
-type WheelPickerProps<ItemT extends WheelPickerItem> =
-  BaseWheelPickerProps<ItemT> & WheelPickerClassNameProps;
-
-const defaultRenderItem = <ItemT extends WheelPickerItem>(
-  { item, itemTextStyle }: RenderItemProps<ItemT>,
-  itemTextClassName?: string
-) => {
-  return (
-    <View className="flex-1 items-center justify-center">
-      <Text
-        className={cn('text-foreground text-center', itemTextClassName)}
-        style={itemTextStyle}
-      >
-        {item.label ?? String(item.value)}
-      </Text>
-    </View>
-  );
-};
-
-const getPickerHeight = (itemHeight: number, visibleItemCount: number) => {
-  const maxStep = Math.trunc((visibleItemCount + 2) / 2);
-  const faceCount = maxStep * 2 + 1;
-
-  if (faceCount === 7) {
-    return itemHeight * 5;
-  }
-
-  return Array.from({ length: maxStep }, (_, index) => {
-    const degree = ((index + 1) * 90) / maxStep;
-
-    return itemHeight * Math.cos((degree * Math.PI) / 180) * 2;
-  }).reduce((height, faceHeight) => height + faceHeight, itemHeight);
-};
-
-const WheelPickerBridge = <ItemT extends WheelPickerItem>({
-  renderItem,
-  renderWhen = true,
-  width = 'auto',
-  itemHeight = 48,
-  visibleItemCount = 5,
-  style,
-  itemTextClassName,
-  ...props
-}: WheelPickerProps<ItemT>) => {
-  const { colors } = useAppTheme();
-
-  if (!renderWhen) {
     return (
-      <View
-        className="items-center justify-center"
-        style={[
-          { width, height: getPickerHeight(itemHeight, visibleItemCount) },
-          style
-        ]}
-      >
-        <ActivityIndicator color={colors.mutedForeground} />
-      </View>
+      <DrumPicker
+        {...props}
+        ref={ref}
+        textColor={textColor ?? colors.mutedForeground}
+        selectedTextColor={selectedTextColor ?? colors.foreground}
+        showSelectionIndicator={showSelectionIndicator}
+        backgroundColor={backgroundColor}
+        itemBackgroundColor={itemBackgroundColor}
+        containerBackgroundColor={containerBackgroundColor}
+      />
     );
   }
+);
 
-  return (
-    <VirtualizedWheelPicker
-      {...props}
-      width={width}
-      itemHeight={itemHeight}
-      visibleItemCount={visibleItemCount}
-      style={style}
-      renderItem={
-        renderItem ??
-        (itemProps => defaultRenderItem(itemProps, itemTextClassName))
-      }
-    />
-  );
-};
-
-const StyledWheelPickerBase = styled(WheelPickerBridge, {
-  className: 'style',
-  overlayItemClassName: 'overlayItemStyle',
-  contentContainerClassName: 'contentContainerStyle'
-});
-
-export const WheelPicker =
-  // HARDEN-OK: nativewind styled() erases this generic wrapper signature.
-  StyledWheelPickerBase as typeof VirtualizedWheelPicker &
-    (<ItemT extends WheelPickerItem>(
-      props: WheelPickerProps<ItemT>
-    ) => ReactNode);
+export const WheelPicker = WheelPickerBase as WheelPickerComponent;

@@ -1,63 +1,21 @@
 import { Text } from '@/src/components/ui/text';
 import { WheelPicker } from '@/src/components/ui/wheel-picker';
 import { cn } from '@/src/lib/utils/cn.utils';
-import { nativeFontSizes } from '@/src/theme/sizes';
-import type {
-  OnValueChanged,
-  OnValueChanging,
-  RenderItemProps
-} from '@quidone/react-native-wheel-picker';
+import type { DrumPickerProps } from 'react-native-drum-picker';
 import { View } from 'react-native';
 
 const PICKER_ITEM_HEIGHT = 65;
 const PICKER_VISIBLE_ITEM_COUNT = 3;
 
-const minuteItems = Array.from({ length: 61 }, (_, value) => ({
-  label: String(value),
-  value
-}));
+const minuteItems = Array.from({ length: 61 }, (_, value) => String(value));
 
-const secondItems = Array.from({ length: 60 }, (_, value) => ({
-  label: String(value).padStart(2, '0'),
-  value
-}));
-
-type TimerPickerItem = (typeof minuteItems)[number];
-
-type DurationPickerItemProps = RenderItemProps<TimerPickerItem> & {
-  isSelected: boolean;
-  unit: 'MIN' | 'SEC';
-};
-
-function DurationPickerItem({
-  item,
-  itemTextStyle,
-  isSelected,
-  unit
-}: DurationPickerItemProps) {
-  return (
-    <View className="flex-1 items-center justify-center">
-      <View className="flex-row items-baseline gap-2">
-        <Text variant="h2" style={itemTextStyle}>
-          {item.label}
-        </Text>
-        {isSelected ? (
-          <Text
-            variant="caption"
-            className="text-secondary-foreground font-bold"
-          >
-            {unit}
-          </Text>
-        ) : null}
-      </View>
-    </View>
-  );
-}
+const secondItems = Array.from({ length: 60 }, (_, value) =>
+  String(value).padStart(2, '0')
+);
 
 interface RestTimerDurationPickerProps {
   minutes: number;
   seconds: number;
-  renderWhen: boolean;
   className?: string;
   onMinutesChanging: (value: number) => void;
   onMinutesChange: (value: number) => void;
@@ -68,72 +26,71 @@ interface RestTimerDurationPickerProps {
 export function RestTimerDurationPicker({
   minutes,
   seconds,
-  renderWhen,
   className,
   onMinutesChanging,
   onMinutesChange,
   onSecondsChanging,
   onSecondsChange
 }: RestTimerDurationPickerProps) {
-  const handleMinuteChanging: OnValueChanging<(typeof minuteItems)[number]> = ({
-    item
-  }) => {
-    onMinutesChanging(item.value);
+  const handleMinuteChanging: NonNullable<
+    DrumPickerProps['onValueChanging']
+  > = ({ nativeEvent }) => {
+    onMinutesChanging(nativeEvent.index);
   };
 
-  const handleMinuteChange: OnValueChanged<(typeof minuteItems)[number]> = ({
-    item
+  const handleMinuteChange: NonNullable<DrumPickerProps['onChange']> = ({
+    nativeEvent
   }) => {
-    onMinutesChange(item.value);
+    onMinutesChange(nativeEvent.index);
   };
 
-  const handleSecondChanging: OnValueChanging<(typeof secondItems)[number]> = ({
-    item
-  }) => {
-    onSecondsChanging(item.value);
+  const handleSecondChanging: NonNullable<
+    DrumPickerProps['onValueChanging']
+  > = ({ nativeEvent }) => {
+    onSecondsChanging(nativeEvent.index);
   };
 
-  const handleSecondChange: OnValueChanged<(typeof secondItems)[number]> = ({
-    item
+  const handleSecondChange: NonNullable<DrumPickerProps['onChange']> = ({
+    nativeEvent
   }) => {
-    onSecondsChange(item.value);
+    onSecondsChange(nativeEvent.index);
   };
 
   return (
     <View
       className={cn(
-        'relative h-[190px] w-full flex-row items-center justify-center overflow-hidden rounded-lg',
+        'relative h-[195px] w-full flex-row items-center justify-center overflow-hidden rounded-lg',
         className
       )}
     >
       <View
         pointerEvents="none"
-        className="bg-secondary absolute inset-x-0 top-[62px] h-[66px] rounded-lg"
+        className="bg-secondary absolute inset-x-0 top-[65px] h-[65px] rounded-lg"
       />
 
-      <View className="relative h-[190px] max-w-[132px] flex-1 justify-center">
+      <View className="relative h-[195px] max-w-[132px] flex-1 justify-center">
         <WheelPicker
-          data={minuteItems}
-          value={minutes}
+          items={minuteItems}
+          selectedIndex={minutes}
           onValueChanging={handleMinuteChanging}
-          onValueChanged={handleMinuteChange}
-          renderWhen={renderWhen}
+          onChange={handleMinuteChange}
           visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
           itemHeight={PICKER_ITEM_HEIGHT}
-          width="100%"
-          overlayItemClassName="bg-transparent"
-          itemTextStyle={{
-            fontSize: nativeFontSizes.restTimerPicker,
-            fontVariant: ['tabular-nums']
-          }}
-          renderItem={itemProps => (
-            <DurationPickerItem
-              {...itemProps}
-              isSelected={itemProps.item.value === minutes}
-              unit="MIN"
-            />
-          )}
+          textSize={38}
+          selectedTextSize={44}
+          style={{ width: '100%' }}
         />
+        <View
+          pointerEvents="none"
+          className="absolute top-0 right-3 bottom-0 z-10 justify-center"
+        >
+          <Text
+            variant="caption"
+            className="text-secondary-foreground font-bold"
+          >
+            MIN
+          </Text>
+        </View>
       </View>
 
       <View className="w-8 shrink-0 items-center justify-center">
@@ -142,29 +99,29 @@ export function RestTimerDurationPicker({
         </Text>
       </View>
 
-      <View className="relative h-[190px] max-w-[132px] flex-1 justify-center">
+      <View className="relative h-[195px] max-w-[132px] flex-1 justify-center">
         <WheelPicker
-          data={secondItems}
-          value={seconds}
+          items={secondItems}
+          selectedIndex={seconds}
           onValueChanging={handleSecondChanging}
-          onValueChanged={handleSecondChange}
-          renderWhen={renderWhen}
+          onChange={handleSecondChange}
           visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
           itemHeight={PICKER_ITEM_HEIGHT}
-          width="100%"
-          overlayItemClassName="bg-transparent"
-          itemTextStyle={{
-            fontSize: nativeFontSizes.restTimerPicker,
-            fontVariant: ['tabular-nums']
-          }}
-          renderItem={itemProps => (
-            <DurationPickerItem
-              {...itemProps}
-              isSelected={itemProps.item.value === seconds}
-              unit="SEC"
-            />
-          )}
+          textSize={38}
+          selectedTextSize={44}
+          style={{ width: '100%' }}
         />
+        <View
+          pointerEvents="none"
+          className="absolute top-0 right-3 bottom-0 z-10 justify-center"
+        >
+          <Text
+            variant="caption"
+            className="text-secondary-foreground font-bold"
+          >
+            SEC
+          </Text>
+        </View>
       </View>
     </View>
   );

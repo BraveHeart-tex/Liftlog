@@ -19,7 +19,6 @@ interface RestTimerIdleContentProps {
   defaultDuration: number;
   context?: RestTimerContext;
   openToken: number;
-  renderWheels: boolean;
 }
 
 function getDurationDraft(durationSeconds: number) {
@@ -29,8 +28,7 @@ function getDurationDraft(durationSeconds: number) {
 export function RestTimerIdleContent({
   defaultDuration,
   context,
-  openToken,
-  renderWheels
+  openToken
 }: RestTimerIdleContentProps) {
   const {
     restTimerPresets,
@@ -172,7 +170,6 @@ export function RestTimerIdleContent({
         <RestTimerDurationPicker
           minutes={minutes}
           seconds={seconds}
-          renderWhen={renderWheels}
           onMinutesChanging={handleMinutesChanging}
           onMinutesChange={handleMinutesChange}
           onSecondsChanging={handleSecondsChanging}

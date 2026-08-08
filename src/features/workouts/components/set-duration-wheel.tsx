@@ -1,24 +1,15 @@
 import { Text } from '@/src/components/ui/text';
 import { WheelPicker } from '@/src/components/ui/wheel-picker';
-import type {
-  OnValueChanged,
-  OnValueChanging
-} from '@quidone/react-native-wheel-picker';
+import type { DrumPickerProps } from 'react-native-drum-picker';
 import { useCallback } from 'react';
 import { View } from 'react-native';
 
-interface DurationWheelItem {
-  label: string;
-  value: number;
-}
-
 interface SetDurationWheelProps {
   label: string;
-  data: DurationWheelItem[];
+  items: string[];
   value: number;
   onValueChanging: (value: number) => void;
   onValueChange: (value: number) => void;
-  renderWhen: boolean;
 }
 
 const PICKER_ITEM_HEIGHT = 58;
@@ -26,48 +17,55 @@ const PICKER_VISIBLE_ITEM_COUNT = 3;
 
 export function SetDurationWheel({
   label,
-  data,
+  items,
   value,
   onValueChanging,
-  onValueChange,
-  renderWhen
+  onValueChange
 }: SetDurationWheelProps) {
-  const handleValueChanging: OnValueChanging<DurationWheelItem> = useCallback(
-    ({ item }) => {
-      onValueChanging(item.value);
+  const handleValueChanging = useCallback<
+    NonNullable<DrumPickerProps['onValueChanging']>
+  >(
+    ({ nativeEvent }) => {
+      onValueChanging(nativeEvent.index);
     },
     [onValueChanging]
   );
 
-  const handleValueChanged: OnValueChanged<DurationWheelItem> = useCallback(
-    ({ item }) => {
-      onValueChange(item.value);
+  const handleValueChanged = useCallback<
+    NonNullable<DrumPickerProps['onChange']>
+  >(
+    ({ nativeEvent }) => {
+      onValueChange(nativeEvent.index);
     },
     [onValueChange]
   );
 
   return (
-    <View className="w-19 flex-row items-center justify-center">
-      <View className="w-14">
+    <View className="w-16 items-center">
+      <View className="relative w-16">
+        <View
+          pointerEvents="none"
+          className="border-border bg-secondary/40 absolute inset-x-0 top-[58px] h-[58px] rounded-lg border"
+        />
         <WheelPicker
-          data={data}
-          value={value}
+          items={items}
+          selectedIndex={value}
           onValueChanging={handleValueChanging}
-          onValueChanged={handleValueChanged}
-          renderWhen={renderWhen}
+          onChange={handleValueChanged}
           visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
           itemHeight={PICKER_ITEM_HEIGHT}
-          width="100%"
-          overlayItemClassName="rounded-lg border border-border bg-secondary/40"
-          itemTextClassName="text-2xl font-semibold"
-          itemTextStyle={{ fontVariant: ['tabular-nums'] }}
+          textSize={20}
+          selectedTextSize={24}
+          style={{ width: '100%' }}
         />
       </View>
-      <View pointerEvents="none" className="ml-1 justify-center">
-        <Text variant="overline" tone="muted" className="text-[9px] font-bold">
-          {label}
-        </Text>
-      </View>
+      <Text
+        variant="overline"
+        tone="muted"
+        className="mt-1 text-[9px] font-bold"
+      >
+        {label}
+      </Text>
     </View>
   );
 }

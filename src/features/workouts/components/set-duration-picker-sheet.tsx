@@ -28,21 +28,16 @@ interface SetDurationPickerSheetProps {
 
 type DurationInputMode = 'stopwatch' | 'manual';
 
-const hourItems = Array.from({ length: 24 }, (_, value) => ({
-  label: String(value),
-  value
-}));
+const hourItems = Array.from({ length: 24 }, (_, value) => String(value));
 
-const minuteItems = Array.from({ length: 60 }, (_, value) => ({
-  label: String(value).padStart(2, '0'),
-  value
-}));
+const minuteItems = Array.from({ length: 60 }, (_, value) =>
+  String(value).padStart(2, '0')
+);
 
 const secondItems = minuteItems;
-const centisecondItems = Array.from({ length: 100 }, (_, value) => ({
-  label: String(value).padStart(2, '0'),
-  value
-}));
+const centisecondItems = Array.from({ length: 100 }, (_, value) =>
+  String(value).padStart(2, '0')
+);
 
 export function SetDurationPickerSheet({
   isOpen,
@@ -58,23 +53,18 @@ export function SetDurationPickerSheet({
       enableDynamicSizing
       enableContentPanningGesture={false}
     >
-      {({ isContentReady }) => (
-        <SetDurationPickerSheetContent
-          isOpen={isOpen}
-          valueMs={valueMs}
-          enableStopwatch={enableStopwatch}
-          onClose={onClose}
-          onConfirm={onConfirm}
-          renderWheels={isContentReady}
-        />
-      )}
+      <SetDurationPickerSheetContent
+        isOpen={isOpen}
+        valueMs={valueMs}
+        enableStopwatch={enableStopwatch}
+        onClose={onClose}
+        onConfirm={onConfirm}
+      />
     </BottomSheet>
   );
 }
 
-interface SetDurationPickerSheetContentProps extends SetDurationPickerSheetProps {
-  renderWheels: boolean;
-}
+type SetDurationPickerSheetContentProps = SetDurationPickerSheetProps;
 
 const SetDurationPickerSheetContent = memo(
   function SetDurationPickerSheetContent({
@@ -82,8 +72,7 @@ const SetDurationPickerSheetContent = memo(
     valueMs,
     enableStopwatch = false,
     onClose,
-    onConfirm,
-    renderWheels
+    onConfirm
   }: SetDurationPickerSheetContentProps) {
     const canUseStopwatch = enableStopwatch;
     const initialParts = getDurationMsParts(valueMs);
@@ -211,35 +200,31 @@ const SetDurationPickerSheetContent = memo(
               <View className="flex-row items-center justify-center gap-1">
                 <SetDurationWheel
                   label="HR"
-                  data={hourItems}
+                  items={hourItems}
                   value={hours}
                   onValueChanging={handleHoursChanging}
                   onValueChange={handleHoursChange}
-                  renderWhen={renderWheels}
                 />
                 <SetDurationWheel
                   label="MIN"
-                  data={minuteItems}
+                  items={minuteItems}
                   value={minutes}
                   onValueChanging={handleMinutesChanging}
                   onValueChange={handleMinutesChange}
-                  renderWhen={renderWheels}
                 />
                 <SetDurationWheel
                   label="SEC"
-                  data={secondItems}
+                  items={secondItems}
                   value={seconds}
                   onValueChanging={handleSecondsChanging}
                   onValueChange={handleSecondsChange}
-                  renderWhen={renderWheels}
                 />
                 <SetDurationWheel
                   label="CS"
-                  data={centisecondItems}
+                  items={centisecondItems}
                   value={centiseconds}
                   onValueChanging={handleCentisecondsChanging}
                   onValueChange={handleCentisecondsChange}
-                  renderWhen={renderWheels}
                 />
               </View>
             </View>

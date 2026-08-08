@@ -45,31 +45,25 @@ export function RestTimerPresetEditorSheet({
       keyboardBehavior="interactive"
       enableContentPanningGesture={false}
     >
-      {({ isContentReady }) => (
-        <RestTimerPresetEditorSheetContent
-          isOpen={isOpen}
-          preset={preset}
-          defaultDuration={defaultDuration}
-          renderWheels={isContentReady}
-          onClose={onClose}
-          onSave={onSave}
-          onDelete={onDelete}
-        />
-      )}
+      <RestTimerPresetEditorSheetContent
+        isOpen={isOpen}
+        preset={preset}
+        defaultDuration={defaultDuration}
+        onClose={onClose}
+        onSave={onSave}
+        onDelete={onDelete}
+      />
     </BottomSheet>
   );
 }
 
-interface RestTimerPresetEditorSheetContentProps extends RestTimerPresetEditorSheetProps {
-  renderWheels: boolean;
-}
+type RestTimerPresetEditorSheetContentProps = RestTimerPresetEditorSheetProps;
 
 const RestTimerPresetEditorSheetContent = memo(
   function RestTimerPresetEditorSheetContent({
     isOpen,
     preset,
     defaultDuration,
-    renderWheels,
     onClose,
     onSave,
     onDelete
@@ -184,7 +178,6 @@ const RestTimerPresetEditorSheetContent = memo(
           <RestTimerDurationPicker
             minutes={minutes}
             seconds={seconds}
-            renderWhen={isOpen && renderWheels}
             className="-mt-2"
             onMinutesChanging={handleMinutesChanging}
             onMinutesChange={handleMinutesChange}

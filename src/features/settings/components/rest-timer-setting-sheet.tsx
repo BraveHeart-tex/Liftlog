@@ -9,28 +9,20 @@ import { Text } from '@/src/components/ui/text';
 import { WheelPicker } from '@/src/components/ui/wheel-picker';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import { getTimerParts } from '@/src/lib/utils/date.utils';
-import type {
-  OnValueChanged,
-  OnValueChanging
-} from '@quidone/react-native-wheel-picker';
-
 import { SaveIcon, XIcon } from 'lucide-react-native';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import type { DrumPickerProps } from 'react-native-drum-picker';
 import { View } from 'react-native';
 
 const PICKER_ITEM_HEIGHT = 65;
 const PICKER_VISIBLE_ITEM_COUNT = 3;
 const MIN_REST_TIMER_SECONDS = 10;
 
-const minuteItems = Array.from({ length: 11 }, (_, value) => ({
-  label: String(value),
-  value
-}));
+const minuteItems = Array.from({ length: 11 }, (_, value) => String(value));
 
-const secondItems = Array.from({ length: 60 }, (_, value) => ({
-  label: String(value).padStart(2, '0'),
-  value
-}));
+const secondItems = Array.from({ length: 60 }, (_, value) =>
+  String(value).padStart(2, '0')
+);
 
 export const RestTimerSettingSheet = ({
   isOpen,
@@ -47,17 +39,11 @@ export const RestTimerSettingSheet = ({
     <BottomSheet
       isOpen={isOpen}
       onClose={handleClose}
-      snapPoints={['36%']}
+      snapPoints={['44%']}
       keyboardBehavior="extend"
       enableContentPanningGesture={false}
     >
-      {({ isContentReady }) => (
-        <RestTimerSettingSheetContent
-          isOpen={isOpen}
-          onClose={handleClose}
-          renderWheels={isContentReady}
-        />
-      )}
+      <RestTimerSettingSheetContent isOpen={isOpen} onClose={handleClose} />
     </BottomSheet>
   );
 };
@@ -65,12 +51,10 @@ export const RestTimerSettingSheet = ({
 const RestTimerSettingSheetContent = memo(
   function RestTimerSettingSheetContent({
     isOpen,
-    onClose,
-    renderWheels
+    onClose
   }: {
     isOpen: boolean;
     onClose: () => void;
-    renderWheels: boolean;
   }) {
     const { restTimerDuration, setRestTimerDuration } = useSettings();
     const [minutes, setMinutes] = useState(
@@ -113,27 +97,31 @@ const RestTimerSettingSheetContent = memo(
       onClose();
     };
 
-    const onMinuteChanging: OnValueChanging<(typeof minuteItems)[number]> =
-      useCallback(({ item }) => {
-        minutesRef.current = item.value;
-      }, []);
+    const onMinuteChanging = useCallback<
+      NonNullable<DrumPickerProps['onValueChanging']>
+    >(({ nativeEvent }) => {
+      minutesRef.current = nativeEvent.index;
+    }, []);
 
-    const onMinuteChange: OnValueChanged<(typeof minuteItems)[number]> =
-      useCallback(({ item }) => {
-        minutesRef.current = item.value;
-        setMinutes(item.value);
-      }, []);
+    const onMinuteChange = useCallback<
+      NonNullable<DrumPickerProps['onChange']>
+    >(({ nativeEvent }) => {
+      minutesRef.current = nativeEvent.index;
+      setMinutes(nativeEvent.index);
+    }, []);
 
-    const onSecondChanging: OnValueChanging<(typeof secondItems)[number]> =
-      useCallback(({ item }) => {
-        secondsRef.current = item.value;
-      }, []);
+    const onSecondChanging = useCallback<
+      NonNullable<DrumPickerProps['onValueChanging']>
+    >(({ nativeEvent }) => {
+      secondsRef.current = nativeEvent.index;
+    }, []);
 
-    const onSecondChange: OnValueChanged<(typeof secondItems)[number]> =
-      useCallback(({ item }) => {
-        secondsRef.current = item.value;
-        setSeconds(item.value);
-      }, []);
+    const onSecondChange = useCallback<
+      NonNullable<DrumPickerProps['onChange']>
+    >(({ nativeEvent }) => {
+      secondsRef.current = nativeEvent.index;
+      setSeconds(nativeEvent.index);
+    }, []);
 
     return (
       <>
@@ -153,18 +141,20 @@ const RestTimerSettingSheetContent = memo(
         <View className="flex-col items-center px-4">
           <View className="-mt-4 flex-row items-center justify-center">
             <View className="relative w-32">
+              <View
+                pointerEvents="none"
+                className="border-border bg-secondary/40 absolute inset-x-0 top-[65px] h-[65px] rounded-xl border"
+              />
               <WheelPicker
-                data={minuteItems}
-                value={minutes}
+                items={minuteItems}
+                selectedIndex={minutes}
                 onValueChanging={onMinuteChanging}
-                onValueChanged={onMinuteChange}
-                renderWhen={renderWheels}
+                onChange={onMinuteChange}
                 visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
                 itemHeight={PICKER_ITEM_HEIGHT}
-                width="100%"
-                overlayItemClassName="rounded-xl border border-border bg-secondary/40"
-                itemTextClassName="text-4xl font-semibold"
-                itemTextStyle={{ fontVariant: ['tabular-nums'] }}
+                textSize={32}
+                selectedTextSize={36}
+                style={{ width: '100%' }}
               />
               <View
                 pointerEvents="none"
@@ -191,18 +181,20 @@ const RestTimerSettingSheetContent = memo(
             </View>
 
             <View className="relative w-32">
+              <View
+                pointerEvents="none"
+                className="border-border bg-secondary/40 absolute inset-x-0 top-[65px] h-[65px] rounded-xl border"
+              />
               <WheelPicker
-                data={secondItems}
-                value={seconds}
+                items={secondItems}
+                selectedIndex={seconds}
                 onValueChanging={onSecondChanging}
-                onValueChanged={onSecondChange}
-                renderWhen={renderWheels}
+                onChange={onSecondChange}
                 visibleItemCount={PICKER_VISIBLE_ITEM_COUNT}
                 itemHeight={PICKER_ITEM_HEIGHT}
-                width="100%"
-                overlayItemClassName="rounded-xl border border-border bg-secondary/40"
-                itemTextClassName="text-4xl font-semibold"
-                itemTextStyle={{ fontVariant: ['tabular-nums'] }}
+                textSize={32}
+                selectedTextSize={36}
+                style={{ width: '100%' }}
               />
               <View
                 pointerEvents="none"
