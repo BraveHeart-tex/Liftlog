@@ -35,6 +35,7 @@ export const ThemeSelectionSection = () => {
         value={themePreference}
         options={THEME_OPTIONS}
         onChange={setThemePreference}
+        accessibilityMode="radioGroup"
       />
     </View>
   );

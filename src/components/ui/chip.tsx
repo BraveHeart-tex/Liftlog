@@ -9,7 +9,7 @@ import { View, type Pressable, type TextStyle } from 'react-native';
 type NativePressableProps = ComponentPropsWithoutRef<typeof Pressable>;
 
 const choiceChipVariantConfig = cva(
-  'border-border min-h-11 flex-row items-center justify-center gap-2 border px-4 py-3',
+  'border-border min-h-12 flex-row items-center justify-center gap-2 border px-4 py-3',
   {
     variants: {
       shape: {

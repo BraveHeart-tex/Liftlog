@@ -33,7 +33,7 @@ const lightFeedbackColors = {
 } as const;
 
 const darkFeedbackColors = {
-  danger: '#c41535',
+  danger: '#f65170',
   success: '#1f9e4a'
 } as const;
 

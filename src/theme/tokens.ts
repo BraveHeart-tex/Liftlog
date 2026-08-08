@@ -14,7 +14,8 @@ const colorSchemes = {
     border: '#DDD8D2',
     muted: '#EDE8E2',
     mutedForeground: '#6B6460',
-    info: '#0070C0'
+    info: '#0070C0',
+    danger: '#C41535'
   },
   dark: {
     background: '#1A1917',
@@ -28,8 +29,9 @@ const colorSchemes = {
     accentForeground: '#FFFFFF',
     border: '#3D3B38',
     muted: '#3D3B38',
-    mutedForeground: '#8A8580',
-    info: '#4DB8FF'
+    mutedForeground: '#8F8A85',
+    info: '#4DB8FF',
+    danger: '#F65170'
   }
 } as const;
 

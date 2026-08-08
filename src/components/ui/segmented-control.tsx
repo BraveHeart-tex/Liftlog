@@ -7,7 +7,8 @@ import { Pressable, View, type LayoutChangeEvent } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withTiming
+  withTiming,
+  useReducedMotion
 } from 'react-native-reanimated';
 
 interface SegmentedControlOption<T extends string> {
@@ -21,6 +22,7 @@ interface SegmentedControlProps<T extends string> {
   onChange: (value: T) => void;
   className?: string;
   indicatorClassName?: string;
+  accessibilityMode?: 'tabs' | 'radioGroup';
 }
 
 const PADDING = 4;
@@ -30,10 +32,12 @@ export function SegmentedControl<T extends string>({
   options,
   onChange,
   className,
-  indicatorClassName
+  indicatorClassName,
+  accessibilityMode = 'tabs'
 }: SegmentedControlProps<T>) {
   const [width, setWidth] = useState(0);
   const [pressedValue, setPressedValue] = useState<T | null>(null);
+  const reduceMotion = useReducedMotion();
   const translateX = useSharedValue(0);
 
   const activeIndex = useMemo(
@@ -49,10 +53,14 @@ export function SegmentedControl<T extends string>({
   const itemWidth = trackWidth / options.length;
 
   useEffect(() => {
-    translateX.value = withTiming(activeIndex * itemWidth, {
-      duration: MOTION_DURATION_MS.standard
-    });
-  }, [activeIndex, itemWidth, translateX]);
+    const nextTranslateX = activeIndex * itemWidth;
+
+    translateX.value = reduceMotion
+      ? nextTranslateX
+      : withTiming(nextTranslateX, {
+          duration: MOTION_DURATION_MS.standard
+        });
+  }, [activeIndex, itemWidth, reduceMotion, translateX]);
 
   const indicatorStyle = useAnimatedStyle(() => ({
     width: itemWidth,
@@ -81,6 +89,9 @@ export function SegmentedControl<T extends string>({
   return (
     <View
       onLayout={handleLayout}
+      accessibilityRole={
+        accessibilityMode === 'tabs' ? 'tablist' : 'radiogroup'
+      }
       className={cn('bg-input relative flex-row rounded-md p-1', className)}
     >
       {width > 0 ? (
@@ -99,13 +110,13 @@ export function SegmentedControl<T extends string>({
         return (
           <Pressable
             key={option.value}
-            accessibilityRole="tab"
+            accessibilityRole={accessibilityMode === 'tabs' ? 'tab' : 'radio'}
             accessibilityState={{ selected: isActive }}
             onPress={() => handleOptionPress(option.value)}
             onPressIn={() => setPressedValue(option.value)}
             onPressOut={() => setPressedValue(null)}
             className={cn(
-              'min-h-11 flex-1 items-center justify-center rounded-md px-4',
+              'min-h-12 flex-1 items-center justify-center rounded-md px-4',
               pressedValue === option.value && !isActive && 'opacity-70'
             )}
           >

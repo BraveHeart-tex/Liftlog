@@ -74,7 +74,14 @@ type TextProps = NativeTextProps & {
 
 export const Text = forwardRef<ComponentRef<typeof NativeText>, TextProps>(
   function Text(
-    { variant = 'body', tone = 'default', className, style, ...props },
+    {
+      variant = 'body',
+      tone = 'default',
+      className,
+      style,
+      accessibilityRole,
+      ...props
+    },
     ref
   ) {
     return (
@@ -87,7 +94,12 @@ export const Text = forwardRef<ComponentRef<typeof NativeText>, TextProps>(
           style
         ]}
         {...props}
-        allowFontScaling={false}
+        accessibilityRole={
+          accessibilityRole ??
+          (variant === 'h1' || variant === 'h2' || variant === 'h3'
+            ? 'header'
+            : undefined)
+        }
       />
     );
   }

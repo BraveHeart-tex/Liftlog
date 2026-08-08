@@ -25,7 +25,7 @@ const buttonVariantConfig = cva(
           'border-danger/30 bg-danger/10 disabled:border-danger/20 disabled:bg-danger/5'
       },
       size: {
-        sm: 'min-h-11 px-3 py-3',
+        sm: 'min-h-12 px-3 py-3',
         md: 'min-h-12 px-4 py-3',
         lg: 'min-h-14 px-5 py-4',
         icon: 'h-12 w-12'

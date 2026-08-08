@@ -43,6 +43,7 @@ export const WorkoutPreferencesSection = () => {
                 value={weightUnit}
                 options={WEIGHT_UNIT_OPTIONS}
                 onChange={setWeightUnit}
+                accessibilityMode="radioGroup"
                 className="bg-muted ml-4 w-32"
                 indicatorClassName="bg-card"
               />

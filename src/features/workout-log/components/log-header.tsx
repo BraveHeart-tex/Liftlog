@@ -23,6 +23,7 @@ export function LogHeader({ view, onViewChange }: LogHeaderProps) {
           value={view}
           options={LOG_VIEW_OPTIONS}
           onChange={onViewChange}
+          accessibilityMode="tabs"
           className="mt-4"
         />
       ) : null}

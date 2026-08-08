@@ -3,13 +3,21 @@ import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn.utils';
 import {
   forwardRef,
+  useEffect,
+  useRef,
   useState,
   type ComponentPropsWithoutRef,
   type ReactNode
 } from 'react';
-import { View, type TextInput } from 'react-native';
+import {
+  AccessibilityInfo,
+  View,
+  type AccessibilityState,
+  type TextInput
+} from 'react-native';
 
 type NativeTextInputProps = ComponentPropsWithoutRef<typeof TextInput>;
+type InputAccessibilityState = AccessibilityState & { invalid?: boolean };
 
 type InputProps = NativeTextInputProps & {
   density?: 'default' | 'compact';
@@ -49,6 +57,9 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
     errorClassName,
     disabled = false,
     editable,
+    accessibilityLabel,
+    accessibilityHint,
+    accessibilityState,
     onBlur,
     onFocus,
     ...props
@@ -58,8 +69,27 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
   const [focused, setFocused] = useState(false);
   const hasError = Boolean(error);
   const isEditable = editable ?? !disabled;
+  const previousError = useRef<string | undefined>(undefined);
   const containerDensityClassName =
     density === 'compact' ? 'min-h-11 px-3 py-2' : 'min-h-12 px-4 py-3';
+
+  useEffect(() => {
+    if (error && error !== previousError.current) {
+      AccessibilityInfo.announceForAccessibility(error);
+    }
+
+    previousError.current = error;
+  }, [error]);
+
+  const supportingText = [accessibilityHint, error, hint]
+    .filter(Boolean)
+    .join('. ');
+  const inputState = accessibilityState as InputAccessibilityState | undefined;
+  const inputAccessibilityState: InputAccessibilityState = {
+    ...inputState,
+    disabled: disabled || inputState?.disabled,
+    invalid: hasError || inputState?.invalid
+  };
 
   return (
     <View className={cn('w-full', wrapperClassName)}>
@@ -101,8 +131,9 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
           )}
           textAlignVertical={props.multiline ? 'top' : 'center'}
           editable={isEditable}
-          accessibilityLabel={props.accessibilityLabel ?? label}
-          accessibilityHint={props.accessibilityHint ?? hint}
+          accessibilityLabel={label ?? accessibilityLabel}
+          accessibilityHint={supportingText || undefined}
+          accessibilityState={inputAccessibilityState}
           onBlur={event => {
             setFocused(false);
             onBlur?.(event);

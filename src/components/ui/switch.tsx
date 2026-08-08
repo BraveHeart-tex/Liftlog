@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { Pressable, type ViewStyle } from 'react-native';
 import Animated, {
   interpolateColor,
+  useReducedMotion,
   useAnimatedStyle,
   useSharedValue,
   withTiming
@@ -26,6 +27,7 @@ export function Switch({
   className
 }: SwitchProps) {
   const { colors } = useAppTheme();
+  const reduceMotion = useReducedMotion();
   const checkedProgress = useSharedValue(checked ? 1 : 0);
   const pressProgress = useSharedValue(0);
   const thumbDepthStyle: ViewStyle = {
@@ -37,10 +39,14 @@ export function Switch({
   };
 
   useEffect(() => {
-    checkedProgress.value = withTiming(checked ? 1 : 0, {
-      duration: MOTION_DURATION_MS.standard
-    });
-  }, [checked, checkedProgress]);
+    const nextProgress = checked ? 1 : 0;
+
+    checkedProgress.value = reduceMotion
+      ? nextProgress
+      : withTiming(nextProgress, {
+          duration: MOTION_DURATION_MS.standard
+        });
+  }, [checked, checkedProgress, reduceMotion]);
 
   const trackStyle = useAnimatedStyle(
     () => ({
@@ -65,15 +71,19 @@ export function Switch({
   };
 
   const handlePressIn = () => {
-    pressProgress.value = withTiming(1, {
-      duration: MOTION_DURATION_MS.pressIn
-    });
+    pressProgress.value = reduceMotion
+      ? 0
+      : withTiming(1, {
+          duration: MOTION_DURATION_MS.pressIn
+        });
   };
 
   const handlePressOut = () => {
-    pressProgress.value = withTiming(0, {
-      duration: MOTION_DURATION_MS.pressOut
-    });
+    pressProgress.value = reduceMotion
+      ? 0
+      : withTiming(0, {
+          duration: MOTION_DURATION_MS.pressOut
+        });
   };
 
   return (
@@ -81,7 +91,7 @@ export function Switch({
       accessibilityRole="switch"
       accessibilityState={{ checked, disabled }}
       className={cn(
-        'h-11 w-16 items-center justify-center rounded-full',
+        'h-12 w-16 items-center justify-center rounded-full',
         disabled && 'opacity-50',
         className
       )}

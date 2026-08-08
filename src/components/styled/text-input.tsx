@@ -40,7 +40,6 @@ const TextInputColorBridge = forwardRef<TextInput, TextInputColorBridgeProps>(
         }
         selectionColor={selectionColor ?? getStyleColor(selectionStyle)}
         {...props}
-        allowFontScaling={false}
       />
     );
   }

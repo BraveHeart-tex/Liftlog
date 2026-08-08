@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, {
   Easing,
+  useReducedMotion,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -9,10 +10,18 @@ import Animated, {
 } from 'react-native-reanimated';
 
 export const PulsatingDot = () => {
+  const reduceMotion = useReducedMotion();
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0.8);
 
   useEffect(() => {
+    if (reduceMotion) {
+      scale.value = 1;
+      opacity.value = 0;
+
+      return;
+    }
+
     scale.value = withRepeat(
       withTiming(1.9, { duration: 1000, easing: Easing.out(Easing.ease) }),
       -1,
@@ -23,7 +32,7 @@ export const PulsatingDot = () => {
       -1,
       false
     );
-  }, [opacity, scale]);
+  }, [opacity, reduceMotion, scale]);
 
   const ringStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -32,11 +41,12 @@ export const PulsatingDot = () => {
 
   return (
     <View className="h-2 w-2 items-center justify-center">
-      {/* expanding ring */}
-      <Animated.View
-        className="bg-primary absolute h-2 w-2 rounded-full"
-        style={ringStyle}
-      />
+      {reduceMotion ? null : (
+        <Animated.View
+          className="bg-primary absolute h-2 w-2 rounded-full"
+          style={ringStyle}
+        />
+      )}
       {/* static center dot */}
       <View className="bg-primary h-2 w-2 rounded-full" />
     </View>

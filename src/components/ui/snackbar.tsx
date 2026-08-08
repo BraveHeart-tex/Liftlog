@@ -2,7 +2,7 @@ import { Button } from '@/src/components/ui/button';
 import { Text } from '@/src/components/ui/text';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, PanResponder, View } from 'react-native';
+import { AccessibilityInfo, Animated, PanResponder, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
 
@@ -129,12 +129,34 @@ export function SnackbarHost() {
 
   useEffect(() => {
     if (!message) {
+      return;
+    }
+
+    const messageId = message.id;
+    const announcement = [message.message, message.actionLabel]
+      .filter(Boolean)
+      .join('. ');
+    const timeoutId = setTimeout(() => {
+      if (useSnackbarStore.getState().message?.id !== messageId) {
+        return;
+      }
+
+      AccessibilityInfo.announceForAccessibility(announcement);
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [message]);
+
+  useEffect(() => {
+    progress.stopAnimation();
+
+    if (!message) {
       Animated.timing(progress, {
         toValue: 0,
         duration: MOTION_DURATION_MS.exit,
         useNativeDriver: true
       }).start(({ finished }) => {
-        if (finished) {
+        if (finished && !useSnackbarStore.getState().message) {
           setRenderedMessage(null);
         }
       });
@@ -145,11 +167,9 @@ export function SnackbarHost() {
     setRenderedMessage(message);
     progress.setValue(0);
     dragY.setValue(0);
-    Animated.spring(progress, {
+    Animated.timing(progress, {
       toValue: 1,
-      damping: 18,
-      stiffness: 220,
-      mass: 0.8,
+      duration: MOTION_DURATION_MS.standard,
       useNativeDriver: true
     }).start();
 
@@ -158,18 +178,15 @@ export function SnackbarHost() {
       message.durationMs ?? DEFAULT_SNACKBAR_DURATION_MS
     );
 
-    return () => clearTimeout(timeoutId);
+    return () => {
+      clearTimeout(timeoutId);
+      progress.stopAnimation();
+    };
   }, [dismissSnackbar, dragY, message, progress]);
 
   if (!renderedMessage) {
     return null;
   }
-
-  const translateY = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [24, 0]
-  });
-  const animatedTranslateY = Animated.add(translateY, dragY);
 
   const handleAction = () => {
     renderedMessage.onAction?.();
@@ -185,7 +202,7 @@ export function SnackbarHost() {
       <Animated.View
         style={{
           opacity: progress,
-          transform: [{ translateY: animatedTranslateY }]
+          transform: [{ translateY: dragY }]
         }}
         {...panResponder.panHandlers}
       >
@@ -199,7 +216,7 @@ export function SnackbarHost() {
             <Button
               variant="ghost"
               size="sm"
-              className="min-h-0 px-2 py-1"
+              className="px-2 py-1"
               textClassName="text-primary"
               onPress={handleAction}
             >

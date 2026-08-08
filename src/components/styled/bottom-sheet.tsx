@@ -71,7 +71,6 @@ const BottomSheetTextInputColorBridge = forwardRef<
       selectionColor={selectionColor ?? getStyleColor(selectionStyle)}
       {...props}
       style={[styles.textInputAndroidReset, style]}
-      allowFontScaling={false}
       underlineColorAndroid="transparent"
     />
   );
