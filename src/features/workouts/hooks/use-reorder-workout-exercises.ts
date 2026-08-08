@@ -56,13 +56,12 @@ export function useSaveActiveWorkoutExerciseDraft(workoutId: Workout['id']) {
       baselineRows: ActiveWorkoutExerciseDraftBaselineRow[],
       stagedCustomExercises: StagedCustomExercise[]
     ) => {
-      saveActiveWorkoutExerciseDraft(
-        db,
+      saveActiveWorkoutExerciseDraft(db, {
         workoutId,
         rows,
         baselineRows,
         stagedCustomExercises
-      );
+      });
     },
     [db, workoutId]
   );

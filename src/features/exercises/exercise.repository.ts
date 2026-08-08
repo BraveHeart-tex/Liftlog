@@ -155,8 +155,7 @@ export function createExercise(db: DrizzleDb, data: NewExercise): Exercise {
 
 export function updateCustomExerciseName(
   db: DrizzleDb,
-  id: Exercise['id'],
-  name: Exercise['name']
+  { id, name }: { id: Exercise['id']; name: Exercise['name'] }
 ): Exercise | undefined {
   try {
     return db

@@ -39,7 +39,10 @@ export function useActiveWorkoutActions({
       }
 
       setIsExercisePickerOpen(false);
-      addExerciseToWorkout(db, activeWorkout.id, exercise.id);
+      addExerciseToWorkout(db, {
+        workoutId: activeWorkout.id,
+        exerciseId: exercise.id
+      });
     },
     [
       activeWorkout.id,

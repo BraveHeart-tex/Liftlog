@@ -199,12 +199,12 @@ export function useSetFormController({
           trackingDefinition.fields,
           weightUnit
         );
-        const hasSavedChanges = getHasSavedChanges(
+        const hasSavedChanges = getHasSavedChanges({
           edit,
-          trackingDefinition.fields,
+          fields: trackingDefinition.fields,
           set,
           validatedValues
-        );
+        });
         const isSaving =
           edit?.phase === 'saving' || edit?.phase === 'awaiting_sync';
 

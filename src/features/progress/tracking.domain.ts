@@ -199,7 +199,13 @@ export function resolveTrackingType(
     : 'weight_reps';
 }
 
-export function computeEstimated1RM(weightKg: number, reps: number): number {
+export function computeEstimated1RM({
+  weightKg,
+  reps
+}: {
+  weightKg: number;
+  reps: number;
+}): number {
   const estimatedOneRepMax = weightKg * (1 + reps / 30);
 
   return roundScore(estimatedOneRepMax);
@@ -261,7 +267,7 @@ export function getSetScore(
         return null;
       }
 
-      return computeEstimated1RM(weightKg, reps);
+      return computeEstimated1RM({ weightKg, reps });
     }
 
     case 'distance_time': {

@@ -336,8 +336,7 @@ export function getWorkoutTemplateBySourceWorkoutIdQuery(
 
 export function updateWorkoutTemplateName(
   db: DrizzleDb,
-  id: WorkoutTemplate['id'],
-  name: WorkoutTemplate['name']
+  { id, name }: { id: WorkoutTemplate['id']; name: WorkoutTemplate['name'] }
 ): WorkoutTemplate | undefined {
   const existingTemplate = getWorkoutTemplateRecordById(db, id);
 
@@ -358,10 +357,17 @@ export function updateWorkoutTemplateName(
 
 export function saveWorkoutTemplateExerciseDraft(
   db: DrizzleDb,
-  templateId: WorkoutTemplate['id'],
-  rows: WorkoutTemplateExerciseDraftRow[],
-  baselineRows: WorkoutTemplateExerciseDraftBaselineRow[],
-  stagedCustomExercises: StagedTemplateCustomExercise[]
+  {
+    templateId,
+    rows,
+    baselineRows,
+    stagedCustomExercises
+  }: {
+    templateId: WorkoutTemplate['id'];
+    rows: WorkoutTemplateExerciseDraftRow[];
+    baselineRows: WorkoutTemplateExerciseDraftBaselineRow[];
+    stagedCustomExercises: StagedTemplateCustomExercise[];
+  }
 ): void {
   db.transaction(tx => {
     const template = getWorkoutTemplateRecordById(tx, templateId);

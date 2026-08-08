@@ -71,12 +71,17 @@ export function getInitialFieldValues(
   return nextValues;
 }
 
-export function getHasSavedChanges(
-  edit: { values: Record<string, string> } | undefined,
-  fields: TrackingFieldDefinition[],
-  set: Set,
-  validatedValues: SetValues | undefined
-) {
+export function getHasSavedChanges({
+  edit,
+  fields,
+  set,
+  validatedValues
+}: {
+  edit: { values: Record<string, string> } | undefined;
+  fields: TrackingFieldDefinition[];
+  set: Set;
+  validatedValues: SetValues | undefined;
+}) {
   if (!edit) {
     return false;
   }

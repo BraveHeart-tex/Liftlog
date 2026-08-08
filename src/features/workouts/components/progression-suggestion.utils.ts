@@ -31,7 +31,10 @@ function getBestEstimated1RM(sets: Set[]) {
       return best;
     }
 
-    const estimated1rm = computeEstimated1RM(set.weightKg, set.reps);
+    const estimated1rm = computeEstimated1RM({
+      weightKg: set.weightKg,
+      reps: set.reps
+    });
 
     return Math.max(best, estimated1rm);
   }, 0);

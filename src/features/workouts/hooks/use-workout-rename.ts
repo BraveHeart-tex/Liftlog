@@ -20,7 +20,7 @@ export function useWorkoutRename() {
         return;
       }
 
-      return updateWorkoutName(db, workoutId, trimmedName);
+      return updateWorkoutName(db, { id: workoutId, name: trimmedName });
     },
     [db]
   );

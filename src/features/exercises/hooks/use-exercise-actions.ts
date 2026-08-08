@@ -11,8 +11,14 @@ import {
 export function useExerciseActions() {
   const db = useDrizzle();
 
-  const renameCustomExercise = (id: Exercise['id'], name: Exercise['name']) => {
-    return updateCustomExerciseName(db, id, name);
+  const renameCustomExercise = ({
+    id,
+    name
+  }: {
+    id: Exercise['id'];
+    name: Exercise['name'];
+  }) => {
+    return updateCustomExerciseName(db, { id, name });
   };
 
   const hasCustomExerciseNameConflict = (

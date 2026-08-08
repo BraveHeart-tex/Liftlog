@@ -94,11 +94,10 @@ export function useRestTimerNotificationResponses({
 
       if (data.workoutExerciseId) {
         const workoutExercise =
-          getActiveWorkoutExerciseForRestTimerNotification(
-            db,
-            activeWorkout.id,
-            data.workoutExerciseId
-          );
+          getActiveWorkoutExerciseForRestTimerNotification(db, {
+            workoutId: activeWorkout.id,
+            workoutExerciseId: data.workoutExerciseId
+          });
 
         if (workoutExercise) {
           replaceWhenRouterReady({

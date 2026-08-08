@@ -130,6 +130,12 @@ export function getMarkedDatesForMonth({
   return markedDates;
 }
 
-export function isDateInMonth(dateKey: string, monthKey: string): boolean {
+export function isDateInMonth({
+  dateKey,
+  monthKey
+}: {
+  dateKey: string;
+  monthKey: string;
+}): boolean {
   return dateKey.startsWith(`${monthKey}-`);
 }

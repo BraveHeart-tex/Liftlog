@@ -23,9 +23,12 @@ export function getNextExerciseHistoryLimit(
   return currentLimit + pageSize;
 }
 
-export function didExerciseHistoryPageFinish(
-  previousUpdatedAt: Date | undefined,
-  updatedAt: Date | undefined
-) {
+export function didExerciseHistoryPageFinish({
+  previousUpdatedAt,
+  updatedAt
+}: {
+  previousUpdatedAt: Date | undefined;
+  updatedAt: Date | undefined;
+}) {
   return Boolean(updatedAt && updatedAt !== previousUpdatedAt);
 }

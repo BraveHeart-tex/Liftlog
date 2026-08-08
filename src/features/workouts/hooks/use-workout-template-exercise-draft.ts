@@ -276,19 +276,18 @@ export function useWorkoutTemplateExerciseDraft({
     setIsSaving(true);
 
     try {
-      saveWorkoutTemplateExerciseDraft(
-        db,
-        template.id,
-        draftExerciseRows.map(row => ({
+      saveWorkoutTemplateExerciseDraft(db, {
+        templateId: template.id,
+        rows: draftExerciseRows.map(row => ({
           id: row.templateExercise.id,
           exerciseId: row.templateExercise.exerciseId,
           supersetId: row.templateExercise.supersetId
         })),
-        baselineExerciseRows,
-        draftExerciseRows.flatMap(row =>
+        baselineRows: baselineExerciseRows,
+        stagedCustomExercises: draftExerciseRows.flatMap(row =>
           row.stagedCustomExercise ? [row.stagedCustomExercise] : []
         )
-      );
+      });
 
       return { status: 'saved' };
     } catch (error) {

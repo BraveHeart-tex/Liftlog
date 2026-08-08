@@ -37,6 +37,18 @@ test('increments the visible limit by one page', () => {
 test('finishes after the shared history read updates', () => {
   const previousRead = new Date(1);
 
-  assert.equal(didExerciseHistoryPageFinish(previousRead, previousRead), false);
-  assert.equal(didExerciseHistoryPageFinish(previousRead, new Date(2)), true);
+  assert.equal(
+    didExerciseHistoryPageFinish({
+      previousUpdatedAt: previousRead,
+      updatedAt: previousRead
+    }),
+    false
+  );
+  assert.equal(
+    didExerciseHistoryPageFinish({
+      previousUpdatedAt: previousRead,
+      updatedAt: new Date(2)
+    }),
+    true
+  );
 });

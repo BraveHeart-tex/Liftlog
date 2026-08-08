@@ -296,8 +296,7 @@ function getPersonalRecordScoreBeforeSet(
 
 function isLatestPersonalRecordSet(
   db: DrizzleDb,
-  exerciseId: Exercise['id'],
-  setId: Set['id']
+  { exerciseId, setId }: { exerciseId: Exercise['id']; setId: Set['id'] }
 ): boolean {
   return (
     db
@@ -401,8 +400,13 @@ export function getActiveWorkoutForRestTimerNotification(
 
 export function getActiveWorkoutExerciseForRestTimerNotification(
   db: DrizzleDb,
-  workoutId: Workout['id'],
-  workoutExerciseId: WorkoutExercise['id']
+  {
+    workoutId,
+    workoutExerciseId
+  }: {
+    workoutId: Workout['id'];
+    workoutExerciseId: WorkoutExercise['id'];
+  }
 ) {
   const rows = db
     .select({ workoutExercise: workoutExercises })
@@ -914,8 +918,7 @@ export function createHistoricalWorkoutEditDraft(
 
 export function updateWorkoutName(
   db: DrizzleDb,
-  id: Workout['id'],
-  name: Workout['name']
+  { id, name }: { id: Workout['id']; name: Workout['name'] }
 ): Workout | undefined {
   return db
     .update(workouts)
@@ -1478,8 +1481,10 @@ function requireWorkoutAllowsExerciseChanges(
 
 function insertWorkoutExerciseAtNextOrder(
   db: DrizzleDb,
-  workoutId: Workout['id'],
-  exerciseId: Exercise['id']
+  {
+    workoutId,
+    exerciseId
+  }: { workoutId: Workout['id']; exerciseId: Exercise['id'] }
 ): WorkoutExercise {
   const existingWorkoutExercise = db
     .select()
@@ -1519,13 +1524,15 @@ function insertWorkoutExerciseAtNextOrder(
 
 export function addExerciseToWorkout(
   db: DrizzleDb,
-  workoutId: Workout['id'],
-  exerciseId: Exercise['id']
+  {
+    workoutId,
+    exerciseId
+  }: { workoutId: Workout['id']; exerciseId: Exercise['id'] }
 ): WorkoutExercise {
   return db.transaction(tx => {
     requireWorkoutAllowsExerciseChanges(tx, workoutId);
 
-    return insertWorkoutExerciseAtNextOrder(tx, workoutId, exerciseId);
+    return insertWorkoutExerciseAtNextOrder(tx, { workoutId, exerciseId });
   });
 }
 
@@ -1538,11 +1545,10 @@ export function createCustomExerciseAndAddToWorkout(
     requireWorkoutAllowsExerciseChanges(tx, workoutId);
 
     const exercise = createExercise(tx, data);
-    const workoutExercise = insertWorkoutExerciseAtNextOrder(
-      tx,
+    const workoutExercise = insertWorkoutExerciseAtNextOrder(tx, {
       workoutId,
-      exercise.id
-    );
+      exerciseId: exercise.id
+    });
 
     return { exercise, workoutExercise };
   });
@@ -1550,10 +1556,17 @@ export function createCustomExerciseAndAddToWorkout(
 
 export function saveActiveWorkoutExerciseDraft(
   db: DrizzleDb,
-  workoutId: Workout['id'],
-  rows: ActiveWorkoutExerciseDraftRow[],
-  baselineRows: ActiveWorkoutExerciseDraftBaselineRow[],
-  stagedCustomExercises: StagedCustomExercise[]
+  {
+    workoutId,
+    rows,
+    baselineRows,
+    stagedCustomExercises
+  }: {
+    workoutId: Workout['id'];
+    rows: ActiveWorkoutExerciseDraftRow[];
+    baselineRows: ActiveWorkoutExerciseDraftBaselineRow[];
+    stagedCustomExercises: StagedCustomExercise[];
+  }
 ): void {
   db.transaction(tx => {
     const workout = tx
@@ -2013,7 +2026,10 @@ export function createCompletedSet(
     const isNewPersonalRecord =
       progressContext !== undefined &&
       couldBecomeLatestPersonalRecord &&
-      isLatestPersonalRecordSet(tx, progressContext.exerciseId, set.id);
+      isLatestPersonalRecordSet(tx, {
+        exerciseId: progressContext.exerciseId,
+        setId: set.id
+      });
 
     return { set, isNewPersonalRecord };
   });
@@ -2072,7 +2088,10 @@ export function updateCompletedSet(
 
     const isNewPersonalRecord =
       couldBecomeLatestPersonalRecord &&
-      isLatestPersonalRecordSet(tx, progressContext.exerciseId, set.id);
+      isLatestPersonalRecordSet(tx, {
+        exerciseId: progressContext.exerciseId,
+        setId: set.id
+      });
 
     return { set, isNewPersonalRecord };
   });

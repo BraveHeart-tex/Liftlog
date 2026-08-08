@@ -80,7 +80,7 @@ export function useWorkoutStart() {
 
   const renameTemplate = useCallback(
     (templateId: WorkoutTemplate['id'], name: string) =>
-      updateWorkoutTemplateName(db, templateId, name),
+      updateWorkoutTemplateName(db, { id: templateId, name }),
     [db]
   );
 

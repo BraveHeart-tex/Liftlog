@@ -390,10 +390,10 @@ export function runDevSeedIfNeeded(db: DrizzleDb): void {
 
         for (const setRow of setRows) {
           const set = tx.insert(sets).values(setRow).returning().get();
-          const estimated1rm = computeEstimated1RM(
-            set.weightKg ?? 0,
-            set.reps ?? 0
-          );
+          const estimated1rm = computeEstimated1RM({
+            weightKg: set.weightKg ?? 0,
+            reps: set.reps ?? 0
+          });
           const personalRecord = maybeCreatePr(bestPrByExerciseId, {
             exerciseId: exercise.id,
             setId: set.id,

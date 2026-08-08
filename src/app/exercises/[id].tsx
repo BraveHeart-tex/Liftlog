@@ -137,7 +137,10 @@ export default function ExerciseDetailScreen() {
     }
 
     try {
-      const updatedExercise = renameCustomExercise(exercise.id, nextName);
+      const updatedExercise = renameCustomExercise({
+        id: exercise.id,
+        name: nextName
+      });
 
       if (!updatedExercise) {
         return 'Only custom exercises can be renamed.';

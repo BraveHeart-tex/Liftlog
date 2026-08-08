@@ -111,10 +111,10 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
     }
 
     if (
-      didExerciseHistoryPageFinish(
-        activeRequest.historyUpdatedAt,
-        historyResult.updatedAt
-      )
+      didExerciseHistoryPageFinish({
+        previousUpdatedAt: activeRequest.historyUpdatedAt,
+        updatedAt: historyResult.updatedAt
+      })
     ) {
       setLoadMoreError(undefined);
       setIsLoadingMore(false);

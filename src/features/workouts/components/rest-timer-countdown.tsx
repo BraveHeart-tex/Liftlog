@@ -27,7 +27,13 @@ const RING_INSET = CENTER - RADIUS;
 const START_ANGLE_DEGREES = -90;
 const MAX_SWEEP_DEGREES = 359.9;
 
-function getSafeProgress(secondsRemaining: number, activeDuration: number) {
+function getSafeProgress({
+  secondsRemaining,
+  activeDuration
+}: {
+  secondsRemaining: number;
+  activeDuration: number;
+}) {
   if (activeDuration <= 0) {
     return 0;
   }
@@ -41,7 +47,7 @@ export function RestTimerCountdown({
   activeDuration
 }: RestTimerCountdownProps) {
   const { colors } = useAppTheme();
-  const progress = getSafeProgress(secondsRemaining, activeDuration);
+  const progress = getSafeProgress({ secondsRemaining, activeDuration });
   const progressEnd = useSharedValue(progress);
   const ringColor = status === 'paused' ? colors.accent : colors.info;
 
@@ -53,10 +59,10 @@ export function RestTimerCountdown({
       return;
     }
 
-    const nextProgress = getSafeProgress(
-      Math.max(secondsRemaining - 1, 0),
+    const nextProgress = getSafeProgress({
+      secondsRemaining: Math.max(secondsRemaining - 1, 0),
       activeDuration
-    );
+    });
 
     progressEnd.value = progress;
     progressEnd.value = withTiming(nextProgress, {

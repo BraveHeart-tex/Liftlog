@@ -104,7 +104,12 @@ export function WorkoutLogCalendar({
         primaryColor={primary}
         primaryForegroundColor={primaryForeground}
         selectedDateKey={
-          isDateInMonth(selectedDateKey, item.monthKey) ? selectedDateKey : ''
+          isDateInMonth({
+            dateKey: selectedDateKey,
+            monthKey: item.monthKey
+          })
+            ? selectedDateKey
+            : ''
         }
         title={item.title}
         todayKey={todayKey}

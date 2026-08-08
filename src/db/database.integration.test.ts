@@ -784,14 +784,20 @@ test('custom exercise updates use reduced statement paths', async () => {
 
     nodeClient.resetPreparedStatementCount();
     assert.equal(
-      updateCustomExerciseName(db, 'custom-exercise', 'Renamed')?.name,
+      updateCustomExerciseName(db, {
+        id: 'custom-exercise',
+        name: 'Renamed'
+      })?.name,
       'Renamed'
     );
     assert.equal(nodeClient.getPreparedStatementCount(), 1);
 
     nodeClient.resetPreparedStatementCount();
     assert.equal(
-      updateCustomExerciseName(db, 'built-in-exercise', 'Blocked'),
+      updateCustomExerciseName(db, {
+        id: 'built-in-exercise',
+        name: 'Blocked'
+      }),
       undefined
     );
     assert.equal(nodeClient.getPreparedStatementCount(), 1);
@@ -949,7 +955,11 @@ test('exercise name writes enforce and translate active normalized conflicts', a
       category: 'other'
     });
     assert.throws(
-      () => updateCustomExerciseName(db, 'rename-target', 'Übung'),
+      () =>
+        updateCustomExerciseName(db, {
+          id: 'rename-target',
+          name: 'Übung'
+        }),
       ExerciseNameConflictError
     );
     assert.doesNotThrow(() =>
@@ -1056,17 +1066,16 @@ test('staged exercise saves scope name checks to staged names', async () => {
     ];
 
     nodeClient.startRecordingPreparedStatements();
-    saveActiveWorkoutExerciseDraft(
-      db,
-      'active-workout',
-      activeStagedExercises.map((exercise, index) => ({
+    saveActiveWorkoutExerciseDraft(db, {
+      workoutId: 'active-workout',
+      rows: activeStagedExercises.map((exercise, index) => ({
         id: `active-workout-exercise-${index}`,
         exerciseId: exercise.id,
         supersetId: null
       })),
-      [],
-      activeStagedExercises
-    );
+      baselineRows: [],
+      stagedCustomExercises: activeStagedExercises
+    });
     assertScopedNameQuery(['new active exercise 1', 'new active exercise 2']);
 
     const templateStagedExercises = [
@@ -1075,17 +1084,16 @@ test('staged exercise saves scope name checks to staged names', async () => {
     ];
 
     nodeClient.startRecordingPreparedStatements();
-    saveWorkoutTemplateExerciseDraft(
-      db,
-      'template',
-      templateStagedExercises.map((exercise, index) => ({
+    saveWorkoutTemplateExerciseDraft(db, {
+      templateId: 'template',
+      rows: templateStagedExercises.map((exercise, index) => ({
         id: `template-exercise-${index}`,
         exerciseId: exercise.id,
         supersetId: null
       })),
-      [],
-      templateStagedExercises
-    );
+      baselineRows: [],
+      stagedCustomExercises: templateStagedExercises
+    });
     assertScopedNameQuery([
       'new template exercise 1',
       'new template exercise 2'
@@ -1099,17 +1107,16 @@ test('staged exercise saves scope name checks to staged names', async () => {
     nodeClient.startRecordingPreparedStatements();
     assert.throws(
       () =>
-        saveActiveWorkoutExerciseDraft(
-          db,
-          'conflicting-active-workout',
-          duplicateActiveExercises.map((exercise, index) => ({
+        saveActiveWorkoutExerciseDraft(db, {
+          workoutId: 'conflicting-active-workout',
+          rows: duplicateActiveExercises.map((exercise, index) => ({
             id: `duplicate-active-workout-exercise-${index}`,
             exerciseId: exercise.id,
             supersetId: null
           })),
-          [],
-          duplicateActiveExercises
-        ),
+          baselineRows: [],
+          stagedCustomExercises: duplicateActiveExercises
+        }),
       ActiveWorkoutExerciseDraftConflictError
     );
     assert.equal(stopRecordingActiveNameQueries().length, 0);
@@ -1122,17 +1129,16 @@ test('staged exercise saves scope name checks to staged names', async () => {
     nodeClient.startRecordingPreparedStatements();
     assert.throws(
       () =>
-        saveWorkoutTemplateExerciseDraft(
-          db,
-          'conflicting-template',
-          duplicateTemplateExercises.map((exercise, index) => ({
+        saveWorkoutTemplateExerciseDraft(db, {
+          templateId: 'conflicting-template',
+          rows: duplicateTemplateExercises.map((exercise, index) => ({
             id: `duplicate-template-exercise-${index}`,
             exerciseId: exercise.id,
             supersetId: null
           })),
-          [],
-          duplicateTemplateExercises
-        ),
+          baselineRows: [],
+          stagedCustomExercises: duplicateTemplateExercises
+        }),
       WorkoutTemplateExerciseDraftConflictError
     );
     assert.equal(stopRecordingActiveNameQueries().length, 0);
@@ -1145,17 +1151,16 @@ test('staged exercise saves scope name checks to staged names', async () => {
     nodeClient.startRecordingPreparedStatements();
     assert.throws(
       () =>
-        saveActiveWorkoutExerciseDraft(
-          db,
-          'conflicting-active-workout',
-          conflictingActiveExercises.map((exercise, index) => ({
+        saveActiveWorkoutExerciseDraft(db, {
+          workoutId: 'conflicting-active-workout',
+          rows: conflictingActiveExercises.map((exercise, index) => ({
             id: `conflicting-workout-exercise-${index}`,
             exerciseId: exercise.id,
             supersetId: null
           })),
-          [],
-          conflictingActiveExercises
-        ),
+          baselineRows: [],
+          stagedCustomExercises: conflictingActiveExercises
+        }),
       ActiveWorkoutExerciseDraftConflictError
     );
     assertScopedNameQuery([
@@ -1171,17 +1176,16 @@ test('staged exercise saves scope name checks to staged names', async () => {
     nodeClient.startRecordingPreparedStatements();
     assert.throws(
       () =>
-        saveWorkoutTemplateExerciseDraft(
-          db,
-          'conflicting-template',
-          conflictingTemplateExercises.map((exercise, index) => ({
+        saveWorkoutTemplateExerciseDraft(db, {
+          templateId: 'conflicting-template',
+          rows: conflictingTemplateExercises.map((exercise, index) => ({
             id: `conflicting-template-exercise-${index}`,
             exerciseId: exercise.id,
             supersetId: null
           })),
-          [],
-          conflictingTemplateExercises
-        ),
+          baselineRows: [],
+          stagedCustomExercises: conflictingTemplateExercises
+        }),
       WorkoutTemplateExerciseDraftConflictError
     );
     assertScopedNameQuery([

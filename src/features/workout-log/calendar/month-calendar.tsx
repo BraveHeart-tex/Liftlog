@@ -252,8 +252,14 @@ export const MonthCalendar = memo(
     }
 
     return (
-      !isDateInMonth(prevProps.selectedDateKey, nextProps.monthKey) &&
-      !isDateInMonth(nextProps.selectedDateKey, nextProps.monthKey)
+      !isDateInMonth({
+        dateKey: prevProps.selectedDateKey,
+        monthKey: nextProps.monthKey
+      }) &&
+      !isDateInMonth({
+        dateKey: nextProps.selectedDateKey,
+        monthKey: nextProps.monthKey
+      })
     );
   }
 );
