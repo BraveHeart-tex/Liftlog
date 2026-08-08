@@ -21,6 +21,7 @@ type UseLiveWithFallbackResult<Rows extends unknown[]> = {
   data: Rows;
   updatedAt: Date | undefined;
   error: Error | undefined;
+  isLoading: boolean;
   isLive: boolean;
 };
 
@@ -174,11 +175,13 @@ export function useLiveWithFallback<Query extends LiveRowsQuery>(
   }, deps);
 
   const isLive = enabled && Boolean(updatedAt);
+  const isLoading = enabled && deferInitialRead && !isLive && !error;
 
   return {
     data: isLive ? liveRows : initialRows,
     updatedAt: enabled ? updatedAt : undefined,
     error: enabled ? error : undefined,
+    isLoading,
     isLive
   };
 }

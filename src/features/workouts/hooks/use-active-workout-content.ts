@@ -80,7 +80,7 @@ export function useActiveWorkoutContent({
     setRows,
     completedSetCount,
     isLoadingWorkoutExercises:
-      (!activeWorkoutExerciseResult.isLive || !setResult.isLive) &&
+      (activeWorkoutExerciseResult.isLoading || setResult.isLoading) &&
       !workoutExerciseLoadError,
     workoutExerciseLoadError,
     exerciseById

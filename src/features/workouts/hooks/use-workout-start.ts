@@ -13,7 +13,7 @@ import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.sto
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { formatWorkoutName } from '@/src/features/workouts/workout-display.utils';
 import { router, type Href } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 
 const activeWorkoutRoute: Href = '/(tabs)/workout/active';
 
@@ -33,6 +33,12 @@ export function useWorkoutStart() {
       }
     : undefined;
   const activeWorkoutId = activeWorkout?.id;
+
+  useEffect(() => {
+    if (activeWorkoutId) {
+      router.prefetch(activeWorkoutRoute);
+    }
+  }, [activeWorkoutId]);
 
   const startWorkout = useCallback(() => {
     createWorkout(db, {
