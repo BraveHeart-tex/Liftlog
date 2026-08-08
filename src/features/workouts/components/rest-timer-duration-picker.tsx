@@ -78,7 +78,10 @@ export function RestTimerDurationPicker({
           itemHeight={PICKER_ITEM_HEIGHT}
           textSize={38}
           selectedTextSize={44}
-          style={{ width: '100%' }}
+          style={{
+            width: '100%',
+            height: PICKER_ITEM_HEIGHT * PICKER_VISIBLE_ITEM_COUNT
+          }}
         />
         <View
           pointerEvents="none"
@@ -109,7 +112,10 @@ export function RestTimerDurationPicker({
           itemHeight={PICKER_ITEM_HEIGHT}
           textSize={38}
           selectedTextSize={44}
-          style={{ width: '100%' }}
+          style={{
+            width: '100%',
+            height: PICKER_ITEM_HEIGHT * PICKER_VISIBLE_ITEM_COUNT
+          }}
         />
         <View
           pointerEvents="none"

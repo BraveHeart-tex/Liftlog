@@ -56,7 +56,10 @@ export function SetDurationWheel({
           itemHeight={PICKER_ITEM_HEIGHT}
           textSize={20}
           selectedTextSize={24}
-          style={{ width: '100%' }}
+          style={{
+            width: '100%',
+            height: PICKER_ITEM_HEIGHT * PICKER_VISIBLE_ITEM_COUNT
+          }}
         />
       </View>
       <Text
