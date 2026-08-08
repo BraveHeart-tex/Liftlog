@@ -20,6 +20,7 @@
     "prettier:check": "prettier . --check",
     "prettier:fix": "prettier . --write",
     "start": "expo start",
+    "test": "tsx --tsconfig tests/tsconfig.json --test \"tests/**/*.test.ts\"",
     "ts-check": "tsc --noEmit true --project ./tsconfig.json"
   },
   "engines": {
@@ -98,6 +99,7 @@
     "prettier": "3.8.1",
     "prettier-plugin-tailwindcss": "0.7.2",
     "tailwindcss": "^4.2.2",
+    "tsx": "4.21.0",
     "typescript": "~5.9.2"
   },
   "lint-staged": {

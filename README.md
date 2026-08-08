@@ -53,6 +53,7 @@ pnpm ios        # or pnpm android
 pnpm start              # Expo dev server
 pnpm ios                # Run on iOS simulator
 pnpm android            # Run on Android device/emulator
+pnpm test               # Run TypeScript tests
 pnpm run ts-check       # Type check
 pnpm run lint           # Lint
 pnpm run format         # Prettier + lint fix
@@ -87,6 +88,7 @@ src/
   features/             # Feature modules (exercises, workouts, steps, …)
   lib/                  # Shared DB utilities and cross-feature helpers
   theme/                # Token values for native props
+tests/                  # Node test suites and test-only runtime mocks
 ```
 
 ---

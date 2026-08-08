@@ -1,14 +1,11 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "tags": ["-lintignore"],
-  "ignoreDependencies": [
-    "@react-navigation/elements",
-    "babel-plugin-inline-import",
-    "babel-preset-expo",
-    "expo-atlas",
-    "expo-blur",
-    "expo-updates"
-  ],
   "ignoreBinaries": ["scripts/build-android-release-single-arch.sh"],
-  "ignore": ["babel.config.js"]
+  "ignore": ["babel.config.js"],
+  "entry": ["tests/**/*.test.ts", "tests/mocks/**/*.ts"],
+  "expo": {
+    "config": ["app.json", "app.config.{ts,js}"],
+    "entry": ["app/**/*.{js,jsx,ts,tsx}", "src/app/**/*.{js,jsx,ts,tsx}"]
+  }
 }

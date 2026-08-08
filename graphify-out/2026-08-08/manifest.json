@@ -9,6 +9,11 @@
     "ast_hash": "503fc3c91cb3a30bf6c97371ddef0cb6",
     "semantic_hash": "503fc3c91cb3a30bf6c97371ddef0cb6"
   },
+  ".impeccable/design.json": {
+    "mtime": 1786205762.486407,
+    "ast_hash": "fbe90bac8fc09285e21ab5a060458bef",
+    "semantic_hash": "fbe90bac8fc09285e21ab5a060458bef"
+  },
   ".vscode/extensions.json": {
     "mtime": 499162500.0,
     "ast_hash": "b2354ba0225f5689d13651ec0fac0de0",
@@ -40,8 +45,8 @@
     "semantic_hash": ""
   },
   "knip.json": {
-    "mtime": 1786207535.0111377,
-    "ast_hash": "03ae27203e04e3944eb03668264f01c7",
+    "mtime": 1786201505.1259706,
+    "ast_hash": "c5bc170f11fda8c79a6da43371deb44a",
     "semantic_hash": ""
   },
   "metro.config.js": {
@@ -55,8 +60,8 @@
     "semantic_hash": "12d4f1a199d5da5bf16e0854171f8503"
   },
   "package.json": {
-    "mtime": 1786207505.578111,
-    "ast_hash": "0e52f8934b38f6bde2978b9da1a5e3ed",
+    "mtime": 1786205514.1343098,
+    "ast_hash": "709e3eb4648b7a0678a2137cf151a6e1",
     "semantic_hash": ""
   },
   "postcss.config.mjs": {
@@ -364,6 +369,11 @@
     "ast_hash": "6671948455109036bf1918afa535d3e6",
     "semantic_hash": "6671948455109036bf1918afa535d3e6"
   },
+  "src/db/database.integration.test.ts": {
+    "mtime": 1786182298.8467386,
+    "ast_hash": "e60f4043b42548fb975779b28348374d",
+    "semantic_hash": "e60f4043b42548fb975779b28348374d"
+  },
   "src/db/dev-seed.ts": {
     "mtime": 1786182351.6985276,
     "ast_hash": "5a5412fc7cc00c49b9898c2daffb8d77",
@@ -649,6 +659,11 @@
     "ast_hash": "454cf9838d7b1f76de7e501aaf72c368",
     "semantic_hash": "454cf9838d7b1f76de7e501aaf72c368"
   },
+  "src/features/progress/progress.repository.test.ts": {
+    "mtime": 1786049220.1843345,
+    "ast_hash": "3bd7489ebeaa90ecf1addc713992647e",
+    "semantic_hash": "3bd7489ebeaa90ecf1addc713992647e"
+  },
   "src/features/progress/progress.repository.ts": {
     "mtime": 1785870826.4757025,
     "ast_hash": "2a75795f360218060010bc276d48b7d6",
@@ -717,6 +732,11 @@
   "src/features/settings/settings-provider.tsx": {
     "mtime": 1786201505.1302862,
     "ast_hash": "10f47649d6a1a124d0af8bb532eaa3a2",
+    "semantic_hash": ""
+  },
+  "src/features/settings/settings.repository.test.ts": {
+    "mtime": 1786201505.1318023,
+    "ast_hash": "232234c64b3bc76ba038693a002c4a54",
     "semantic_hash": ""
   },
   "src/features/settings/settings.repository.ts": {
@@ -933,6 +953,11 @@
     "mtime": 1786202935.4829729,
     "ast_hash": "b4abcf7534f6918bdac6678b90cc86a2",
     "semantic_hash": ""
+  },
+  "src/features/workouts/components/exercise-history-list.test.ts": {
+    "mtime": 1785098286.1691613,
+    "ast_hash": "5e7e6c79e53cdec4b005b8cb53464809",
+    "semantic_hash": "5e7e6c79e53cdec4b005b8cb53464809"
   },
   "src/features/workouts/components/exercise-history-list.tsx": {
     "mtime": 1785098893.9962282,
@@ -1194,6 +1219,11 @@
     "ast_hash": "052360d07c1b29e4671788841b0c1fb0",
     "semantic_hash": "052360d07c1b29e4671788841b0c1fb0"
   },
+  "src/features/workouts/exercise-history-pagination.utils.test.ts": {
+    "mtime": 1786182463.1517367,
+    "ast_hash": "8bfb71c3b3013ec7b23af15339683b26",
+    "semantic_hash": "8bfb71c3b3013ec7b23af15339683b26"
+  },
   "src/features/workouts/exercise-history-pagination.utils.ts": {
     "mtime": 1786182462.9345114,
     "ast_hash": "4c99564cbfd697058650bc59d71407a1",
@@ -1368,6 +1398,11 @@
     "mtime": 1783203206.2094133,
     "ast_hash": "d522360b6fc6592f1442cfa44ff6e710",
     "semantic_hash": "d522360b6fc6592f1442cfa44ff6e710"
+  },
+  "src/features/workouts/set-display.utils.test.ts": {
+    "mtime": 1785098231.105041,
+    "ast_hash": "1fc746332110adbe31373e10714cfa7a",
+    "semantic_hash": "1fc746332110adbe31373e10714cfa7a"
   },
   "src/features/workouts/set-display.utils.ts": {
     "mtime": 1785098073.5940707,
@@ -1555,8 +1590,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/ci.yml": {
-    "mtime": 1786207341.8481588,
-    "ast_hash": "fb9e94b519a1fe99720361ac180434eb",
+    "mtime": 1785870956.926806,
+    "ast_hash": "f03ea7da40ab5f9eb38d4e9fb1b655be",
     "semantic_hash": ""
   },
   "AGENTS.md": {
@@ -1565,8 +1600,8 @@
     "semantic_hash": ""
   },
   "DESIGN.md": {
-    "mtime": 1786206179.289428,
-    "ast_hash": "38dd17aaa38945795455b5ebdb501a63",
+    "mtime": 1786205692.228184,
+    "ast_hash": "d4e13c817a88db17eb59c2425920b8c7",
     "semantic_hash": ""
   },
   "PRODUCT.md": {
@@ -1575,8 +1610,8 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1786207341.7918205,
-    "ast_hash": "bd9007883c08b5531747fbde47908ee8",
+    "mtime": 1786201505.1108124,
+    "ast_hash": "e6e128fc191f58153dd2775f41883dee",
     "semantic_hash": ""
   },
   "docs/bottom-sheet.md": {
@@ -1622,46 +1657,6 @@
   "src/components/ui/input-field-layout.tsx": {
     "mtime": 1786205454.6483448,
     "ast_hash": "c7e3ef7afca4a8cb6b834340f72375b5",
-    "semantic_hash": ""
-  },
-  "tests/db/database.integration.test.ts": {
-    "mtime": 1786182298.8467386,
-    "ast_hash": "e60f4043b42548fb975779b28348374d",
-    "semantic_hash": ""
-  },
-  "tests/features/progress/progress.repository.test.ts": {
-    "mtime": 1786049220.1843345,
-    "ast_hash": "3bd7489ebeaa90ecf1addc713992647e",
-    "semantic_hash": ""
-  },
-  "tests/features/settings/settings.repository.test.ts": {
-    "mtime": 1786201505.1318023,
-    "ast_hash": "232234c64b3bc76ba038693a002c4a54",
-    "semantic_hash": ""
-  },
-  "tests/features/workouts/components/exercise-history-list.test.ts": {
-    "mtime": 1785098286.1691613,
-    "ast_hash": "5e7e6c79e53cdec4b005b8cb53464809",
-    "semantic_hash": ""
-  },
-  "tests/features/workouts/exercise-history-pagination.utils.test.ts": {
-    "mtime": 1786182463.1517367,
-    "ast_hash": "8bfb71c3b3013ec7b23af15339683b26",
-    "semantic_hash": ""
-  },
-  "tests/features/workouts/set-display.utils.test.ts": {
-    "mtime": 1785098231.105041,
-    "ast_hash": "1fc746332110adbe31373e10714cfa7a",
-    "semantic_hash": ""
-  },
-  "tests/mocks/lucide-react-native.ts": {
-    "mtime": 1786207535.0651689,
-    "ast_hash": "0a261ba75b8563112e5158fd5f797953",
-    "semantic_hash": ""
-  },
-  "tests/tsconfig.json": {
-    "mtime": 1786207505.441917,
-    "ast_hash": "77c43d0bbea8380b16e3f5e70d4a26b7",
     "semantic_hash": ""
   }
 }
