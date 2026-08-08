@@ -1,0 +1,24 @@
+# .graphifyignore
+
+# Expo / generated
+.expo/
+.expo-shared/
+
+# Dependencies
+node_modules/
+
+# Native projects - exclude initially
+android/
+ios/
+
+# Build artifacts
+dist/
+build/
+coverage/
+
+# Generated files
+*.generated.ts
+*.generated.tsx
+
+# Assets aren't useful for structural analysis
+assets/
