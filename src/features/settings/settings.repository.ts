@@ -30,7 +30,6 @@ export const SETTINGS_KEYS = {
   restTimerDuration: 'settings.rest_timer',
   restTimerPresets: 'settings.rest_timer_presets',
   healthConnectStepsEnabled: 'settings.health_connect_steps_enabled',
-  stepsNotificationEnabled: 'settings.steps_notification_enabled',
   stepGoal: 'settings.step_goal',
   stepsLastSyncAt: 'settings.steps_last_sync_at'
 } as const;
@@ -39,7 +38,6 @@ export const SETTINGS_DEFAULTS = {
   weightUnit: 'kg' as WeightUnit,
   restTimerDuration: 90,
   healthConnectStepsEnabled: false,
-  stepsNotificationEnabled: false,
   stepGoal: 10000
 };
 
@@ -48,7 +46,6 @@ export interface Settings {
   restTimerDuration: number;
   restTimerPresets: RestTimerPreset[];
   healthConnectStepsEnabled: boolean;
-  stepsNotificationEnabled: boolean;
   stepGoal: number;
 }
 
@@ -59,7 +56,6 @@ const SETTINGS_QUERY_KEYS = [
   SETTINGS_KEYS.restTimerDuration,
   SETTINGS_KEYS.restTimerPresets,
   SETTINGS_KEYS.healthConnectStepsEnabled,
-  SETTINGS_KEYS.stepsNotificationEnabled,
   SETTINGS_KEYS.stepGoal
 ];
 
@@ -278,9 +274,6 @@ export function mapSettingsRows(rows: SettingsRow[]): Settings {
     healthConnectStepsEnabled: parseBooleanSetting(
       valuesByKey.get(SETTINGS_KEYS.healthConnectStepsEnabled)
     ),
-    stepsNotificationEnabled: parseBooleanSetting(
-      valuesByKey.get(SETTINGS_KEYS.stepsNotificationEnabled)
-    ),
     stepGoal: parseStepGoal(valuesByKey.get(SETTINGS_KEYS.stepGoal))
   };
 }
@@ -300,19 +293,6 @@ export function setHealthConnectStepsEnabled(
   isEnabled: boolean
 ): void {
   setSetting(db, SETTINGS_KEYS.healthConnectStepsEnabled, String(isEnabled));
-}
-
-export function getStepsNotificationEnabled(db: DrizzleDb): boolean {
-  return parseBooleanSetting(
-    getSetting(db, SETTINGS_KEYS.stepsNotificationEnabled)
-  );
-}
-
-export function setStepsNotificationEnabled(
-  db: DrizzleDb,
-  isEnabled: boolean
-): void {
-  setSetting(db, SETTINGS_KEYS.stepsNotificationEnabled, String(isEnabled));
 }
 
 export function getStepGoal(db: DrizzleDb): number {

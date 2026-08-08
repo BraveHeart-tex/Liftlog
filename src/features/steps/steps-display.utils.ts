@@ -1,7 +1,6 @@
 import type { HealthStepDay } from '@/src/db/schema';
 import { getRecentLocalDayRanges } from '@/src/features/steps/steps-date.utils';
 import type { HealthConnectAvailability } from '@/src/features/steps/health-connect.service';
-import type { LiveStepCounterStatus } from '@/src/features/steps/hooks/use-live-step-counter';
 
 export const RECENT_STEP_STATUS_DAY_COUNT = 7;
 
@@ -98,38 +97,4 @@ export function getAvailabilityLabel(
   }
 
   return 'Health Connect unavailable';
-}
-
-export function getLiveStepCounterBadgeLabel(
-  status: LiveStepCounterStatus,
-  liveStepDelta: number
-) {
-  if (status === 'active') {
-    return liveStepDelta > 0 ? `Live +${formatSteps(liveStepDelta)}` : 'Live';
-  }
-
-  if (status === 'checking') {
-    return 'Starting live';
-  }
-
-  return null;
-}
-
-export function getLiveStepCounterMessage(
-  status: LiveStepCounterStatus,
-  errorMessage: string | null
-): string | null {
-  if (status === 'permission_denied') {
-    return 'Allow Activity Recognition to show live steps.';
-  }
-
-  if (status === 'unavailable' || status === 'no_sensor') {
-    return 'Live step counting is not available on this device.';
-  }
-
-  if (status === 'error') {
-    return errorMessage ?? 'Live step counting stopped.';
-  }
-
-  return null;
 }

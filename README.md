@@ -13,8 +13,8 @@ Built with Expo, React Native, TypeScript, NativeWind, Expo SQLite, and Drizzle 
 - Exercise library with search, category filters, custom exercises, and archive/delete
 - Calendar view of completed workouts
 - Progressive overload feedback per exercise
-- Android: live step counting and Health Connect sync
-- Settings: theme, weight unit, rest timer duration, steps preferences
+- Android: Health Connect step sync
+- Settings: theme, weight unit, rest timer duration, step preferences
 - Fully local — no account or internet required
 
 ---
@@ -63,15 +63,15 @@ pnpm run knip           # Unused exports check
 
 ## Stack
 
-| Layer      | Technology                                                         |
-| ---------- | ------------------------------------------------------------------ |
-| Framework  | Expo 54 · React Native 0.81 · React 19                             |
-| Navigation | Expo Router                                                        |
-| Language   | TypeScript                                                         |
-| Styling    | NativeWind 5 · Tailwind CSS v4                                     |
-| Database   | Expo SQLite · Drizzle ORM                                          |
-| UI         | Gorhom Bottom Sheet · Lucide React Native                          |
-| Platform   | `expo-audio` · `expo-step-counter` · `react-native-health-connect` |
+| Layer      | Technology                                   |
+| ---------- | -------------------------------------------- |
+| Framework  | Expo 54 · React Native 0.81 · React 19       |
+| Navigation | Expo Router                                  |
+| Language   | TypeScript                                   |
+| Styling    | NativeWind 5 · Tailwind CSS v4               |
+| Database   | Expo SQLite · Drizzle ORM                    |
+| UI         | Gorhom Bottom Sheet · Lucide React Native    |
+| Platform   | `expo-audio` · `react-native-health-connect` |
 
 ---
 

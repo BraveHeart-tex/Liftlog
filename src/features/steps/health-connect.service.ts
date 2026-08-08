@@ -1,7 +1,6 @@
 import type { NewHealthStepDay } from '@/src/db/schema';
 import {
   aggregateGroupByPeriod,
-  aggregateRecord,
   getGrantedPermissions,
   getSdkStatus,
   initialize,
@@ -247,35 +246,4 @@ export async function syncStepDaysFromHealthConnect({
     days: await readDailyStepTotals(dayCount),
     usedHistoryWindowDays: dayCount
   };
-}
-
-export async function readTodayStepCount(): Promise<number | null> {
-  const availability = await initializeHealthConnect();
-
-  if (availability !== 'available') {
-    return null;
-  }
-
-  const permissions = await getStepPermissionState();
-
-  if (!permissions.canReadSteps) {
-    return null;
-  }
-
-  const [todayRange] = getRecentLocalDayRanges(1);
-
-  if (!todayRange) {
-    return null;
-  }
-
-  const result = await aggregateRecord({
-    recordType: 'Steps',
-    timeRangeFilter: {
-      operator: 'between',
-      startTime: new Date(todayRange.startAt).toISOString(),
-      endTime: new Date(todayRange.endAt).toISOString()
-    }
-  });
-
-  return result.COUNT_TOTAL ?? 0;
 }

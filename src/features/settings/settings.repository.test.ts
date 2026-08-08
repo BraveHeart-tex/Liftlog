@@ -19,7 +19,6 @@ test('maps invalid settings to defaults', () => {
     { key: SETTINGS_KEYS.restTimerDuration, value: '10 seconds' },
     { key: SETTINGS_KEYS.restTimerPresets, value: '{invalid' },
     { key: SETTINGS_KEYS.healthConnectStepsEnabled, value: 'TRUE' },
-    { key: SETTINGS_KEYS.stepsNotificationEnabled, value: '1' },
     { key: SETTINGS_KEYS.stepGoal, value: '999' }
   ]);
 
@@ -40,7 +39,6 @@ test('maps valid settings values', () => {
       ])
     },
     { key: SETTINGS_KEYS.healthConnectStepsEnabled, value: 'true' },
-    { key: SETTINGS_KEYS.stepsNotificationEnabled, value: 'false' },
     { key: SETTINGS_KEYS.stepGoal, value: '15000' }
   ]);
 
@@ -51,7 +49,6 @@ test('maps valid settings values', () => {
       { id: 'preset-1', name: 'Two minutes', durationSeconds: 120 }
     ],
     healthConnectStepsEnabled: true,
-    stepsNotificationEnabled: false,
     stepGoal: 15000
   });
 });

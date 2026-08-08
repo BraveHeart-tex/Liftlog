@@ -20,7 +20,12 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.borakaraca94.liftlog"
+      "package": "com.borakaraca94.liftlog",
+      "permissions": [
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_HEALTH_DATA_HISTORY",
+        "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -38,9 +43,7 @@
       ],
       "expo-font",
       "expo-notifications",
-      "./plugins/with-step-activity-permissions",
       "react-native-health-connect",
-      "react-native-notify-kit",
       [
         "expo-build-properties",
         {

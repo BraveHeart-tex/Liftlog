@@ -2,11 +2,10 @@ import type { DrizzleDb } from '@/src/db/client';
 import {
   appMeta,
   healthStepDays,
-  type HealthStepDay,
   type NewHealthStepDay
 } from '@/src/db/schema';
 import { SETTINGS_KEYS } from '@/src/features/settings/settings.repository';
-import { desc, eq, sql } from 'drizzle-orm';
+import { desc, sql } from 'drizzle-orm';
 
 const STEP_DAY_CHUNK_SIZE = Math.floor(999 / 5);
 
@@ -16,17 +15,6 @@ export function getRecentStepDaysQuery(db: DrizzleDb, limit: number) {
     .from(healthStepDays)
     .orderBy(desc(healthStepDays.startAt))
     .limit(limit);
-}
-
-export function getTodayStepDay(
-  db: DrizzleDb,
-  dateKey: HealthStepDay['dateKey']
-): HealthStepDay | undefined {
-  return db
-    .select()
-    .from(healthStepDays)
-    .where(eq(healthStepDays.dateKey, dateKey))
-    .get();
 }
 
 export function saveStepSyncResult(

@@ -1,16 +1,7 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import {
-  getTodayStepDay,
-  saveStepSyncResult
-} from '@/src/features/steps/steps.repository';
+import { saveStepSyncResult } from '@/src/features/steps/steps.repository';
 import { syncStepDaysFromHealthConnect } from '@/src/features/steps/health-connect.service';
-import {
-  showStepNotification,
-  startStepNotificationRefresh,
-  stopStepNotification
-} from '@/src/features/steps/steps-notifications.service';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
-import { getTodayDateKey } from '@/src/features/steps/steps-date.utils';
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 
@@ -24,8 +15,7 @@ export function StepsSyncHost() {
 
 function AndroidStepsSyncHost() {
   const db = useDrizzle();
-  const { healthConnectStepsEnabled, stepsNotificationEnabled, stepGoal } =
-    useSettings();
+  const { healthConnectStepsEnabled } = useSettings();
   const didLaunchSyncRef = useRef(false);
 
   useEffect(() => {
@@ -52,22 +42,6 @@ function AndroidStepsSyncHost() {
         console.error('Launch step sync failed', error);
       });
   }, [db, healthConnectStepsEnabled]);
-
-  useEffect(() => {
-    if (!healthConnectStepsEnabled || !stepsNotificationEnabled) {
-      void stopStepNotification();
-
-      return;
-    }
-
-    const today = getTodayStepDay(db, getTodayDateKey());
-
-    if (today) {
-      void showStepNotification({ steps: today.steps, goal: stepGoal });
-    }
-
-    startStepNotificationRefresh(stepGoal);
-  }, [db, healthConnectStepsEnabled, stepGoal, stepsNotificationEnabled]);
 
   return null;
 }

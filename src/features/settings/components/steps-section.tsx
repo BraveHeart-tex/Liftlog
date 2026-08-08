@@ -6,53 +6,21 @@ import { Text } from '@/src/components/ui/text';
 import { StepGoalSheet } from '@/src/features/settings/components/step-goal-sheet';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import { openStepHealthConnectSettings } from '@/src/features/steps/health-connect.service';
-import {
-  requestStepNotificationPermission,
-  stopStepNotification
-} from '@/src/features/steps/steps-notifications.service';
-
 import { iconSizes } from '@/src/theme/sizes';
 import { ChevronDown, ExternalLink } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
-import { Alert, Platform, View } from 'react-native';
+import { Platform, View } from 'react-native';
 
 export const StepsSection = () => {
   const [isStepGoalSheetOpen, setIsStepGoalSheetOpen] = useState(false);
-  const {
-    healthConnectStepsEnabled,
-    stepsNotificationEnabled,
-    stepGoal,
-    setHealthConnectStepsEnabled,
-    setStepsNotificationEnabled
-  } = useSettings();
+  const { healthConnectStepsEnabled, stepGoal, setHealthConnectStepsEnabled } =
+    useSettings();
   const shouldShowStepsSettings = Platform.OS === 'android';
   const openStepGoalSheet = useCallback(() => setIsStepGoalSheetOpen(true), []);
   const closeStepGoalSheet = useCallback(
     () => setIsStepGoalSheetOpen(false),
     []
   );
-
-  const handleStepsNotificationChange = async (isEnabled: boolean) => {
-    if (!isEnabled) {
-      setStepsNotificationEnabled(false);
-      await stopStepNotification();
-
-      return;
-    }
-
-    const isGranted = await requestStepNotificationPermission();
-
-    if (!isGranted) {
-      Alert.alert(
-        'Step tracking permissions needed',
-        "Allow notifications and activity recognition to keep today's steps visible."
-      );
-
-      return;
-    }
-
-    setStepsNotificationEnabled(true);
-  };
 
   return shouldShowStepsSettings ? (
     <>
@@ -97,23 +65,6 @@ export const StepsSection = () => {
                     {new Intl.NumberFormat().format(stepGoal)}
                   </Button>
                 </View>
-              </View>
-            </View>
-
-            <View className="border-border mt-4 border-t pt-4">
-              <View className="flex-row items-center justify-between">
-                <View className="flex-1">
-                  <Text variant="bodyMedium">Persistent step notification</Text>
-                  <Text variant="caption" tone="muted" className="mt-1">
-                    Keep today&apos;s step count visible on Android
-                  </Text>
-                </View>
-                <Switch
-                  checked={stepsNotificationEnabled}
-                  onCheckedChange={value => {
-                    void handleStepsNotificationChange(value);
-                  }}
-                />
               </View>
             </View>
           </CardContent>

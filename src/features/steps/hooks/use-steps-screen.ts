@@ -10,7 +10,6 @@ import {
   type HealthConnectAvailability,
   type StepPermissionState
 } from '@/src/features/steps/health-connect.service';
-import { useLiveStepCounter } from '@/src/features/steps/hooks/use-live-step-counter';
 import {
   getMillisecondsUntilNextLocalDay,
   getTodayDateKey
@@ -19,10 +18,6 @@ import {
   getStepRecentActivityStatus,
   type StepRecentActivityStatus
 } from '@/src/features/steps/steps-display.utils';
-import {
-  refreshStepNotification,
-  showStepNotification
-} from '@/src/features/steps/steps-notifications.service';
 import {
   getRecentStepDaysQuery,
   saveStepSyncResult
@@ -61,12 +56,8 @@ function getStats(
 
 export function useStepsScreen() {
   const db = useDrizzle();
-  const {
-    healthConnectStepsEnabled,
-    stepsNotificationEnabled,
-    stepGoal,
-    setHealthConnectStepsEnabled
-  } = useSettings();
+  const { healthConnectStepsEnabled, stepGoal, setHealthConnectStepsEnabled } =
+    useSettings();
   const stepDaysResult = useLiveWithFallback(
     getRecentStepDaysQuery(db, RECENT_DAY_LIMIT),
     [db]
@@ -90,19 +81,7 @@ export function useStepsScreen() {
   const [hasCheckedAvailability, setHasCheckedAvailability] = useState(false);
   const [syncState, setSyncState] = useState<SyncState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const liveStepCounter = useLiveStepCounter({
-    availability,
-    baselineDateKey: todayDateKey,
-    baselineSteps: stats.todaySteps,
-    canReadHealthConnectSteps: permissions.canReadSteps,
-    isEnabled: healthConnectStepsEnabled && stepsNotificationEnabled,
-    stepGoal
-  });
-  const displayedTodaySteps = Math.max(
-    stats.todaySteps,
-    liveStepCounter.steps ?? stats.todaySteps
-  );
-  const liveStepDelta = Math.max(0, displayedTodaySteps - stats.todaySteps);
+  const displayedTodaySteps = stats.todaySteps;
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -158,15 +137,6 @@ export function useStepsScreen() {
           days: result.days,
           syncedAt: firstDay.syncedAt
         });
-
-        const today = result.days.at(-1);
-
-        if (stepsNotificationEnabled && today) {
-          await showStepNotification({
-            steps: today.steps ?? 0,
-            goal: stepGoal
-          });
-        }
       } catch (error) {
         console.error('Failed to sync steps', error);
         setErrorMessage('Could not sync steps from Health Connect.');
@@ -174,7 +144,7 @@ export function useStepsScreen() {
         setSyncState('idle');
       }
     },
-    [db, refreshStatus, stepGoal, stepsNotificationEnabled]
+    [db, refreshStatus]
   );
 
   const connectSteps = useCallback(async () => {
@@ -204,11 +174,7 @@ export function useStepsScreen() {
 
   const refreshSteps = useCallback(async () => {
     await syncSteps({ isInitial: false });
-
-    if (stepsNotificationEnabled) {
-      await refreshStepNotification(stepGoal);
-    }
-  }, [stepGoal, stepsNotificationEnabled, syncSteps]);
+  }, [syncSteps]);
 
   useFocusEffect(
     useCallback(() => {
@@ -230,9 +196,6 @@ export function useStepsScreen() {
     isLoading: !stepDaysResult.isLive || !hasCheckedAvailability,
     isSyncing: syncState === 'syncing',
     displayedTodaySteps,
-    liveStepCounterError: liveStepCounter.error,
-    liveStepCounterStatus: liveStepCounter.status,
-    liveStepDelta,
     permissions,
     stats,
     stepDays,

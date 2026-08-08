@@ -13,11 +13,7 @@ import { StepsSummaryCards } from '@/src/features/steps/components/steps-summary
 import { StepsUnavailableState } from '@/src/features/steps/components/steps-unavailable-state';
 import { TodayStepRadialCard } from '@/src/features/steps/components/today-step-radial-card';
 import { useStepsScreen } from '@/src/features/steps/hooks/use-steps-screen';
-import {
-  getAvailabilityLabel,
-  getLiveStepCounterBadgeLabel,
-  getLiveStepCounterMessage
-} from '@/src/features/steps/steps-display.utils';
+import { getAvailabilityLabel } from '@/src/features/steps/steps-display.utils';
 import { EllipsisIcon } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
@@ -35,9 +31,6 @@ export function StepsContent() {
     healthConnectStepsEnabled,
     isLoading,
     isSyncing,
-    liveStepCounterError,
-    liveStepCounterStatus,
-    liveStepDelta,
     permissions,
     stats,
     stepDays,
@@ -65,14 +58,6 @@ export function StepsContent() {
   const shouldShowToday = hasTodayStepRecord;
   const shouldUseCompactToday = hasTodayStepRecord && displayedTodaySteps === 0;
   const shouldShowRecentActivity = hasStepRecords;
-  const liveStepCounterBadgeLabel = getLiveStepCounterBadgeLabel(
-    liveStepCounterStatus,
-    liveStepDelta
-  );
-  const liveStepCounterMessage = getLiveStepCounterMessage(
-    liveStepCounterStatus,
-    liveStepCounterError
-  );
   const openActionsSheet = useCallback(() => setIsActionsSheetOpen(true), []);
   const closeActionsSheet = useCallback(() => setIsActionsSheetOpen(false), []);
 
@@ -154,9 +139,6 @@ export function StepsContent() {
                 steps={displayedTodaySteps}
                 goal={stepGoal}
                 progress={progress}
-                liveStepCounterBadgeLabel={liveStepCounterBadgeLabel}
-                liveStepCounterMessage={liveStepCounterMessage}
-                liveStepCounterStatus={liveStepCounterStatus}
               />
             ) : null}
 

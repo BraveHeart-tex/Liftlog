@@ -8,7 +8,6 @@ import {
   setHealthConnectStepsEnabled as setHealthConnectStepsEnabledRepo,
   setRestTimerDuration as setRestTimerDurationRepo,
   setStepGoal as setStepGoalRepo,
-  setStepsNotificationEnabled as setStepsNotificationEnabledRepo,
   setWeightUnit as setWeightUnitRepo,
   updateRestTimerPreset as updateRestTimerPresetRepo,
   type RestTimerPreset,
@@ -31,7 +30,6 @@ interface SettingsContextValue {
   restTimerPresets: RestTimerPreset[];
   formattedRestTimerDuration: string;
   healthConnectStepsEnabled: boolean;
-  stepsNotificationEnabled: boolean;
   stepGoal: number;
   setWeightUnit: (unit: WeightUnit) => void;
   setRestTimerDuration: (seconds: number) => void;
@@ -39,7 +37,6 @@ interface SettingsContextValue {
   updateRestTimerPreset: (preset: RestTimerPreset) => void;
   deleteRestTimerPreset: (id: string) => void;
   setHealthConnectStepsEnabled: (isEnabled: boolean) => void;
-  setStepsNotificationEnabled: (isEnabled: boolean) => void;
   setStepGoal: (goal: number) => void;
 }
 
@@ -98,13 +95,6 @@ export function SettingsProvider({ children }: PropsWithChildren) {
     [db]
   );
 
-  const setStepsNotificationEnabled = useCallback(
-    (isEnabled: boolean) => {
-      setStepsNotificationEnabledRepo(db, isEnabled);
-    },
-    [db]
-  );
-
   const setStepGoal = useCallback(
     (goal: number) => {
       setStepGoalRepo(db, goal);
@@ -137,7 +127,6 @@ export function SettingsProvider({ children }: PropsWithChildren) {
       updateRestTimerPreset,
       deleteRestTimerPreset,
       setHealthConnectStepsEnabled,
-      setStepsNotificationEnabled,
       setStepGoal
     }),
     [
@@ -147,7 +136,6 @@ export function SettingsProvider({ children }: PropsWithChildren) {
       setHealthConnectStepsEnabled,
       setRestTimerDuration,
       setStepGoal,
-      setStepsNotificationEnabled,
       settings,
       setWeightUnit,
       updateRestTimerPreset
