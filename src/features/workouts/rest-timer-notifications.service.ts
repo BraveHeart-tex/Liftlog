@@ -18,13 +18,13 @@ const REST_TIMER_NOTIFICATION_CHANNEL_ID = 'rest-timer';
 const REST_TIMER_NOTIFICATION_ID_PREFIX = 'rest-timer';
 const REST_TIMER_NOTIFICATION_TYPE = 'rest-timer';
 
-export interface RestTimerNotificationContext {
+interface RestTimerNotificationContext {
   workoutId?: string;
   workoutExerciseId?: string;
   exerciseName?: string;
 }
 
-export interface RestTimerNotificationData extends RestTimerNotificationContext {
+interface RestTimerNotificationData extends RestTimerNotificationContext {
   type: typeof REST_TIMER_NOTIFICATION_TYPE;
 }
 

@@ -7,7 +7,6 @@ import {
   workouts,
   type Exercise,
   type NewPersonalRecord,
-  type PersonalRecord,
   type Set,
   type Workout
 } from '@/src/db/schema';
@@ -29,13 +28,6 @@ export function getPersonalRecordsByExerciseQuery(
     .from(personalRecords)
     .where(eq(personalRecords.exerciseId, exerciseId))
     .orderBy(desc(personalRecords.achievedAt));
-}
-
-export function getPersonalRecordsByExercise(
-  db: DrizzleDb,
-  exerciseId: Exercise['id']
-): PersonalRecord[] {
-  return getPersonalRecordsByExerciseQuery(db, exerciseId).all();
 }
 
 const TWO_MONTHS_MS = 2 * 30 * 24 * 60 * 60 * 1000;

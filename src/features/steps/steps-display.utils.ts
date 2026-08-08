@@ -2,7 +2,7 @@ import type { HealthStepDay } from '@/src/db/schema';
 import { getRecentLocalDayRanges } from '@/src/features/steps/steps-date.utils';
 import type { HealthConnectAvailability } from '@/src/features/steps/health-connect.service';
 
-export const RECENT_STEP_STATUS_DAY_COUNT = 7;
+const RECENT_STEP_STATUS_DAY_COUNT = 7;
 
 export interface StepRecentActivityStatus {
   averageSteps: number | null;

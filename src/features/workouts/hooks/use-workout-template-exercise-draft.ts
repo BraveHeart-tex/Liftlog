@@ -55,7 +55,7 @@ function reconcileDraftRows(
   });
 }
 
-export type SaveWorkoutTemplateExerciseDraftResult =
+type SaveWorkoutTemplateExerciseDraftResult =
   | { status: 'saved' }
   | { status: 'unchanged' }
   | {

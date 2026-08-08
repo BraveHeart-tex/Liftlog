@@ -1,4 +1,3 @@
-import type { WorkoutExercise, WorkoutTemplateExercise } from '@/src/db/schema';
 import { generateUuid } from '@/src/lib/utils/uuid.utils';
 
 type SupersetRow = {
@@ -12,7 +11,7 @@ export type SupersetBlock<T extends SupersetRow> = {
   supersetId: string | null;
 };
 
-export function createSupersetId(): string {
+function createSupersetId(): string {
   return generateUuid();
 }
 
@@ -163,10 +162,3 @@ export function unlinkSupersetRows<T extends SupersetRow>(
     row.supersetId === supersetId ? { ...row, supersetId: null } : row
   );
 }
-
-export type WorkoutSupersetFields = Pick<WorkoutExercise, 'id' | 'supersetId'>;
-
-export type TemplateSupersetFields = Pick<
-  WorkoutTemplateExercise,
-  'id' | 'supersetId'
->;

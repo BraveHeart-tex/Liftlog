@@ -41,7 +41,7 @@ export const SETTINGS_DEFAULTS = {
   stepGoal: 10000
 };
 
-export interface Settings {
+interface Settings {
   weightUnit: WeightUnit;
   restTimerDuration: number;
   restTimerPresets: RestTimerPreset[];
@@ -70,7 +70,7 @@ export function getSettingsQuery(db: DrizzleDb) {
     .where(inArray(appMeta.key, SETTINGS_QUERY_KEYS));
 }
 
-export function setSetting(db: DrizzleDb, key: string, value: string): void {
+function setSetting(db: DrizzleDb, key: string, value: string): void {
   db.insert(appMeta)
     .values({ key, value })
     .onConflictDoUpdate({ target: appMeta.key, set: { value } })
@@ -85,12 +85,6 @@ export function getWeightUnit(db: DrizzleDb): WeightUnit {
 
 export function setWeightUnit(db: DrizzleDb, unit: WeightUnit): void {
   setSetting(db, SETTINGS_KEYS.weightUnit, unit);
-}
-
-export function getRestTimerDuration(db: DrizzleDb): number {
-  return parseRestTimerDuration(
-    getSetting(db, SETTINGS_KEYS.restTimerDuration)
-  );
 }
 
 function parseRestTimerDuration(value: string | undefined): number {
@@ -172,26 +166,17 @@ function parseRestTimerPresets(value: string | undefined): RestTimerPreset[] {
   }
 }
 
-export function serializeRestTimerPresets(presets: RestTimerPreset[]) {
+function serializeRestTimerPresets(presets: RestTimerPreset[]) {
   return JSON.stringify(presets);
 }
 
-export function getRestTimerPresets(db: DrizzleDb): RestTimerPreset[] {
+function getRestTimerPresets(db: DrizzleDb): RestTimerPreset[] {
   const value = getSetting(db, SETTINGS_KEYS.restTimerPresets);
 
   return parseRestTimerPresets(value);
 }
 
-export function getRestTimerPresetsFromValue(
-  value: string | undefined
-): RestTimerPreset[] {
-  return parseRestTimerPresets(value);
-}
-
-export function setRestTimerPresets(
-  db: DrizzleDb,
-  presets: RestTimerPreset[]
-): void {
+function setRestTimerPresets(db: DrizzleDb, presets: RestTimerPreset[]): void {
   const normalizedPresets = presets
     .map(normalizeRestTimerPreset)
     .filter((preset): preset is RestTimerPreset => Boolean(preset))
@@ -243,11 +228,11 @@ export function deleteRestTimerPreset(db: DrizzleDb, id: string): void {
   );
 }
 
-export function parseBooleanSetting(value: string | undefined): boolean {
+function parseBooleanSetting(value: string | undefined): boolean {
   return value === 'true';
 }
 
-export function parseStepGoal(value: string | undefined): number {
+function parseStepGoal(value: string | undefined): number {
   if (!value) {
     return SETTINGS_DEFAULTS.stepGoal;
   }
@@ -282,21 +267,11 @@ export function getSettingsSnapshot(db: DrizzleDb): Settings {
   return mapSettingsRows(getSettingsQuery(db).all());
 }
 
-export function getHealthConnectStepsEnabled(db: DrizzleDb): boolean {
-  return parseBooleanSetting(
-    getSetting(db, SETTINGS_KEYS.healthConnectStepsEnabled)
-  );
-}
-
 export function setHealthConnectStepsEnabled(
   db: DrizzleDb,
   isEnabled: boolean
 ): void {
   setSetting(db, SETTINGS_KEYS.healthConnectStepsEnabled, String(isEnabled));
-}
-
-export function getStepGoal(db: DrizzleDb): number {
-  return parseStepGoal(getSetting(db, SETTINGS_KEYS.stepGoal));
 }
 
 export function setStepGoal(db: DrizzleDb, goal: number): void {

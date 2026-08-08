@@ -66,7 +66,7 @@ type AppIconProps = Omit<
   tone?: IconTone;
 };
 
-export type IconTone =
+type IconTone =
   | 'foreground'
   | 'primary'
   | 'primaryForeground'

@@ -9,7 +9,7 @@ interface ExerciseNameMigrationRow {
   name: string;
 }
 
-export interface ExerciseNameMigrationConflict {
+interface ExerciseNameMigrationConflict {
   normalizedName: string;
   exercises: ExerciseNameMigrationRow[];
 }

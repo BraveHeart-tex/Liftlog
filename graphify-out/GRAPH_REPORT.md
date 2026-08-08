@@ -1,100 +1,86 @@
 # Graph Report - liftlog  (2026-08-08)
 
 ## Corpus Check
-- 330 files · ~112,805 words
+- 330 files · ~112,619 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1803 nodes · 5291 edges · 156 communities (82 shown, 74 thin omitted)
+- 1791 nodes · 5260 edges · 139 communities (75 shown, 64 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 15 edges (avg confidence: 0.72)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `194376b2`
+- Built from commit: `37e2dc0e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- text.tsx
-- Button
-- icon.tsx
+- ExerciseListItem
+- use-steps-screen.ts
+- workout-log-content.tsx
 - schema.ts
-- Workout
-- button.tsx
-- tracking.domain.ts
-- use-exercise-detail.ts
-- useLiveWithFallback
-- workout-log-calendar.tsx
-- DrizzleDb
+- ui/bottom-sheet.tsx
+- useDrizzle
+- active-workout-content.tsx
+- Text
 - settings.repository.ts
-- set-form-row.tsx
 - rest-timer-sheet.tsx
+- workout-template.repository.ts
+- chip.tsx
+- DrizzleDb
+- text.tsx
+- TrackingType
+- Set
+- styled/bottom-sheet.tsx
+- Workout
 - workout.repository.ts
-- set-form.utils.ts
-- NodeSQLiteDatabase
-- set-display.utils.ts
-- database-provider.tsx
-- expo
+- devDependencies
 - Components
 - migrations.js
-- devDependencies
-- exercise-metadata-form.tsx
-- exercise-picker-filters.tsx
-- exercise-picker-sheet.tsx
+- set-form-row.tsx
 - What You Must Do When Invoked
-- exercise.repository.ts
-- workout-log-content.tsx
+- button.tsx
+- tracking.domain.ts
+- use-exercise-history.ts
 - app-theme-provider.tsx
-- template-exercise-editor.tsx
-- toLocalDateKey
-- styled/bottom-sheet.tsx
-- exercise-history-list.tsx
-- Set
-- active-workout-exercise-edit-list.tsx
-- workout-template.repository.ts
-- common-providers.tsx
-- scripts
 - useSettings
-- chip.tsx
-- rest-timer-notifications.service.ts
-- set-duration-picker-sheet.tsx
-- @expo-google-fonts/instrument-sans
-- ExerciseListItem
-- steps-content.tsx
-- tests/tsconfig.json
+- scripts
 - knip.json
-- bottom-sheet-input.tsx
-- snackbar.tsx
-- exercise-progress-chart-body.tsx
-- NodeSQLiteStatement
-- step-goal-sheet.tsx
-- plugins
-- TrackingType
-- overrides
+- WorkoutDetailLoaded
+- set-form.tsx
+- use-exercise-detail.ts
 - useAppTheme
+- use-historical-workout-start.ts
+- expo
+- exercise-progress-chart.tsx
+- exercise-picker-sheet.tsx
+- package.json
+- (tabs)/_layout.tsx
+- common-providers.tsx
+- NodeSQLiteDatabase
+- overrides
 - include
-- exercise-list-row.tsx
+- android
 - dependencies
 - Product
-- husky
-- lint-staged
-- package.json
-- Liftlog
-- graphify reference: extra exports and benchmark
-- knip
-- nativewind-env.d.ts
-- expo
-- prettier
-- WeightUnit
-- replaySoundEffect
+- rest-timer-setting-sheet.tsx
 - progression-suggestion.utils.ts
+- Liftlog
+- onboarding.repository.ts
+- rest-timer-notifications.service.ts
+- graphify reference: extra exports and benchmark
+- replaySoundEffect
+- nativewind-env.d.ts
+- log/index.tsx
+- tests/tsconfig.json
+- database-error-boundary.tsx
 - graphify reference: query, path, explain
 - .commitlintrc.json
-- flash-list.tsx
-- RestTimerPreset
-- clsx
-- @commitlint/cli
-- @commitlint/config-conventional
+- use-rest-timer-notification-responses.ts
+- plugins
+- lint-staged
+- ScreenErrorBoundary
+- NodeSQLiteStatement
 - graphify reference: add a URL and watch a folder
 - graphify reference: commit hook and native CLAUDE.md integration
 - graphify reference: incremental update and cluster-only
@@ -102,29 +88,28 @@
 - ux-display.md
 - metro.config.js
 - build-android-release-single-arch.sh
+- flash-list.tsx
 - AGENTS.md
 - graphify reference: GitHub clone and cross-repo merge
 - graphify reference: transcribe video and audio
 - database.md
-- @dotenvx/dotenvx
+- clsx
 - extraction-spec.md
-- eslint
+- @commitlint/cli
 - bottom-sheet.md
 - data-access.md
 - expo-router.md
 - layout.md
 - drizzle-kit
 - drizzle-orm
-- eslint-config-expo
-- eslint-plugin-unused-imports
 - expo
-- expo-audio
 - expo-asset
+- expo-audio
 - expo-build-properties
 - expo-constants
 - expo-dev-client
 - expo-font
-- expo-atlas
+- @expo-google-fonts/instrument-sans
 - expo-haptics
 - expo-linking
 - expo-notifications
@@ -134,6 +119,7 @@
 - expo-system-ui
 - @faker-js/faker
 - @gorhom/bottom-sheet
+- husky
 - lint-staged
 - lucide-react-native
 - nativewind
@@ -149,30 +135,27 @@
 - react-native-reorderable-list
 - react-native-screens
 - react-native-svg
-- @react-navigation/bottom-tabs
 - react-native-worklets
+- @react-navigation/bottom-tabs
 - @sentry/react-native
 - @shopify/flash-list
 - @shopify/react-native-skia
 - tailwind-merge
 - victory-native
 - zustand
+- knip
 - postcss
 - prettier-plugin-tailwindcss
-- @types/node
-- @stylistic/eslint-plugin
-- tailwindcss
-- @typescript-eslint/eslint-plugin
-- tsx
+- @tailwindcss/postcss
 - @types/react
 - typescript
 - @typescript-eslint/parser
 
 ## God Nodes (most connected - your core abstractions)
-1. `DrizzleDb` - 107 edges
+1. `DrizzleDb` - 106 edges
 2. `cn()` - 100 edges
 3. `Text` - 87 edges
-4. `useDrizzle()` - 81 edges
+4. `useDrizzle()` - 79 edges
 5. `Icon()` - 72 edges
 6. `Button()` - 62 edges
 7. `Workout` - 52 edges
@@ -195,83 +178,87 @@
 ## Import Cycles
 - None detected.
 
-## Communities (156 total, 74 thin omitted)
+## Communities (139 total, 64 thin omitted)
 
-### Community 0 - "text.tsx"
+### Community 0 - "ExerciseListItem"
+Cohesion: 0.05
+Nodes (59): ExerciseDetailScreen(), formatUsageBreakdown(), WorkoutTemplateDetailLoaded(), ReorderableHandle(), ReorderableHandleProps, ReorderableHandleRenderProps, ReorderableList(), ReorderableListItemProps (+51 more)
+
+### Community 1 - "use-steps-screen.ts"
 Cohesion: 0.06
-Nodes (52): OnboardingScreen(), weightUnitOptions, StyledScrollView, Badge(), BadgeProps, badgeTextVariants, BadgeVariant, badgeVariantConfig (+44 more)
+Nodes (59): BackButtonProps, Card, CardContent, CardProps, IconComponent, PulsatingDot(), HealthStepDay, StepDayRow() (+51 more)
 
-### Community 1 - "Button"
-Cohesion: 0.12
-Nodes (35): expo-router, WorkoutExerciseHistoryScreen(), ActiveWorkoutExerciseScreen(), HistoricalWorkoutExerciseScreen(), HistoricalWorkoutEditExerciseScreen(), WorkoutDetailScreen(), WorkoutTemplateDetailLoaded(), WorkoutTemplateDetailScreen() (+27 more)
-
-### Community 2 - "icon.tsx"
+### Community 2 - "workout-log-content.tsx"
 Cohesion: 0.06
-Nodes (57): StyledBottomSheetScrollView, BottomSheet(), BottomSheetChildren, BottomSheetComponentProps, BottomSheetContent(), BottomSheetDescription(), BottomSheetHeader(), BottomSheetRenderState (+49 more)
+Nodes (56): FlatListClassNameProps, StyledFlatList, StyledFlatListBase, AnimatedText, CalendarDayButton(), CalendarDayButtonProps, MonthCalendar, MonthCalendarProps (+48 more)
 
 ### Community 3 - "schema.ts"
-Cohesion: 0.08
-Nodes (46): configureDatabase(), ForeignKeysPragma, ForeignKeyViolation, runDatabaseMigrations(), schema, buildSetRows(), getExerciseRowsByName(), getStartedAt() (+38 more)
+Cohesion: 0.06
+Nodes (57): DrizzleProvider(), migrateAsync(), configureDatabase(), createDrizzleDb(), databaseName, databaseOptions, ForeignKeysPragma, ForeignKeyViolation (+49 more)
 
-### Community 4 - "Workout"
+### Community 4 - "ui/bottom-sheet.tsx"
 Cohesion: 0.07
-Nodes (44): ActiveWorkoutEditExercisesContent(), ActiveWorkoutEditExercisesContentProps, Workout, WorkoutExercise, ExerciseHistoryQueryOptions, ExerciseHistoryQueryRow, ExerciseHistoryRows, WorkoutLogRowProps (+36 more)
+Nodes (46): StyledBottomSheetScrollView, BottomSheet(), BottomSheetChildren, BottomSheetComponentProps, BottomSheetContent(), BottomSheetDescription(), BottomSheetHeader(), BottomSheetRenderState (+38 more)
 
-### Community 5 - "button.tsx"
-Cohesion: 0.14
-Nodes (12): Props, State, StyledActivityIndicator, ButtonProps, ButtonSize, buttonSpinnerVariants, buttonTextStyle, buttonTextVariants (+4 more)
+### Community 5 - "useDrizzle"
+Cohesion: 0.08
+Nodes (43): ExercisesScreen(), ActiveWorkoutEditExercisesScreen(), ActiveWorkoutScreen(), HistoricalWorkoutDraftScreen(), HistoricalWorkoutEditScreen(), WorkoutDetailLoadedProps, DatabaseProviderProps, DrizzleContext (+35 more)
 
-### Community 6 - "tracking.domain.ts"
-Cohesion: 0.15
-Nodes (21): assertNonNegativeNumber(), assertPositiveNumber(), computeEstimated1RM(), formatPersonalRecordValue(), getDurationMs(), getDurationSecondsFromMs(), getPersonalRecordSnapshot(), getSetScore() (+13 more)
+### Community 6 - "active-workout-content.tsx"
+Cohesion: 0.13
+Nodes (31): expo-router, WorkoutExerciseHistoryScreen(), ActiveWorkoutExerciseScreen(), HistoricalWorkoutExerciseScreen(), HistoricalWorkoutEditExerciseScreen(), WorkoutDetailScreen(), WorkoutTemplateDetailScreen(), BackButton() (+23 more)
 
-### Community 7 - "use-exercise-detail.ts"
-Cohesion: 0.12
-Nodes (29): EditExerciseScreen(), getExerciseByIdQuery(), getExerciseUsageSummaryQuery(), ExercisePersonalRecordSummaryItem, ExerciseTopSetPerformance, useCustomExerciseEdit(), buildPersonalRecordSummary(), CompletedHistoryEntry (+21 more)
-
-### Community 8 - "useLiveWithFallback"
+### Community 7 - "Text"
 Cohesion: 0.09
-Nodes (34): ActiveWorkoutEditExercisesScreen(), ActiveWorkoutScreen(), WorkoutStartScreen(), WorkoutDetailLoadedProps, WorkoutTemplateDetailLoadedProps, useActiveWorkoutScreen(), useRecentWorkouts(), useWorkoutHistoryDetail() (+26 more)
+Nodes (33): Props, State, StyledScrollView, Button(), buttonSpinnerVariants, buttonTextVariants, AppIconProps, createStyledIcon() (+25 more)
 
-### Community 9 - "workout-log-calendar.tsx"
-Cohesion: 0.13
-Nodes (29): AnimatedText, CalendarDayButton(), CalendarDayButtonProps, MonthCalendar, MonthCalendarProps, CALENDAR_COLUMNS, CALENDAR_ROWS, DEFAULT_CALENDAR_HEIGHT (+21 more)
+### Community 8 - "settings.repository.ts"
+Cohesion: 0.09
+Nodes (44): numberFormatter, StepGoalSheet(), StepGoalSheetContent, SettingsContext, SettingsContextValue, SettingsProvider(), addRestTimerPreset(), createRestTimerPreset() (+36 more)
 
-### Community 10 - "DrizzleDb"
-Cohesion: 0.16
-Nodes (24): DrizzleDb, getCompletedSetsForPersonalRecords(), rebuildPersonalRecordsForExercises(), rebuildPersonalRecordsForExercisesInTransaction(), useActiveWorkoutActions(), AddSetValues, getSetStorageValues(), useExerciseTrackActions() (+16 more)
+### Community 9 - "rest-timer-sheet.tsx"
+Cohesion: 0.09
+Nodes (33): getSafeProgress(), RestTimerCountdown(), RestTimerCountdownProps, minuteItems, RestTimerDurationPicker(), RestTimerDurationPickerProps, secondItems, RestTimerIdleContentProps (+25 more)
 
-### Community 11 - "settings.repository.ts"
-Cohesion: 0.13
-Nodes (35): SettingsContext, SettingsProvider(), addRestTimerPreset(), createRestTimerPreset(), deleteRestTimerPreset(), getHealthConnectStepsEnabled(), getRestTimerDuration(), getRestTimerPresets() (+27 more)
+### Community 10 - "workout-template.repository.ts"
+Cohesion: 0.09
+Nodes (39): WorkoutStartScreen(), WorkoutTemplateDetailLoadedProps, Exercise, WorkoutTemplate, WorkoutTemplateExercise, NewTemplateContent(), WorkoutTemplateCardProps, useSaveWorkoutTemplate() (+31 more)
 
-### Community 12 - "set-form-row.tsx"
+### Community 11 - "chip.tsx"
 Cohesion: 0.07
-Nodes (36): Switch(), SwitchProps, TRACKING_TYPE_DEFINITIONS, darkFeedbackColors, SetFormEmptyState(), emptyStateEntering, emptyStateExiting, SetFormFieldColors (+28 more)
+Nodes (38): StyledGestureScrollView, ChipShape, ChipTextStyle, ChoiceChip(), choiceChipContainerVariants, ChoiceChipProps, choiceChipTextVariants, choiceChipVariantConfig (+30 more)
 
-### Community 13 - "rest-timer-sheet.tsx"
-Cohesion: 0.07
-Nodes (41): WheelPicker, WheelPickerBase, WheelPickerComponent, REST_TIMER_PRESET_NAME_MAX_LENGTH, getSafeProgress(), RestTimerCountdown(), RestTimerCountdownProps, minuteItems (+33 more)
+### Community 12 - "DrizzleDb"
+Cohesion: 0.12
+Nodes (37): NewExerciseScreen(), DrizzleDb, NewExercise, createSeedExercises(), runSeedIfNeeded(), runSeedUpgrades(), upsertAppMeta(), normalizeExerciseName() (+29 more)
 
-### Community 14 - "workout.repository.ts"
-Cohesion: 0.10
-Nodes (37): HistoricalWorkoutDraftScreen(), HistoricalWorkoutEditScreen(), WorkoutDetailLoaded(), useDrizzle(), NewWorkout, ActiveWorkoutHeaderWithActions(), useFinishWorkout(), useHistoricalWorkoutDraftActions() (+29 more)
-
-### Community 15 - "set-form.utils.ts"
-Cohesion: 0.16
-Nodes (25): SetValues, TrackingFieldDefinition, SetFormProps, ActiveDurationPickerState, BaseRowView, DraftRowState, DraftSetFormRow, PersistedEditState (+17 more)
-
-### Community 17 - "set-display.utils.ts"
-Cohesion: 0.14
-Nodes (23): buildProgressPoints(), buildTopSetPerformances(), areSameTrackingValues(), formatNumber(), formatScore(), formatTrackingValue(), getSetValues(), ActiveWorkoutExerciseEditRow() (+15 more)
-
-### Community 18 - "database-provider.tsx"
-Cohesion: 0.10
-Nodes (23): DatabaseErrorBoundary, Props, State, DatabaseProviderProps, DrizzleContext, DrizzleProvider(), DrizzleProviderProps, migrateAsync() (+15 more)
-
-### Community 19 - "expo"
+### Community 13 - "text.tsx"
 Cohesion: 0.08
-Nodes (25): backgroundImage, foregroundImage, monochromeImage, adaptiveIcon, package, permissions, predictiveBackGestureEnabled, reactCompiler (+17 more)
+Nodes (34): OnboardingScreen(), weightUnitOptions, Badge(), BadgeProps, badgeTextVariants, BadgeVariant, badgeVariantConfig, BadgeVariants (+26 more)
+
+### Community 14 - "TrackingType"
+Cohesion: 0.13
+Nodes (29): ExerciseTrackingStyleSelectorProps, areSameTrackingValues(), formatTrackingValue(), getSetValues(), TrackingType, UseOnboardingActionsParams, CompleteOnboardingWithPreferencesParams, ActiveWorkoutExerciseEditRow() (+21 more)
+
+### Community 15 - "Set"
+Cohesion: 0.13
+Nodes (31): Set, CompletedHistoryEntry, ExerciseHistoryQueryRow, ExerciseHistoryRows, SetValues, TrackingFieldDefinition, SetFormProps, ActiveDurationPickerState (+23 more)
+
+### Community 16 - "styled/bottom-sheet.tsx"
+Cohesion: 0.07
+Nodes (30): BottomSheetFlatListClassNameProps, BottomSheetScrollViewClassNameProps, BottomSheetTextInputClassNameProps, BottomSheetTextInputColorBridge, BottomSheetTextInputColorBridgeProps, StyledBottomSheetBackdrop, StyledBottomSheetFlatList, StyledBottomSheetFlatListBase (+22 more)
+
+### Community 17 - "Workout"
+Cohesion: 0.11
+Nodes (29): ActiveWorkoutEditExercisesContent(), ActiveWorkoutEditExercisesContentProps, Workout, WorkoutExercise, WorkoutLogRowProps, ActiveWorkoutHeaderWithActionsProps, HistoricalWorkoutHeaderProps, RecentWorkoutCardProps (+21 more)
+
+### Community 18 - "workout.repository.ts"
+Cohesion: 0.12
+Nodes (27): useActiveWorkoutContent(), UseActiveWorkoutContentParams, AddSetValues, getSetStorageValues(), useExerciseTrackActions(), CompletedSetCommandOptions, CompletedSetUpdates, createCompletedSet() (+19 more)
+
+### Community 19 - "devDependencies"
+Cohesion: 0.07
+Nodes (29): babel-plugin-inline-import, babel-preset-expo, @commitlint/config-conventional, @dotenvx/dotenvx, eslint, eslint-config-expo, eslint-plugin-unused-imports, expo-atlas (+21 more)
 
 ### Community 20 - "Components"
 Cohesion: 0.07
@@ -281,253 +268,221 @@ Nodes (27): Bottom Sheets, Buttons, Cards / Containers, Chips, Colors, Component
 Cohesion: 0.09
 Nodes (13): `app_meta`, `exercises`, `personal_records`, `sets`, `workout_exercises`, `workout_template_exercises`, `workout_templates`, `workouts` (+5 more)
 
-### Community 22 - "devDependencies"
-Cohesion: 0.29
-Nodes (7): babel-plugin-inline-import, babel-preset-expo, devDependencies, babel-plugin-inline-import, babel-preset-expo, @tailwindcss/postcss, @tailwindcss/postcss
-
-### Community 23 - "exercise-metadata-form.tsx"
-Cohesion: 0.15
-Nodes (16): CATEGORY_OPTIONS, CategoryOption, ExerciseCategorySelector(), ExerciseCategorySelectorProps, ErrorTarget, ExerciseMetadataForm(), ExerciseMetadataFormProps, FocusableInput (+8 more)
-
-### Community 24 - "exercise-picker-filters.tsx"
-Cohesion: 0.22
-Nodes (9): StyledGestureScrollView, BackButtonProps, IconComponent, CATEGORY_OPTIONS, CategoryOption, ExercisePickerFilterOption, ExercisePickerFilters(), ExercisePickerFiltersProps (+1 more)
-
-### Community 25 - "exercise-picker-sheet.tsx"
+### Community 22 - "set-form-row.tsx"
 Cohesion: 0.10
-Nodes (24): ExercisesScreen(), buildAlphabetizedExerciseListItems(), categoryLabelByValue, ExerciseListDataItem, ExerciseListRowItem, ExerciseListSectionHeaderItem, getExerciseCategoryLabel(), matchesExerciseSearch() (+16 more)
+Nodes (22): SetFormFieldColors, SetFormFieldSurface(), SetFormFieldSurfaceProps, SetFormFieldTone, SetFormSaveSurface(), SetFormSaveSurfaceProps, toneProgress, SetFormRowActions() (+14 more)
 
-### Community 26 - "What You Must Do When Invoked"
+### Community 23 - "What You Must Do When Invoked"
 Cohesion: 0.08
 Nodes (24): For /graphify add and --watch, For /graphify query, For the commit hook and native CLAUDE.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Interpreter guard for subcommands, Part A - Structural extraction for code files (+16 more)
 
-### Community 27 - "exercise.repository.ts"
-Cohesion: 0.18
-Nodes (21): NewExerciseScreen(), NewExercise, normalizeExerciseName(), archiveExercise(), createExercise(), deleteExercise(), exerciseListFields, ExerciseNameConflictError (+13 more)
+### Community 24 - "button.tsx"
+Cohesion: 0.09
+Nodes (19): StyledActivityIndicator, ButtonProps, ButtonSize, buttonTextStyle, ButtonVariant, buttonVariantConfig, ButtonVariants, centisecondItems (+11 more)
 
-### Community 28 - "workout-log-content.tsx"
-Cohesion: 0.12
-Nodes (21): PulsatingDot(), ExerciseProgressChart(), selectedDayEntering, selectedDayExiting, WorkoutLogRow(), getDateKeyTimestamp(), WorkoutLogStartSheet(), ActiveWorkoutDuration() (+13 more)
+### Community 25 - "tracking.domain.ts"
+Cohesion: 0.14
+Nodes (20): PersonalRecord, assertNonNegativeNumber(), assertPositiveNumber(), formatNumber(), formatPersonalRecordValue(), getDurationMs(), getDurationSecondsFromMs(), getPersonalRecordSnapshot() (+12 more)
 
-### Community 29 - "app-theme-provider.tsx"
+### Community 26 - "use-exercise-history.ts"
+Cohesion: 0.20
+Nodes (15): buildExerciseHistory(), getExerciseHistoryQuery(), getPersonalRecordsByExerciseQuery(), mapExerciseHistoryRows(), resolveTrackingType(), canLoadExerciseHistoryPage(), CanLoadExerciseHistoryPageOptions, didExerciseHistoryPageFinish() (+7 more)
+
+### Community 27 - "app-theme-provider.tsx"
 Cohesion: 0.21
 Nodes (18): AppThemeContext, AppThemeContextValue, AppThemeProvider(), createNavigationTheme(), resolveAppColorScheme(), resolveColorScheme(), bootstrapThemeColorScheme(), getThemePreference() (+10 more)
 
-### Community 30 - "template-exercise-editor.tsx"
-Cohesion: 0.29
-Nodes (9): useExercises(), UseExercisesOptions, TemplateExerciseEditor(), TemplateExerciseEditorProps, reconcileDraftRows(), SaveWorkoutTemplateExerciseDraftResult, useWorkoutTemplateExerciseDraft(), normalizeSupersetRows() (+1 more)
-
-### Community 31 - "toLocalDateKey"
-Cohesion: 0.18
-Nodes (13): LogHeader(), LogHeaderProps, LogView, formatSelectedDate(), WorkoutLogContent(), getWorkoutCalendarDateRange(), useWorkoutCalendarMarks(), useWorkoutRowsForDate() (+5 more)
-
-### Community 32 - "styled/bottom-sheet.tsx"
-Cohesion: 0.11
-Nodes (17): BottomSheetFlatListClassNameProps, BottomSheetScrollViewClassNameProps, BottomSheetTextInputClassNameProps, BottomSheetTextInputColorBridge, BottomSheetTextInputColorBridgeProps, StyledBottomSheetBackdrop, StyledBottomSheetFlatList, StyledBottomSheetFlatListBase (+9 more)
-
-### Community 33 - "exercise-history-list.tsx"
-Cohesion: 0.38
-Nodes (6): ExerciseHistoryData, ExerciseHistoryEntry, ExerciseHistoryList(), ExerciseHistoryWidgets(), formatWorkoutDate(), getProgressionToneClassName()
-
-### Community 34 - "Set"
+### Community 28 - "useSettings"
 Cohesion: 0.16
-Nodes (17): Set, ActiveWorkoutExerciseCardProps, ActiveWorkoutExerciseEditList, ActiveWorkoutExerciseEditListProps, ActiveWorkoutExerciseEditRowProps, ActiveWorkoutExerciseList(), ActiveWorkoutExerciseListProps, DisplayWorkoutExerciseRow (+9 more)
+Nodes (13): SegmentedControl(), AboutInfoSection(), StepsSection(), THEME_OPTIONS, ThemeSelectionSection(), WEIGHT_UNIT_OPTIONS, WorkoutPreferencesSection(), useSettings() (+5 more)
 
-### Community 35 - "active-workout-exercise-edit-list.tsx"
-Cohesion: 0.11
-Nodes (29): ReorderableHandle(), ReorderableHandleProps, ReorderableHandleRenderProps, ReorderableList(), ReorderableListItemProps, ReorderableListProps, ReorderableListRenderItem, ReorderableListRenderItemInfo (+21 more)
-
-### Community 36 - "workout-template.repository.ts"
-Cohesion: 0.11
-Nodes (27): showSnackbar(), Exercise, WorkoutTemplate, WorkoutTemplateExercise, CustomExerciseDetailsUpdate, validateStagedCustomExerciseNames(), NewTemplateContent(), WorkoutTemplateCardProps (+19 more)
-
-### Community 37 - "common-providers.tsx"
-Cohesion: 0.15
-Nodes (6): CommonProviders(), CommonProvidersProps, DatabaseProvider(), DrizzleStudio(), ScreenErrorBoundary, StepsSyncHost()
-
-### Community 38 - "scripts"
+### Community 29 - "scripts"
 Cohesion: 0.11
 Nodes (19): scripts, android, android:clean, android:device, android:release:single-arch, format, ios, lint (+11 more)
 
-### Community 39 - "useSettings"
-Cohesion: 0.08
-Nodes (44): HealthStepDay, useSettings(), StepDayRowProps, StepsContent(), StepsSummaryCardsProps, AndroidStepsSyncHost(), StepsUnavailableStateProps, BACKGROUND_PERMISSION (+36 more)
-
-### Community 40 - "chip.tsx"
-Cohesion: 0.21
-Nodes (11): ChipShape, ChipTextStyle, ChoiceChip(), choiceChipContainerVariants, ChoiceChipProps, choiceChipTextVariants, choiceChipVariantConfig, ChoiceChipVariants (+3 more)
-
-### Community 41 - "rest-timer-notifications.service.ts"
-Cohesion: 0.21
-Nodes (16): dismissSnackbar(), RestTimerHost(), useRestTimerNotificationResponses(), UseRestTimerNotificationResponsesParams, cancelRestTimerNotification(), cancelScheduledRestTimerNotification(), ensureRestTimerNotificationChannel(), getRestTimerNotificationData() (+8 more)
-
-### Community 42 - "set-duration-picker-sheet.tsx"
-Cohesion: 0.15
-Nodes (11): centisecondItems, DurationInputMode, DurationModeTab(), DurationModeTabProps, DurationModeTabsProps, hourItems, minuteItems, SetDurationPickerSheet() (+3 more)
-
-### Community 44 - "ExerciseListItem"
-Cohesion: 0.18
-Nodes (12): ExerciseListRowProps, ExerciseRow(), ExerciseRowProps, ExerciseListItem, ActiveWorkoutContentProps, ExercisePickerRow, ExercisePickerRowProps, ExercisePickerSheetCommonProps (+4 more)
-
-### Community 45 - "steps-content.tsx"
-Cohesion: 0.17
-Nodes (13): FlatListClassNameProps, StyledFlatList, StyledFlatListBase, StepDayRow(), StepsActionsSheet(), StepsEmptyState(), StepsEmptyStateProps, StepsSummaryCards() (+5 more)
-
-### Community 46 - "tests/tsconfig.json"
-Cohesion: 0.29
-Nodes (6): ./mocks/lucide-react-native.ts, ../tsconfig.json, compilerOptions, paths, extends, lucide-react-native
-
-### Community 47 - "knip.json"
+### Community 30 - "knip.json"
 Cohesion: 0.11
 Nodes (17): entry, expo, config, entry, ignore, ignoreBinaries, $schema, tags (+9 more)
 
-### Community 48 - "bottom-sheet-input.tsx"
-Cohesion: 0.20
-Nodes (9): StyledBottomSheetTextInput, BottomSheetInput, BottomSheetInputProps, BottomSheetTextInputRef, InputAccessibilityState, NativeTextInputProps, ExerciseNameField(), ExerciseNameFieldProps (+1 more)
+### Community 31 - "WorkoutDetailLoaded"
+Cohesion: 0.17
+Nodes (13): WorkoutDetailLoaded(), ActiveWorkoutHeaderWithActions(), useHistoricalWorkoutDraftActions(), useHistoricalWorkoutEditActions(), useRepeatWorkout(), useWorkoutDelete(), useWorkoutRename(), chunkRows() (+5 more)
 
-### Community 49 - "snackbar.tsx"
-Cohesion: 0.38
-Nodes (6): notifySnackbarDismissed(), SnackbarHost(), SnackbarMessage, SnackbarOptions, SnackbarState, useSnackbarStore
+### Community 32 - "set-form.tsx"
+Cohesion: 0.14
+Nodes (13): SegmentedControlOption, SegmentedControlProps, SwitchProps, darkFeedbackColors, SetFormEmptyState(), emptyStateEntering, emptyStateExiting, formEaseOut (+5 more)
 
-### Community 50 - "exercise-progress-chart-body.tsx"
+### Community 33 - "use-exercise-detail.ts"
+Cohesion: 0.28
+Nodes (14): EditExerciseScreen(), getExerciseByIdQuery(), getExerciseUsageSummaryQuery(), useCustomExerciseEdit(), buildPersonalRecordSummary(), buildProgressPoints(), buildTopSetPerformances(), getBestSetId() (+6 more)
+
+### Community 34 - "useAppTheme"
 Cohesion: 0.16
-Nodes (15): AnimatedTabBar(), styles, TabLayout(), axisDateFormatter, ChartPoint, ExerciseProgressChartBody(), formatAxisDate(), getChartDomain() (+7 more)
+Nodes (10): RootNavigator(), unstable_settings, WorkoutLayout(), CommonProviders(), DrizzleStudio(), TodayStepRadialCard(), useAppTheme(), appFontAssets (+2 more)
 
-### Community 52 - "step-goal-sheet.tsx"
-Cohesion: 0.33
-Nodes (6): numberFormatter, StepGoalSheet(), StepGoalSheetContent, MAX_STEP_GOAL, MIN_STEP_GOAL, STEP_GOAL_PRESETS
+### Community 35 - "use-historical-workout-start.ts"
+Cohesion: 0.19
+Nodes (14): useHistoricalWorkoutStart(), UseHistoricalWorkoutStartOptions, useWorkoutTemplates(), UseWorkoutTemplatesOptions, buildHistoricalWorkoutSourceSnapshot(), cleanupStaleHistoricalWorkoutDrafts(), createHistoricalWorkoutDraft(), createHistoricalWorkoutDraftFromTemplate() (+6 more)
 
-### Community 53 - "plugins"
-Cohesion: 0.40
-Nodes (5): plugins, expo-asset, expo-font, expo-notifications, react-native-health-connect
+### Community 36 - "expo"
+Cohesion: 0.13
+Nodes (14): reactCompiler, typedRoutes, expo, experiments, icon, ios, name, orientation (+6 more)
 
-### Community 54 - "TrackingType"
+### Community 37 - "exercise-progress-chart.tsx"
+Cohesion: 0.21
+Nodes (12): axisDateFormatter, ChartPoint, ExerciseProgressChartBody(), ExerciseProgressChartBodyProps, formatAxisDate(), getChartDomain(), ExerciseProgressChart(), ExerciseProgressChartProps (+4 more)
+
+### Community 38 - "exercise-picker-sheet.tsx"
+Cohesion: 0.14
+Nodes (11): ActiveWorkoutExercisePickerSheetCommonProps, ActiveWorkoutExercisePickerSheetProps, ExercisePickerRow, ExercisePickerSearchInput, ExercisePickerSearchInputProps, ExercisePickerSheet(), ExercisePickerSheetBodyProps, ExercisePickerSheetCommonProps (+3 more)
+
+### Community 39 - "package.json"
+Cohesion: 0.14
+Nodes (13): engines, node, pnpm, expo, install, exclude, main, name (+5 more)
+
+### Community 40 - "(tabs)/_layout.tsx"
+Cohesion: 0.23
+Nodes (10): ExercisesLayout(), AnimatedTabBar(), styles, TabLayout(), LogLayout(), triggerBottomTabNavigationHaptics(), triggerSegmentSelectionHaptics(), triggerSelectionHaptics() (+2 more)
+
+### Community 41 - "common-providers.tsx"
 Cohesion: 0.25
-Nodes (9): ExerciseProgressChartBodyProps, ExerciseProgressChartProps, ExerciseTrackingStyleSelectorProps, ExerciseProgressPoint, TrackingType, ExerciseHistoryListProps, WorkoutExerciseSummaryProps, WorkoutHistoryExerciseCardProps (+1 more)
+Nodes (11): CommonProvidersProps, DatabaseProvider(), dismissSnackbar(), notifySnackbarDismissed(), showSnackbar(), SnackbarHost(), SnackbarMessage, SnackbarOptions (+3 more)
 
-### Community 55 - "overrides"
+### Community 43 - "overrides"
 Cohesion: 0.15
 Nodes (13): @babel/core@7.29.0, esbuild@0.18.20, esbuild@0.27.7, js-yaml@3.14.2, js-yaml@4.1.1, lightningcss, postcss@8.4.49, tar@7.5.13 (+5 more)
 
-### Community 56 - "useAppTheme"
-Cohesion: 0.23
-Nodes (9): RootNavigator(), ExercisesLayout(), LogLayout(), unstable_settings, WorkoutLayout(), THEME_OPTIONS, ThemeSelectionSection(), useAppTheme() (+1 more)
-
-### Community 57 - "include"
+### Community 44 - "include"
 Cohesion: 0.17
 Nodes (11): expo-env.d.ts, expo/tsconfig.base, .expo/types/**/*.ts, nativewind-env.d.ts, **/*.ts, **/*.tsx, compilerOptions, paths (+3 more)
 
-### Community 58 - "exercise-list-row.tsx"
-Cohesion: 0.26
-Nodes (10): ExerciseDetailScreen(), formatUsageBreakdown(), ExerciseListRow(), formatMuscleList(), getPrimaryMuscleLabel(), ActiveWorkoutStats(), ActiveWorkoutStatsProps, pluralize() (+2 more)
+### Community 45 - "android"
+Cohesion: 0.18
+Nodes (11): backgroundImage, foregroundImage, monochromeImage, adaptiveIcon, package, permissions, predictiveBackGestureEnabled, android (+3 more)
 
-### Community 59 - "dependencies"
+### Community 46 - "dependencies"
 Cohesion: 0.18
 Nodes (11): class-variance-authority, expo-drizzle-studio-plugin, expo-router, dependencies, class-variance-authority, expo-drizzle-studio-plugin, expo-router, react-native-safe-area-context (+3 more)
 
-### Community 60 - "Product"
+### Community 47 - "Product"
 Cohesion: 0.18
 Nodes (10): Brand Commitments, Capabilities and Constraints, Evidence on Hand, Operating Context, Platform, Positioning, Product, Product Principles (+2 more)
 
-### Community 62 - "lint-staged"
-Cohesion: 0.40
-Nodes (5): lint-staged, **/*.{md,json}, **/*.{ts,tsx,js}, pnpm exec eslint --fix, pnpm exec prettier --write
+### Community 48 - "rest-timer-setting-sheet.tsx"
+Cohesion: 0.22
+Nodes (8): WheelPicker, WheelPickerBase, WheelPickerComponent, minuteItems, RestTimerSettingSheet(), RestTimerSettingSheetContent, secondItems, SetDurationWheelProps
 
-### Community 63 - "package.json"
-Cohesion: 0.20
-Nodes (9): engines, node, pnpm, main, name, packageManager, pnpm, private (+1 more)
+### Community 49 - "progression-suggestion.utils.ts"
+Cohesion: 0.27
+Nodes (10): computeEstimated1RM(), roundScore(), ProgressionSuggestionProps, areSameSetValues(), getBestEstimated1RM(), getCompletedSets(), getLastWorkingSet(), getProgressionSuggestion() (+2 more)
 
-### Community 64 - "Liftlog"
+### Community 50 - "Liftlog"
 Cohesion: 0.20
 Nodes (9): Database, Features, Getting Started, Liftlog, Project Structure, Requirements, Screenshots, Scripts (+1 more)
 
-### Community 65 - "graphify reference: extra exports and benchmark"
+### Community 51 - "onboarding.repository.ts"
+Cohesion: 0.33
+Nodes (6): Index(), useIndexRedirect(), useOnboardingActions(), completeOnboardingWithPreferences(), isOnboardingCompleted(), SETTINGS_KEYS
+
+### Community 52 - "rest-timer-notifications.service.ts"
+Cohesion: 0.33
+Nodes (9): cancelRestTimerNotification(), cancelScheduledRestTimerNotification(), ensureRestTimerNotificationChannel(), isGranted(), requestRestTimerNotificationPermission(), RestTimerNotificationContext, RestTimerNotificationData, scheduleRestTimerNotification() (+1 more)
+
+### Community 53 - "graphify reference: extra exports and benchmark"
 Cohesion: 0.22
 Nodes (8): graphify reference: extra exports and benchmark, Step 6b - Wiki (only if --wiki flag), Step 7 - Neo4j export (only if --neo4j or --neo4j-push flag), Step 7a - FalkorDB export (only if --falkordb or --falkordb-push flag), Step 7b - SVG export (only if --svg flag), Step 7c - GraphML export (only if --graphml flag), Step 7d - MCP server (only if --mcp flag), Step 8 - Token reduction benchmark (only if total_words > 5000)
 
-### Community 67 - "nativewind-env.d.ts"
-Cohesion: 0.25
-Nodes (7): ActivityIndicatorProps, BottomSheetDefaultBackdropProps, FlatListProps, @gorhom/bottom-sheet, react-native, ScrollViewProps, TextInputProps
-
-### Community 68 - "expo"
-Cohesion: 0.50
-Nodes (4): expo, install, exclude, @sentry/react-native
-
-### Community 70 - "WeightUnit"
-Cohesion: 0.27
-Nodes (9): Index(), useIndexRedirect(), useOnboardingActions(), UseOnboardingActionsParams, completeOnboardingWithPreferences(), CompleteOnboardingWithPreferencesParams, isOnboardingCompleted(), Settings (+1 more)
-
-### Community 71 - "replaySoundEffect"
+### Community 54 - "replaySoundEffect"
 Cohesion: 0.33
 Nodes (5): StopwatchContent(), playersWithReplayInFlight, ReplayableSoundEffectPlayer, replaySoundEffect(), ReplaySoundEffectOptions
 
-### Community 72 - "progression-suggestion.utils.ts"
-Cohesion: 0.33
-Nodes (8): ProgressionSuggestionProps, areSameSetValues(), getBestEstimated1RM(), getCompletedSets(), getLastWorkingSet(), getProgressionSuggestion(), ProgressionHistoryEntry, ProgressionSuggestionData
+### Community 55 - "nativewind-env.d.ts"
+Cohesion: 0.25
+Nodes (7): ActivityIndicatorProps, BottomSheetDefaultBackdropProps, FlatListProps, @gorhom/bottom-sheet, react-native, ScrollViewProps, TextInputProps
 
-### Community 73 - "graphify reference: query, path, explain"
+### Community 56 - "log/index.tsx"
+Cohesion: 0.32
+Nodes (5): StepsContent(), getAvailabilityLabel(), LogHeader(), LogHeaderProps, LogView
+
+### Community 57 - "tests/tsconfig.json"
+Cohesion: 0.29
+Nodes (6): ./mocks/lucide-react-native.ts, ../tsconfig.json, compilerOptions, paths, extends, lucide-react-native
+
+### Community 58 - "database-error-boundary.tsx"
+Cohesion: 0.29
+Nodes (3): DatabaseErrorBoundary, Props, State
+
+### Community 59 - "graphify reference: query, path, explain"
 Cohesion: 0.33
 Nodes (5): For /graphify explain, For /graphify path, graphify reference: query, path, explain, Step 0 — Constrained query expansion (REQUIRED before traversal), Step 1 — Traversal
 
-### Community 74 - ".commitlintrc.json"
+### Community 60 - ".commitlintrc.json"
 Cohesion: 0.33
 Nodes (5): extends, rules, type-enum, always, @commitlint/config-conventional
 
-### Community 75 - "flash-list.tsx"
-Cohesion: 0.50
-Nodes (3): FlashListClassNameProps, StyledFlashList, StyledFlashListBase
+### Community 61 - "use-rest-timer-notification-responses.ts"
+Cohesion: 0.53
+Nodes (5): useRestTimerNotificationResponses(), UseRestTimerNotificationResponsesParams, getRestTimerNotificationData(), getActiveWorkoutExerciseForRestTimerNotification(), getActiveWorkoutForRestTimerNotification()
 
-### Community 76 - "RestTimerPreset"
-Cohesion: 0.50
-Nodes (4): SettingsContextValue, RestTimerPreset, RestTimerPresetEditorSheetProps, RestTimerPresetListProps
+### Community 62 - "plugins"
+Cohesion: 0.40
+Nodes (5): plugins, expo-asset, expo-font, expo-notifications, react-native-health-connect
 
-### Community 80 - "graphify reference: add a URL and watch a folder"
+### Community 63 - "lint-staged"
+Cohesion: 0.40
+Nodes (5): lint-staged, **/*.{md,json}, **/*.{ts,tsx,js}, pnpm exec eslint --fix, pnpm exec prettier --write
+
+### Community 66 - "graphify reference: add a URL and watch a folder"
 Cohesion: 0.50
 Nodes (3): For /graphify add, For --watch, graphify reference: add a URL and watch a folder
 
-### Community 81 - "graphify reference: commit hook and native CLAUDE.md integration"
+### Community 67 - "graphify reference: commit hook and native CLAUDE.md integration"
 Cohesion: 0.50
 Nodes (3): For git commit hook, For native CLAUDE.md integration, graphify reference: commit hook and native CLAUDE.md integration
 
-### Community 82 - "graphify reference: incremental update and cluster-only"
+### Community 68 - "graphify reference: incremental update and cluster-only"
 Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
-### Community 83 - "styling.md"
+### Community 69 - "styling.md"
 Cohesion: 0.50
 Nodes (3): NativeWind, Styling, Third-Party Components
 
-### Community 84 - "ux-display.md"
+### Community 70 - "ux-display.md"
 Cohesion: 0.50
 Nodes (3): Audio Feedback, Data Display, Workout UX
 
-### Community 85 - "metro.config.js"
+### Community 71 - "metro.config.js"
 Cohesion: 0.50
 Nodes (3): config, { getSentryExpoConfig }, { withNativewind }
 
-### Community 86 - "build-android-release-single-arch.sh"
+### Community 72 - "build-android-release-single-arch.sh"
 Cohesion: 0.67
 Nodes (3): notify(), on_exit(), build-android-release-single-arch.sh script
 
+### Community 73 - "flash-list.tsx"
+Cohesion: 0.50
+Nodes (3): FlashListClassNameProps, StyledFlashList, StyledFlashListBase
+
 ## Knowledge Gaps
-- **541 isolated node(s):** `@commitlint/config-conventional`, `always`, `name`, `slug`, `version` (+536 more)
+- **538 isolated node(s):** `@commitlint/config-conventional`, `always`, `name`, `slug`, `version` (+533 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **74 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **64 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `@sentry/react-native` connect `expo` to `common-providers.tsx`?**
-  _High betweenness centrality (0.190) - this node is a cross-community bridge._
+- **Why does `@sentry/react-native` connect `package.json` to `useAppTheme`?**
+  _High betweenness centrality (0.188) - this node is a cross-community bridge._
 - **What connects `@commitlint/config-conventional`, `always`, `name` to the rest of the system?**
-  _541 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `text.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.06229797237731413 - nodes in this community are weakly interconnected._
-- **Should `Button` be split into smaller, more focused modules?**
-  _Cohesion score 0.12038717483363581 - nodes in this community are weakly interconnected._
-- **Should `icon.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.062342342342342344 - nodes in this community are weakly interconnected._
+  _538 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `ExerciseListItem` be split into smaller, more focused modules?**
+  _Cohesion score 0.05368382080710848 - nodes in this community are weakly interconnected._
+- **Should `use-steps-screen.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.05627545353572751 - nodes in this community are weakly interconnected._
+- **Should `workout-log-content.tsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.06459627329192547 - nodes in this community are weakly interconnected._
 - **Should `schema.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.07826694619147449 - nodes in this community are weakly interconnected._
-- **Should `Workout` be split into smaller, more focused modules?**
-  _Cohesion score 0.06802721088435375 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06386946386946386 - nodes in this community are weakly interconnected._
+- **Should `ui/bottom-sheet.tsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.07103825136612021 - nodes in this community are weakly interconnected._

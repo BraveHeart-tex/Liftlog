@@ -8,10 +8,6 @@ import {
 } from '@/src/features/progress/tracking.domain';
 import type { WeightUnit } from '@/src/lib/utils/weight.utils';
 
-export function getCompletedSets(sets: Set[]) {
-  return sets.filter(set => set.status === 'completed');
-}
-
 export function getWeightRepsVolume(sets: Set[]) {
   return sets.reduce((total, set) => {
     if (set.weightKg === null || set.reps === null) {

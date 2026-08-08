@@ -479,14 +479,14 @@ export function getWorkoutByIdQuery(db: DrizzleDb, id: Workout['id']) {
   return db.select().from(workouts).where(eq(workouts.id, id));
 }
 
-export interface WorkoutHistoryDetailRow {
+interface WorkoutHistoryDetailRow {
   workout: Workout;
   workoutExercise: WorkoutExercise | null;
   exercise: Exercise | null;
   set: Set | null;
 }
 
-export interface WorkoutHistoryDetail {
+interface WorkoutHistoryDetail {
   workout: Workout | undefined;
   workoutExerciseRows: WorkoutExercise[];
   exerciseById: Map<Exercise['id'], Exercise>;
@@ -591,13 +591,6 @@ export function getWorkoutExercisesWithExercisesQuery(
     .innerJoin(exercises, eq(workoutExercises.exerciseId, exercises.id))
     .where(eq(workoutExercises.workoutId, workoutId))
     .orderBy(asc(workoutExercises.order));
-}
-
-export function getWorkoutExerciseByIdQuery(
-  db: DrizzleDb,
-  id: WorkoutExercise['id']
-) {
-  return db.select().from(workoutExercises).where(eq(workoutExercises.id, id));
 }
 
 export function getActiveWorkoutExerciseDetailQuery(

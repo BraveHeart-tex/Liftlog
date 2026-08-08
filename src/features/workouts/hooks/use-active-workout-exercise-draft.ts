@@ -23,7 +23,7 @@ interface UseActiveWorkoutExerciseDraftParams {
   isLoadingWorkoutExercises: boolean;
 }
 
-export type SaveActiveWorkoutExerciseDraftResult =
+type SaveActiveWorkoutExerciseDraftResult =
   | { status: 'saved' }
   | { status: 'unchanged' }
   | { status: 'conflict'; error: ActiveWorkoutExerciseDraftConflictError }

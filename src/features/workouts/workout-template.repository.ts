@@ -26,7 +26,7 @@ export interface WorkoutStartTemplateItem {
   exerciseSummary: string;
 }
 
-export interface WorkoutTemplateListRow {
+interface WorkoutTemplateListRow {
   templateId: WorkoutTemplate['id'];
   templateName: WorkoutTemplate['name'];
   templateSourceWorkoutId: WorkoutTemplate['sourceWorkoutId'];
@@ -41,7 +41,7 @@ export interface WorkoutTemplateListRow {
   exerciseName: Exercise['name'] | null;
 }
 
-export interface WorkoutTemplateDetailRow {
+interface WorkoutTemplateDetailRow {
   templateId: WorkoutTemplate['id'];
   templateName: WorkoutTemplate['name'];
   templateSourceWorkoutId: WorkoutTemplate['sourceWorkoutId'];
@@ -64,13 +64,13 @@ export interface WorkoutTemplateDetailRow {
   exerciseCreatedAt: Exercise['createdAt'] | null;
 }
 
-export interface WorkoutTemplateDetail {
+interface WorkoutTemplateDetail {
   template: WorkoutTemplate | undefined;
   templateExerciseRows: WorkoutTemplateExercise[];
   exerciseById: Map<Exercise['id'], Exercise>;
 }
 
-export interface WorkoutTemplateExerciseDraftRow {
+interface WorkoutTemplateExerciseDraftRow {
   id: WorkoutTemplateExercise['id'];
   exerciseId: WorkoutTemplateExercise['exerciseId'];
   supersetId: WorkoutTemplateExercise['supersetId'];
