@@ -36,7 +36,7 @@ export function ExerciseTrackingStyleSelector({
         className="mt-3 gap-2"
       >
         {TRACKING_TYPE_ROWS.map(row => (
-          <View key={row[0]} className="flex-row gap-2">
+          <View key={row[0]} className="flex-row items-stretch gap-2">
             {row.map(option => {
               const isSelected = trackingType === option;
               const definition = TRACKING_TYPE_DEFINITIONS[option];
@@ -51,10 +51,10 @@ export function ExerciseTrackingStyleSelector({
                   accessibilityLabel={`${label}. ${definition.description}`}
                   accessibilityState={{ selected: isSelected }}
                   className={cn(
-                    'min-h-24 flex-1 items-start justify-center px-3 py-4',
+                    'h-full min-h-24 items-start justify-center px-3 py-4',
                     isSelected && 'border-primary bg-primary/10'
                   )}
-                  containerClassName="min-w-0 flex-1"
+                  containerClassName="min-w-0 h-26 flex-1"
                   onPress={() => onSelectTrackingType(option)}
                 >
                   <View className="w-full min-w-0 flex-row items-start gap-2">
