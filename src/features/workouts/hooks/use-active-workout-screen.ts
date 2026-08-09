@@ -7,7 +7,10 @@ export function useActiveWorkoutScreen() {
   const activeWorkoutResult = useLiveWithFallback(
     getActiveWorkoutQuery(db),
     [db],
-    { operation: 'workout.getActiveWorkout' }
+    {
+      deferInitialRead: true,
+      operation: 'workout.getActiveWorkout'
+    }
   );
 
   return {

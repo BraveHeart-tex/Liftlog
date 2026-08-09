@@ -25,6 +25,7 @@ export function useActiveWorkoutContent({
     getWorkoutExercisesQuery(db, activeWorkout.id),
     [db, activeWorkout.id, hasPreloadedExerciseRows],
     {
+      deferInitialRead: true,
       enabled: hasPreloadedExerciseRows,
       operation: 'workout.getWorkoutExercises'
     }
@@ -33,6 +34,7 @@ export function useActiveWorkoutContent({
     getWorkoutExercisesWithExercisesQuery(db, activeWorkout.id),
     [db, activeWorkout.id, hasPreloadedExerciseRows],
     {
+      deferInitialRead: true,
       enabled: !hasPreloadedExerciseRows,
       fallbackData: [],
       operation: 'workout.getWorkoutExercisesWithExercises'
@@ -41,7 +43,10 @@ export function useActiveWorkoutContent({
   const setResult = useLiveWithFallback(
     getSetsForWorkoutQuery(db, activeWorkout.id),
     [db, activeWorkout.id],
-    { operation: 'workout.getSetsForWorkout' }
+    {
+      deferInitialRead: true,
+      operation: 'workout.getSetsForWorkout'
+    }
   );
   const workoutExerciseRows = useMemo(
     () =>
