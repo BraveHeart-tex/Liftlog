@@ -8,7 +8,8 @@ import {
 import { cn } from '@/src/lib/utils/cn.utils';
 import {
   formatDisplaySetPosition,
-  getDisplaySetGroups
+  getDisplaySetGroups,
+  type DisplaySetGroup
 } from '@/src/features/workouts/set-display.utils';
 import type { WeightUnit } from '@/src/lib/utils/weight.utils';
 import { View, type TextStyle } from 'react-native';
@@ -25,9 +26,8 @@ interface WorkoutSetSummaryProps {
   emptyText?: string;
   className?: string;
   showDividers?: boolean;
+  displayGroups?: DisplaySetGroup[];
 }
-
-type DisplaySetGroup = ReturnType<typeof getDisplaySetGroups>[number];
 
 function groupHasPersonalRecord(
   group: DisplaySetGroup,
@@ -47,15 +47,18 @@ export function WorkoutSetSummary({
   personalRecordSetIds,
   emptyText,
   className,
-  showDividers = true
+  showDividers = true,
+  displayGroups: providedDisplayGroups
 }: WorkoutSetSummaryProps) {
-  const displayGroups = getDisplaySetGroups(
-    completedSets,
-    {
-      personalRecordSetIds
-    },
-    trackingType
-  );
+  const displayGroups =
+    providedDisplayGroups ??
+    getDisplaySetGroups(
+      completedSets,
+      {
+        personalRecordSetIds
+      },
+      trackingType
+    );
 
   return (
     <View className={className}>

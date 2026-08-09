@@ -562,13 +562,14 @@ export function mapWorkoutHistoryDetailRows(
       continue;
     }
 
-    const existingSets =
-      setsByWorkoutExerciseId.get(row.set.workoutExerciseId) ?? [];
+    const existingSets = setsByWorkoutExerciseId.get(row.set.workoutExerciseId);
 
-    setsByWorkoutExerciseId.set(row.set.workoutExerciseId, [
-      ...existingSets,
-      row.set
-    ]);
+    if (existingSets) {
+      existingSets.push(row.set);
+    } else {
+      setsByWorkoutExerciseId.set(row.set.workoutExerciseId, [row.set]);
+    }
+
     totalCompletedSets += 1;
 
     if (row.set.weightKg !== null && row.set.reps !== null) {

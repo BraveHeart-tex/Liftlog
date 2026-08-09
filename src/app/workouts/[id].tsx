@@ -5,6 +5,7 @@ import { LoadingState } from '@/src/components/ui/loading-state';
 import { RenameSheet } from '@/src/components/ui/rename-sheet';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
+import { StyledFlashList } from '@/src/components/styled/flash-list';
 import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
 import { SupersetIndicator } from '@/src/features/workouts/components/superset-indicator';
@@ -247,9 +248,110 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
     [renameWorkout, workout.id]
   );
 
+  const historyHeader = useMemo(
+    () => (
+      <View>
+        <View>
+          <Text variant="h2">{workoutName}</Text>
+          <Text variant="small" tone="muted" className="mt-1">
+            {formatWorkoutDate(workout.startedAt, 'full')}
+          </Text>
+        </View>
+
+        <View className="mt-6">
+          <WorkoutMetrics metrics={workoutMetrics} />
+        </View>
+
+        {workoutExerciseRows.length > 0 && !hasSavedTemplate && (
+          <View className="mt-6">
+            <Button
+              variant="secondary"
+              fullWidth
+              onPress={openTemplateSheet}
+              leftIcon={<Icon as={BookmarkIcon} tone="secondaryForeground" />}
+            >
+              Save as template
+            </Button>
+          </View>
+        )}
+
+        <View className="mt-6">
+          <View className="flex-row items-center justify-between">
+            <Text variant="caption" tone="muted" className="tracking-widest">
+              EXERCISES
+            </Text>
+            {workoutExerciseRows.length > 0 && (
+              <Text variant="caption" tone="muted">
+                {workoutExerciseRows.length} total
+              </Text>
+            )}
+          </View>
+
+          {workoutExerciseRows.length === 0 ? (
+            <EmptyState
+              layout="section"
+              title="No exercises were logged in this workout."
+              className="mt-3 py-8"
+            />
+          ) : null}
+        </View>
+      </View>
+    ),
+    [
+      hasSavedTemplate,
+      openTemplateSheet,
+      workoutExerciseRows.length,
+      workoutMetrics,
+      workoutName,
+      workout.startedAt
+    ]
+  );
+
+  const renderHistoryBlock = useCallback(
+    ({ item: block }: { item: (typeof supersetBlocks)[number] }) => {
+      const renderExerciseCard = (
+        workoutExercise: (typeof workoutExerciseRows)[number],
+        className?: string
+      ) => {
+        const exercise = exerciseById.get(workoutExercise.exerciseId);
+        const completedSets =
+          setsByWorkoutExerciseId.get(workoutExercise.id) ?? [];
+
+        return (
+          <WorkoutHistoryExerciseCard
+            key={workoutExercise.id}
+            exerciseName={exercise?.name ?? 'Unknown exercise'}
+            supersetLabel={
+              block.supersetId
+                ? supersetLabelByBlockId.get(block.id)
+                : undefined
+            }
+            completedSets={completedSets}
+            weightUnit={weightUnit}
+            trackingType={resolveTrackingType(exercise?.trackingType)}
+            className={className}
+          />
+        );
+      };
+
+      if (!block.supersetId) {
+        return renderExerciseCard(block.rows[0]);
+      }
+
+      return (
+        <View className="mt-3">
+          {renderExerciseCard(block.rows[0], 'mt-0')}
+          <SupersetIndicator />
+          {renderExerciseCard(block.rows[1], 'mt-0')}
+        </View>
+      );
+    },
+    [exerciseById, setsByWorkoutExerciseId, supersetLabelByBlockId, weightUnit]
+  );
+
   return (
     <Screen
-      scroll
+      withPadding={false}
       edges={[]}
       footer={
         <Button
@@ -280,90 +382,16 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
           )
         }}
       />
-
-      <View>
-        <Text variant="h2">{workoutName}</Text>
-        <Text variant="small" tone="muted" className="mt-1">
-          {formatWorkoutDate(workout.startedAt, 'full')}
-        </Text>
-      </View>
-
-      <View className="mt-6">
-        <WorkoutMetrics metrics={workoutMetrics} />
-      </View>
-
-      {workoutExerciseRows.length > 0 && !hasSavedTemplate && (
-        <View className="mt-6">
-          <Button
-            variant="secondary"
-            fullWidth
-            onPress={openTemplateSheet}
-            leftIcon={<Icon as={BookmarkIcon} tone="secondaryForeground" />}
-          >
-            Save as template
-          </Button>
-        </View>
-      )}
-
-      <View className="mt-6">
-        <View className="flex-row items-center justify-between">
-          <Text variant="caption" tone="muted" className="tracking-widest">
-            EXERCISES
-          </Text>
-          {workoutExerciseRows.length > 0 && (
-            <Text variant="caption" tone="muted">
-              {workoutExerciseRows.length} total
-            </Text>
-          )}
-        </View>
-
-        {workoutExerciseRows.length === 0 ? (
-          <EmptyState
-            layout="section"
-            title="No exercises were logged in this workout."
-            className="mt-3 py-8"
-          />
-        ) : (
-          supersetBlocks.map(block => {
-            const renderExerciseCard = (
-              workoutExercise: (typeof workoutExerciseRows)[number],
-              className?: string
-            ) => {
-              const exercise = exerciseById.get(workoutExercise.exerciseId);
-              const completedSets =
-                setsByWorkoutExerciseId.get(workoutExercise.id) ?? [];
-
-              return (
-                <WorkoutHistoryExerciseCard
-                  key={workoutExercise.id}
-                  exerciseName={exercise?.name ?? 'Unknown exercise'}
-                  supersetLabel={
-                    block.supersetId
-                      ? supersetLabelByBlockId.get(block.id)
-                      : undefined
-                  }
-                  completedSets={completedSets}
-                  weightUnit={weightUnit}
-                  trackingType={resolveTrackingType(exercise?.trackingType)}
-                  className={className}
-                />
-              );
-            };
-
-            if (!block.supersetId) {
-              return renderExerciseCard(block.rows[0]);
-            }
-
-            return (
-              <View key={block.id} className="mt-3">
-                {renderExerciseCard(block.rows[0], 'mt-0')}
-                <SupersetIndicator />
-                {renderExerciseCard(block.rows[1], 'mt-0')}
-              </View>
-            );
-          })
-        )}
-      </View>
+      <StyledFlashList
+        data={supersetBlocks}
+        renderItem={renderHistoryBlock}
+        keyExtractor={block => block.id}
+        className="flex-1"
+        contentContainerClassName="px-4 pb-6 pt-6"
+        ListHeaderComponent={historyHeader}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      />
 
       {isTemplateSheetOpen ? (
         <SaveWorkoutTemplateSheet

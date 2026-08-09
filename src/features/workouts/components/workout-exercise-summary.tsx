@@ -105,6 +105,7 @@ export function WorkoutExerciseSummary({
           weightUnit={weightUnit}
           trackingType={trackingType}
           personalRecordSetIds={personalRecordSetIds}
+          displayGroups={displayGroups}
         />
       ) : null}
     </View>

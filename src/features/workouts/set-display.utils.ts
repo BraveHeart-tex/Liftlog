@@ -60,7 +60,7 @@ export function formatCompletedSets(
     .join(', ');
 }
 
-interface DisplaySetGroup {
+export interface DisplaySetGroup {
   type: 'single' | 'range';
   startIndex: number;
   endIndex: number;
@@ -79,16 +79,17 @@ export function getDisplaySetGroups(
 ): DisplaySetGroup[] {
   const groups: DisplaySetGroup[] = [];
   const resolvedTrackingType = resolveTrackingType(trackingType);
+  const personalRecordSetIds = options.personalRecordSetIds;
+  let setIndex = 0;
 
   for (const set of sets) {
+    setIndex += 1;
     const previousGroup = groups.at(-1);
-    const setIndex =
-      groups.reduce((count, group) => count + group.setIds.length, 0) + 1;
-    const isCurrentPr = options.personalRecordSetIds?.has(set.id) ?? false;
-    const isPreviousPr =
-      previousGroup?.setIds.some(
-        setId => options.personalRecordSetIds?.has(setId) ?? false
-      ) ?? false;
+    const isCurrentPr = personalRecordSetIds?.has(set.id) ?? false;
+    const isPreviousPr = personalRecordSetIds
+      ? (previousGroup?.setIds.some(setId => personalRecordSetIds.has(setId)) ??
+        false)
+      : false;
 
     if (
       previousGroup &&
