@@ -3,7 +3,7 @@ import { CommonProviders } from '@/src/components/common-providers';
 import { DrizzleStudio } from '@/src/components/drizzle-studio';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { bootstrapThemeColorScheme } from '@/src/theme/bootstrap-theme';
-import { appFontAssets } from '@/src/theme/fonts';
+import { appFontAssets, appFonts } from '@/src/theme/fonts';
 import {
   expoRouterIntegration,
   init as initSentry,
@@ -53,7 +53,8 @@ function RootNavigator() {
         },
         headerTintColor: colors.foreground,
         headerTitleStyle: {
-          color: colors.foreground
+          color: colors.foreground,
+          fontFamily: appFonts.faces.semiBold
         },
         contentStyle: {
           backgroundColor: colors.background

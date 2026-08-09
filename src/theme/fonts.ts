@@ -6,7 +6,7 @@ import {
 } from '@expo-google-fonts/instrument-sans';
 
 export const appFonts = {
-  family: 'DM Sans',
+  family: 'Instrument Sans',
   faces: {
     regular: 'InstrumentSans_400Regular',
     medium: 'InstrumentSans_500Medium',

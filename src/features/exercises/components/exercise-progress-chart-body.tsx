@@ -72,7 +72,7 @@ export function ExerciseProgressChartBody({
     y: { value: points[0]?.value ?? 0 }
   });
   const axisFont = matchFont({
-    fontFamily: appFonts.family,
+    fontFamily: appFonts.faces.regular,
     fontSize: nativeFontSizes.chartAxis
   });
   const chartData: ChartPoint[] = points.map(point => ({

@@ -1,4 +1,5 @@
 import { useAppTheme, useTabBarTheme } from '@/src/theme/app-theme-provider';
+import { appFonts } from '@/src/theme/fonts';
 import { Stack } from 'expo-router';
 
 export const unstable_settings = {
@@ -17,6 +18,7 @@ export default function WorkoutLayout() {
     headerTintColor: colors.foreground,
     headerTitleStyle: {
       color: colors.foreground,
+      fontFamily: appFonts.faces.semiBold,
       fontSize: 17
     }
   };
