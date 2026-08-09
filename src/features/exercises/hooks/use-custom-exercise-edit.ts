@@ -9,7 +9,8 @@ export function useCustomExerciseEdit(exerciseId: string | undefined) {
   const resolvedExerciseId = exerciseId ?? '';
   const exerciseResult = useLiveWithFallback(
     getExerciseByIdQuery(db, resolvedExerciseId),
-    [db, resolvedExerciseId]
+    [db, resolvedExerciseId],
+    { operation: 'exercise.getById' }
   );
   const exercise = exerciseResult.data[0];
   const primaryMuscles = useMemo(

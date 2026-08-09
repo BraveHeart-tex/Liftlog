@@ -7,7 +7,8 @@ export function useHistoricalWorkoutDraftScreen(workoutId: string | undefined) {
   const resolvedWorkoutId = workoutId ?? '';
   const workoutResult = useLiveWithFallback(
     getHistoricalWorkoutDraftQuery(db, resolvedWorkoutId),
-    [db, resolvedWorkoutId]
+    [db, resolvedWorkoutId],
+    { operation: 'workout.getHistoricalWorkoutDraft' }
   );
 
   return {

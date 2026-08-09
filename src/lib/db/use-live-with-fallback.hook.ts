@@ -2,6 +2,7 @@ import type { AnySQLiteSelect } from 'drizzle-orm/sqlite-core';
 import { addDatabaseChangeListener } from 'expo-sqlite';
 import { useEffect, useMemo, useState, type DependencyList } from 'react';
 
+import { withDatabaseSpan } from '@/src/lib/db/database-observability';
 import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task.utils';
 
 type LiveRowsQuery = Pick<AnySQLiteSelect, '_' | 'then'> &
@@ -26,6 +27,7 @@ type UseLiveWithFallbackResult<Rows extends unknown[]> = {
 };
 
 interface UseLiveWithFallbackOptions<Rows extends unknown[]> {
+  operation?: string;
   enabled?: boolean;
   fallbackData?: Rows;
   initialData?: Rows;
@@ -44,6 +46,7 @@ export function useLiveWithFallback<Query extends LiveRowsQuery>(
 ): UseLiveWithFallbackResult<QueryRows<Query>> {
   const {
     enabled = true,
+    operation,
     fallbackData,
     initialData,
     deferInitialRead = false,
@@ -57,7 +60,20 @@ export function useLiveWithFallback<Query extends LiveRowsQuery>(
       return fallbackRows;
     }
 
-    return query.all() as QueryRows<Query>;
+    if (!operation) {
+      return query.all() as QueryRows<Query>;
+    }
+
+    return withDatabaseSpan(
+      {
+        operation,
+        feature: operation.split('.')[0],
+        access: 'read',
+        phase: 'initial_read',
+        liveRefresh: false
+      },
+      () => query.all() as QueryRows<Query>
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
   const [liveRows, setLiveRows] = useState<QueryRows<Query>>(initialRows);
@@ -117,7 +133,23 @@ export function useLiveWithFallback<Query extends LiveRowsQuery>(
         }
       }
 
-      query.then(
+      const liveQuery = operation
+        ? withDatabaseSpan(
+            {
+              operation,
+              feature: operation.split('.')[0],
+              access: 'read',
+              phase: 'live_refresh',
+              liveRefresh: true
+            },
+            () =>
+              new Promise<QueryRows<Query>>((resolve, reject) => {
+                query.then(rows => resolve(rows as QueryRows<Query>), reject);
+              })
+          )
+        : query.then(rows => rows as QueryRows<Query>);
+
+      liveQuery.then(
         rows => {
           if (!isCurrent || currentRequestId !== requestId) {
             return;

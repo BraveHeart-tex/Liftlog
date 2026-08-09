@@ -39,7 +39,8 @@ export function useExercisesScreen() {
   const exercisesResult = useLiveWithFallback(getExercisesQuery(db), [db], {
     initialData: [],
     deferInitialRead: true,
-    waitForInteractions: true
+    waitForInteractions: true,
+    operation: 'exercise.getExercises'
   });
   const exercises = exercisesResult.data;
   const shouldLoadRecentExercises = selectedFilter === 'recent';
@@ -50,7 +51,8 @@ export function useExercisesScreen() {
       enabled: shouldLoadRecentExercises,
       fallbackData: [],
       deferInitialRead: true,
-      waitForInteractions: true
+      waitForInteractions: true,
+      operation: 'workout.getRecentExerciseIds'
     }
   );
   const recentExerciseIdSet = useMemo(

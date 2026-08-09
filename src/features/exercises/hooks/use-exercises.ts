@@ -12,7 +12,8 @@ export const useExercises = (options?: UseExercisesOptions) => {
   const result = useLiveWithFallback(getExercisesQuery(db), [db, enabled], {
     enabled,
     fallbackData: [],
-    deferInitialRead: true
+    deferInitialRead: true,
+    operation: 'exercise.getExercises'
   });
 
   return {

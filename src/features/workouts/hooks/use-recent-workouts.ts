@@ -8,7 +8,8 @@ export function useRecentWorkouts() {
   const db = useDrizzle();
   const recentWorkoutResult = useLiveWithFallback(
     getRecentWorkoutsQuery(db, RECENT_WORKOUT_LIMIT),
-    [db]
+    [db],
+    { operation: 'workout.getRecentWorkouts' }
   );
 
   return {

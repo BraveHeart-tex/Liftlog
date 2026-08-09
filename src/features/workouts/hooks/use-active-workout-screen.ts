@@ -4,9 +4,11 @@ import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 
 export function useActiveWorkoutScreen() {
   const db = useDrizzle();
-  const activeWorkoutResult = useLiveWithFallback(getActiveWorkoutQuery(db), [
-    db
-  ]);
+  const activeWorkoutResult = useLiveWithFallback(
+    getActiveWorkoutQuery(db),
+    [db],
+    { operation: 'workout.getActiveWorkout' }
+  );
 
   return {
     activeWorkout: activeWorkoutResult.data[0],

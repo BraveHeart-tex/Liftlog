@@ -48,7 +48,11 @@ export function SettingsProvider({ children }: PropsWithChildren) {
   const { data: rows, isLive } = useLiveWithFallback(
     getSettingsQuery(db),
     [db],
-    { deferInitialRead: true, debugLabel: 'settings' }
+    {
+      deferInitialRead: true,
+      debugLabel: 'settings',
+      operation: 'settings.getSettings'
+    }
   );
   const liveSettings = useMemo(() => mapSettingsRows(rows), [rows]);
   const settings = isLive ? liveSettings : initialSettings;

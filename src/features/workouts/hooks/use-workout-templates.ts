@@ -19,7 +19,7 @@ export function useWorkoutTemplates(options?: UseWorkoutTemplatesOptions) {
   const result = useLiveWithFallback(
     getWorkoutStartTemplateRowsQuery(db, limit),
     [db, enabled, limit],
-    { enabled }
+    { enabled, operation: 'workoutTemplate.getStartRows' }
   );
 
   const templates = useMemo(

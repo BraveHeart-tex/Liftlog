@@ -16,7 +16,8 @@ export function useWorkoutHistoryDetail(workoutId: string | undefined) {
 
   const contentResult = useLiveWithFallback(
     getWorkoutHistoryDetailRowsQuery(db, resolvedWorkoutId),
-    [db, resolvedWorkoutId]
+    [db, resolvedWorkoutId],
+    { operation: 'workout.getHistoryDetail' }
   );
   const {
     workout,
@@ -30,14 +31,17 @@ export function useWorkoutHistoryDetail(workoutId: string | undefined) {
     [contentResult.data]
   );
 
-  const activeWorkoutResult = useLiveWithFallback(getActiveWorkoutQuery(db), [
-    db
-  ]);
+  const activeWorkoutResult = useLiveWithFallback(
+    getActiveWorkoutQuery(db),
+    [db],
+    { operation: 'workout.getActiveWorkout' }
+  );
   const activeWorkout = activeWorkoutResult.data[0];
 
   const savedTemplateResult = useLiveWithFallback(
     getWorkoutTemplateBySourceWorkoutIdQuery(db, resolvedWorkoutId),
-    [db, resolvedWorkoutId]
+    [db, resolvedWorkoutId],
+    { operation: 'workoutTemplate.getBySourceWorkoutId' }
   );
   const hasSavedTemplate = savedTemplateResult.data.length > 0;
   const canRepeatWorkout = Boolean(

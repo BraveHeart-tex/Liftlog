@@ -60,7 +60,8 @@ export function useStepsScreen() {
     useSettings();
   const stepDaysResult = useLiveWithFallback(
     getRecentStepDaysQuery(db, RECENT_DAY_LIMIT),
-    [db]
+    [db],
+    { operation: 'steps.getRecentStepDays' }
   );
   const stepDays = useMemo(
     () => [...stepDaysResult.data].sort((a, b) => a.startAt - b.startAt),

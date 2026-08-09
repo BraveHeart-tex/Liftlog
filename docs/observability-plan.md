@@ -34,14 +34,14 @@ Verification: `pnpm test` (71 passed), TypeScript check, ESLint, and Prettier pa
 
 ## Phase 1 — Shared live-query reads
 
-- [ ] Add stable repository operation names to the `useLiveWithFallback` call sites.
-- [ ] Instrument the initial `query.all()` as `phase: initial_read`.
-- [ ] Instrument reactive `query.then()` executions as `phase: live_refresh`.
-- [ ] Record both executions when both occur; do not suppress the second query.
-- [ ] Preserve an active route/interaction parent and record background refreshes without forcing a transaction.
-- [ ] Record query errors without changing existing error handling.
+- [x] Add stable repository operation names to the `useLiveWithFallback` call sites.
+- [x] Instrument the initial `query.all()` as `phase: initial_read`.
+- [x] Instrument reactive `query.then()` executions as `phase: live_refresh`.
+- [x] Record both executions when both occur; do not suppress the second query.
+- [x] Preserve an active route/interaction parent and record background refreshes without forcing a transaction.
+- [x] Record query errors without changing existing error handling.
 - [ ] Verify representative screens in development and inspect spans in Spotlight/Sentry.
-- [ ] Run type checks/tests and `graphify update .`.
+- [x] Run type checks/tests and `graphify update .`.
 
 ## Phase 2 — Repository operations
 
@@ -77,4 +77,4 @@ Verification: `pnpm test` (71 passed), TypeScript check, ESLint, and Prettier pa
 
 Before ending a session, record the active phase, check off completed items, note tests run and failures, and state the next smallest task. Do not start a later phase until the current phase is verified.
 
-Current handoff: Phase 0 code is implemented; its development Spotlight smoke check is pending. Next smallest task is that smoke check, followed by Phase 1 call-site instrumentation.
+Current handoff: Phase 1 shared live-query instrumentation is implemented; automated checks pass. Development Spotlight verification for Phase 0 and representative Phase 1 screens remains pending. Next smallest task is the development Spotlight smoke check, then inspect initial/live-refresh spans in representative screens.

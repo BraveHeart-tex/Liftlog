@@ -24,16 +24,24 @@ export function useActiveWorkoutContent({
   const workoutExerciseResult = useLiveWithFallback(
     getWorkoutExercisesQuery(db, activeWorkout.id),
     [db, activeWorkout.id, hasPreloadedExerciseRows],
-    { enabled: hasPreloadedExerciseRows }
+    {
+      enabled: hasPreloadedExerciseRows,
+      operation: 'workout.getWorkoutExercises'
+    }
   );
   const joinedWorkoutExerciseResult = useLiveWithFallback(
     getWorkoutExercisesWithExercisesQuery(db, activeWorkout.id),
     [db, activeWorkout.id, hasPreloadedExerciseRows],
-    { enabled: !hasPreloadedExerciseRows, fallbackData: [] }
+    {
+      enabled: !hasPreloadedExerciseRows,
+      fallbackData: [],
+      operation: 'workout.getWorkoutExercisesWithExercises'
+    }
   );
   const setResult = useLiveWithFallback(
     getSetsForWorkoutQuery(db, activeWorkout.id),
-    [db, activeWorkout.id]
+    [db, activeWorkout.id],
+    { operation: 'workout.getSetsForWorkout' }
   );
   const workoutExerciseRows = useMemo(
     () =>

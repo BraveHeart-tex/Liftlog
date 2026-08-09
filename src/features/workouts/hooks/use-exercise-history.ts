@@ -55,14 +55,16 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
 
   const exerciseResult = useLiveWithFallback(
     getExerciseByIdQuery(db, exerciseId),
-    [db, exerciseId]
+    [db, exerciseId],
+    { operation: 'exercise.getById' }
   );
   const trackingType = resolveTrackingType(
     exerciseResult.data[0]?.trackingType
   );
   const prResult = useLiveWithFallback(
     getPersonalRecordsByExerciseQuery(db, exerciseId),
-    [db, exerciseId]
+    [db, exerciseId],
+    { operation: 'progress.getPersonalRecordsByExercise' }
   );
   const prSetIds = useMemo(
     () => new Set(prResult.data.map(personalRecord => personalRecord.setId)),
@@ -73,7 +75,8 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
       includeLimitProbe: true,
       includeProgression: true
     }),
-    [db, exerciseId, paginationRetryKey, visibleWorkoutLimit]
+    [db, exerciseId, paginationRetryKey, visibleWorkoutLimit],
+    { operation: 'progress.getExerciseHistory' }
   );
   const historyRows = useMemo(
     () => mapExerciseHistoryRows(historyResult.data),

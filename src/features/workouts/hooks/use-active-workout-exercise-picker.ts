@@ -29,7 +29,8 @@ export function useActiveWorkoutExercisePicker({
     {
       enabled: shouldLoadExercises,
       fallbackData: [],
-      deferInitialRead: true
+      deferInitialRead: true,
+      operation: 'exercise.getExercises'
     }
   );
   const recentExerciseRowResult = useLiveWithFallback(
@@ -38,7 +39,8 @@ export function useActiveWorkoutExercisePicker({
     {
       enabled,
       fallbackData: [],
-      deferInitialRead: true
+      deferInitialRead: true,
+      operation: 'workout.getRecentExerciseIds'
     }
   );
   const recentExerciseIds = useMemo(

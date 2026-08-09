@@ -17,11 +17,13 @@ export function useHistoricalWorkoutEditScreen({
   const resolvedSourceWorkoutId = sourceWorkoutId ?? '';
   const draftWorkoutResult = useLiveWithFallback(
     getHistoricalWorkoutEditDraftQuery(db, resolvedDraftWorkoutId),
-    [db, resolvedDraftWorkoutId]
+    [db, resolvedDraftWorkoutId],
+    { operation: 'workout.getHistoricalWorkoutEditDraft' }
   );
   const sourceWorkoutResult = useLiveWithFallback(
     getWorkoutByIdQuery(db, resolvedSourceWorkoutId),
-    [db, resolvedSourceWorkoutId]
+    [db, resolvedSourceWorkoutId],
+    { operation: 'workout.getById' }
   );
 
   return {

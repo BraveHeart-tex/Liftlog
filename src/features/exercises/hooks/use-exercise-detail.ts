@@ -206,7 +206,8 @@ export function useExerciseDetail(exerciseId: string | undefined) {
   const resolvedExerciseId = exerciseId ?? '';
   const exerciseResult = useLiveWithFallback(
     getExerciseByIdQuery(db, resolvedExerciseId),
-    [db, resolvedExerciseId]
+    [db, resolvedExerciseId],
+    { operation: 'exercise.getById' }
   );
   const exercise = exerciseResult.data[0];
   const trackingType = resolveTrackingType(exercise?.trackingType);
@@ -216,7 +217,7 @@ export function useExerciseDetail(exerciseId: string | undefined) {
   const exerciseUsageResult = useLiveWithFallback(
     getExerciseUsageSummaryQuery(db, resolvedExerciseId),
     [db, resolvedExerciseId, isCustomExercise],
-    { enabled: isCustomExercise }
+    { enabled: isCustomExercise, operation: 'exercise.getUsageSummary' }
   );
 
   const historyResult = useLiveWithFallback(
@@ -227,7 +228,8 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     {
       deferInitialRead: true,
       enabled: hasExercise,
-      waitForInteractions: true
+      waitForInteractions: true,
+      operation: 'progress.getExerciseHistory'
     }
   );
 

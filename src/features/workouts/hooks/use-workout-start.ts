@@ -21,7 +21,8 @@ export function useWorkoutStart() {
   const db = useDrizzle();
   const activeWorkoutResult = useLiveWithFallback(
     getActiveWorkoutSummaryQuery(db),
-    [db]
+    [db],
+    { operation: 'workout.getActiveWorkoutSummary' }
   );
 
   const activeWorkoutSummary = activeWorkoutResult.data[0];

@@ -14,11 +14,13 @@ export function useActiveWorkoutExerciseDetail(
   const resolvedWorkoutExerciseId = workoutExerciseId ?? '';
   const detailResult = useLiveWithFallback(
     getActiveWorkoutExerciseDetailQuery(db, resolvedWorkoutExerciseId),
-    [db, resolvedWorkoutExerciseId]
+    [db, resolvedWorkoutExerciseId],
+    { operation: 'workout.getActiveWorkoutExerciseDetail' }
   );
   const setResult = useLiveWithFallback(
     getSetsByWorkoutExerciseIdQuery(db, resolvedWorkoutExerciseId),
-    [db, resolvedWorkoutExerciseId]
+    [db, resolvedWorkoutExerciseId],
+    { operation: 'workout.getSetsByWorkoutExercise' }
   );
   const detail = detailResult.data[0];
   const workoutExercise = detail?.workoutExercise;
