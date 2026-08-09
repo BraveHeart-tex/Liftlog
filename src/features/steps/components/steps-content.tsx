@@ -39,9 +39,8 @@ export function StepsContent() {
     openHealthConnectSettings,
     refreshSteps
   } = useStepsScreen();
-  const newestFirstDays = [...stepDays].sort((a, b) => b.startAt - a.startAt);
-  const recentStepDays = newestFirstDays.slice(0, RECENT_STEP_HISTORY_LIMIT);
-  const hasMoreStepHistory = newestFirstDays.length > recentStepDays.length;
+  const recentStepDays = stepDays.slice(0, RECENT_STEP_HISTORY_LIMIT);
+  const hasMoreStepHistory = stepDays.length > recentStepDays.length;
   const progress =
     stepGoal > 0
       ? Math.min(100, Math.round((displayedTodaySteps / stepGoal) * 100))
@@ -175,8 +174,8 @@ export function StepsContent() {
         ListFooterComponent={
           hasMoreStepHistory ? (
             <Text variant="caption" tone="muted" className="pt-3 text-center">
-              Showing latest {recentStepDays.length} of {newestFirstDays.length}{' '}
-              synced days
+              Showing latest {recentStepDays.length} of {stepDays.length} synced
+              days
             </Text>
           ) : null
         }

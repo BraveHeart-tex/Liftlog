@@ -64,7 +64,7 @@ export function useStepsScreen() {
     }
   );
   const stepDays = useMemo(
-    () => [...stepDaysResult.data].sort((a, b) => a.startAt - b.startAt),
+    () => [...stepDaysResult.data].sort((a, b) => b.startAt - a.startAt),
     [stepDaysResult.data]
   );
   const [todayDateKey, setTodayDateKey] = useState(getTodayDateKey);

@@ -735,8 +735,8 @@
     "semantic_hash": "c2814e29962ab14f7e49ff3f79daa79a"
   },
   "src/features/steps/components/steps-content.tsx": {
-    "mtime": 1786205454.654098,
-    "ast_hash": "734d43f1572e97546e1517e3a923b579",
+    "mtime": 1786277838.192919,
+    "ast_hash": "3a44107ab4855143775af418e01904c6",
     "semantic_hash": ""
   },
   "src/features/steps/components/steps-empty-state.tsx": {
@@ -760,8 +760,8 @@
     "semantic_hash": "d7d72d8c0fa59acd46a0861bdc656718"
   },
   "src/features/steps/components/today-step-radial-card.tsx": {
-    "mtime": 1786205454.6558204,
-    "ast_hash": "aedf23b3d97267df61a7373ed48a7f7c",
+    "mtime": 1786277838.1202824,
+    "ast_hash": "f7349ce40801d6985ccbccbf6e646fd7",
     "semantic_hash": ""
   },
   "src/features/steps/health-connect.service.ts": {
@@ -770,8 +770,8 @@
     "semantic_hash": ""
   },
   "src/features/steps/hooks/use-steps-screen.ts": {
-    "mtime": 1786277147.1170986,
-    "ast_hash": "bc87d5d2f4167233db2bc5d9e2ea8c4e",
+    "mtime": 1786277820.7638688,
+    "ast_hash": "3b2a0bf1fbdedcd03ab37bf3a1f1326b",
     "semantic_hash": ""
   },
   "src/features/steps/steps-date.utils.ts": {
@@ -1687,11 +1687,6 @@
   "tests/setup.ts": {
     "mtime": 1786273291.7234442,
     "ast_hash": "37fe3fa8ba4ba273226e1dc1947fb77e",
-    "semantic_hash": ""
-  },
-  "docs/workout-log-rendering-performance-plan.md": {
-    "mtime": 1786276512.1142325,
-    "ast_hash": "e8b12ab46703ba218072fdc73c776ef5",
     "semantic_hash": ""
   },
   "src/features/steps/steps-sync.service.ts": {

@@ -6,15 +6,9 @@ import { cn } from '@/src/lib/utils/cn.utils';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { nativeFontSizes } from '@/src/theme/sizes';
 import { Canvas, Circle, Path, Skia } from '@shopify/react-native-skia';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { View } from 'react-native';
-import {
-  Easing,
-  runOnJS,
-  useAnimatedReaction,
-  useSharedValue,
-  withTiming
-} from 'react-native-reanimated';
+import { Easing, useSharedValue, withTiming } from 'react-native-reanimated';
 
 interface TodayStepRadialCardProps {
   compact?: boolean;
@@ -41,7 +35,6 @@ export function TodayStepRadialCard({
   const safeProgress = Math.min(Math.max(progress, 0), 100);
   const progressEnd = useSharedValue(safeProgress / 100);
   const stepValue = useSharedValue(steps);
-  const [displayedSteps, setDisplayedSteps] = useState(steps);
   const chartSize = compact ? COMPACT_CHART_SIZE : CHART_SIZE;
   const strokeWidth = compact ? COMPACT_STROKE_WIDTH : STROKE_WIDTH;
   const radius = (chartSize - strokeWidth) / 2;
@@ -76,14 +69,6 @@ export function TodayStepRadialCard({
       easing: Easing.out(Easing.cubic)
     });
   }, [stepValue, steps]);
-
-  useAnimatedReaction(
-    () => Math.round(stepValue.value),
-    currentSteps => {
-      runOnJS(setDisplayedSteps)(currentSteps);
-    },
-    []
-  );
 
   return (
     <Card className={cn('overflow-hidden', compact ? 'mt-4' : 'mt-5')}>
@@ -127,7 +112,7 @@ export function TodayStepRadialCard({
                 minimumFontScale={0.72}
                 style={{ fontSize: nativeFontSizes.stepRadialValueCompact }}
               >
-                {formatSteps(displayedSteps)}
+                {formatSteps(steps)}
               </Text>
 
               <Text
