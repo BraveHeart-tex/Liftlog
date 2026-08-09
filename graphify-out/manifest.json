@@ -1580,8 +1580,8 @@
     "semantic_hash": ""
   },
   "docs/data-access.md": {
-    "mtime": 1786272564.580427,
-    "ast_hash": "8f59f863d10ccc15d403acbbe3edd2ad",
+    "mtime": 1786272692.983803,
+    "ast_hash": "422b88b585e9e67a7693002c7c30f3ba",
     "semantic_hash": ""
   },
   "docs/database.md": {
@@ -1675,8 +1675,8 @@
     "semantic_hash": ""
   },
   "tests/lib/db/database-observability.test.ts": {
-    "mtime": 1786272479.2319221,
-    "ast_hash": "1843fa0beb5a91fb578702e4ef0255f8",
+    "mtime": 1786272709.2472625,
+    "ast_hash": "a30b38c254419a4e035f5f4fabfa772d",
     "semantic_hash": ""
   },
   "docs/observability-plan.md": {
