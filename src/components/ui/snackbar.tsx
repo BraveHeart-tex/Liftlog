@@ -1,6 +1,15 @@
 import { Button } from '@/src/components/ui/button';
+import { Icon, type IconComponent } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { cn } from '@/src/lib/utils/cn.utils';
+import {
+  CircleCheck,
+  CircleX,
+  Info,
+  TriangleAlert,
+  X
+} from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, PanResponder, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +20,8 @@ const SNACKBAR_BOTTOM_OFFSET = 88;
 const SWIPE_DISMISS_DISTANCE = 48;
 const SWIPE_DISMISS_VELOCITY = 0.75;
 
+export type SnackbarVariant = 'success' | 'info' | 'warning' | 'danger';
+
 interface SnackbarOptions {
   key?: string;
   message: string;
@@ -18,7 +29,54 @@ interface SnackbarOptions {
   onAction?: () => void;
   onDismiss?: () => void;
   durationMs?: number;
+  variant?: SnackbarVariant;
 }
+
+interface SnackbarVariantStyles {
+  borderClassName: string;
+  indicatorClassName: string;
+  iconContainerClassName: string;
+  icon: IconComponent;
+  actionTextClassName: string;
+}
+
+const snackbarVariantStyles: Record<SnackbarVariant, SnackbarVariantStyles> = {
+  success: {
+    borderClassName: 'border-success/40',
+    indicatorClassName: 'bg-success',
+    iconContainerClassName: 'bg-success/15 border-success/25',
+    icon: CircleCheck,
+    actionTextClassName: 'text-success'
+  },
+  info: {
+    borderClassName: 'border-info/40',
+    indicatorClassName: 'bg-info',
+    iconContainerClassName: 'bg-info/15 border-info/25',
+    icon: Info,
+    actionTextClassName: 'text-info'
+  },
+  warning: {
+    borderClassName: 'border-warning/40',
+    indicatorClassName: 'bg-warning',
+    iconContainerClassName: 'bg-warning/15 border-warning/25',
+    icon: TriangleAlert,
+    actionTextClassName: 'text-warning'
+  },
+  danger: {
+    borderClassName: 'border-danger/40',
+    indicatorClassName: 'bg-danger',
+    iconContainerClassName: 'bg-danger/15 border-danger/25',
+    icon: CircleX,
+    actionTextClassName: 'text-danger'
+  }
+};
+
+const snackbarAnnouncementLabels: Record<SnackbarVariant, string> = {
+  success: 'Success',
+  info: 'Information',
+  warning: 'Warning',
+  danger: 'Error'
+};
 
 type SnackbarMessage = SnackbarOptions & {
   id: number;
@@ -133,7 +191,12 @@ export function SnackbarHost() {
     }
 
     const messageId = message.id;
-    const announcement = [message.message, message.actionLabel]
+    const variant = message.variant ?? 'info';
+    const announcement = [
+      snackbarAnnouncementLabels[variant],
+      message.message,
+      message.actionLabel
+    ]
       .filter(Boolean)
       .join('. ');
     const timeoutId = setTimeout(() => {
@@ -193,6 +256,10 @@ export function SnackbarHost() {
     dismissSnackbar();
   };
 
+  const variant = renderedMessage.variant ?? 'info';
+  const variantStyles = snackbarVariantStyles[variant];
+  const StatusIcon = variantStyles.icon;
+
   return (
     <View
       pointerEvents="box-none"
@@ -202,13 +269,43 @@ export function SnackbarHost() {
       <Animated.View
         style={{
           opacity: progress,
-          transform: [{ translateY: dragY }]
+          transform: [
+            {
+              translateY: progress.interpolate({
+                inputRange: [0, 1],
+                outputRange: [12, 0]
+              })
+            },
+            { translateY: dragY }
+          ]
         }}
         {...panResponder.panHandlers}
       >
-        <View className="border-border bg-card flex-row items-center gap-3 rounded-md border px-4 py-3 shadow-lg">
-          <View className="bg-primary h-8 w-1 rounded-sm" />
-          <Text variant="bodyMedium" className="flex-1" numberOfLines={2}>
+        <View
+          className={cn(
+            'bg-popover flex-row items-center gap-3 rounded-lg border px-3 py-2 shadow-xl',
+            variantStyles.borderClassName
+          )}
+        >
+          <View
+            className={cn(
+              'h-9 w-1.5 shrink-0 rounded-sm',
+              variantStyles.indicatorClassName
+            )}
+          />
+          <View
+            className={cn(
+              'h-8 w-8 shrink-0 items-center justify-center rounded-md border',
+              variantStyles.iconContainerClassName
+            )}
+          >
+            <Icon as={StatusIcon} size="sm" tone={variant} />
+          </View>
+          <Text
+            variant="bodyMedium"
+            className="min-w-0 flex-1"
+            numberOfLines={2}
+          >
             {renderedMessage.message}
           </Text>
 
@@ -216,13 +313,23 @@ export function SnackbarHost() {
             <Button
               variant="ghost"
               size="sm"
-              className="px-2 py-1"
-              textClassName="text-primary"
+              className="shrink-0 px-2"
+              textClassName={variantStyles.actionTextClassName}
               onPress={handleAction}
             >
               {renderedMessage.actionLabel}
             </Button>
           ) : null}
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="shrink-0"
+            accessibilityLabel="Dismiss notification"
+            onPress={() => dismissSnackbar()}
+          >
+            <Icon as={X} size="md" tone="mutedForeground" strokeWidth={2.25} />
+          </Button>
         </View>
       </Animated.View>
     </View>
