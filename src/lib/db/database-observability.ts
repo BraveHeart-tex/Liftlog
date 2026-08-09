@@ -1,7 +1,4 @@
-import { startSpan, type Span } from '@sentry/react-native';
-
-const SPAN_STATUS_OK = 1;
-const SPAN_STATUS_ERROR = 2;
+import { withObservabilitySpan } from '@/src/lib/observability/observability-span';
 
 export interface DatabaseSpanOptions {
   operation: string;
@@ -33,23 +30,6 @@ function getSpanAttributes({
   };
 }
 
-function setSpanStatus(span: Span, code: number) {
-  try {
-    span.setStatus({ code: code as 1 | 2 });
-  } catch {
-    // Observability must never change database behavior.
-  }
-}
-
-function isPromiseLike<T>(value: T): value is T & PromiseLike<Awaited<T>> {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'then' in value &&
-    typeof value.then === 'function'
-  );
-}
-
 export function withDatabaseSpan<T>(
   options: DatabaseSpanOptions,
   operation: DatabaseOperation<T>
@@ -64,73 +44,13 @@ export function withDatabaseSpan<T>(
   options: DatabaseSpanOptions,
   operation: DatabaseOperation<T> | DatabaseOperation<Promise<T>>
 ): T | Promise<T> {
-  let operationStarted = false;
-  let operationFailed = false;
-  let operationError: unknown;
-  let operationCompleted = false;
-  let completedResult: T | Promise<T> | undefined;
-
-  const run = (span: Span) => {
-    operationStarted = true;
-
-    try {
-      const result = operation();
-
-      if (isPromiseLike(result)) {
-        return result.then(
-          value => {
-            operationCompleted = true;
-            setSpanStatus(span, SPAN_STATUS_OK);
-
-            return value;
-          },
-          error => {
-            operationFailed = true;
-            operationError = error;
-            setSpanStatus(span, SPAN_STATUS_ERROR);
-
-            throw error;
-          }
-        );
-      }
-
-      operationCompleted = true;
-      completedResult = result;
-      setSpanStatus(span, SPAN_STATUS_OK);
-
-      return result;
-    } catch (error) {
-      operationFailed = true;
-      operationError = error;
-      setSpanStatus(span, SPAN_STATUS_ERROR);
-
-      throw error;
-    }
-  };
-
-  try {
-    return startSpan(
-      {
-        name: options.operation,
-        op: 'db',
-        onlyIfParent: true,
-        attributes: getSpanAttributes(options)
-      },
-      run
-    ) as T | Promise<T>;
-  } catch (error) {
-    if (operationFailed) {
-      throw operationError;
-    }
-
-    if (operationCompleted) {
-      return completedResult as T | Promise<T>;
-    }
-
-    if (!operationStarted) {
-      return operation();
-    }
-
-    throw error;
-  }
+  return withObservabilitySpan(
+    {
+      name: options.operation,
+      op: 'db',
+      onlyIfParent: true,
+      attributes: getSpanAttributes(options)
+    },
+    operation as () => T
+  );
 }

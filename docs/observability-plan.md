@@ -57,11 +57,13 @@ Verification: `pnpm test` (71 passed), TypeScript check, ESLint, Prettier, and `
 
 ## Phase 3 — Startup and important user flows
 
-- [ ] Add separate spans for production-relevant migrations, backfills, and seeds in `src/components/database-provider.tsx`.
-- [ ] Use development seed spans only to validate instrumentation, not as baseline data.
-- [ ] Add a small number of domain-flow spans around high-value actions such as starting, saving, and finishing workouts.
-- [ ] Confirm database child spans appear under route or flow spans where a parent exists.
-- [ ] Run type checks/tests and `graphify update .`.
+- [x] Add separate spans for production-relevant migrations, backfills, and seeds in `src/components/database-provider.tsx`.
+- [x] Use development seed spans only to validate instrumentation, not as baseline data.
+- [x] Add a small number of domain-flow spans around high-value actions such as starting, saving, and finishing workouts.
+- [x] Confirm database child spans appear under route or flow spans where a parent exists.
+- [x] Run type checks/tests and `graphify update .`.
+
+Verification: `pnpm test` (72 passed), TypeScript check, ESLint, Prettier, and the flow-parent test pass. Development Spotlight smoke checks from Phases 0–1 remain pending because they require running the app in a development client.
 
 ## Phase 4 — Baseline review and optimization
 
@@ -79,4 +81,4 @@ Verification: `pnpm test` (71 passed), TypeScript check, ESLint, Prettier, and `
 
 Before ending a session, record the active phase, check off completed items, note tests run and failures, and state the next smallest task. Do not start a later phase until the current phase is verified.
 
-Current handoff: Phase 2 repository-operation instrumentation is implemented; automated checks pass. Development Spotlight verification for Phase 0 and representative Phase 1 screens remains pending. Next smallest task is Phase 3 startup and important user-flow spans after the pending Spotlight checks.
+Current handoff: Phase 3 startup and important user-flow instrumentation is implemented; automated checks pass. Development Spotlight verification for Phases 0–3 remains pending. Next smallest task is baseline collection and review after the pending Spotlight checks.

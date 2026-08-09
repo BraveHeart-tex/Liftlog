@@ -11,6 +11,7 @@ import {
 } from '@/src/features/workouts/workout-template.repository';
 import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
+import { withDomainFlowSpan } from '@/src/lib/observability/observability-span';
 import { formatWorkoutName } from '@/src/features/workouts/workout-display.utils';
 import { router, type Href } from 'expo-router';
 import { useCallback, useEffect } from 'react';
@@ -42,12 +43,17 @@ export function useWorkoutStart() {
   }, [activeWorkoutId]);
 
   const startWorkout = useCallback(() => {
-    createWorkout(db, {
-      name: formatWorkoutName(new Date()),
-      status: 'in_progress'
-    });
+    withDomainFlowSpan(
+      { operation: 'workout.start', feature: 'workout' },
+      () => {
+        createWorkout(db, {
+          name: formatWorkoutName(new Date()),
+          status: 'in_progress'
+        });
 
-    router.navigate(activeWorkoutRoute);
+        router.navigate(activeWorkoutRoute);
+      }
+    );
   }, [db]);
 
   const resumeWorkout = useCallback(() => {
@@ -56,31 +62,41 @@ export function useWorkoutStart() {
 
   const startWorkoutFromTemplate = useCallback(
     (templateId: WorkoutTemplate['id']) => {
-      const createdWorkout = createWorkoutFromTemplate(db, {
-        templateId
-      });
+      withDomainFlowSpan(
+        { operation: 'workout.start', feature: 'workout' },
+        () => {
+          const createdWorkout = createWorkoutFromTemplate(db, {
+            templateId
+          });
 
-      if (createdWorkout) {
-        router.navigate(activeWorkoutRoute);
-      }
+          if (createdWorkout) {
+            router.navigate(activeWorkoutRoute);
+          }
+        }
+      );
     },
     [db]
   );
 
   const discardActiveWorkoutAndStartTemplate = useCallback(
     (templateId: WorkoutTemplate['id']) => {
-      const createdWorkout = createWorkoutFromTemplate(db, {
-        templateId,
-        discardWorkoutId: activeWorkoutId
-      });
+      withDomainFlowSpan(
+        { operation: 'workout.start', feature: 'workout' },
+        () => {
+          const createdWorkout = createWorkoutFromTemplate(db, {
+            templateId,
+            discardWorkoutId: activeWorkoutId
+          });
 
-      if (createdWorkout) {
-        if (activeWorkoutId) {
-          useRestTimerStore.getState().cancelForWorkout(activeWorkoutId);
+          if (createdWorkout) {
+            if (activeWorkoutId) {
+              useRestTimerStore.getState().cancelForWorkout(activeWorkoutId);
+            }
+
+            router.navigate(activeWorkoutRoute);
+          }
         }
-
-        router.navigate(activeWorkoutRoute);
-      }
+      );
     },
     [activeWorkoutId, db]
   );

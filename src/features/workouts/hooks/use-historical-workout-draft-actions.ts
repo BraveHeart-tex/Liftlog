@@ -4,6 +4,7 @@ import {
   deleteWorkout,
   saveHistoricalWorkoutDraft
 } from '@/src/features/workouts/workout.repository';
+import { withDomainFlowSpan } from '@/src/lib/observability/observability-span';
 import { useCallback } from 'react';
 
 export function useHistoricalWorkoutDraftActions() {
@@ -11,13 +12,18 @@ export function useHistoricalWorkoutDraftActions() {
 
   const saveDraft = useCallback(
     (workoutId: Workout['id']) => {
-      const savedDraft = saveHistoricalWorkoutDraft(db, workoutId);
+      return withDomainFlowSpan(
+        { operation: 'workout.save', feature: 'workout' },
+        () => {
+          const savedDraft = saveHistoricalWorkoutDraft(db, workoutId);
 
-      if (!savedDraft) {
-        return undefined;
-      }
+          if (!savedDraft) {
+            return undefined;
+          }
 
-      return savedDraft.workout;
+          return savedDraft.workout;
+        }
+      );
     },
     [db]
   );

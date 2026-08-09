@@ -14,6 +14,7 @@ import migrations from '@/src/db/migrations/migrations';
 import { runSeedIfNeeded } from '@/src/db/seed';
 import { cleanupLegacyHistoricalWorkoutEditDrafts } from '@/src/features/workouts/workout.repository';
 import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
+import { withDatabaseSpan } from '@/src/lib/db/database-observability';
 import {
   type SQLiteDatabase,
   SQLiteProvider,
@@ -39,6 +40,22 @@ const migrationsThroughExerciseNameBackfill = {
     )
   }
 };
+
+function withStartupDatabaseSpan<T>(
+  operation: string,
+  phase: string,
+  callback: () => T
+): T {
+  return withDatabaseSpan(
+    {
+      operation,
+      feature: 'database',
+      access: 'write',
+      phase
+    },
+    callback
+  );
+}
 
 export function useDrizzle() {
   const context = useContext(DrizzleContext);
@@ -72,13 +89,35 @@ async function migrateAsync(sqliteDb: SQLiteDatabase) {
   const drizzleDb = createDrizzleDb(sqliteDb);
 
   try {
-    await assertNoExerciseNameMigrationConflicts(sqliteDb);
-    await runDatabaseMigrations(sqliteDb, () =>
-      migrate(drizzleDb, migrationsThroughExerciseNameBackfill)
+    await withStartupDatabaseSpan(
+      'database.migration.validateExerciseNames',
+      'migration',
+      () => assertNoExerciseNameMigrationConflicts(sqliteDb)
     );
-    backfillNormalizedExerciseNames(drizzleDb);
-    await runDatabaseMigrations(sqliteDb, () => migrate(drizzleDb, migrations));
-    cleanupLegacyHistoricalWorkoutEditDrafts(drizzleDb);
+    await withStartupDatabaseSpan(
+      'database.migration.beforeExerciseNameBackfill',
+      'migration',
+      () =>
+        runDatabaseMigrations(sqliteDb, () =>
+          migrate(drizzleDb, migrationsThroughExerciseNameBackfill)
+        )
+    );
+    withStartupDatabaseSpan(
+      'database.backfill.normalizedExerciseNames',
+      'backfill',
+      () => backfillNormalizedExerciseNames(drizzleDb)
+    );
+    await withStartupDatabaseSpan(
+      'database.migration.afterExerciseNameBackfill',
+      'migration',
+      () =>
+        runDatabaseMigrations(sqliteDb, () => migrate(drizzleDb, migrations))
+    );
+    withStartupDatabaseSpan(
+      'database.backfill.legacyHistoricalEditDrafts',
+      'backfill',
+      () => cleanupLegacyHistoricalWorkoutEditDrafts(drizzleDb)
+    );
   } catch (error) {
     console.error('Database migration failed', error);
 
@@ -86,12 +125,16 @@ async function migrateAsync(sqliteDb: SQLiteDatabase) {
   }
 
   try {
-    await runSeedIfNeeded(drizzleDb);
+    withStartupDatabaseSpan('database.seed.production', 'seed', () =>
+      runSeedIfNeeded(drizzleDb)
+    );
 
     if (__DEV__) {
       const { runDevSeedIfNeeded } = await import('@/src/db/dev-seed');
 
-      await runDevSeedIfNeeded(drizzleDb);
+      withStartupDatabaseSpan('database.seed.development', 'dev_seed', () =>
+        runDevSeedIfNeeded(drizzleDb)
+      );
     }
   } catch (error) {
     console.error('Database seed failed', error);
