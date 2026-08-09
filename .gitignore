@@ -63,11 +63,5 @@ app-example
 .design-reviews
 
 .pnpm-store/
-# Graphify local/generated state
-graphify-out/cache/
-graphify-out/.graphify_*
-graphify-out/cost.json
-graphify-out/graph.html
-
-# Graphify transient dated outputs
-graphify-out/20??-??-??/
+# Graphify generated output
+graphify-out/
