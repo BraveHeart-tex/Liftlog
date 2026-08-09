@@ -29,7 +29,12 @@ export interface StepPermissionState {
   canReadHistory: boolean;
 }
 
-interface StepSyncResult {
+export interface StepHealthConnectStatus {
+  availability: HealthConnectAvailability;
+  permissions: StepPermissionState;
+}
+
+export interface StepSyncResult extends StepHealthConnectStatus {
   days: NewHealthStepDay[];
   usedHistoryWindowDays: number;
 }
@@ -101,6 +106,12 @@ async function initializeHealthConnect(): Promise<HealthConnectAvailability> {
   return isInitialized ? 'available' : 'unavailable';
 }
 
+async function getGrantedStepPermissionState(): Promise<StepPermissionState> {
+  const permissions = (await getGrantedPermissions()) as GrantedPermission[];
+
+  return toStepPermissionState(permissions);
+}
+
 export async function getHealthConnectAvailability(): Promise<HealthConnectAvailability> {
   try {
     return await initializeHealthConnect();
@@ -122,9 +133,27 @@ export async function getStepPermissionState(): Promise<StepPermissionState> {
     };
   }
 
-  const permissions = (await getGrantedPermissions()) as GrantedPermission[];
+  return getGrantedStepPermissionState();
+}
 
-  return toStepPermissionState(permissions);
+export async function getStepHealthConnectStatus(): Promise<StepHealthConnectStatus> {
+  const availability = await getHealthConnectAvailability();
+
+  if (availability !== 'available') {
+    return {
+      availability,
+      permissions: {
+        canReadSteps: false,
+        canReadBackground: false,
+        canReadHistory: false
+      }
+    };
+  }
+
+  return {
+    availability,
+    permissions: await getGrantedStepPermissionState()
+  };
 }
 
 export async function requestStepPermissions(): Promise<StepPermissionState> {
@@ -218,31 +247,24 @@ export async function syncStepDaysFromHealthConnect({
 }: {
   isInitial: boolean;
 }): Promise<StepSyncResult> {
-  const availability = await initializeHealthConnect();
+  const status = await getStepHealthConnectStatus();
 
-  if (availability !== 'available') {
+  if (status.availability !== 'available' || !status.permissions.canReadSteps) {
     return {
-      days: [],
-      usedHistoryWindowDays: 0
-    };
-  }
-
-  const permissions = await getStepPermissionState();
-
-  if (!permissions.canReadSteps) {
-    return {
+      ...status,
       days: [],
       usedHistoryWindowDays: 0
     };
   }
 
   const dayCount = isInitial
-    ? permissions.canReadHistory
+    ? status.permissions.canReadHistory
       ? INITIAL_HISTORY_DAYS
       : FALLBACK_HISTORY_DAYS
     : REFRESH_HISTORY_DAYS;
 
   return {
+    ...status,
     days: await readDailyStepTotals(dayCount),
     usedHistoryWindowDays: dayCount
   };

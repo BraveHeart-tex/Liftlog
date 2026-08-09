@@ -2,11 +2,9 @@ import { useDrizzle } from '@/src/components/database-provider';
 import type { HealthStepDay } from '@/src/db/schema';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import {
-  getHealthConnectAvailability,
-  getStepPermissionState,
+  getStepHealthConnectStatus,
   openStepHealthConnectSettings,
   requestStepPermissions,
-  syncStepDaysFromHealthConnect,
   type HealthConnectAvailability,
   type StepPermissionState
 } from '@/src/features/steps/health-connect.service';
@@ -18,13 +16,11 @@ import {
   getStepRecentActivityStatus,
   type StepRecentActivityStatus
 } from '@/src/features/steps/steps-display.utils';
-import {
-  getRecentStepDaysQuery,
-  saveStepSyncResult
-} from '@/src/features/steps/steps.repository';
+import { getRecentStepDaysQuery } from '@/src/features/steps/steps.repository';
+import { syncAndSaveStepDays } from '@/src/features/steps/steps-sync.service';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type SyncState = 'idle' | 'syncing';
 
@@ -61,7 +57,11 @@ export function useStepsScreen() {
   const stepDaysResult = useLiveWithFallback(
     getRecentStepDaysQuery(db, RECENT_DAY_LIMIT),
     [db],
-    { operation: 'steps.getRecentStepDays' }
+    {
+      deferInitialRead: true,
+      waitForInteractions: true,
+      operation: 'steps.getRecentStepDays'
+    }
   );
   const stepDays = useMemo(
     () => [...stepDaysResult.data].sort((a, b) => a.startAt - b.startAt),
@@ -82,7 +82,14 @@ export function useStepsScreen() {
   const [hasCheckedAvailability, setHasCheckedAvailability] = useState(false);
   const [syncState, setSyncState] = useState<SyncState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const isMountedRef = useRef(true);
   const displayedTodaySteps = stats.todaySteps;
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -94,58 +101,50 @@ export function useStepsScreen() {
 
   const refreshStatus = useCallback(async () => {
     try {
-      const nextAvailability = await getHealthConnectAvailability();
+      const nextStatus = await getStepHealthConnectStatus();
 
-      setAvailability(nextAvailability);
-
-      if (nextAvailability !== 'available') {
-        setPermissions(EMPTY_PERMISSION_STATE);
-
-        return EMPTY_PERMISSION_STATE;
+      if (!isMountedRef.current) {
+        return nextStatus.permissions;
       }
 
-      const nextPermissions = await getStepPermissionState();
+      setAvailability(nextStatus.availability);
+      setPermissions(nextStatus.permissions);
 
-      setPermissions(nextPermissions);
-
-      return nextPermissions;
+      return nextStatus.permissions;
     } finally {
-      setHasCheckedAvailability(true);
+      if (isMountedRef.current) {
+        setHasCheckedAvailability(true);
+      }
     }
   }, []);
 
   const syncSteps = useCallback(
     async ({ isInitial }: { isInitial: boolean }) => {
-      setErrorMessage(null);
-      setSyncState('syncing');
+      if (isMountedRef.current) {
+        setErrorMessage(null);
+        setSyncState('syncing');
+      }
 
       try {
-        const nextPermissions = await refreshStatus();
+        const result = await syncAndSaveStepDays(db, { isInitial });
 
-        if (!nextPermissions.canReadSteps) {
-          return;
+        if (isMountedRef.current) {
+          setAvailability(result.availability);
+          setPermissions(result.permissions);
         }
-
-        const result = await syncStepDaysFromHealthConnect({ isInitial });
-
-        const firstDay = result.days[0];
-
-        if (!firstDay) {
-          return;
-        }
-
-        saveStepSyncResult(db, {
-          days: result.days,
-          syncedAt: firstDay.syncedAt
-        });
       } catch (error) {
         console.error('Failed to sync steps', error);
-        setErrorMessage('Could not sync steps from Health Connect.');
+
+        if (isMountedRef.current) {
+          setErrorMessage('Could not sync steps from Health Connect.');
+        }
       } finally {
-        setSyncState('idle');
+        if (isMountedRef.current) {
+          setSyncState('idle');
+        }
       }
     },
-    [db, refreshStatus]
+    [db]
   );
 
   const connectSteps = useCallback(async () => {
@@ -155,7 +154,9 @@ export function useStepsScreen() {
     try {
       const nextPermissions = await requestStepPermissions();
 
-      setPermissions(nextPermissions);
+      if (isMountedRef.current) {
+        setPermissions(nextPermissions);
+      }
 
       if (!nextPermissions.canReadSteps) {
         setHealthConnectStepsEnabled(false);
@@ -167,9 +168,14 @@ export function useStepsScreen() {
       await syncSteps({ isInitial: true });
     } catch (error) {
       console.error('Failed to connect Health Connect steps', error);
-      setErrorMessage('Could not connect to Health Connect.');
+
+      if (isMountedRef.current) {
+        setErrorMessage('Could not connect to Health Connect.');
+      }
     } finally {
-      setSyncState('idle');
+      if (isMountedRef.current) {
+        setSyncState('idle');
+      }
     }
   }, [setHealthConnectStepsEnabled, syncSteps]);
 
@@ -181,11 +187,7 @@ export function useStepsScreen() {
     useCallback(() => {
       setTodayDateKey(getTodayDateKey());
       void refreshStatus();
-
-      if (healthConnectStepsEnabled) {
-        void syncSteps({ isInitial: false });
-      }
-    }, [healthConnectStepsEnabled, refreshStatus, syncSteps])
+    }, [refreshStatus])
   );
 
   return {

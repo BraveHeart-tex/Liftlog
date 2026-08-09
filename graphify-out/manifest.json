@@ -90,9 +90,9 @@
     "semantic_hash": "0404553079bb26cf0f543d65be04d72f"
   },
   "src/app/(tabs)/log/index.tsx": {
-    "mtime": 1786191355.736514,
+    "mtime": 1786276397.4226208,
     "ast_hash": "f0d0803d5749466472b12d0665140bf3",
-    "semantic_hash": "f0d0803d5749466472b12d0665140bf3"
+    "semantic_hash": ""
   },
   "src/app/(tabs)/workout/_layout.tsx": {
     "mtime": 1785059092.1443992,
@@ -750,8 +750,8 @@
     "semantic_hash": "189ba9610113760a4974f1790f801f90"
   },
   "src/features/steps/components/steps-sync-host.tsx": {
-    "mtime": 1786201505.1338913,
-    "ast_hash": "65dacbf33e36cc5b9d27d4fc5d9a71c9",
+    "mtime": 1786277034.7087622,
+    "ast_hash": "0ae41bef186804325e120237ac476d08",
     "semantic_hash": ""
   },
   "src/features/steps/components/steps-unavailable-state.tsx": {
@@ -765,13 +765,13 @@
     "semantic_hash": ""
   },
   "src/features/steps/health-connect.service.ts": {
-    "mtime": 1786201505.134449,
-    "ast_hash": "0ad4dd6d0767f76aaede7244c5a81003",
+    "mtime": 1786277034.4731698,
+    "ast_hash": "df57574f70f38b6c64aa2ece082e9889",
     "semantic_hash": ""
   },
   "src/features/steps/hooks/use-steps-screen.ts": {
-    "mtime": 1786273291.7092788,
-    "ast_hash": "a2e48ee67026303e5d775c17af6563ca",
+    "mtime": 1786277147.1170986,
+    "ast_hash": "bc87d5d2f4167233db2bc5d9e2ea8c4e",
     "semantic_hash": ""
   },
   "src/features/steps/steps-date.utils.ts": {
@@ -845,7 +845,7 @@
     "semantic_hash": ""
   },
   "src/features/workout-log/hooks/use-workout-log.ts": {
-    "mtime": 1786273291.7103186,
+    "mtime": 1786276408.0573244,
     "ast_hash": "38610b353ecdbf1bbd55093ea81772c6",
     "semantic_hash": ""
   },
@@ -1687,6 +1687,16 @@
   "tests/setup.ts": {
     "mtime": 1786273291.7234442,
     "ast_hash": "37fe3fa8ba4ba273226e1dc1947fb77e",
+    "semantic_hash": ""
+  },
+  "docs/workout-log-rendering-performance-plan.md": {
+    "mtime": 1786276512.1142325,
+    "ast_hash": "e8b12ab46703ba218072fdc73c776ef5",
+    "semantic_hash": ""
+  },
+  "src/features/steps/steps-sync.service.ts": {
+    "mtime": 1786277034.5406382,
+    "ast_hash": "fc6301ee5edc012f5c76951a855892b7",
     "semantic_hash": ""
   }
 }

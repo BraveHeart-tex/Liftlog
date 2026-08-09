@@ -1,9 +1,9 @@
 import { useDrizzle } from '@/src/components/database-provider';
-import { saveStepSyncResult } from '@/src/features/steps/steps.repository';
-import { syncStepDaysFromHealthConnect } from '@/src/features/steps/health-connect.service';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
-import { useEffect, useRef } from 'react';
-import { Platform } from 'react-native';
+import { syncAndSaveStepDays } from '@/src/features/steps/steps-sync.service';
+import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task.utils';
+import { useCallback, useEffect, useRef } from 'react';
+import { AppState, Platform } from 'react-native';
 
 export function StepsSyncHost() {
   if (Platform.OS !== 'android') {
@@ -16,32 +16,37 @@ export function StepsSyncHost() {
 function AndroidStepsSyncHost() {
   const db = useDrizzle();
   const { healthConnectStepsEnabled } = useSettings();
-  const didLaunchSyncRef = useRef(false);
+  const cancelScheduledSyncRef = useRef<(() => void) | null>(null);
+  const scheduleSync = useCallback(() => {
+    cancelScheduledSyncRef.current?.();
+    cancelScheduledSyncRef.current = scheduleIdleTask(() => {
+      cancelScheduledSyncRef.current = null;
+
+      void syncAndSaveStepDays(db, { isInitial: false }).catch(error => {
+        console.error('Automatic step sync failed', error);
+      });
+    });
+  }, [db]);
 
   useEffect(() => {
-    if (!healthConnectStepsEnabled || didLaunchSyncRef.current) {
+    if (!healthConnectStepsEnabled) {
       return;
     }
 
-    didLaunchSyncRef.current = true;
+    scheduleSync();
 
-    void syncStepDaysFromHealthConnect({ isInitial: false })
-      .then(result => {
-        const firstDay = result.days[0];
+    const subscription = AppState.addEventListener('change', nextState => {
+      if (nextState === 'active') {
+        scheduleSync();
+      }
+    });
 
-        if (!firstDay) {
-          return;
-        }
-
-        saveStepSyncResult(db, {
-          days: result.days,
-          syncedAt: firstDay.syncedAt
-        });
-      })
-      .catch(error => {
-        console.error('Launch step sync failed', error);
-      });
-  }, [db, healthConnectStepsEnabled]);
+    return () => {
+      cancelScheduledSyncRef.current?.();
+      cancelScheduledSyncRef.current = null;
+      subscription.remove();
+    };
+  }, [healthConnectStepsEnabled, scheduleSync]);
 
   return null;
 }
