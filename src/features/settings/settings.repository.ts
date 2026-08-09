@@ -10,6 +10,7 @@ import {
   MIN_REST_TIMER_SECONDS
 } from '@/src/features/workouts/rest-timer.constants';
 import { generateUuid } from '@/src/lib/utils/uuid.utils';
+import { withDatabaseSpan } from '@/src/lib/db/database-observability';
 import type { WeightUnit } from '@/src/lib/utils/weight.utils';
 import { eq, inArray } from 'drizzle-orm';
 
@@ -59,8 +60,19 @@ const SETTINGS_QUERY_KEYS = [
   SETTINGS_KEYS.stepGoal
 ];
 
-export function getSetting(db: DrizzleDb, key: string): string | undefined {
+function readSetting(db: DrizzleDb, key: string): string | undefined {
   return db.select().from(appMeta).where(eq(appMeta.key, key)).get()?.value;
+}
+
+export function getSetting(db: DrizzleDb, key: string): string | undefined {
+  return withDatabaseSpan(
+    {
+      operation: 'settings.getSetting',
+      feature: 'settings',
+      access: 'read'
+    },
+    () => readSetting(db, key)
+  );
 }
 
 export function getSettingsQuery(db: DrizzleDb) {
@@ -78,13 +90,29 @@ function setSetting(db: DrizzleDb, key: string, value: string): void {
 }
 
 export function getWeightUnit(db: DrizzleDb): WeightUnit {
-  const value = getSetting(db, SETTINGS_KEYS.weightUnit);
+  return withDatabaseSpan(
+    {
+      operation: 'settings.getWeightUnit',
+      feature: 'settings',
+      access: 'read'
+    },
+    () => {
+      const value = readSetting(db, SETTINGS_KEYS.weightUnit);
 
-  return value === 'lb' ? 'lb' : 'kg';
+      return value === 'lb' ? 'lb' : 'kg';
+    }
+  );
 }
 
 export function setWeightUnit(db: DrizzleDb, unit: WeightUnit): void {
-  setSetting(db, SETTINGS_KEYS.weightUnit, unit);
+  withDatabaseSpan(
+    {
+      operation: 'settings.setWeightUnit',
+      feature: 'settings',
+      access: 'write'
+    },
+    () => setSetting(db, SETTINGS_KEYS.weightUnit, unit)
+  );
 }
 
 function parseRestTimerDuration(value: string | undefined): number {
@@ -100,7 +128,14 @@ function parseRestTimerDuration(value: string | undefined): number {
 }
 
 export function setRestTimerDuration(db: DrizzleDb, seconds: number): void {
-  setSetting(db, SETTINGS_KEYS.restTimerDuration, String(seconds));
+  withDatabaseSpan(
+    {
+      operation: 'settings.setRestTimerDuration',
+      feature: 'settings',
+      access: 'write'
+    },
+    () => setSetting(db, SETTINGS_KEYS.restTimerDuration, String(seconds))
+  );
 }
 
 function createRestTimerPreset(
@@ -171,7 +206,7 @@ function serializeRestTimerPresets(presets: RestTimerPreset[]) {
 }
 
 function getRestTimerPresets(db: DrizzleDb): RestTimerPreset[] {
-  const value = getSetting(db, SETTINGS_KEYS.restTimerPresets);
+  const value = readSetting(db, SETTINGS_KEYS.restTimerPresets);
 
   return parseRestTimerPresets(value);
 }
@@ -193,38 +228,65 @@ export function addRestTimerPreset(
   db: DrizzleDb,
   preset: Omit<RestTimerPreset, 'id'>
 ): void {
-  const presets = getRestTimerPresets(db);
+  withDatabaseSpan(
+    {
+      operation: 'settings.addRestTimerPreset',
+      feature: 'settings',
+      access: 'write'
+    },
+    () => {
+      const presets = getRestTimerPresets(db);
 
-  if (presets.length >= MAX_REST_TIMER_PRESETS) {
-    throw new RangeError('Only 8 rest timer presets are allowed.');
-  }
+      if (presets.length >= MAX_REST_TIMER_PRESETS) {
+        throw new RangeError('Only 8 rest timer presets are allowed.');
+      }
 
-  setRestTimerPresets(db, [
-    ...presets,
-    createRestTimerPreset(preset.name, preset.durationSeconds)
-  ]);
+      setRestTimerPresets(db, [
+        ...presets,
+        createRestTimerPreset(preset.name, preset.durationSeconds)
+      ]);
+    }
+  );
 }
 
 export function updateRestTimerPreset(
   db: DrizzleDb,
   preset: RestTimerPreset
 ): void {
-  const presets = getRestTimerPresets(db);
+  withDatabaseSpan(
+    {
+      operation: 'settings.updateRestTimerPreset',
+      feature: 'settings',
+      access: 'write'
+    },
+    () => {
+      const presets = getRestTimerPresets(db);
 
-  setRestTimerPresets(
-    db,
-    presets.map(currentPreset =>
-      currentPreset.id === preset.id ? preset : currentPreset
-    )
+      setRestTimerPresets(
+        db,
+        presets.map(currentPreset =>
+          currentPreset.id === preset.id ? preset : currentPreset
+        )
+      );
+    }
   );
 }
 
 export function deleteRestTimerPreset(db: DrizzleDb, id: string): void {
-  const presets = getRestTimerPresets(db);
+  withDatabaseSpan(
+    {
+      operation: 'settings.deleteRestTimerPreset',
+      feature: 'settings',
+      access: 'write'
+    },
+    () => {
+      const presets = getRestTimerPresets(db);
 
-  setRestTimerPresets(
-    db,
-    presets.filter(preset => preset.id !== id)
+      setRestTimerPresets(
+        db,
+        presets.filter(preset => preset.id !== id)
+      );
+    }
   );
 }
 
@@ -264,22 +326,46 @@ export function mapSettingsRows(rows: SettingsRow[]): Settings {
 }
 
 export function getSettingsSnapshot(db: DrizzleDb): Settings {
-  return mapSettingsRows(getSettingsQuery(db).all());
+  return withDatabaseSpan(
+    {
+      operation: 'settings.getSnapshot',
+      feature: 'settings',
+      access: 'read'
+    },
+    () => mapSettingsRows(getSettingsQuery(db).all())
+  );
 }
 
 export function setHealthConnectStepsEnabled(
   db: DrizzleDb,
   isEnabled: boolean
 ): void {
-  setSetting(db, SETTINGS_KEYS.healthConnectStepsEnabled, String(isEnabled));
+  withDatabaseSpan(
+    {
+      operation: 'settings.setHealthConnectStepsEnabled',
+      feature: 'settings',
+      access: 'write'
+    },
+    () =>
+      setSetting(db, SETTINGS_KEYS.healthConnectStepsEnabled, String(isEnabled))
+  );
 }
 
 export function setStepGoal(db: DrizzleDb, goal: number): void {
-  if (!isValidStepGoal(goal)) {
-    throw new RangeError(
-      `Step goal must be between ${MIN_STEP_GOAL} and ${MAX_STEP_GOAL}.`
-    );
-  }
+  withDatabaseSpan(
+    {
+      operation: 'settings.setStepGoal',
+      feature: 'settings',
+      access: 'write'
+    },
+    () => {
+      if (!isValidStepGoal(goal)) {
+        throw new RangeError(
+          `Step goal must be between ${MIN_STEP_GOAL} and ${MAX_STEP_GOAL}.`
+        );
+      }
 
-  setSetting(db, SETTINGS_KEYS.stepGoal, String(goal));
+      setSetting(db, SETTINGS_KEYS.stepGoal, String(goal));
+    }
+  );
 }

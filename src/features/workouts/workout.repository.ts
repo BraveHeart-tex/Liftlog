@@ -33,6 +33,7 @@ import { normalizeSupersetRows } from '@/src/features/workouts/superset.utils';
 import { formatWorkoutName } from '@/src/features/workouts/workout-display.utils';
 import { toLocalDateKey } from '@/src/lib/utils/date.utils';
 import { generateUuid } from '@/src/lib/utils/uuid.utils';
+import { withDatabaseSpan } from '@/src/lib/db/database-observability';
 import {
   and,
   asc,
@@ -383,19 +384,28 @@ export function getActiveWorkoutForRestTimerNotification(
   db: DrizzleDb,
   workoutId: Workout['id'] | undefined
 ) {
-  const rows = db
-    .select()
-    .from(workouts)
-    .where(
-      and(
-        eq(workouts.status, 'in_progress'),
-        workoutId ? eq(workouts.id, workoutId) : undefined
-      )
-    )
-    .orderBy(desc(workouts.startedAt))
-    .limit(1);
+  return withDatabaseSpan(
+    {
+      operation: 'workout.getActiveForRestTimerNotification',
+      feature: 'workout',
+      access: 'read'
+    },
+    () => {
+      const rows = db
+        .select()
+        .from(workouts)
+        .where(
+          and(
+            eq(workouts.status, 'in_progress'),
+            workoutId ? eq(workouts.id, workoutId) : undefined
+          )
+        )
+        .orderBy(desc(workouts.startedAt))
+        .limit(1);
 
-  return rows.get();
+      return rows.get();
+    }
+  );
 }
 
 export function getActiveWorkoutExerciseForRestTimerNotification(
@@ -408,20 +418,29 @@ export function getActiveWorkoutExerciseForRestTimerNotification(
     workoutExerciseId: WorkoutExercise['id'];
   }
 ) {
-  const rows = db
-    .select({ workoutExercise: workoutExercises })
-    .from(workoutExercises)
-    .innerJoin(workouts, eq(workouts.id, workoutExercises.workoutId))
-    .where(
-      and(
-        eq(workouts.status, 'in_progress'),
-        eq(workouts.id, workoutId),
-        eq(workoutExercises.id, workoutExerciseId)
-      )
-    )
-    .limit(1);
+  return withDatabaseSpan(
+    {
+      operation: 'workout.getActiveExerciseForRestTimerNotification',
+      feature: 'workout',
+      access: 'read'
+    },
+    () => {
+      const rows = db
+        .select({ workoutExercise: workoutExercises })
+        .from(workoutExercises)
+        .innerJoin(workouts, eq(workouts.id, workoutExercises.workoutId))
+        .where(
+          and(
+            eq(workouts.status, 'in_progress'),
+            eq(workouts.id, workoutId),
+            eq(workoutExercises.id, workoutExerciseId)
+          )
+        )
+        .limit(1);
 
-  return rows.get()?.workoutExercise;
+      return rows.get()?.workoutExercise;
+    }
+  );
 }
 
 export function getHistoricalWorkoutDraftQuery(
@@ -653,7 +672,14 @@ export function getSetsForWorkoutQuery(
 }
 
 export function createWorkout(db: DrizzleDb, data: NewWorkout): Workout {
-  return db.insert(workouts).values(withWorkoutDateKey(data)).returning().get();
+  return withDatabaseSpan(
+    {
+      operation: 'workout.create',
+      feature: 'workout',
+      access: 'write'
+    },
+    () => db.insert(workouts).values(withWorkoutDateKey(data)).returning().get()
+  );
 }
 
 function cleanupStaleHistoricalWorkoutDrafts(db: DrizzleDb): void {
@@ -674,35 +700,53 @@ function cleanupStaleHistoricalWorkoutDrafts(db: DrizzleDb): void {
 }
 
 export function cleanupLegacyHistoricalWorkoutEditDrafts(db: DrizzleDb): void {
-  db.delete(workouts)
-    .where(
-      and(
-        eq(workouts.status, HISTORICAL_WORKOUT_EDIT_DRAFT_STATUS),
-        isNull(workouts.sourceSnapshot)
-      )
-    )
-    .run();
+  withDatabaseSpan(
+    {
+      operation: 'workout.cleanupLegacyHistoricalEditDrafts',
+      feature: 'workout',
+      access: 'write'
+    },
+    () => {
+      db.delete(workouts)
+        .where(
+          and(
+            eq(workouts.status, HISTORICAL_WORKOUT_EDIT_DRAFT_STATUS),
+            isNull(workouts.sourceSnapshot)
+          )
+        )
+        .run();
+    }
+  );
 }
 
 export function createHistoricalWorkoutDraft(
   db: DrizzleDb,
   dateKey: Workout['dateKey']
 ): Workout {
-  cleanupStaleHistoricalWorkoutDrafts(db);
+  return withDatabaseSpan(
+    {
+      operation: 'workout.createHistoricalDraft',
+      feature: 'workout',
+      access: 'write'
+    },
+    () => {
+      cleanupStaleHistoricalWorkoutDrafts(db);
 
-  const startedAt = getLocalNoonTimestamp(dateKey);
+      const startedAt = getLocalNoonTimestamp(dateKey);
 
-  return db
-    .insert(workouts)
-    .values({
-      name: formatWorkoutName(startedAt),
-      status: HISTORICAL_WORKOUT_DRAFT_STATUS,
-      startedAt,
-      dateKey,
-      completedAt: Date.now()
-    })
-    .returning()
-    .get();
+      return db
+        .insert(workouts)
+        .values({
+          name: formatWorkoutName(startedAt),
+          status: HISTORICAL_WORKOUT_DRAFT_STATUS,
+          startedAt,
+          dateKey,
+          completedAt: Date.now()
+        })
+        .returning()
+        .get();
+    }
+  );
 }
 
 export function createHistoricalWorkoutDraftFromTemplate(
@@ -715,224 +759,271 @@ export function createHistoricalWorkoutDraftFromTemplate(
     templateId: WorkoutTemplate['id'];
   }
 ): Workout | undefined {
-  cleanupStaleHistoricalWorkoutDrafts(db);
+  return withDatabaseSpan(
+    {
+      operation: 'workout.createHistoricalDraftFromTemplate',
+      feature: 'workout',
+      access: 'write'
+    },
+    () => {
+      cleanupStaleHistoricalWorkoutDrafts(db);
 
-  let createdWorkout: Workout | undefined;
+      let createdWorkout: Workout | undefined;
 
-  db.transaction(tx => {
-    const template = getWorkoutTemplateRecordById(tx, templateId);
+      db.transaction(tx => {
+        const template = getWorkoutTemplateRecordById(tx, templateId);
 
-    if (!template) {
-      return;
+        if (!template) {
+          return;
+        }
+
+        const templateExerciseRows = tx
+          .select()
+          .from(workoutTemplateExercises)
+          .where(eq(workoutTemplateExercises.templateId, templateId))
+          .orderBy(asc(workoutTemplateExercises.order))
+          .all();
+        const startedAt = getLocalNoonTimestamp(dateKey);
+
+        createdWorkout = tx
+          .insert(workouts)
+          .values({
+            name: template.name,
+            status: HISTORICAL_WORKOUT_DRAFT_STATUS,
+            startedAt,
+            dateKey,
+            completedAt: Date.now()
+          })
+          .returning()
+          .get();
+
+        const createdWorkoutRow = createdWorkout;
+
+        if (!createdWorkoutRow || templateExerciseRows.length === 0) {
+          return;
+        }
+
+        tx.insert(workoutExercises)
+          .values(
+            templateExerciseRows.map(templateExercise => ({
+              workoutId: createdWorkoutRow.id,
+              exerciseId: templateExercise.exerciseId,
+              order: templateExercise.order,
+              supersetId: templateExercise.supersetId,
+              notes: null
+            }))
+          )
+          .run();
+      });
+
+      return createdWorkout;
     }
-
-    const templateExerciseRows = tx
-      .select()
-      .from(workoutTemplateExercises)
-      .where(eq(workoutTemplateExercises.templateId, templateId))
-      .orderBy(asc(workoutTemplateExercises.order))
-      .all();
-    const startedAt = getLocalNoonTimestamp(dateKey);
-
-    createdWorkout = tx
-      .insert(workouts)
-      .values({
-        name: template.name,
-        status: HISTORICAL_WORKOUT_DRAFT_STATUS,
-        startedAt,
-        dateKey,
-        completedAt: Date.now()
-      })
-      .returning()
-      .get();
-
-    const createdWorkoutRow = createdWorkout;
-
-    if (!createdWorkoutRow || templateExerciseRows.length === 0) {
-      return;
-    }
-
-    tx.insert(workoutExercises)
-      .values(
-        templateExerciseRows.map(templateExercise => ({
-          workoutId: createdWorkoutRow.id,
-          exerciseId: templateExercise.exerciseId,
-          order: templateExercise.order,
-          supersetId: templateExercise.supersetId,
-          notes: null
-        }))
-      )
-      .run();
-  });
-
-  return createdWorkout;
+  );
 }
 
 export function createHistoricalWorkoutEditDraft(
   db: DrizzleDb,
   sourceWorkoutId: Workout['id']
 ): Workout | undefined {
-  cleanupStaleHistoricalWorkoutDrafts(db);
+  return withDatabaseSpan(
+    {
+      operation: 'workout.createHistoricalEditDraft',
+      feature: 'workout',
+      access: 'write'
+    },
+    () => {
+      cleanupStaleHistoricalWorkoutDrafts(db);
 
-  let createdWorkout: Workout | undefined;
+      let createdWorkout: Workout | undefined;
 
-  db.transaction(tx => {
-    const sourceWorkout = tx
-      .select()
-      .from(workouts)
-      .where(
-        and(eq(workouts.id, sourceWorkoutId), eq(workouts.status, 'completed'))
-      )
-      .get();
+      db.transaction(tx => {
+        const sourceWorkout = tx
+          .select()
+          .from(workouts)
+          .where(
+            and(
+              eq(workouts.id, sourceWorkoutId),
+              eq(workouts.status, 'completed')
+            )
+          )
+          .get();
 
-    if (!sourceWorkout) {
-      return;
+        if (!sourceWorkout) {
+          return;
+        }
+
+        const sourceWorkoutExercises = tx
+          .select()
+          .from(workoutExercises)
+          .where(eq(workoutExercises.workoutId, sourceWorkoutId))
+          .orderBy(asc(workoutExercises.order))
+          .all();
+
+        const sourceWorkoutExerciseIds = sourceWorkoutExercises.map(
+          workoutExercise => workoutExercise.id
+        );
+        const sourceSets =
+          sourceWorkoutExerciseIds.length > 0
+            ? tx
+                .select()
+                .from(sets)
+                .where(
+                  inArray(sets.workoutExerciseId, sourceWorkoutExerciseIds)
+                )
+                .orderBy(asc(sets.order))
+                .all()
+            : [];
+        const sourceSetsByWorkoutExerciseId = new Map<
+          WorkoutExercise['id'],
+          Set[]
+        >();
+
+        for (const set of sourceSets) {
+          const existingSets =
+            sourceSetsByWorkoutExerciseId.get(set.workoutExerciseId) ?? [];
+
+          sourceSetsByWorkoutExerciseId.set(set.workoutExerciseId, [
+            ...existingSets,
+            set
+          ]);
+        }
+
+        createdWorkout = tx
+          .insert(workouts)
+          .values({
+            name: sourceWorkout.name,
+            status: HISTORICAL_WORKOUT_EDIT_DRAFT_STATUS,
+            startedAt: sourceWorkout.startedAt,
+            dateKey: sourceWorkout.dateKey,
+            completedAt: Date.now(),
+            notes: sourceWorkout.notes,
+            sourceSnapshot: buildHistoricalWorkoutSourceSnapshot(
+              sourceWorkout,
+              sourceWorkoutExercises,
+              sourceSets
+            ),
+            sourceWorkoutId: sourceWorkout.id
+          })
+          .returning()
+          .get();
+
+        const createdWorkoutRow = createdWorkout;
+
+        if (!createdWorkoutRow || sourceWorkoutExercises.length === 0) {
+          return;
+        }
+
+        const draftWorkoutExercises = sourceWorkoutExercises.map(
+          workoutExercise => ({
+            id: generateUuid(),
+            workoutId: createdWorkoutRow.id,
+            exerciseId: workoutExercise.exerciseId,
+            order: workoutExercise.order,
+            supersetId: workoutExercise.supersetId,
+            notes: workoutExercise.notes,
+            sourceWorkoutExerciseId: workoutExercise.id
+          })
+        );
+
+        tx.insert(workoutExercises).values(draftWorkoutExercises).run();
+        const draftWorkoutExerciseIdBySourceId = new Map<
+          WorkoutExercise['id'],
+          WorkoutExercise['id']
+        >(
+          sourceWorkoutExercises.map((sourceWorkoutExercise, index) => [
+            sourceWorkoutExercise.id,
+            draftWorkoutExercises[index]?.id ?? ''
+          ])
+        );
+        const draftSets: NewSet[] = [];
+
+        for (const sourceWorkoutExercise of sourceWorkoutExercises) {
+          const draftWorkoutExerciseId = draftWorkoutExerciseIdBySourceId.get(
+            sourceWorkoutExercise.id
+          );
+
+          if (!draftWorkoutExerciseId) {
+            continue;
+          }
+
+          const sourceSetRows =
+            sourceSetsByWorkoutExerciseId.get(sourceWorkoutExercise.id) ?? [];
+
+          for (const set of sourceSetRows) {
+            draftSets.push({
+              workoutExerciseId: draftWorkoutExerciseId,
+              order: set.order,
+              weightKg: set.weightKg,
+              reps: set.reps,
+              distanceMeters: set.distanceMeters,
+              durationMs: set.durationMs,
+              durationSeconds: set.durationSeconds,
+              rpe: set.rpe,
+              status: set.status,
+              completedAt: set.completedAt,
+              sourceSetId: set.id
+            });
+          }
+        }
+
+        if (draftSets.length > 0) {
+          tx.insert(sets).values(draftSets).run();
+        }
+      });
+
+      return createdWorkout;
     }
-
-    const sourceWorkoutExercises = tx
-      .select()
-      .from(workoutExercises)
-      .where(eq(workoutExercises.workoutId, sourceWorkoutId))
-      .orderBy(asc(workoutExercises.order))
-      .all();
-
-    const sourceWorkoutExerciseIds = sourceWorkoutExercises.map(
-      workoutExercise => workoutExercise.id
-    );
-    const sourceSets =
-      sourceWorkoutExerciseIds.length > 0
-        ? tx
-            .select()
-            .from(sets)
-            .where(inArray(sets.workoutExerciseId, sourceWorkoutExerciseIds))
-            .orderBy(asc(sets.order))
-            .all()
-        : [];
-    const sourceSetsByWorkoutExerciseId = new Map<
-      WorkoutExercise['id'],
-      Set[]
-    >();
-
-    for (const set of sourceSets) {
-      const existingSets =
-        sourceSetsByWorkoutExerciseId.get(set.workoutExerciseId) ?? [];
-
-      sourceSetsByWorkoutExerciseId.set(set.workoutExerciseId, [
-        ...existingSets,
-        set
-      ]);
-    }
-
-    createdWorkout = tx
-      .insert(workouts)
-      .values({
-        name: sourceWorkout.name,
-        status: HISTORICAL_WORKOUT_EDIT_DRAFT_STATUS,
-        startedAt: sourceWorkout.startedAt,
-        dateKey: sourceWorkout.dateKey,
-        completedAt: Date.now(),
-        notes: sourceWorkout.notes,
-        sourceSnapshot: buildHistoricalWorkoutSourceSnapshot(
-          sourceWorkout,
-          sourceWorkoutExercises,
-          sourceSets
-        ),
-        sourceWorkoutId: sourceWorkout.id
-      })
-      .returning()
-      .get();
-
-    const createdWorkoutRow = createdWorkout;
-
-    if (!createdWorkoutRow || sourceWorkoutExercises.length === 0) {
-      return;
-    }
-
-    const draftWorkoutExercises = sourceWorkoutExercises.map(
-      workoutExercise => ({
-        id: generateUuid(),
-        workoutId: createdWorkoutRow.id,
-        exerciseId: workoutExercise.exerciseId,
-        order: workoutExercise.order,
-        supersetId: workoutExercise.supersetId,
-        notes: workoutExercise.notes,
-        sourceWorkoutExerciseId: workoutExercise.id
-      })
-    );
-
-    tx.insert(workoutExercises).values(draftWorkoutExercises).run();
-    const draftWorkoutExerciseIdBySourceId = new Map<
-      WorkoutExercise['id'],
-      WorkoutExercise['id']
-    >(
-      sourceWorkoutExercises.map((sourceWorkoutExercise, index) => [
-        sourceWorkoutExercise.id,
-        draftWorkoutExercises[index]?.id ?? ''
-      ])
-    );
-    const draftSets: NewSet[] = [];
-
-    for (const sourceWorkoutExercise of sourceWorkoutExercises) {
-      const draftWorkoutExerciseId = draftWorkoutExerciseIdBySourceId.get(
-        sourceWorkoutExercise.id
-      );
-
-      if (!draftWorkoutExerciseId) {
-        continue;
-      }
-
-      const sourceSetRows =
-        sourceSetsByWorkoutExerciseId.get(sourceWorkoutExercise.id) ?? [];
-
-      for (const set of sourceSetRows) {
-        draftSets.push({
-          workoutExerciseId: draftWorkoutExerciseId,
-          order: set.order,
-          weightKg: set.weightKg,
-          reps: set.reps,
-          distanceMeters: set.distanceMeters,
-          durationMs: set.durationMs,
-          durationSeconds: set.durationSeconds,
-          rpe: set.rpe,
-          status: set.status,
-          completedAt: set.completedAt,
-          sourceSetId: set.id
-        });
-      }
-    }
-
-    if (draftSets.length > 0) {
-      tx.insert(sets).values(draftSets).run();
-    }
-  });
-
-  return createdWorkout;
+  );
 }
 
 export function updateWorkoutName(
   db: DrizzleDb,
   { id, name }: { id: Workout['id']; name: Workout['name'] }
 ): Workout | undefined {
-  return db
-    .update(workouts)
-    .set({ name })
-    .where(eq(workouts.id, id))
-    .returning()
-    .get();
+  return withDatabaseSpan(
+    {
+      operation: 'workout.updateName',
+      feature: 'workout',
+      access: 'write'
+    },
+    () =>
+      db
+        .update(workouts)
+        .set({ name })
+        .where(eq(workouts.id, id))
+        .returning()
+        .get()
+  );
 }
 
 export function deleteWorkout(db: DrizzleDb, id: Workout['id']): boolean {
-  return db.delete(workouts).where(eq(workouts.id, id)).run().changes > 0;
+  return withDatabaseSpan(
+    {
+      operation: 'workout.delete',
+      feature: 'workout',
+      access: 'write'
+    },
+    () => db.delete(workouts).where(eq(workouts.id, id)).run().changes > 0
+  );
 }
 
 export function completeWorkout(db: DrizzleDb, id: Workout['id']): void {
-  db.update(workouts)
-    .set({
-      status: 'completed',
-      completedAt: Date.now()
-    })
-    .where(and(eq(workouts.id, id), eq(workouts.status, 'in_progress')))
-    .run();
+  withDatabaseSpan(
+    {
+      operation: 'workout.complete',
+      feature: 'workout',
+      access: 'write'
+    },
+    () => {
+      db.update(workouts)
+        .set({
+          status: 'completed',
+          completedAt: Date.now()
+        })
+        .where(and(eq(workouts.id, id), eq(workouts.status, 'in_progress')))
+        .run();
+    }
+  );
 }
 
 export function saveHistoricalWorkoutDraft(
@@ -942,80 +1033,94 @@ export function saveHistoricalWorkoutDraft(
   let savedWorkout: Workout | undefined;
   let affectedExerciseIds: WorkoutExercise['exerciseId'][] = [];
 
-  db.transaction(tx => {
-    const existingWorkout = tx
-      .select()
-      .from(workouts)
-      .where(
-        and(
-          eq(workouts.id, id),
-          eq(workouts.status, HISTORICAL_WORKOUT_DRAFT_STATUS)
-        )
-      )
-      .get();
+  withDatabaseSpan(
+    {
+      operation: 'workout.saveHistoricalDraft',
+      feature: 'workout',
+      access: 'write'
+    },
+    () =>
+      db.transaction(tx => {
+        const existingWorkout = tx
+          .select()
+          .from(workouts)
+          .where(
+            and(
+              eq(workouts.id, id),
+              eq(workouts.status, HISTORICAL_WORKOUT_DRAFT_STATUS)
+            )
+          )
+          .get();
 
-    if (!existingWorkout) {
-      return;
-    }
+        if (!existingWorkout) {
+          return;
+        }
 
-    const completedSetRows = tx
-      .select({
-        setId: sets.id,
-        exerciseId: workoutExercises.exerciseId
+        const completedSetRows = tx
+          .select({
+            setId: sets.id,
+            exerciseId: workoutExercises.exerciseId
+          })
+          .from(sets)
+          .innerJoin(
+            workoutExercises,
+            eq(sets.workoutExerciseId, workoutExercises.id)
+          )
+          .where(
+            and(
+              eq(workoutExercises.workoutId, id),
+              eq(sets.status, 'completed')
+            )
+          )
+          .orderBy(asc(workoutExercises.order), asc(sets.order))
+          .all();
+
+        if (completedSetRows.length === 0) {
+          return;
+        }
+
+        tx.update(sets)
+          .set({
+            completedAt: sql`CASE ${sets.id} ${sql.join(
+              completedSetRows.map(
+                (row, index) =>
+                  sql`WHEN ${row.setId} THEN ${
+                    existingWorkout.startedAt +
+                    (index + 1) * HISTORICAL_SET_INTERVAL_MS
+                  }`
+              ),
+              sql` `
+            )} END`
+          })
+          .where(
+            inArray(
+              sets.id,
+              completedSetRows.map(row => row.setId)
+            )
+          )
+          .run();
+
+        savedWorkout = tx
+          .update(workouts)
+          .set({
+            status: 'completed',
+            dateKey: existingWorkout.dateKey,
+            completedAt: null
+          })
+          .where(eq(workouts.id, id))
+          .returning()
+          .get();
+
+        affectedExerciseIds = Array.from(
+          new Set(completedSetRows.map(row => row.exerciseId))
+        );
+
+        rebuildPersonalRecordsForExercisesInTransaction(
+          tx,
+          affectedExerciseIds
+        );
       })
-      .from(sets)
-      .innerJoin(
-        workoutExercises,
-        eq(sets.workoutExerciseId, workoutExercises.id)
-      )
-      .where(
-        and(eq(workoutExercises.workoutId, id), eq(sets.status, 'completed'))
-      )
-      .orderBy(asc(workoutExercises.order), asc(sets.order))
-      .all();
-
-    if (completedSetRows.length === 0) {
-      return;
-    }
-
-    tx.update(sets)
-      .set({
-        completedAt: sql`CASE ${sets.id} ${sql.join(
-          completedSetRows.map(
-            (row, index) =>
-              sql`WHEN ${row.setId} THEN ${
-                existingWorkout.startedAt +
-                (index + 1) * HISTORICAL_SET_INTERVAL_MS
-              }`
-          ),
-          sql` `
-        )} END`
-      })
-      .where(
-        inArray(
-          sets.id,
-          completedSetRows.map(row => row.setId)
-        )
-      )
-      .run();
-
-    savedWorkout = tx
-      .update(workouts)
-      .set({
-        status: 'completed',
-        dateKey: existingWorkout.dateKey,
-        completedAt: null
-      })
-      .where(eq(workouts.id, id))
-      .returning()
-      .get();
-
-    affectedExerciseIds = Array.from(
-      new Set(completedSetRows.map(row => row.exerciseId))
-    );
-
-    rebuildPersonalRecordsForExercisesInTransaction(tx, affectedExerciseIds);
-  });
+  );
 
   if (!savedWorkout) {
     return undefined;
@@ -1040,403 +1145,436 @@ export function saveHistoricalWorkoutEditDraft(
   let savedWorkout: Workout | undefined;
   let affectedExerciseIds: WorkoutExercise['exerciseId'][] = [];
 
-  db.transaction(tx => {
-    const sourceWorkout = tx
-      .select()
-      .from(workouts)
-      .where(
-        and(eq(workouts.id, sourceWorkoutId), eq(workouts.status, 'completed'))
-      )
-      .get();
-    const draftWorkout = tx
-      .select()
-      .from(workouts)
-      .where(
-        and(
-          eq(workouts.id, draftWorkoutId),
-          eq(workouts.status, HISTORICAL_WORKOUT_EDIT_DRAFT_STATUS),
-          eq(workouts.sourceWorkoutId, sourceWorkoutId)
-        )
-      )
-      .get();
-
-    if (!sourceWorkout || !draftWorkout) {
-      return;
-    }
-
-    const sourceWorkoutExercises = tx
-      .select()
-      .from(workoutExercises)
-      .where(eq(workoutExercises.workoutId, sourceWorkoutId))
-      .orderBy(asc(workoutExercises.order))
-      .all();
-    const draftWorkoutExercises = tx
-      .select()
-      .from(workoutExercises)
-      .where(eq(workoutExercises.workoutId, draftWorkoutId))
-      .orderBy(asc(workoutExercises.order))
-      .all();
-    const sourceWorkoutExerciseIds = sourceWorkoutExercises.map(row => row.id);
-    const draftWorkoutExerciseIds = draftWorkoutExercises.map(row => row.id);
-    const sourceSetRows =
-      sourceWorkoutExerciseIds.length > 0
-        ? tx
-            .select()
-            .from(sets)
-            .where(inArray(sets.workoutExerciseId, sourceWorkoutExerciseIds))
-            .all()
-        : [];
-    const draftSetRows = draftWorkoutExerciseIds.length
-      ? tx
+  withDatabaseSpan(
+    {
+      operation: 'workout.saveHistoricalEditDraft',
+      feature: 'workout',
+      access: 'write'
+    },
+    () =>
+      db.transaction(tx => {
+        const sourceWorkout = tx
           .select()
-          .from(sets)
-          .where(inArray(sets.workoutExerciseId, draftWorkoutExerciseIds))
-          .all()
-      : [];
+          .from(workouts)
+          .where(
+            and(
+              eq(workouts.id, sourceWorkoutId),
+              eq(workouts.status, 'completed')
+            )
+          )
+          .get();
+        const draftWorkout = tx
+          .select()
+          .from(workouts)
+          .where(
+            and(
+              eq(workouts.id, draftWorkoutId),
+              eq(workouts.status, HISTORICAL_WORKOUT_EDIT_DRAFT_STATUS),
+              eq(workouts.sourceWorkoutId, sourceWorkoutId)
+            )
+          )
+          .get();
 
-    if (
-      !draftWorkout.sourceSnapshot ||
-      draftWorkout.sourceSnapshot !==
-        buildHistoricalWorkoutSourceSnapshot(
-          sourceWorkout,
-          sourceWorkoutExercises,
-          sourceSetRows
-        )
-    ) {
-      throw new HistoricalWorkoutEditDraftConflictError();
-    }
+        if (!sourceWorkout || !draftWorkout) {
+          return;
+        }
 
-    const completedDraftSetRows = draftSetRows.filter(
-      set => set.status === 'completed'
-    );
+        const sourceWorkoutExercises = tx
+          .select()
+          .from(workoutExercises)
+          .where(eq(workoutExercises.workoutId, sourceWorkoutId))
+          .orderBy(asc(workoutExercises.order))
+          .all();
+        const draftWorkoutExercises = tx
+          .select()
+          .from(workoutExercises)
+          .where(eq(workoutExercises.workoutId, draftWorkoutId))
+          .orderBy(asc(workoutExercises.order))
+          .all();
+        const sourceWorkoutExerciseIds = sourceWorkoutExercises.map(
+          row => row.id
+        );
+        const draftWorkoutExerciseIds = draftWorkoutExercises.map(
+          row => row.id
+        );
+        const sourceSetRows =
+          sourceWorkoutExerciseIds.length > 0
+            ? tx
+                .select()
+                .from(sets)
+                .where(
+                  inArray(sets.workoutExerciseId, sourceWorkoutExerciseIds)
+                )
+                .all()
+            : [];
+        const draftSetRows = draftWorkoutExerciseIds.length
+          ? tx
+              .select()
+              .from(sets)
+              .where(inArray(sets.workoutExerciseId, draftWorkoutExerciseIds))
+              .all()
+          : [];
 
-    if (completedDraftSetRows.length === 0) {
-      return;
-    }
+        if (
+          !draftWorkout.sourceSnapshot ||
+          draftWorkout.sourceSnapshot !==
+            buildHistoricalWorkoutSourceSnapshot(
+              sourceWorkout,
+              sourceWorkoutExercises,
+              sourceSetRows
+            )
+        ) {
+          throw new HistoricalWorkoutEditDraftConflictError();
+        }
 
-    const sourceExerciseById = new Map(
-      sourceWorkoutExercises.map(row => [row.id, row])
-    );
-    const draftExerciseById = new Map(
-      draftWorkoutExercises.map(row => [row.id, row])
-    );
-    const mappedDraftExercises = draftWorkoutExercises.filter(
-      row => row.sourceWorkoutExerciseId !== null
-    );
-    const mappedSourceExerciseIds = mappedDraftExercises.map(
-      row => row.sourceWorkoutExerciseId!
-    );
-    const sourceSetById = new Map(sourceSetRows.map(row => [row.id, row]));
-    const mappedDraftSets = draftSetRows.filter(
-      row => row.sourceSetId !== null
-    );
-    const mappedSourceSetIds = mappedDraftSets.map(row => row.sourceSetId!);
+        const completedDraftSetRows = draftSetRows.filter(
+          set => set.status === 'completed'
+        );
 
-    if (
-      new Set(mappedSourceExerciseIds).size !==
-        mappedSourceExerciseIds.length ||
-      mappedDraftExercises.some(
-        row => !sourceExerciseById.has(row.sourceWorkoutExerciseId!)
-      ) ||
-      new Set(mappedSourceSetIds).size !== mappedSourceSetIds.length ||
-      mappedDraftSets.some(row => {
-        const sourceSet = sourceSetById.get(row.sourceSetId!);
-        const draftExercise = draftExerciseById.get(row.workoutExerciseId);
+        if (completedDraftSetRows.length === 0) {
+          return;
+        }
 
-        return (
-          !sourceSet ||
-          !draftExercise?.sourceWorkoutExerciseId ||
-          sourceSet.workoutExerciseId !== draftExercise.sourceWorkoutExerciseId
+        const sourceExerciseById = new Map(
+          sourceWorkoutExercises.map(row => [row.id, row])
+        );
+        const draftExerciseById = new Map(
+          draftWorkoutExercises.map(row => [row.id, row])
+        );
+        const mappedDraftExercises = draftWorkoutExercises.filter(
+          row => row.sourceWorkoutExerciseId !== null
+        );
+        const mappedSourceExerciseIds = mappedDraftExercises.map(
+          row => row.sourceWorkoutExerciseId!
+        );
+        const sourceSetById = new Map(sourceSetRows.map(row => [row.id, row]));
+        const mappedDraftSets = draftSetRows.filter(
+          row => row.sourceSetId !== null
+        );
+        const mappedSourceSetIds = mappedDraftSets.map(row => row.sourceSetId!);
+
+        if (
+          new Set(mappedSourceExerciseIds).size !==
+            mappedSourceExerciseIds.length ||
+          mappedDraftExercises.some(
+            row => !sourceExerciseById.has(row.sourceWorkoutExerciseId!)
+          ) ||
+          new Set(mappedSourceSetIds).size !== mappedSourceSetIds.length ||
+          mappedDraftSets.some(row => {
+            const sourceSet = sourceSetById.get(row.sourceSetId!);
+            const draftExercise = draftExerciseById.get(row.workoutExerciseId);
+
+            return (
+              !sourceSet ||
+              !draftExercise?.sourceWorkoutExerciseId ||
+              sourceSet.workoutExerciseId !==
+                draftExercise.sourceWorkoutExerciseId
+            );
+          })
+        ) {
+          throw new HistoricalWorkoutEditDraftConflictError();
+        }
+
+        const removedWorkoutExercises = sourceWorkoutExercises.filter(
+          row => !mappedSourceExerciseIds.includes(row.id)
+        );
+        const removedWorkoutExerciseIds = new Set(
+          removedWorkoutExercises.map(row => row.id)
+        );
+        const addedDraftExercises = draftWorkoutExercises.filter(
+          row => row.sourceWorkoutExerciseId === null
+        );
+        const updatedDraftExercises = mappedDraftExercises.filter(row => {
+          const source = sourceExerciseById.get(row.sourceWorkoutExerciseId!)!;
+
+          return (
+            source.exerciseId !== row.exerciseId ||
+            source.order !== row.order ||
+            source.supersetId !== row.supersetId ||
+            source.notes !== row.notes
+          );
+        });
+        const removedSets = sourceSetRows.filter(
+          row =>
+            !removedWorkoutExerciseIds.has(row.workoutExerciseId) &&
+            !mappedSourceSetIds.includes(row.id)
+        );
+        const addedDraftSets = draftSetRows.filter(
+          row => row.sourceSetId === null
+        );
+        const updatedDraftSets = mappedDraftSets.filter(row => {
+          const source = sourceSetById.get(row.sourceSetId!)!;
+
+          return (
+            source.order !== row.order ||
+            source.weightKg !== row.weightKg ||
+            source.reps !== row.reps ||
+            source.distanceMeters !== row.distanceMeters ||
+            source.durationMs !== row.durationMs ||
+            source.durationSeconds !== row.durationSeconds ||
+            source.rpe !== row.rpe ||
+            source.status !== row.status ||
+            source.completedAt !== row.completedAt
+          );
+        });
+        const addedSourceExerciseIdByDraftId = new Map(
+          addedDraftExercises.map(row => [row.id, generateUuid()])
+        );
+        const sourceExerciseIdByDraftId = new Map(
+          draftWorkoutExercises.map(row => [
+            row.id,
+            row.sourceWorkoutExerciseId ??
+              addedSourceExerciseIdByDraftId.get(row.id)!
+          ])
+        );
+        const affected = new Set<WorkoutExercise['exerciseId']>();
+        const addSourceExerciseForSet = (set: Set) => {
+          const sourceExercise = sourceExerciseById.get(set.workoutExerciseId);
+
+          if (sourceExercise) {
+            affected.add(sourceExercise.exerciseId);
+          }
+        };
+
+        const addDraftExerciseForSet = (set: Set) => {
+          const draftExercise = draftExerciseById.get(set.workoutExerciseId);
+
+          if (draftExercise) {
+            affected.add(draftExercise.exerciseId);
+          }
+        };
+
+        for (const set of sourceSetRows) {
+          if (
+            removedWorkoutExerciseIds.has(set.workoutExerciseId) &&
+            set.status === 'completed'
+          ) {
+            addSourceExerciseForSet(set);
+          }
+        }
+
+        for (const set of removedSets) {
+          if (set.status === 'completed') {
+            addSourceExerciseForSet(set);
+          }
+        }
+
+        for (const set of addedDraftSets) {
+          if (set.status === 'completed') {
+            addDraftExerciseForSet(set);
+          }
+        }
+
+        for (const draftSet of updatedDraftSets) {
+          const sourceSet = sourceSetById.get(draftSet.sourceSetId!)!;
+
+          if (
+            sourceSet.status === 'completed' ||
+            draftSet.status === 'completed'
+          ) {
+            addSourceExerciseForSet(sourceSet);
+            addDraftExerciseForSet(draftSet);
+          }
+        }
+
+        for (const draftExercise of updatedDraftExercises) {
+          const sourceExercise = sourceExerciseById.get(
+            draftExercise.sourceWorkoutExerciseId!
+          )!;
+
+          if (sourceExercise.exerciseId !== draftExercise.exerciseId) {
+            const hasCompletedSets = sourceSetRows.some(
+              set =>
+                set.workoutExerciseId === sourceExercise.id &&
+                set.status === 'completed'
+            );
+
+            if (hasCompletedSets) {
+              affected.add(sourceExercise.exerciseId);
+              affected.add(draftExercise.exerciseId);
+            }
+          }
+        }
+
+        for (const rows of chunkRows(removedSets)) {
+          tx.delete(sets)
+            .where(
+              inArray(
+                sets.id,
+                rows.map(row => row.id)
+              )
+            )
+            .run();
+        }
+
+        for (const rows of chunkRows(removedWorkoutExercises)) {
+          tx.delete(workoutExercises)
+            .where(
+              inArray(
+                workoutExercises.id,
+                rows.map(row => row.id)
+              )
+            )
+            .run();
+        }
+
+        for (const rows of chunkRows(addedDraftExercises)) {
+          tx.insert(workoutExercises)
+            .values(
+              rows.map(row => ({
+                id: addedSourceExerciseIdByDraftId.get(row.id)!,
+                workoutId: sourceWorkoutId,
+                exerciseId: row.exerciseId,
+                order: row.order,
+                supersetId: row.supersetId,
+                notes: row.notes
+              }))
+            )
+            .run();
+        }
+
+        for (const rows of chunkRows(updatedDraftExercises)) {
+          tx.update(workoutExercises)
+            .set({
+              exerciseId: sql`CASE ${workoutExercises.id} ${sql.join(
+                rows.map(
+                  row =>
+                    sql`WHEN ${row.sourceWorkoutExerciseId} THEN ${row.exerciseId}`
+                ),
+                sql` `
+              )} END`,
+              order: sql`CASE ${workoutExercises.id} ${sql.join(
+                rows.map(
+                  row =>
+                    sql`WHEN ${row.sourceWorkoutExerciseId} THEN ${row.order}`
+                ),
+                sql` `
+              )} END`,
+              supersetId: sql`CASE ${workoutExercises.id} ${sql.join(
+                rows.map(
+                  row =>
+                    sql`WHEN ${row.sourceWorkoutExerciseId} THEN ${row.supersetId}`
+                ),
+                sql` `
+              )} END`,
+              notes: sql`CASE ${workoutExercises.id} ${sql.join(
+                rows.map(
+                  row =>
+                    sql`WHEN ${row.sourceWorkoutExerciseId} THEN ${row.notes}`
+                ),
+                sql` `
+              )} END`
+            })
+            .where(
+              inArray(
+                workoutExercises.id,
+                rows.map(row => row.sourceWorkoutExerciseId!)
+              )
+            )
+            .run();
+        }
+
+        for (const rows of chunkRows(addedDraftSets)) {
+          tx.insert(sets)
+            .values(
+              rows.map(row => ({
+                id: generateUuid(),
+                workoutExerciseId: sourceExerciseIdByDraftId.get(
+                  row.workoutExerciseId
+                )!,
+                order: row.order,
+                weightKg: row.weightKg,
+                reps: row.reps,
+                distanceMeters: row.distanceMeters,
+                durationMs: row.durationMs,
+                durationSeconds: row.durationSeconds,
+                rpe: row.rpe,
+                status: row.status,
+                completedAt: row.completedAt
+              }))
+            )
+            .run();
+        }
+
+        for (const rows of chunkRows(updatedDraftSets)) {
+          tx.update(sets)
+            .set({
+              order: sql`CASE ${sets.id} ${sql.join(
+                rows.map(row => sql`WHEN ${row.sourceSetId} THEN ${row.order}`),
+                sql` `
+              )} END`,
+              weightKg: sql`CASE ${sets.id} ${sql.join(
+                rows.map(
+                  row => sql`WHEN ${row.sourceSetId} THEN ${row.weightKg}`
+                ),
+                sql` `
+              )} END`,
+              reps: sql`CASE ${sets.id} ${sql.join(
+                rows.map(row => sql`WHEN ${row.sourceSetId} THEN ${row.reps}`),
+                sql` `
+              )} END`,
+              distanceMeters: sql`CASE ${sets.id} ${sql.join(
+                rows.map(
+                  row => sql`WHEN ${row.sourceSetId} THEN ${row.distanceMeters}`
+                ),
+                sql` `
+              )} END`,
+              durationMs: sql`CASE ${sets.id} ${sql.join(
+                rows.map(
+                  row => sql`WHEN ${row.sourceSetId} THEN ${row.durationMs}`
+                ),
+                sql` `
+              )} END`,
+              durationSeconds: sql`CASE ${sets.id} ${sql.join(
+                rows.map(
+                  row =>
+                    sql`WHEN ${row.sourceSetId} THEN ${row.durationSeconds}`
+                ),
+                sql` `
+              )} END`,
+              rpe: sql`CASE ${sets.id} ${sql.join(
+                rows.map(row => sql`WHEN ${row.sourceSetId} THEN ${row.rpe}`),
+                sql` `
+              )} END`,
+              status: sql`CASE ${sets.id} ${sql.join(
+                rows.map(
+                  row => sql`WHEN ${row.sourceSetId} THEN ${row.status}`
+                ),
+                sql` `
+              )} END`,
+              completedAt: sql`CASE ${sets.id} ${sql.join(
+                rows.map(
+                  row => sql`WHEN ${row.sourceSetId} THEN ${row.completedAt}`
+                ),
+                sql` `
+              )} END`
+            })
+            .where(
+              inArray(
+                sets.id,
+                rows.map(row => row.sourceSetId!)
+              )
+            )
+            .run();
+        }
+
+        savedWorkout = tx
+          .update(workouts)
+          .set({ name: draftWorkout.name, notes: draftWorkout.notes })
+          .where(eq(workouts.id, sourceWorkoutId))
+          .returning()
+          .get();
+
+        tx.delete(workouts).where(eq(workouts.id, draftWorkoutId)).run();
+
+        affectedExerciseIds = Array.from(affected).sort();
+
+        rebuildPersonalRecordsForExercisesInTransaction(
+          tx,
+          affectedExerciseIds
         );
       })
-    ) {
-      throw new HistoricalWorkoutEditDraftConflictError();
-    }
-
-    const removedWorkoutExercises = sourceWorkoutExercises.filter(
-      row => !mappedSourceExerciseIds.includes(row.id)
-    );
-    const removedWorkoutExerciseIds = new Set(
-      removedWorkoutExercises.map(row => row.id)
-    );
-    const addedDraftExercises = draftWorkoutExercises.filter(
-      row => row.sourceWorkoutExerciseId === null
-    );
-    const updatedDraftExercises = mappedDraftExercises.filter(row => {
-      const source = sourceExerciseById.get(row.sourceWorkoutExerciseId!)!;
-
-      return (
-        source.exerciseId !== row.exerciseId ||
-        source.order !== row.order ||
-        source.supersetId !== row.supersetId ||
-        source.notes !== row.notes
-      );
-    });
-    const removedSets = sourceSetRows.filter(
-      row =>
-        !removedWorkoutExerciseIds.has(row.workoutExerciseId) &&
-        !mappedSourceSetIds.includes(row.id)
-    );
-    const addedDraftSets = draftSetRows.filter(row => row.sourceSetId === null);
-    const updatedDraftSets = mappedDraftSets.filter(row => {
-      const source = sourceSetById.get(row.sourceSetId!)!;
-
-      return (
-        source.order !== row.order ||
-        source.weightKg !== row.weightKg ||
-        source.reps !== row.reps ||
-        source.distanceMeters !== row.distanceMeters ||
-        source.durationMs !== row.durationMs ||
-        source.durationSeconds !== row.durationSeconds ||
-        source.rpe !== row.rpe ||
-        source.status !== row.status ||
-        source.completedAt !== row.completedAt
-      );
-    });
-    const addedSourceExerciseIdByDraftId = new Map(
-      addedDraftExercises.map(row => [row.id, generateUuid()])
-    );
-    const sourceExerciseIdByDraftId = new Map(
-      draftWorkoutExercises.map(row => [
-        row.id,
-        row.sourceWorkoutExerciseId ??
-          addedSourceExerciseIdByDraftId.get(row.id)!
-      ])
-    );
-    const affected = new Set<WorkoutExercise['exerciseId']>();
-    const addSourceExerciseForSet = (set: Set) => {
-      const sourceExercise = sourceExerciseById.get(set.workoutExerciseId);
-
-      if (sourceExercise) {
-        affected.add(sourceExercise.exerciseId);
-      }
-    };
-
-    const addDraftExerciseForSet = (set: Set) => {
-      const draftExercise = draftExerciseById.get(set.workoutExerciseId);
-
-      if (draftExercise) {
-        affected.add(draftExercise.exerciseId);
-      }
-    };
-
-    for (const set of sourceSetRows) {
-      if (
-        removedWorkoutExerciseIds.has(set.workoutExerciseId) &&
-        set.status === 'completed'
-      ) {
-        addSourceExerciseForSet(set);
-      }
-    }
-
-    for (const set of removedSets) {
-      if (set.status === 'completed') {
-        addSourceExerciseForSet(set);
-      }
-    }
-
-    for (const set of addedDraftSets) {
-      if (set.status === 'completed') {
-        addDraftExerciseForSet(set);
-      }
-    }
-
-    for (const draftSet of updatedDraftSets) {
-      const sourceSet = sourceSetById.get(draftSet.sourceSetId!)!;
-
-      if (sourceSet.status === 'completed' || draftSet.status === 'completed') {
-        addSourceExerciseForSet(sourceSet);
-        addDraftExerciseForSet(draftSet);
-      }
-    }
-
-    for (const draftExercise of updatedDraftExercises) {
-      const sourceExercise = sourceExerciseById.get(
-        draftExercise.sourceWorkoutExerciseId!
-      )!;
-
-      if (sourceExercise.exerciseId !== draftExercise.exerciseId) {
-        const hasCompletedSets = sourceSetRows.some(
-          set =>
-            set.workoutExerciseId === sourceExercise.id &&
-            set.status === 'completed'
-        );
-
-        if (hasCompletedSets) {
-          affected.add(sourceExercise.exerciseId);
-          affected.add(draftExercise.exerciseId);
-        }
-      }
-    }
-
-    for (const rows of chunkRows(removedSets)) {
-      tx.delete(sets)
-        .where(
-          inArray(
-            sets.id,
-            rows.map(row => row.id)
-          )
-        )
-        .run();
-    }
-
-    for (const rows of chunkRows(removedWorkoutExercises)) {
-      tx.delete(workoutExercises)
-        .where(
-          inArray(
-            workoutExercises.id,
-            rows.map(row => row.id)
-          )
-        )
-        .run();
-    }
-
-    for (const rows of chunkRows(addedDraftExercises)) {
-      tx.insert(workoutExercises)
-        .values(
-          rows.map(row => ({
-            id: addedSourceExerciseIdByDraftId.get(row.id)!,
-            workoutId: sourceWorkoutId,
-            exerciseId: row.exerciseId,
-            order: row.order,
-            supersetId: row.supersetId,
-            notes: row.notes
-          }))
-        )
-        .run();
-    }
-
-    for (const rows of chunkRows(updatedDraftExercises)) {
-      tx.update(workoutExercises)
-        .set({
-          exerciseId: sql`CASE ${workoutExercises.id} ${sql.join(
-            rows.map(
-              row =>
-                sql`WHEN ${row.sourceWorkoutExerciseId} THEN ${row.exerciseId}`
-            ),
-            sql` `
-          )} END`,
-          order: sql`CASE ${workoutExercises.id} ${sql.join(
-            rows.map(
-              row => sql`WHEN ${row.sourceWorkoutExerciseId} THEN ${row.order}`
-            ),
-            sql` `
-          )} END`,
-          supersetId: sql`CASE ${workoutExercises.id} ${sql.join(
-            rows.map(
-              row =>
-                sql`WHEN ${row.sourceWorkoutExerciseId} THEN ${row.supersetId}`
-            ),
-            sql` `
-          )} END`,
-          notes: sql`CASE ${workoutExercises.id} ${sql.join(
-            rows.map(
-              row => sql`WHEN ${row.sourceWorkoutExerciseId} THEN ${row.notes}`
-            ),
-            sql` `
-          )} END`
-        })
-        .where(
-          inArray(
-            workoutExercises.id,
-            rows.map(row => row.sourceWorkoutExerciseId!)
-          )
-        )
-        .run();
-    }
-
-    for (const rows of chunkRows(addedDraftSets)) {
-      tx.insert(sets)
-        .values(
-          rows.map(row => ({
-            id: generateUuid(),
-            workoutExerciseId: sourceExerciseIdByDraftId.get(
-              row.workoutExerciseId
-            )!,
-            order: row.order,
-            weightKg: row.weightKg,
-            reps: row.reps,
-            distanceMeters: row.distanceMeters,
-            durationMs: row.durationMs,
-            durationSeconds: row.durationSeconds,
-            rpe: row.rpe,
-            status: row.status,
-            completedAt: row.completedAt
-          }))
-        )
-        .run();
-    }
-
-    for (const rows of chunkRows(updatedDraftSets)) {
-      tx.update(sets)
-        .set({
-          order: sql`CASE ${sets.id} ${sql.join(
-            rows.map(row => sql`WHEN ${row.sourceSetId} THEN ${row.order}`),
-            sql` `
-          )} END`,
-          weightKg: sql`CASE ${sets.id} ${sql.join(
-            rows.map(row => sql`WHEN ${row.sourceSetId} THEN ${row.weightKg}`),
-            sql` `
-          )} END`,
-          reps: sql`CASE ${sets.id} ${sql.join(
-            rows.map(row => sql`WHEN ${row.sourceSetId} THEN ${row.reps}`),
-            sql` `
-          )} END`,
-          distanceMeters: sql`CASE ${sets.id} ${sql.join(
-            rows.map(
-              row => sql`WHEN ${row.sourceSetId} THEN ${row.distanceMeters}`
-            ),
-            sql` `
-          )} END`,
-          durationMs: sql`CASE ${sets.id} ${sql.join(
-            rows.map(
-              row => sql`WHEN ${row.sourceSetId} THEN ${row.durationMs}`
-            ),
-            sql` `
-          )} END`,
-          durationSeconds: sql`CASE ${sets.id} ${sql.join(
-            rows.map(
-              row => sql`WHEN ${row.sourceSetId} THEN ${row.durationSeconds}`
-            ),
-            sql` `
-          )} END`,
-          rpe: sql`CASE ${sets.id} ${sql.join(
-            rows.map(row => sql`WHEN ${row.sourceSetId} THEN ${row.rpe}`),
-            sql` `
-          )} END`,
-          status: sql`CASE ${sets.id} ${sql.join(
-            rows.map(row => sql`WHEN ${row.sourceSetId} THEN ${row.status}`),
-            sql` `
-          )} END`,
-          completedAt: sql`CASE ${sets.id} ${sql.join(
-            rows.map(
-              row => sql`WHEN ${row.sourceSetId} THEN ${row.completedAt}`
-            ),
-            sql` `
-          )} END`
-        })
-        .where(
-          inArray(
-            sets.id,
-            rows.map(row => row.sourceSetId!)
-          )
-        )
-        .run();
-    }
-
-    savedWorkout = tx
-      .update(workouts)
-      .set({ name: draftWorkout.name, notes: draftWorkout.notes })
-      .where(eq(workouts.id, sourceWorkoutId))
-      .returning()
-      .get();
-
-    tx.delete(workouts).where(eq(workouts.id, draftWorkoutId)).run();
-
-    affectedExerciseIds = Array.from(affected).sort();
-
-    rebuildPersonalRecordsForExercisesInTransaction(tx, affectedExerciseIds);
-  });
+  );
 
   if (!savedWorkout) {
     return undefined;
@@ -1522,11 +1660,19 @@ export function addExerciseToWorkout(
     exerciseId
   }: { workoutId: Workout['id']; exerciseId: Exercise['id'] }
 ): WorkoutExercise {
-  return db.transaction(tx => {
-    requireWorkoutAllowsExerciseChanges(tx, workoutId);
+  return withDatabaseSpan(
+    {
+      operation: 'workout.addExercise',
+      feature: 'workout',
+      access: 'write'
+    },
+    () =>
+      db.transaction(tx => {
+        requireWorkoutAllowsExerciseChanges(tx, workoutId);
 
-    return insertWorkoutExerciseAtNextOrder(tx, { workoutId, exerciseId });
-  });
+        return insertWorkoutExerciseAtNextOrder(tx, { workoutId, exerciseId });
+      })
+  );
 }
 
 export function createCustomExerciseAndAddToWorkout(
@@ -1534,17 +1680,25 @@ export function createCustomExerciseAndAddToWorkout(
   workoutId: Workout['id'],
   data: NewExercise
 ): { exercise: Exercise; workoutExercise: WorkoutExercise } {
-  return db.transaction(tx => {
-    requireWorkoutAllowsExerciseChanges(tx, workoutId);
+  return withDatabaseSpan(
+    {
+      operation: 'workout.createCustomExerciseAndAdd',
+      feature: 'workout',
+      access: 'write'
+    },
+    () =>
+      db.transaction(tx => {
+        requireWorkoutAllowsExerciseChanges(tx, workoutId);
 
-    const exercise = createExercise(tx, data);
-    const workoutExercise = insertWorkoutExerciseAtNextOrder(tx, {
-      workoutId,
-      exerciseId: exercise.id
-    });
+        const exercise = createExercise(tx, data);
+        const workoutExercise = insertWorkoutExerciseAtNextOrder(tx, {
+          workoutId,
+          exerciseId: exercise.id
+        });
 
-    return { exercise, workoutExercise };
-  });
+        return { exercise, workoutExercise };
+      })
+  );
 }
 
 export function saveActiveWorkoutExerciseDraft(
@@ -1561,178 +1715,194 @@ export function saveActiveWorkoutExerciseDraft(
     stagedCustomExercises: StagedCustomExercise[];
   }
 ): void {
-  db.transaction(tx => {
-    const workout = tx
-      .select({ status: workouts.status })
-      .from(workouts)
-      .where(eq(workouts.id, workoutId))
-      .get();
-    const existingWorkoutExercises = tx
-      .select({
-        id: workoutExercises.id,
-        exerciseId: workoutExercises.exerciseId,
-        order: workoutExercises.order,
-        supersetId: workoutExercises.supersetId
-      })
-      .from(workoutExercises)
-      .where(eq(workoutExercises.workoutId, workoutId))
-      .all();
-    const baselineById = new Map(
-      baselineRows.map(row => [row.id, row] as const)
-    );
-    const draftIdSet = new Set(rows.map(row => row.id));
-    const draftExerciseIdSet = new Set(rows.map(row => row.exerciseId));
-    const stagedCustomExerciseById = new Map(
-      stagedCustomExercises.map(exercise => [exercise.id, exercise] as const)
-    );
-
-    if (
-      workout?.status !== 'in_progress' ||
-      baselineById.size !== baselineRows.length ||
-      draftIdSet.size !== rows.length ||
-      draftExerciseIdSet.size !== rows.length ||
-      stagedCustomExerciseById.size !== stagedCustomExercises.length ||
-      existingWorkoutExercises.length !== baselineRows.length ||
-      existingWorkoutExercises.some(existingRow => {
-        const baselineRow = baselineById.get(existingRow.id);
-
-        return (
-          !baselineRow ||
-          existingRow.exerciseId !== baselineRow.exerciseId ||
-          existingRow.order !== baselineRow.order ||
-          existingRow.supersetId !== baselineRow.supersetId
+  withDatabaseSpan(
+    {
+      operation: 'workout.saveActiveExerciseDraft',
+      feature: 'workout',
+      access: 'write'
+    },
+    () =>
+      db.transaction(tx => {
+        const workout = tx
+          .select({ status: workouts.status })
+          .from(workouts)
+          .where(eq(workouts.id, workoutId))
+          .get();
+        const existingWorkoutExercises = tx
+          .select({
+            id: workoutExercises.id,
+            exerciseId: workoutExercises.exerciseId,
+            order: workoutExercises.order,
+            supersetId: workoutExercises.supersetId
+          })
+          .from(workoutExercises)
+          .where(eq(workoutExercises.workoutId, workoutId))
+          .all();
+        const baselineById = new Map(
+          baselineRows.map(row => [row.id, row] as const)
         );
-      }) ||
-      rows.some(row => {
-        const baselineRow = baselineById.get(row.id);
-
-        return baselineRow && baselineRow.exerciseId !== row.exerciseId;
-      }) ||
-      stagedCustomExercises.some(
-        exercise => !draftExerciseIdSet.has(exercise.id)
-      )
-    ) {
-      throw new ActiveWorkoutExerciseDraftConflictError();
-    }
-
-    const persistedExercises =
-      draftExerciseIdSet.size > 0
-        ? tx
-            .select({
-              id: exercises.id,
-              name: exercises.name,
-              isArchived: exercises.isArchived
-            })
-            .from(exercises)
-            .where(inArray(exercises.id, Array.from(draftExerciseIdSet)))
-            .all()
-        : [];
-    const persistedExerciseById = new Map(
-      persistedExercises.map(exercise => [exercise.id, exercise] as const)
-    );
-
-    if (
-      rows.some(row => {
-        const persistedExercise = persistedExerciseById.get(row.exerciseId);
-
-        if (persistedExercise) {
-          return (
-            stagedCustomExerciseById.has(row.exerciseId) ||
-            (persistedExercise.isArchived !== 0 && !baselineById.has(row.id))
-          );
-        }
-
-        return !stagedCustomExerciseById.has(row.exerciseId);
-      })
-    ) {
-      throw new ActiveWorkoutExerciseDraftConflictError();
-    }
-
-    const normalizedStagedCustomExercises = validateStagedCustomExerciseNames(
-      tx,
-      stagedCustomExercises,
-      () => new ActiveWorkoutExerciseDraftConflictError()
-    );
-
-    if (normalizedStagedCustomExercises.length > 0) {
-      try {
-        tx.insert(exercises)
-          .values(
-            normalizedStagedCustomExercises.map(exercise => ({
-              ...exercise,
-              isCustom: 1,
-              isArchived: 0
-            }))
+        const draftIdSet = new Set(rows.map(row => row.id));
+        const draftExerciseIdSet = new Set(rows.map(row => row.exerciseId));
+        const stagedCustomExerciseById = new Map(
+          stagedCustomExercises.map(
+            exercise => [exercise.id, exercise] as const
           )
-          .run();
-      } catch (error) {
-        if (isExerciseNameUniqueConstraintError(error)) {
+        );
+
+        if (
+          workout?.status !== 'in_progress' ||
+          baselineById.size !== baselineRows.length ||
+          draftIdSet.size !== rows.length ||
+          draftExerciseIdSet.size !== rows.length ||
+          stagedCustomExerciseById.size !== stagedCustomExercises.length ||
+          existingWorkoutExercises.length !== baselineRows.length ||
+          existingWorkoutExercises.some(existingRow => {
+            const baselineRow = baselineById.get(existingRow.id);
+
+            return (
+              !baselineRow ||
+              existingRow.exerciseId !== baselineRow.exerciseId ||
+              existingRow.order !== baselineRow.order ||
+              existingRow.supersetId !== baselineRow.supersetId
+            );
+          }) ||
+          rows.some(row => {
+            const baselineRow = baselineById.get(row.id);
+
+            return baselineRow && baselineRow.exerciseId !== row.exerciseId;
+          }) ||
+          stagedCustomExercises.some(
+            exercise => !draftExerciseIdSet.has(exercise.id)
+          )
+        ) {
           throw new ActiveWorkoutExerciseDraftConflictError();
         }
 
-        throw error;
-      }
-    }
+        const persistedExercises =
+          draftExerciseIdSet.size > 0
+            ? tx
+                .select({
+                  id: exercises.id,
+                  name: exercises.name,
+                  isArchived: exercises.isArchived
+                })
+                .from(exercises)
+                .where(inArray(exercises.id, Array.from(draftExerciseIdSet)))
+                .all()
+            : [];
+        const persistedExerciseById = new Map(
+          persistedExercises.map(exercise => [exercise.id, exercise] as const)
+        );
 
-    const normalizedRows = normalizeSupersetRows(
-      rows.map((row, order) => ({ ...row, order }))
-    );
-    const removedIds = baselineRows
-      .filter(row => !draftIdSet.has(row.id))
-      .map(row => row.id);
-    const addedRows = normalizedRows.filter(row => !baselineById.has(row.id));
-    const updatedRows = normalizedRows.filter(row => {
-      const baselineRow = baselineById.get(row.id);
+        if (
+          rows.some(row => {
+            const persistedExercise = persistedExerciseById.get(row.exerciseId);
 
-      return (
-        baselineRow &&
-        (baselineRow.order !== row.order ||
-          baselineRow.supersetId !== row.supersetId)
-      );
-    });
+            if (persistedExercise) {
+              return (
+                stagedCustomExerciseById.has(row.exerciseId) ||
+                (persistedExercise.isArchived !== 0 &&
+                  !baselineById.has(row.id))
+              );
+            }
 
-    if (removedIds.length > 0) {
-      tx.delete(workoutExercises)
-        .where(inArray(workoutExercises.id, removedIds))
-        .run();
-    }
+            return !stagedCustomExerciseById.has(row.exerciseId);
+          })
+        ) {
+          throw new ActiveWorkoutExerciseDraftConflictError();
+        }
 
-    if (addedRows.length > 0) {
-      tx.insert(workoutExercises)
-        .values(
-          addedRows.map(row => ({
-            id: row.id,
-            workoutId,
-            exerciseId: row.exerciseId,
-            order: row.order,
-            supersetId: row.supersetId,
-            notes: null
-          }))
-        )
-        .run();
-    }
+        const normalizedStagedCustomExercises =
+          validateStagedCustomExerciseNames(
+            tx,
+            stagedCustomExercises,
+            () => new ActiveWorkoutExerciseDraftConflictError()
+          );
 
-    if (updatedRows.length > 0) {
-      tx.update(workoutExercises)
-        .set({
-          order: sql`CASE id ${sql.join(
-            updatedRows.map(row => sql`WHEN ${row.id} THEN ${row.order}`),
-            sql` `
-          )} END`,
-          supersetId: sql`CASE id ${sql.join(
-            updatedRows.map(row => sql`WHEN ${row.id} THEN ${row.supersetId}`),
-            sql` `
-          )} END`
-        })
-        .where(
-          inArray(
-            workoutExercises.id,
-            updatedRows.map(row => row.id)
-          )
-        )
-        .run();
-    }
-  });
+        if (normalizedStagedCustomExercises.length > 0) {
+          try {
+            tx.insert(exercises)
+              .values(
+                normalizedStagedCustomExercises.map(exercise => ({
+                  ...exercise,
+                  isCustom: 1,
+                  isArchived: 0
+                }))
+              )
+              .run();
+          } catch (error) {
+            if (isExerciseNameUniqueConstraintError(error)) {
+              throw new ActiveWorkoutExerciseDraftConflictError();
+            }
+
+            throw error;
+          }
+        }
+
+        const normalizedRows = normalizeSupersetRows(
+          rows.map((row, order) => ({ ...row, order }))
+        );
+        const removedIds = baselineRows
+          .filter(row => !draftIdSet.has(row.id))
+          .map(row => row.id);
+        const addedRows = normalizedRows.filter(
+          row => !baselineById.has(row.id)
+        );
+        const updatedRows = normalizedRows.filter(row => {
+          const baselineRow = baselineById.get(row.id);
+
+          return (
+            baselineRow &&
+            (baselineRow.order !== row.order ||
+              baselineRow.supersetId !== row.supersetId)
+          );
+        });
+
+        if (removedIds.length > 0) {
+          tx.delete(workoutExercises)
+            .where(inArray(workoutExercises.id, removedIds))
+            .run();
+        }
+
+        if (addedRows.length > 0) {
+          tx.insert(workoutExercises)
+            .values(
+              addedRows.map(row => ({
+                id: row.id,
+                workoutId,
+                exerciseId: row.exerciseId,
+                order: row.order,
+                supersetId: row.supersetId,
+                notes: null
+              }))
+            )
+            .run();
+        }
+
+        if (updatedRows.length > 0) {
+          tx.update(workoutExercises)
+            .set({
+              order: sql`CASE id ${sql.join(
+                updatedRows.map(row => sql`WHEN ${row.id} THEN ${row.order}`),
+                sql` `
+              )} END`,
+              supersetId: sql`CASE id ${sql.join(
+                updatedRows.map(
+                  row => sql`WHEN ${row.id} THEN ${row.supersetId}`
+                ),
+                sql` `
+              )} END`
+            })
+            .where(
+              inArray(
+                workoutExercises.id,
+                updatedRows.map(row => row.id)
+              )
+            )
+            .run();
+        }
+      })
+  );
 }
 
 export function updateWorkoutExerciseSupersets(
@@ -1740,64 +1910,72 @@ export function updateWorkoutExerciseSupersets(
   workoutId: Workout['id'],
   rows: Pick<WorkoutExercise, 'id' | 'supersetId'>[]
 ): void {
-  db.transaction(tx => {
-    const existingWorkoutExercises = tx
-      .select({
-        id: workoutExercises.id,
-        order: workoutExercises.order,
-        supersetId: workoutExercises.supersetId
+  withDatabaseSpan(
+    {
+      operation: 'workout.updateExerciseSupersets',
+      feature: 'workout',
+      access: 'write'
+    },
+    () =>
+      db.transaction(tx => {
+        const existingWorkoutExercises = tx
+          .select({
+            id: workoutExercises.id,
+            order: workoutExercises.order,
+            supersetId: workoutExercises.supersetId
+          })
+          .from(workoutExercises)
+          .where(eq(workoutExercises.workoutId, workoutId))
+          .orderBy(asc(workoutExercises.order))
+          .all();
+        const rowById = new Map(rows.map(row => [row.id, row.supersetId]));
+
+        if (
+          existingWorkoutExercises.length !== rows.length ||
+          rows.some(
+            row =>
+              !existingWorkoutExercises.some(existing => existing.id === row.id)
+          )
+        ) {
+          throw new Error(
+            'Workout exercises changed before supersets were updated.'
+          );
+        }
+
+        const normalizedRows = normalizeSupersetRows(
+          existingWorkoutExercises.map(row => ({
+            id: row.id,
+            supersetId: rowById.get(row.id) ?? null
+          }))
+        );
+        const toUpdate = normalizedRows.filter(row => {
+          const existingRow = existingWorkoutExercises.find(
+            existing => existing.id === row.id
+          );
+
+          return existingRow?.supersetId !== row.supersetId;
+        });
+
+        if (toUpdate.length === 0) {
+          return;
+        }
+
+        const caseExpr = sql.join(
+          toUpdate.map(row => sql`WHEN ${row.id} THEN ${row.supersetId}`),
+          sql` `
+        );
+
+        tx.update(workoutExercises)
+          .set({ supersetId: sql`CASE id ${caseExpr} END` })
+          .where(
+            inArray(
+              workoutExercises.id,
+              toUpdate.map(row => row.id)
+            )
+          )
+          .run();
       })
-      .from(workoutExercises)
-      .where(eq(workoutExercises.workoutId, workoutId))
-      .orderBy(asc(workoutExercises.order))
-      .all();
-    const rowById = new Map(rows.map(row => [row.id, row.supersetId]));
-
-    if (
-      existingWorkoutExercises.length !== rows.length ||
-      rows.some(
-        row =>
-          !existingWorkoutExercises.some(existing => existing.id === row.id)
-      )
-    ) {
-      throw new Error(
-        'Workout exercises changed before supersets were updated.'
-      );
-    }
-
-    const normalizedRows = normalizeSupersetRows(
-      existingWorkoutExercises.map(row => ({
-        id: row.id,
-        supersetId: rowById.get(row.id) ?? null
-      }))
-    );
-    const toUpdate = normalizedRows.filter(row => {
-      const existingRow = existingWorkoutExercises.find(
-        existing => existing.id === row.id
-      );
-
-      return existingRow?.supersetId !== row.supersetId;
-    });
-
-    if (toUpdate.length === 0) {
-      return;
-    }
-
-    const caseExpr = sql.join(
-      toUpdate.map(row => sql`WHEN ${row.id} THEN ${row.supersetId}`),
-      sql` `
-    );
-
-    tx.update(workoutExercises)
-      .set({ supersetId: sql`CASE id ${caseExpr} END` })
-      .where(
-        inArray(
-          workoutExercises.id,
-          toUpdate.map(row => row.id)
-        )
-      )
-      .run();
-  });
+  );
 }
 
 export function updateWorkoutExerciseOrderAndSupersets(
@@ -1806,96 +1984,107 @@ export function updateWorkoutExerciseOrderAndSupersets(
   rows: Pick<WorkoutExercise, 'id' | 'supersetId'>[],
   baselineRows: Pick<WorkoutExercise, 'id' | 'order' | 'supersetId'>[]
 ): void {
-  db.transaction(tx => {
-    const existingWorkoutExercises = tx
-      .select({
-        id: workoutExercises.id,
-        order: workoutExercises.order,
-        supersetId: workoutExercises.supersetId
-      })
-      .from(workoutExercises)
-      .where(eq(workoutExercises.workoutId, workoutId))
-      .all();
+  withDatabaseSpan(
+    {
+      operation: 'workout.updateExerciseOrderAndSupersets',
+      feature: 'workout',
+      access: 'write'
+    },
+    () =>
+      db.transaction(tx => {
+        const existingWorkoutExercises = tx
+          .select({
+            id: workoutExercises.id,
+            order: workoutExercises.order,
+            supersetId: workoutExercises.supersetId
+          })
+          .from(workoutExercises)
+          .where(eq(workoutExercises.workoutId, workoutId))
+          .all();
 
-    const existingById = new Map(
-      existingWorkoutExercises.map(workoutExercise => [
-        workoutExercise.id,
-        workoutExercise
-      ])
-    );
-    const inputIdSet = new Set(rows.map(row => row.id));
-    const baselineById = new Map(
-      baselineRows.map(workoutExercise => [workoutExercise.id, workoutExercise])
-    );
-
-    if (
-      inputIdSet.size !== rows.length ||
-      baselineById.size !== baselineRows.length ||
-      rows.some(row => !baselineById.has(row.id)) ||
-      existingWorkoutExercises.length !== baselineRows.length ||
-      existingWorkoutExercises.some(existingRow => {
-        const baselineRow = baselineById.get(existingRow.id);
-
-        return (
-          !baselineRow ||
-          existingRow.order !== baselineRow.order ||
-          existingRow.supersetId !== baselineRow.supersetId
+        const existingById = new Map(
+          existingWorkoutExercises.map(workoutExercise => [
+            workoutExercise.id,
+            workoutExercise
+          ])
         );
+        const inputIdSet = new Set(rows.map(row => row.id));
+        const baselineById = new Map(
+          baselineRows.map(workoutExercise => [
+            workoutExercise.id,
+            workoutExercise
+          ])
+        );
+
+        if (
+          inputIdSet.size !== rows.length ||
+          baselineById.size !== baselineRows.length ||
+          rows.some(row => !baselineById.has(row.id)) ||
+          existingWorkoutExercises.length !== baselineRows.length ||
+          existingWorkoutExercises.some(existingRow => {
+            const baselineRow = baselineById.get(existingRow.id);
+
+            return (
+              !baselineRow ||
+              existingRow.order !== baselineRow.order ||
+              existingRow.supersetId !== baselineRow.supersetId
+            );
+          })
+        ) {
+          throw new Error('Workout exercises changed before edits were saved.');
+        }
+
+        const removedIds = baselineRows
+          .filter(workoutExercise => !inputIdSet.has(workoutExercise.id))
+          .map(workoutExercise => workoutExercise.id);
+        const normalizedRows = normalizeSupersetRows(
+          rows.map((row, order) => ({
+            id: row.id,
+            order,
+            supersetId: row.supersetId
+          }))
+        );
+        const toUpdate = normalizedRows.filter(row => {
+          const existingRow = existingById.get(row.id)!;
+
+          return (
+            existingRow.order !== row.order ||
+            existingRow.supersetId !== row.supersetId
+          );
+        });
+
+        if (removedIds.length === 0 && toUpdate.length === 0) {
+          return;
+        }
+
+        if (removedIds.length > 0) {
+          tx.delete(workoutExercises)
+            .where(inArray(workoutExercises.id, removedIds))
+            .run();
+        }
+
+        if (toUpdate.length > 0) {
+          tx.update(workoutExercises)
+            .set({
+              order: sql`CASE id ${sql.join(
+                toUpdate.map(row => sql`WHEN ${row.id} THEN ${row.order}`),
+                sql` `
+              )} END`,
+              supersetId: sql`CASE id ${sql.join(
+                toUpdate.map(row => sql`WHEN ${row.id} THEN ${row.supersetId}`),
+                sql` `
+              )} END`
+            })
+            .where(
+              inArray(
+                workoutExercises.id,
+                toUpdate.map(row => row.id)
+              )
+            )
+            .run();
+        }
       })
-    ) {
-      throw new Error('Workout exercises changed before edits were saved.');
-    }
-
-    const removedIds = baselineRows
-      .filter(workoutExercise => !inputIdSet.has(workoutExercise.id))
-      .map(workoutExercise => workoutExercise.id);
-    const normalizedRows = normalizeSupersetRows(
-      rows.map((row, order) => ({
-        id: row.id,
-        order,
-        supersetId: row.supersetId
-      }))
-    );
-    const toUpdate = normalizedRows.filter(row => {
-      const existingRow = existingById.get(row.id)!;
-
-      return (
-        existingRow.order !== row.order ||
-        existingRow.supersetId !== row.supersetId
-      );
-    });
-
-    if (removedIds.length === 0 && toUpdate.length === 0) {
-      return;
-    }
-
-    if (removedIds.length > 0) {
-      tx.delete(workoutExercises)
-        .where(inArray(workoutExercises.id, removedIds))
-        .run();
-    }
-
-    if (toUpdate.length > 0) {
-      tx.update(workoutExercises)
-        .set({
-          order: sql`CASE id ${sql.join(
-            toUpdate.map(row => sql`WHEN ${row.id} THEN ${row.order}`),
-            sql` `
-          )} END`,
-          supersetId: sql`CASE id ${sql.join(
-            toUpdate.map(row => sql`WHEN ${row.id} THEN ${row.supersetId}`),
-            sql` `
-          )} END`
-        })
-        .where(
-          inArray(
-            workoutExercises.id,
-            toUpdate.map(row => row.id)
-          )
-        )
-        .run();
-    }
-  });
+  );
 }
 
 export function createCompletedSet(
@@ -1903,54 +2092,62 @@ export function createCompletedSet(
   data: NewCompletedSet,
   { maintainPersonalRecords = true }: CompletedSetCommandOptions = {}
 ): CompletedSetMutationResult {
-  return db.transaction(tx => {
-    const progressContext = maintainPersonalRecords
-      ? getWorkoutExerciseProgressContext(tx, data.workoutExerciseId)
-      : undefined;
-    const currentBestScore = progressContext
-      ? getCurrentPersonalRecordScore(tx, progressContext.exerciseId)
-      : undefined;
-    const set = tx
-      .insert(sets)
-      .values({ ...data, status: 'completed' })
-      .returning()
-      .get();
-    const score = progressContext
-      ? getSetScore(resolveTrackingType(progressContext.trackingType), set)
-      : null;
-    const couldBecomeLatestPersonalRecord = isPersonalRecordScore(
-      score,
-      currentBestScore
-    );
-    const couldAffectPersonalRecordChain = progressContext
-      ? isPersonalRecordScore(
+  return withDatabaseSpan(
+    {
+      operation: 'workout.createCompletedSet',
+      feature: 'workout',
+      access: 'write'
+    },
+    () =>
+      db.transaction(tx => {
+        const progressContext = maintainPersonalRecords
+          ? getWorkoutExerciseProgressContext(tx, data.workoutExerciseId)
+          : undefined;
+        const currentBestScore = progressContext
+          ? getCurrentPersonalRecordScore(tx, progressContext.exerciseId)
+          : undefined;
+        const set = tx
+          .insert(sets)
+          .values({ ...data, status: 'completed' })
+          .returning()
+          .get();
+        const score = progressContext
+          ? getSetScore(resolveTrackingType(progressContext.trackingType), set)
+          : null;
+        const couldBecomeLatestPersonalRecord = isPersonalRecordScore(
           score,
-          getPersonalRecordScoreBeforeSet(
+          currentBestScore
+        );
+        const couldAffectPersonalRecordChain = progressContext
+          ? isPersonalRecordScore(
+              score,
+              getPersonalRecordScoreBeforeSet(
+                tx,
+                progressContext.exerciseId,
+                set,
+                progressContext.workoutStartedAt
+              )
+            )
+          : false;
+
+        if (progressContext && couldAffectPersonalRecordChain) {
+          rebuildPersonalRecordsForExerciseInTransaction(
             tx,
-            progressContext.exerciseId,
-            set,
-            progressContext.workoutStartedAt
-          )
-        )
-      : false;
+            progressContext.exerciseId
+          );
+        }
 
-    if (progressContext && couldAffectPersonalRecordChain) {
-      rebuildPersonalRecordsForExerciseInTransaction(
-        tx,
-        progressContext.exerciseId
-      );
-    }
+        const isNewPersonalRecord =
+          progressContext !== undefined &&
+          couldBecomeLatestPersonalRecord &&
+          isLatestPersonalRecordSet(tx, {
+            exerciseId: progressContext.exerciseId,
+            setId: set.id
+          });
 
-    const isNewPersonalRecord =
-      progressContext !== undefined &&
-      couldBecomeLatestPersonalRecord &&
-      isLatestPersonalRecordSet(tx, {
-        exerciseId: progressContext.exerciseId,
-        setId: set.id
-      });
-
-    return { set, isNewPersonalRecord };
-  });
+        return { set, isNewPersonalRecord };
+      })
+  );
 }
 
 export function updateCompletedSet(
@@ -1959,60 +2156,68 @@ export function updateCompletedSet(
   data: CompletedSetUpdates,
   { maintainPersonalRecords = true }: CompletedSetCommandOptions = {}
 ): CompletedSetMutationResult | undefined {
-  return db.transaction(tx => {
-    const progressContext = getSetProgressContext(tx, id);
+  return withDatabaseSpan(
+    {
+      operation: 'workout.updateCompletedSet',
+      feature: 'workout',
+      access: 'write'
+    },
+    () =>
+      db.transaction(tx => {
+        const progressContext = getSetProgressContext(tx, id);
 
-    if (!progressContext) {
-      return undefined;
-    }
+        if (!progressContext) {
+          return undefined;
+        }
 
-    const currentBestScore = maintainPersonalRecords
-      ? getCurrentPersonalRecordScore(tx, progressContext.exerciseId)
-      : undefined;
-    const wasInPersonalRecordChain = maintainPersonalRecords
-      ? isSetInPersonalRecordChain(tx, id)
-      : false;
-    const set = tx
-      .update(sets)
-      .set({ ...data, status: 'completed' })
-      .where(eq(sets.id, id))
-      .returning()
-      .get();
-    const score = maintainPersonalRecords
-      ? getSetScore(resolveTrackingType(progressContext.trackingType), set)
-      : null;
-    const couldBecomeLatestPersonalRecord = isPersonalRecordScore(
-      score,
-      currentBestScore
-    );
-    const couldAffectPersonalRecordChain =
-      maintainPersonalRecords &&
-      isPersonalRecordScore(
-        score,
-        getPersonalRecordScoreBeforeSet(
-          tx,
-          progressContext.exerciseId,
-          set,
-          progressContext.workoutStartedAt
-        )
-      );
+        const currentBestScore = maintainPersonalRecords
+          ? getCurrentPersonalRecordScore(tx, progressContext.exerciseId)
+          : undefined;
+        const wasInPersonalRecordChain = maintainPersonalRecords
+          ? isSetInPersonalRecordChain(tx, id)
+          : false;
+        const set = tx
+          .update(sets)
+          .set({ ...data, status: 'completed' })
+          .where(eq(sets.id, id))
+          .returning()
+          .get();
+        const score = maintainPersonalRecords
+          ? getSetScore(resolveTrackingType(progressContext.trackingType), set)
+          : null;
+        const couldBecomeLatestPersonalRecord = isPersonalRecordScore(
+          score,
+          currentBestScore
+        );
+        const couldAffectPersonalRecordChain =
+          maintainPersonalRecords &&
+          isPersonalRecordScore(
+            score,
+            getPersonalRecordScoreBeforeSet(
+              tx,
+              progressContext.exerciseId,
+              set,
+              progressContext.workoutStartedAt
+            )
+          );
 
-    if (wasInPersonalRecordChain || couldAffectPersonalRecordChain) {
-      rebuildPersonalRecordsForExerciseInTransaction(
-        tx,
-        progressContext.exerciseId
-      );
-    }
+        if (wasInPersonalRecordChain || couldAffectPersonalRecordChain) {
+          rebuildPersonalRecordsForExerciseInTransaction(
+            tx,
+            progressContext.exerciseId
+          );
+        }
 
-    const isNewPersonalRecord =
-      couldBecomeLatestPersonalRecord &&
-      isLatestPersonalRecordSet(tx, {
-        exerciseId: progressContext.exerciseId,
-        setId: set.id
-      });
+        const isNewPersonalRecord =
+          couldBecomeLatestPersonalRecord &&
+          isLatestPersonalRecordSet(tx, {
+            exerciseId: progressContext.exerciseId,
+            setId: set.id
+          });
 
-    return { set, isNewPersonalRecord };
-  });
+        return { set, isNewPersonalRecord };
+      })
+  );
 }
 
 export function deleteCompletedSet(
@@ -2020,28 +2225,36 @@ export function deleteCompletedSet(
   id: Set['id'],
   { maintainPersonalRecords = true }: CompletedSetCommandOptions = {}
 ): Set | undefined {
-  return db.transaction(tx => {
-    const progressContext = getSetProgressContext(tx, id);
+  return withDatabaseSpan(
+    {
+      operation: 'workout.deleteCompletedSet',
+      feature: 'workout',
+      access: 'write'
+    },
+    () =>
+      db.transaction(tx => {
+        const progressContext = getSetProgressContext(tx, id);
 
-    if (!progressContext) {
-      return undefined;
-    }
+        if (!progressContext) {
+          return undefined;
+        }
 
-    const wasInPersonalRecordChain = maintainPersonalRecords
-      ? isSetInPersonalRecordChain(tx, id)
-      : false;
+        const wasInPersonalRecordChain = maintainPersonalRecords
+          ? isSetInPersonalRecordChain(tx, id)
+          : false;
 
-    tx.delete(sets).where(eq(sets.id, id)).run();
+        tx.delete(sets).where(eq(sets.id, id)).run();
 
-    if (wasInPersonalRecordChain) {
-      rebuildPersonalRecordsForExerciseInTransaction(
-        tx,
-        progressContext.exerciseId
-      );
-    }
+        if (wasInPersonalRecordChain) {
+          rebuildPersonalRecordsForExerciseInTransaction(
+            tx,
+            progressContext.exerciseId
+          );
+        }
 
-    return progressContext.set;
-  });
+        return progressContext.set;
+      })
+  );
 }
 
 export function repeatWorkout(
@@ -2057,44 +2270,53 @@ export function repeatWorkout(
     >[];
   }
 ): Workout {
-  let createdWorkout: Workout | undefined;
+  return withDatabaseSpan(
+    {
+      operation: 'workout.repeat',
+      feature: 'workout',
+      access: 'write'
+    },
+    () => {
+      let createdWorkout: Workout | undefined;
 
-  db.transaction(tx => {
-    const startedAt = Date.now();
+      db.transaction(tx => {
+        const startedAt = Date.now();
 
-    createdWorkout = tx
-      .insert(workouts)
-      .values({
-        name: sourceWorkout.name,
-        status: 'in_progress',
-        startedAt,
-        dateKey: toLocalDateKey(startedAt)
-      })
-      .returning()
-      .get();
+        createdWorkout = tx
+          .insert(workouts)
+          .values({
+            name: sourceWorkout.name,
+            status: 'in_progress',
+            startedAt,
+            dateKey: toLocalDateKey(startedAt)
+          })
+          .returning()
+          .get();
 
-    const createdWorkoutRow = createdWorkout;
+        const createdWorkoutRow = createdWorkout;
 
-    if (!createdWorkoutRow || sourceWorkoutExercises.length === 0) {
-      return;
+        if (!createdWorkoutRow || sourceWorkoutExercises.length === 0) {
+          return;
+        }
+
+        tx.insert(workoutExercises)
+          .values(
+            sourceWorkoutExercises.map(workoutExercise => ({
+              workoutId: createdWorkoutRow.id,
+              exerciseId: workoutExercise.exerciseId,
+              order: workoutExercise.order,
+              supersetId: workoutExercise.supersetId,
+              notes: null
+            }))
+          )
+          .run();
+      });
+
+      if (!createdWorkout) {
+        throw new Error('Failed to repeat workout.');
+      }
+
+      return createdWorkout;
     }
-
-    tx.insert(workoutExercises)
-      .values(
-        sourceWorkoutExercises.map(workoutExercise => ({
-          workoutId: createdWorkoutRow.id,
-          exerciseId: workoutExercise.exerciseId,
-          order: workoutExercise.order,
-          supersetId: workoutExercise.supersetId,
-          notes: null
-        }))
-      )
-      .run();
-  });
-
-  if (!createdWorkout) {
-    throw new Error('Failed to repeat workout.');
-  }
-
-  return createdWorkout;
+  );
 }

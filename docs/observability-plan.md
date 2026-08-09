@@ -45,13 +45,15 @@ Verification: `pnpm test` (71 passed), TypeScript check, ESLint, and Prettier pa
 
 ## Phase 2 — Repository operations
 
-- [ ] Instrument direct repository reads outside `useLiveWithFallback`.
-- [ ] Instrument repository writes and transaction boundaries across workouts, exercises, progress, settings, and steps.
-- [ ] Start with one logical span per operation/transaction; avoid wrapping every internal statement by default.
-- [ ] Add finer-grained nested spans only when a baseline transaction hides the actual bottleneck.
-- [ ] Keep operation names stable and parameter-free.
-- [ ] Test success/error behavior for representative reads, writes, and transactions.
-- [ ] Run type checks/tests and `graphify update .`.
+- [x] Instrument direct repository reads outside `useLiveWithFallback`.
+- [x] Instrument repository writes and transaction boundaries across workouts, exercises, progress, settings, and steps.
+- [x] Start with one logical span per operation/transaction; avoid wrapping every internal statement by default.
+- [x] Add finer-grained nested spans only when a baseline transaction hides the actual bottleneck.
+- [x] Keep operation names stable and parameter-free.
+- [x] Test success/error behavior for representative reads, writes, and transactions.
+- [x] Run type checks/tests and `graphify update .`.
+
+Verification: `pnpm test` (71 passed), TypeScript check, ESLint, Prettier, and `graphify update .` pass. Repository tests use a test-only Sentry module mock because the current `tsx` transform cannot parse the native package's Flow syntax.
 
 ## Phase 3 — Startup and important user flows
 
@@ -77,4 +79,4 @@ Verification: `pnpm test` (71 passed), TypeScript check, ESLint, and Prettier pa
 
 Before ending a session, record the active phase, check off completed items, note tests run and failures, and state the next smallest task. Do not start a later phase until the current phase is verified.
 
-Current handoff: Phase 1 shared live-query instrumentation is implemented; automated checks pass. Development Spotlight verification for Phase 0 and representative Phase 1 screens remains pending. Next smallest task is the development Spotlight smoke check, then inspect initial/live-refresh spans in representative screens.
+Current handoff: Phase 2 repository-operation instrumentation is implemented; automated checks pass. Development Spotlight verification for Phase 0 and representative Phase 1 screens remains pending. Next smallest task is Phase 3 startup and important user-flow spans after the pending Spotlight checks.

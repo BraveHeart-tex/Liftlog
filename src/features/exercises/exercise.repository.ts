@@ -8,6 +8,7 @@ import {
 } from '@/src/db/schema';
 import { rebuildPersonalRecordsForExerciseInTransaction } from '@/src/features/progress/progress.repository';
 import { normalizeExerciseName } from '@/src/features/exercises/exercise-name.utils';
+import { withDatabaseSpan } from '@/src/lib/db/database-observability';
 import { and, count, eq, exists, inArray, ne, or, sql } from 'drizzle-orm';
 import type { InferColumnsDataTypes } from 'drizzle-orm/column';
 
@@ -110,67 +111,94 @@ export function hasExerciseNameConflict(
   id: Exercise['id'] | undefined,
   name: Exercise['name']
 ): boolean {
-  const normalizedName = normalizeExerciseName(name);
+  return withDatabaseSpan(
+    {
+      operation: 'exercise.hasNameConflict',
+      feature: 'exercise',
+      access: 'read'
+    },
+    () => {
+      const normalizedName = normalizeExerciseName(name);
 
-  if (normalizedName.length === 0) {
-    return false;
-  }
+      if (normalizedName.length === 0) {
+        return false;
+      }
 
-  const existingExercise = db
-    .select({ id: exercises.id })
-    .from(exercises)
-    .where(
-      and(
-        eq(exercises.isArchived, 0),
-        ...(id ? [ne(exercises.id, id)] : []),
-        eq(exercises.normalizedName, normalizedName)
-      )
-    )
-    .limit(1)
-    .get();
+      const existingExercise = db
+        .select({ id: exercises.id })
+        .from(exercises)
+        .where(
+          and(
+            eq(exercises.isArchived, 0),
+            ...(id ? [ne(exercises.id, id)] : []),
+            eq(exercises.normalizedName, normalizedName)
+          )
+        )
+        .limit(1)
+        .get();
 
-  return Boolean(existingExercise);
+      return Boolean(existingExercise);
+    }
+  );
 }
 
 export function createExercise(db: DrizzleDb, data: NewExercise): Exercise {
-  try {
-    return db
-      .insert(exercises)
-      .values({
-        ...data,
-        normalizedName: normalizeExerciseName(data.name),
-        isCustom: 1,
-        isArchived: 0
-      })
-      .returning()
-      .get();
-  } catch (error) {
-    if (isExerciseNameUniqueConstraintError(error)) {
-      throw new ExerciseNameConflictError();
-    }
+  return withDatabaseSpan(
+    {
+      operation: 'exercise.create',
+      feature: 'exercise',
+      access: 'write'
+    },
+    () => {
+      try {
+        return db
+          .insert(exercises)
+          .values({
+            ...data,
+            normalizedName: normalizeExerciseName(data.name),
+            isCustom: 1,
+            isArchived: 0
+          })
+          .returning()
+          .get();
+      } catch (error) {
+        if (isExerciseNameUniqueConstraintError(error)) {
+          throw new ExerciseNameConflictError();
+        }
 
-    throw error;
-  }
+        throw error;
+      }
+    }
+  );
 }
 
 export function updateCustomExerciseName(
   db: DrizzleDb,
   { id, name }: { id: Exercise['id']; name: Exercise['name'] }
 ): Exercise | undefined {
-  try {
-    return db
-      .update(exercises)
-      .set({ name, normalizedName: normalizeExerciseName(name) })
-      .where(and(eq(exercises.id, id), eq(exercises.isCustom, 1)))
-      .returning()
-      .get();
-  } catch (error) {
-    if (isExerciseNameUniqueConstraintError(error)) {
-      throw new ExerciseNameConflictError();
-    }
+  return withDatabaseSpan(
+    {
+      operation: 'exercise.updateCustomName',
+      feature: 'exercise',
+      access: 'write'
+    },
+    () => {
+      try {
+        return db
+          .update(exercises)
+          .set({ name, normalizedName: normalizeExerciseName(name) })
+          .where(and(eq(exercises.id, id), eq(exercises.isCustom, 1)))
+          .returning()
+          .get();
+      } catch (error) {
+        if (isExerciseNameUniqueConstraintError(error)) {
+          throw new ExerciseNameConflictError();
+        }
 
-    throw error;
-  }
+        throw error;
+      }
+    }
+  );
 }
 
 export function updateCustomExerciseDetails(
@@ -178,38 +206,46 @@ export function updateCustomExerciseDetails(
   id: Exercise['id'],
   details: CustomExerciseDetailsUpdate
 ): Exercise | undefined {
-  return db.transaction(tx => {
-    const exercise = tx
-      .select({
-        isCustom: exercises.isCustom,
-        trackingType: exercises.trackingType
+  return withDatabaseSpan(
+    {
+      operation: 'exercise.updateCustomDetails',
+      feature: 'exercise',
+      access: 'write'
+    },
+    () =>
+      db.transaction(tx => {
+        const exercise = tx
+          .select({
+            isCustom: exercises.isCustom,
+            trackingType: exercises.trackingType
+          })
+          .from(exercises)
+          .where(eq(exercises.id, id))
+          .get();
+
+        if (!exercise || exercise.isCustom !== 1) {
+          return undefined;
+        }
+
+        const updatedExercise = tx
+          .update(exercises)
+          .set({
+            category: details.category,
+            trackingType: details.trackingType,
+            primaryMuscles: JSON.stringify(details.primaryMuscles),
+            secondaryMuscles: JSON.stringify(details.secondaryMuscles)
+          })
+          .where(and(eq(exercises.id, id), eq(exercises.isCustom, 1)))
+          .returning()
+          .get();
+
+        if (updatedExercise && exercise.trackingType !== details.trackingType) {
+          rebuildPersonalRecordsForExerciseInTransaction(tx, id);
+        }
+
+        return updatedExercise;
       })
-      .from(exercises)
-      .where(eq(exercises.id, id))
-      .get();
-
-    if (!exercise || exercise.isCustom !== 1) {
-      return undefined;
-    }
-
-    const updatedExercise = tx
-      .update(exercises)
-      .set({
-        category: details.category,
-        trackingType: details.trackingType,
-        primaryMuscles: JSON.stringify(details.primaryMuscles),
-        secondaryMuscles: JSON.stringify(details.secondaryMuscles)
-      })
-      .where(and(eq(exercises.id, id), eq(exercises.isCustom, 1)))
-      .returning()
-      .get();
-
-    if (updatedExercise && exercise.trackingType !== details.trackingType) {
-      rebuildPersonalRecordsForExerciseInTransaction(tx, id);
-    }
-
-    return updatedExercise;
-  });
+  );
 }
 
 function archiveExercise(db: DrizzleDb, id: Exercise['id']): void {
@@ -290,37 +326,46 @@ export function removeCustomExercise(
   db: DrizzleDb,
   id: Exercise['id']
 ): 'archived' | 'deleted' | 'not_custom' | 'not_found' {
-  const exercise = db
-    .select({ isCustom: exercises.isCustom })
-    .from(exercises)
-    .where(eq(exercises.id, id))
-    .get();
+  return withDatabaseSpan(
+    {
+      operation: 'exercise.removeCustom',
+      feature: 'exercise',
+      access: 'write'
+    },
+    () => {
+      const exercise = db
+        .select({ isCustom: exercises.isCustom })
+        .from(exercises)
+        .where(eq(exercises.id, id))
+        .get();
 
-  if (!exercise) {
-    return 'not_found';
-  }
+      if (!exercise) {
+        return 'not_found';
+      }
 
-  if (exercise.isCustom !== 1) {
-    return 'not_custom';
-  }
+      if (exercise.isCustom !== 1) {
+        return 'not_custom';
+      }
 
-  if (isExerciseUsed(db, id)) {
-    archiveExercise(db, id);
+      if (isExerciseUsed(db, id)) {
+        archiveExercise(db, id);
 
-    return 'archived';
-  }
+        return 'archived';
+      }
 
-  try {
-    deleteExercise(db, id);
-  } catch (error) {
-    console.error(
-      'Failed to delete unused custom exercise; archiving instead.',
-      error
-    );
-    archiveExercise(db, id);
+      try {
+        deleteExercise(db, id);
+      } catch (error) {
+        console.error(
+          'Failed to delete unused custom exercise; archiving instead.',
+          error
+        );
+        archiveExercise(db, id);
 
-    return 'archived';
-  }
+        return 'archived';
+      }
 
-  return 'deleted';
+      return 'deleted';
+    }
+  );
 }

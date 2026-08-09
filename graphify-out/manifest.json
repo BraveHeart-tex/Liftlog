@@ -55,8 +55,8 @@
     "semantic_hash": "12d4f1a199d5da5bf16e0854171f8503"
   },
   "package.json": {
-    "mtime": 1786270503.8245265,
-    "ast_hash": "b18671fc4f366047b6986ebc25865b30",
+    "mtime": 1786271932.421511,
+    "ast_hash": "042e6e6d31573663a97e961dabc291a1",
     "semantic_hash": ""
   },
   "postcss.config.mjs": {
@@ -605,9 +605,9 @@
     "semantic_hash": "b3f6c8a4ae2bfe2186fe996ef42f927c"
   },
   "src/features/exercises/exercise.repository.ts": {
-    "mtime": 1786182298.7184672,
-    "ast_hash": "3ca41c3d54b5806190387ff8c9c232b1",
-    "semantic_hash": "3ca41c3d54b5806190387ff8c9c232b1"
+    "mtime": 1786271628.7259216,
+    "ast_hash": "c5ae3b71bb1f22d12469446e388eb73d",
+    "semantic_hash": ""
   },
   "src/features/exercises/exercise.types.ts": {
     "mtime": 1783203206.1774755,
@@ -650,8 +650,8 @@
     "semantic_hash": "454cf9838d7b1f76de7e501aaf72c368"
   },
   "src/features/progress/progress.repository.ts": {
-    "mtime": 1786220700.4765306,
-    "ast_hash": "ec3f0eab87e752f21843d5ff89e316ee",
+    "mtime": 1786271634.2170396,
+    "ast_hash": "137e8ebd31bbf251e48bb1e407de51f7",
     "semantic_hash": ""
   },
   "src/features/progress/tracking.domain.ts": {
@@ -705,9 +705,9 @@
     "semantic_hash": "cd56edb58b7b063f1099b3f2361ae57f"
   },
   "src/features/settings/onboarding.repository.ts": {
-    "mtime": 1786050300.1675797,
-    "ast_hash": "14beb8833eae2396af355541ca74954e",
-    "semantic_hash": "14beb8833eae2396af355541ca74954e"
+    "mtime": 1786271821.6528585,
+    "ast_hash": "7b5521748d50eea7393a0ccccc031fb4",
+    "semantic_hash": ""
   },
   "src/features/settings/settings-provider.tsx": {
     "mtime": 1786270957.8586197,
@@ -715,8 +715,8 @@
     "semantic_hash": ""
   },
   "src/features/settings/settings.repository.ts": {
-    "mtime": 1786221053.4494827,
-    "ast_hash": "a2e5e0872e454d5f3636cdf4b258959b",
+    "mtime": 1786271821.638268,
+    "ast_hash": "7529922e1335da7908ff9d673d9c405a",
     "semantic_hash": ""
   },
   "src/features/steps/components/step-day-row.tsx": {
@@ -790,8 +790,8 @@
     "semantic_hash": "b739c052796a8ea95479819e94eb0589"
   },
   "src/features/steps/steps.repository.ts": {
-    "mtime": 1786201505.135502,
-    "ast_hash": "3c6615f3478159a65ada6faae73ae4d9",
+    "mtime": 1786271680.894724,
+    "ast_hash": "02dcf4e80c1447538969e80aa038bbf0",
     "semantic_hash": ""
   },
   "src/features/steps/steps.validation.ts": {
@@ -1385,8 +1385,8 @@
     "semantic_hash": "9f23a3d982339618736fbcf43c342594"
   },
   "src/features/workouts/workout-template.repository.ts": {
-    "mtime": 1786220693.1021967,
-    "ast_hash": "df36f41654f15c3d20d4e2bcf08c4e39",
+    "mtime": 1786271822.0404203,
+    "ast_hash": "c74c9998a88cf6cb33f4dc0071610ee2",
     "semantic_hash": ""
   },
   "src/features/workouts/workout.constants.ts": {
@@ -1400,8 +1400,8 @@
     "semantic_hash": "9139b3e927bd60f75322846436209479"
   },
   "src/features/workouts/workout.repository.ts": {
-    "mtime": 1786223149.6822746,
-    "ast_hash": "37b889a670d9618aed2050cf65e2876b",
+    "mtime": 1786271821.9374614,
+    "ast_hash": "4d100a0dacb3c75ba0883b8be86e9a50",
     "semantic_hash": ""
   },
   "src/lib/animations/motion.constants.ts": {
@@ -1682,6 +1682,11 @@
   "docs/observability-plan.md": {
     "mtime": 1786271286.194943,
     "ast_hash": "ccf1ffff0504550c065a76e26b3e76ce",
+    "semantic_hash": ""
+  },
+  "tests/setup.ts": {
+    "mtime": 1786271937.799726,
+    "ast_hash": "37fe3fa8ba4ba273226e1dc1947fb77e",
     "semantic_hash": ""
   }
 }

@@ -18,6 +18,7 @@ import {
   getSetScore,
   resolveTrackingType
 } from '@/src/features/progress/tracking.domain';
+import { withDatabaseSpan } from '@/src/lib/db/database-observability';
 
 export function getPersonalRecordsByExerciseQuery(
   db: DrizzleDb,
@@ -356,15 +357,24 @@ export function rebuildPersonalRecordsForExercises(
   db: DrizzleDb,
   exerciseIds: Exercise['id'][]
 ): void {
-  const uniqueExerciseIds = Array.from(new Set(exerciseIds));
+  withDatabaseSpan(
+    {
+      operation: 'progress.rebuildPersonalRecords',
+      feature: 'progress',
+      access: 'write'
+    },
+    () => {
+      const uniqueExerciseIds = Array.from(new Set(exerciseIds));
 
-  if (uniqueExerciseIds.length === 0) {
-    return;
-  }
+      if (uniqueExerciseIds.length === 0) {
+        return;
+      }
 
-  db.transaction(tx => {
-    rebuildPersonalRecordsForExercisesInTransaction(tx, uniqueExerciseIds);
-  });
+      db.transaction(tx => {
+        rebuildPersonalRecordsForExercisesInTransaction(tx, uniqueExerciseIds);
+      });
+    }
+  );
 }
 
 export function rebuildPersonalRecordsForExerciseInTransaction(
