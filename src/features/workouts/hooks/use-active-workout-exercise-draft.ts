@@ -70,12 +70,14 @@ export function useActiveWorkoutExerciseDraft({
       return false;
     }
 
+    const baselineById = new Map(
+      baselineExerciseRows.map(row => [row.id, row] as const)
+    );
+
     return (
       draftExerciseRows.length !== baselineExerciseRows.length ||
       draftExerciseRows.some(({ workoutExercise }, order) => {
-        const baselineRow = baselineExerciseRows.find(
-          baseline => baseline.id === workoutExercise.id
-        );
+        const baselineRow = baselineById.get(workoutExercise.id);
 
         return (
           !baselineRow ||

@@ -217,11 +217,6 @@ function ActiveWorkoutEditExercisesContent({
             sets={setRows}
             exerciseById={draftExerciseById}
             isEditing
-            onEnterEditMode={() => undefined}
-            draftExerciseRows={draftWorkoutExercises.map(workoutExercise => ({
-              id: workoutExercise.id,
-              supersetId: workoutExercise.supersetId
-            }))}
             onChangeDraftExerciseRows={changeRows}
           />
           <View className="border-border pb-safe border-t px-4 pt-3">

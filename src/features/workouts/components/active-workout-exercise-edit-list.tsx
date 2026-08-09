@@ -48,17 +48,30 @@ export const ActiveWorkoutExerciseEditList = memo(
         })),
       [rows]
     );
-    const [orderedRows, setOrderedRows] = useState(() =>
-      groupSupersetBlocks(editableRows)
-    );
     const blocks = useMemo(
       () => groupSupersetBlocks(editableRows),
       [editableRows]
     );
+    const [orderedRows, setOrderedRows] = useState(blocks);
     const rowIds = rows
       .map(r => `${r.workoutExercise.id}:${r.workoutExercise.supersetId ?? ''}`)
       .join(',');
     const shouldShowDragHandle = blocks.length > 1;
+    const flatRows = useMemo(
+      () => flattenSupersetBlocks(orderedRows),
+      [orderedRows]
+    );
+    const supersetLabelByBlockId = useMemo(() => {
+      let supersetIndex = 0;
+
+      return new Map(
+        orderedRows
+          .filter(block => block.supersetId)
+          .map(
+            block => [block.id, formatSupersetLetter(supersetIndex++)] as const
+          )
+      );
+    }, [orderedRows]);
 
     useEffect(() => {
       // Only fires when exercises are added/removed, not on order changes
@@ -105,17 +118,13 @@ export const ActiveWorkoutExerciseEditList = memo(
       ReorderableListRenderItem<SupersetBlock<EditableWorkoutExerciseRow>>
     >(
       ({ item, index, isDragging, isReordering }) => {
-        const flatRows = flattenSupersetBlocks(orderedRows);
         const canLinkWithNext =
           item.rows.length === 1 &&
           orderedRows[index + 1]?.rows.length === 1 &&
           !item.rows[0].workoutExercise.supersetId &&
           !orderedRows[index + 1].rows[0].workoutExercise.supersetId;
         const supersetLabel = item.supersetId
-          ? formatSupersetLetter(
-              orderedRows.slice(0, index).filter(block => block.supersetId)
-                .length
-            )
+          ? supersetLabelByBlockId.get(item.id)
           : undefined;
 
         return (
@@ -233,7 +242,9 @@ export const ActiveWorkoutExerciseEditList = memo(
         onChangeRows,
         orderedRows,
         setRowsFromWorkoutExercises,
-        shouldShowDragHandle
+        shouldShowDragHandle,
+        supersetLabelByBlockId,
+        flatRows
       ]
     );
 

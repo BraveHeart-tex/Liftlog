@@ -1,6 +1,7 @@
 import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import type { Set, WorkoutExercise } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import { ActiveWorkoutExerciseCard } from '@/src/features/workouts/components/active-workout-exercise-card';
 import { ActiveWorkoutExerciseEditList } from '@/src/features/workouts/components/active-workout-exercise-edit-list';
 import { SupersetIndicator } from '@/src/features/workouts/components/superset-indicator';
@@ -10,7 +11,6 @@ import {
   formatSupersetLabel,
   groupSupersetBlocks
 } from '@/src/features/workouts/superset.utils';
-import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { useMemo } from 'react';
 import { View } from 'react-native';
@@ -43,7 +43,7 @@ interface ActiveWorkoutExerciseListProps {
   sets: Set[];
   exerciseById: Map<ExerciseListItem['id'], ExerciseListItem>;
   mode?: 'active' | 'historical' | 'historical-edit';
-  onEnterEditMode: () => void;
+  onEnterEditMode?: () => void;
   draftExerciseRows?: Pick<WorkoutExercise, 'id' | 'supersetId'>[];
   onChangeDraftExerciseRows: (
     rows: Pick<WorkoutExercise, 'id' | 'supersetId'>[]
@@ -68,13 +68,23 @@ export function ActiveWorkoutExerciseList({
 }: ActiveWorkoutExerciseListProps) {
   const { weightUnit } = useSettings();
   const shouldAnimateLocalState = mode !== 'active';
+  const workoutExerciseById = useMemo(() => {
+    if (!isEditing || !draftExerciseRows) {
+      return undefined;
+    }
+
+    return new Map(
+      workoutExercises.map(workoutExercise => [
+        workoutExercise.id,
+        workoutExercise
+      ])
+    );
+  }, [draftExerciseRows, isEditing, workoutExercises]);
   const visibleWorkoutExercises =
     isEditing && draftExerciseRows
       ? draftExerciseRows
           .map((draftRow, order) => {
-            const workoutExercise = workoutExercises.find(
-              row => row.id === draftRow.id
-            );
+            const workoutExercise = workoutExerciseById?.get(draftRow.id);
 
             return workoutExercise
               ? { ...workoutExercise, order, supersetId: draftRow.supersetId }

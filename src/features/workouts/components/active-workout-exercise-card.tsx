@@ -1,11 +1,11 @@
 import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
+import { WorkoutExerciseSummary } from '@/src/features/workouts/components/workout-exercise-summary';
 import { usePressScale } from '@/src/lib/animations/use-press-scale.hook';
 import { cn } from '@/src/lib/utils/cn.utils';
 import type { WeightUnit } from '@/src/lib/utils/weight.utils';
 import { router } from 'expo-router';
 import { Animated, Pressable, View } from 'react-native';
-import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
-import { WorkoutExerciseSummary } from '@/src/features/workouts/components/workout-exercise-summary';
 
 interface ActiveWorkoutExerciseCardProps {
   item: WorkoutExerciseWithSets;
@@ -13,7 +13,7 @@ interface ActiveWorkoutExerciseCardProps {
   mode?: 'active' | 'historical' | 'historical-edit';
   supersetLabel?: string;
   weightUnit: WeightUnit;
-  onLongPress: () => void;
+  onLongPress?: () => void;
 }
 
 export function ActiveWorkoutExerciseCard({
