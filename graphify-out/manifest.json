@@ -55,8 +55,8 @@
     "semantic_hash": "12d4f1a199d5da5bf16e0854171f8503"
   },
   "package.json": {
-    "mtime": 1786220262.2718768,
-    "ast_hash": "08660eeec63520f0875046a1523d34e9",
+    "mtime": 1786270503.8245265,
+    "ast_hash": "b18671fc4f366047b6986ebc25865b30",
     "semantic_hash": ""
   },
   "postcss.config.mjs": {
@@ -125,9 +125,9 @@
     "semantic_hash": ""
   },
   "src/app/_layout.tsx": {
-    "mtime": 1786045025.498351,
-    "ast_hash": "04f5e4bc64bd6ef38c72c73ec9af8910",
-    "semantic_hash": "04f5e4bc64bd6ef38c72c73ec9af8910"
+    "mtime": 1786270331.6490784,
+    "ast_hash": "9b74ec18089e2bb0141fd0f0f2f05e03",
+    "semantic_hash": ""
   },
   "src/app/exercises/[id].tsx": {
     "mtime": 1786205454.642577,
@@ -1667,6 +1667,21 @@
   ".husky/post-commit": {
     "mtime": 1786221822.2111452,
     "ast_hash": "70539000008325fa4d04a0d2a1cfc725",
+    "semantic_hash": ""
+  },
+  "src/lib/db/database-observability.ts": {
+    "mtime": 1786270503.7696328,
+    "ast_hash": "0983de32b927dc1ec520d613026577bd",
+    "semantic_hash": ""
+  },
+  "tests/lib/db/database-observability.test.ts": {
+    "mtime": 1786270575.4206681,
+    "ast_hash": "7d231de6e80540b839deca4bec5cd621",
+    "semantic_hash": ""
+  },
+  "docs/observability-plan.md": {
+    "mtime": 1786270609.7629144,
+    "ast_hash": "20ee043d4523b6f4e3d073ca64cca1fc",
     "semantic_hash": ""
   }
 }
