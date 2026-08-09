@@ -156,10 +156,10 @@ export function WorkoutLogCalendar({
           disableIntervalMomentum
           getItemLayout={getMonthItemLayout}
           horizontal
-          initialNumToRender={3}
+          initialNumToRender={1}
           initialScrollIndex={currentMonthIndex}
           keyExtractor={keyExtractor}
-          maxToRenderPerBatch={3}
+          maxToRenderPerBatch={2}
           nestedScrollEnabled
           pagingEnabled
           renderItem={renderCalendarMonth}
@@ -167,7 +167,7 @@ export function WorkoutLogCalendar({
           snapToAlignment="start"
           snapToInterval={calendarWidth}
           style={{ height: DEFAULT_CALENDAR_HEIGHT, width: calendarWidth }}
-          windowSize={5}
+          windowSize={3}
         />
       ) : (
         <View

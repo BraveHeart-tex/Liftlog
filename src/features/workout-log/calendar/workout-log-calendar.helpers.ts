@@ -65,24 +65,49 @@ function getCalendarDaysForMonth(monthDate: Date): CalendarDay[] {
   );
 }
 
+const MAX_CACHED_CALENDAR_MODELS = 4;
+const calendarMonthsCache = new Map<string, CalendarMonth[]>();
+
 export function getCalendarMonths(
   todayKey: string,
   pastMonthRange: number
 ): CalendarMonth[] {
+  const cacheKey = `${todayKey.slice(0, 7)}:${pastMonthRange}`;
+  const cachedMonths = calendarMonthsCache.get(cacheKey);
+
+  if (cachedMonths) {
+    return cachedMonths;
+  }
+
   const currentMonth = parseDateKey(todayKey);
 
   currentMonth.setDate(1);
 
-  return Array.from({ length: pastMonthRange + 1 }, (_, index) => {
-    const monthDate = addMonths(currentMonth, index - pastMonthRange);
+  const calendarMonths = Array.from(
+    { length: pastMonthRange + 1 },
+    (_, index) => {
+      const monthDate = addMonths(currentMonth, index - pastMonthRange);
 
-    return {
-      dateKey: getMonthDateKey(monthDate),
-      days: getCalendarDaysForMonth(monthDate),
-      monthKey: toMonthKey(monthDate),
-      title: getMonthTitle(monthDate)
-    };
-  });
+      return {
+        dateKey: getMonthDateKey(monthDate),
+        days: getCalendarDaysForMonth(monthDate),
+        monthKey: toMonthKey(monthDate),
+        title: getMonthTitle(monthDate)
+      };
+    }
+  );
+
+  if (calendarMonthsCache.size >= MAX_CACHED_CALENDAR_MODELS) {
+    const oldestCacheKey = calendarMonthsCache.keys().next().value;
+
+    if (oldestCacheKey !== undefined) {
+      calendarMonthsCache.delete(oldestCacheKey);
+    }
+  }
+
+  calendarMonthsCache.set(cacheKey, calendarMonths);
+
+  return calendarMonths;
 }
 
 export function getMonthIndexForDate(

@@ -64,14 +64,80 @@ function CalendarDayButton({
   primaryForegroundColor,
   onPress
 }: CalendarDayButtonProps) {
-  const selectedProgress = useSharedValue(isSelected ? 1 : 0);
   const baseTextColor = isToday ? primaryColor : foregroundColor;
 
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{
+        disabled: isDisabled,
+        selected: isSelected
+      }}
+      className="items-center justify-center overflow-hidden rounded-full"
+      disabled={isDisabled}
+      onPress={() => onPress(day.dateKey)}
+      style={{
+        height: DAY_BUTTON_SIZE,
+        opacity: isDisabled ? 0.35 : 1,
+        width: DAY_BUTTON_SIZE
+      }}
+    >
+      {isSelected ? (
+        <AnimatedSelectedDay
+          baseTextColor={baseTextColor}
+          dayOfMonth={day.dayOfMonth}
+          primaryColor={primaryColor}
+          primaryForegroundColor={primaryForegroundColor}
+        />
+      ) : (
+        <Text
+          variant="bodyMedium"
+          className={cn(
+            'text-center',
+            !isToday && 'text-foreground',
+            isToday && 'text-primary'
+          )}
+          style={{ color: baseTextColor }}
+        >
+          {day.dayOfMonth}
+        </Text>
+      )}
+
+      {mark?.dots ? (
+        <View className="absolute bottom-1 flex-row gap-0.5">
+          {mark.dots.map(dot => (
+            <View
+              key={dot.key}
+              className="h-1 w-1 rounded-full"
+              style={{
+                backgroundColor: isSelected ? dot.selectedDotColor : dot.color
+              }}
+            />
+          ))}
+        </View>
+      ) : null}
+    </Pressable>
+  );
+}
+
+function AnimatedSelectedDay({
+  baseTextColor,
+  dayOfMonth,
+  primaryColor,
+  primaryForegroundColor
+}: {
+  baseTextColor: string;
+  dayOfMonth: number;
+  primaryColor: string;
+  primaryForegroundColor: string;
+}) {
+  const selectedProgress = useSharedValue(0);
+
   useEffect(() => {
-    selectedProgress.value = withTiming(isSelected ? 1 : 0, {
+    selectedProgress.value = withTiming(1, {
       duration: MOTION_DURATION_MS.standard
     });
-  }, [isSelected, selectedProgress]);
+  }, [selectedProgress]);
 
   const selectionStyle = useAnimatedStyle(() => ({
     opacity: selectedProgress.value,
@@ -90,21 +156,7 @@ function CalendarDayButton({
   );
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{
-        disabled: isDisabled,
-        selected: isSelected
-      }}
-      className="items-center justify-center overflow-hidden rounded-full"
-      disabled={isDisabled}
-      onPress={() => onPress(day.dateKey)}
-      style={{
-        height: DAY_BUTTON_SIZE,
-        opacity: isDisabled ? 0.35 : 1,
-        width: DAY_BUTTON_SIZE
-      }}
-    >
+    <>
       <Animated.View
         pointerEvents="none"
         className="absolute rounded-full"
@@ -120,30 +172,12 @@ function CalendarDayButton({
 
       <AnimatedText
         variant="bodyMedium"
-        className={cn(
-          'text-center',
-          !isSelected && !isToday && 'text-foreground',
-          !isSelected && isToday && 'text-primary'
-        )}
+        className="text-center"
         style={textStyle}
       >
-        {day.dayOfMonth}
+        {dayOfMonth}
       </AnimatedText>
-
-      {mark?.dots ? (
-        <View className="absolute bottom-1 flex-row gap-0.5">
-          {mark.dots.map(dot => (
-            <View
-              key={dot.key}
-              className="h-1 w-1 rounded-full"
-              style={{
-                backgroundColor: isSelected ? dot.selectedDotColor : dot.color
-              }}
-            />
-          ))}
-        </View>
-      ) : null}
-    </Pressable>
+    </>
   );
 }
 
