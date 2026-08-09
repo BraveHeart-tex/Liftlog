@@ -137,9 +137,13 @@ export function useWorkoutTemplateExerciseDraft({
   );
 
   const draftExerciseById = useMemo(() => {
+    if (!draftExerciseRows) {
+      return exerciseById;
+    }
+
     const nextExerciseById = new Map(exerciseById);
 
-    for (const row of draftExerciseRows ?? []) {
+    for (const row of draftExerciseRows) {
       nextExerciseById.set(row.exercise.id, row.exercise);
     }
 

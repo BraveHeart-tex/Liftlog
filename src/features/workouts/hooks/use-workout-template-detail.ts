@@ -22,7 +22,11 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
   const templateDetailResult = useLiveWithFallback(
     getWorkoutTemplateDetailRowsQuery(db, resolvedTemplateId),
     [db, resolvedTemplateId],
-    { operation: 'workoutTemplate.getDetail' }
+    {
+      deferInitialRead: true,
+      waitForInteractions: true,
+      operation: 'workoutTemplate.getDetail'
+    }
   );
   const { template, templateExerciseRows, exerciseById } = useMemo(
     () => mapWorkoutTemplateDetailRows(templateDetailResult.data),
@@ -32,7 +36,11 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
   const activeWorkoutResult = useLiveWithFallback(
     getActiveWorkoutQuery(db),
     [db],
-    { operation: 'workout.getActiveWorkout' }
+    {
+      deferInitialRead: true,
+      waitForInteractions: true,
+      operation: 'workout.getActiveWorkout'
+    }
   );
   const activeWorkout = activeWorkoutResult.data[0];
 
