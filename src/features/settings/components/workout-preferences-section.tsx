@@ -72,10 +72,9 @@ export const WorkoutPreferencesSection = () => {
           </CardContent>
         </Card>
       </View>
-      <RestTimerSettingSheet
-        isOpen={isTimerSheetOpen}
-        onClose={closeTimerSheet}
-      />
+      {isTimerSheetOpen ? (
+        <RestTimerSettingSheet isOpen onClose={closeTimerSheet} />
+      ) : null}
     </>
   );
 };

@@ -81,10 +81,9 @@ export const StepsSection = () => {
           </Button>
         </Card>
       </View>
-      <StepGoalSheet
-        isOpen={isStepGoalSheetOpen}
-        onClose={closeStepGoalSheet}
-      />
+      {isStepGoalSheetOpen ? (
+        <StepGoalSheet isOpen onClose={closeStepGoalSheet} />
+      ) : null}
     </>
   ) : null;
 };
