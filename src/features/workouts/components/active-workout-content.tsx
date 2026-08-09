@@ -354,21 +354,25 @@ export function ActiveWorkoutContent({
           </Animated.View>
         )}
 
-      <ActiveWorkoutExercisePickerSheet
-        isOpen={isExercisePickerOpen}
-        exerciseRows={exerciseRows}
-        selectedExerciseIds={selectedWorkoutExerciseIds}
-        onClose={closeExercisePicker}
-        onSelectExercise={selectExercise}
-        onCreateCustomExercise={openCreateCustomExercise}
-      />
+      {isExercisePickerOpen ? (
+        <ActiveWorkoutExercisePickerSheet
+          isOpen
+          exerciseRows={exerciseRows}
+          selectedExerciseIds={selectedWorkoutExerciseIds}
+          onClose={closeExercisePicker}
+          onSelectExercise={selectExercise}
+          onCreateCustomExercise={openCreateCustomExercise}
+        />
+      ) : null}
 
-      <CreateCustomExerciseSheet
-        isOpen={isCreateCustomExerciseOpen}
-        initialName={initialCustomExerciseName}
-        onClose={closeCreateCustomExercise}
-        onSave={saveCustomExercise}
-      />
+      {isCreateCustomExerciseOpen ? (
+        <CreateCustomExerciseSheet
+          isOpen
+          initialName={initialCustomExerciseName}
+          onClose={closeCreateCustomExercise}
+          onSave={saveCustomExercise}
+        />
+      ) : null}
     </Screen>
   );
 }

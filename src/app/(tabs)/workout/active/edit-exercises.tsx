@@ -238,28 +238,32 @@ function ActiveWorkoutEditExercisesContent({
         </>
       )}
 
-      <ActiveWorkoutExercisePickerSheet
-        mode="multiple"
-        isOpen={isExercisePickerOpen}
-        multipleDescription="Choose exercises to add to this workout draft."
-        selectedExerciseIds={selectedExerciseIds}
-        onClose={closeExercisePicker}
-        onSelectExercises={addExercises}
-        onCreateCustomExercise={openCreateCustomExercise}
-      />
+      {isExercisePickerOpen ? (
+        <ActiveWorkoutExercisePickerSheet
+          mode="multiple"
+          isOpen
+          multipleDescription="Choose exercises to add to this workout draft."
+          selectedExerciseIds={selectedExerciseIds}
+          onClose={closeExercisePicker}
+          onSelectExercises={addExercises}
+          onCreateCustomExercise={openCreateCustomExercise}
+        />
+      ) : null}
 
-      <CreateCustomExerciseSheet
-        isOpen={isCreateCustomExerciseOpen}
-        initialName={initialCustomExerciseName}
-        description="Add it to this draft. It will be created when you save the workout."
-        saveLabel="Add to draft"
-        reservedNames={stagedCustomExerciseNames}
-        onClose={closeCreateCustomExercise}
-        onSave={exercise => {
-          stageCustomExercise(exercise);
-          setIsCreateCustomExerciseOpen(false);
-        }}
-      />
+      {isCreateCustomExerciseOpen ? (
+        <CreateCustomExerciseSheet
+          isOpen
+          initialName={initialCustomExerciseName}
+          description="Add it to this draft. It will be created when you save the workout."
+          saveLabel="Add to draft"
+          reservedNames={stagedCustomExerciseNames}
+          onClose={closeCreateCustomExercise}
+          onSave={exercise => {
+            stageCustomExercise(exercise);
+            setIsCreateCustomExerciseOpen(false);
+          }}
+        />
+      ) : null}
     </Screen>
   );
 }

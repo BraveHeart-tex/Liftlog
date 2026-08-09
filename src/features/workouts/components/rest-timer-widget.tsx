@@ -128,7 +128,7 @@ export function RestTimerWidget({ className }: RestTimerWidgetProps) {
         </Animated.View>
       ) : null}
 
-      <RestTimerSheet isOpen={isSheetOpen} onClose={closeSheet} />
+      {isSheetOpen ? <RestTimerSheet isOpen onClose={closeSheet} /> : null}
     </>
   );
 }

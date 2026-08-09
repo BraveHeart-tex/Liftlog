@@ -348,28 +348,32 @@ function WorkoutTemplateDetailLoaded({
           </>
         )}
 
-        <ActiveWorkoutExercisePickerSheet
-          mode="multiple"
-          isOpen={isExercisePickerOpen}
-          multipleDescription="Choose exercises to add to this template draft."
-          selectedExerciseIds={selectedExerciseIds}
-          onClose={closeExercisePicker}
-          onSelectExercises={addExercises}
-          onCreateCustomExercise={openCreateCustomExercise}
-        />
+        {isExercisePickerOpen ? (
+          <ActiveWorkoutExercisePickerSheet
+            mode="multiple"
+            isOpen
+            multipleDescription="Choose exercises to add to this template draft."
+            selectedExerciseIds={selectedExerciseIds}
+            onClose={closeExercisePicker}
+            onSelectExercises={addExercises}
+            onCreateCustomExercise={openCreateCustomExercise}
+          />
+        ) : null}
 
-        <CreateCustomExerciseSheet
-          isOpen={isCreateCustomExerciseOpen}
-          initialName={initialCustomExerciseName}
-          description="Add it to this draft. It will be created when you save the template."
-          saveLabel="Add to draft"
-          reservedNames={stagedCustomExerciseNames}
-          onClose={closeCreateCustomExercise}
-          onSave={exercise => {
-            stageCustomExercise(exercise);
-            setIsCreateCustomExerciseOpen(false);
-          }}
-        />
+        {isCreateCustomExerciseOpen ? (
+          <CreateCustomExerciseSheet
+            isOpen
+            initialName={initialCustomExerciseName}
+            description="Add it to this draft. It will be created when you save the template."
+            saveLabel="Add to draft"
+            reservedNames={stagedCustomExerciseNames}
+            onClose={closeCreateCustomExercise}
+            onSave={exercise => {
+              stageCustomExercise(exercise);
+              setIsCreateCustomExerciseOpen(false);
+            }}
+          />
+        ) : null}
       </Screen>
     );
   }
@@ -503,24 +507,28 @@ function WorkoutTemplateDetailLoaded({
         )}
       </View>
 
-      <RenameTemplateSheet
-        isOpen={isRenameSheetOpen}
-        templateId={template.id}
-        initialName={template.name}
-        onClose={closeRenameSheet}
-        onSubmit={handleRenameTemplate}
-      />
+      {isRenameSheetOpen ? (
+        <RenameTemplateSheet
+          isOpen
+          templateId={template.id}
+          initialName={template.name}
+          onClose={closeRenameSheet}
+          onSubmit={handleRenameTemplate}
+        />
+      ) : null}
 
-      <WorkoutTemplateActionsSheet
-        isOpen={isActionSheetOpen}
-        onClose={closeActions}
-        onRename={openRenameSheet}
-        onDelete={confirmDeleteTemplate}
-      />
+      {isActionSheetOpen ? (
+        <WorkoutTemplateActionsSheet
+          isOpen
+          onClose={closeActions}
+          onRename={openRenameSheet}
+          onDelete={confirmDeleteTemplate}
+        />
+      ) : null}
 
-      {activeWorkout ? (
+      {activeWorkout && isReplaceSheetOpen ? (
         <DiscardWorkoutSheet
-          isOpen={isReplaceSheetOpen}
+          isOpen
           onClose={closeReplaceSheet}
           activeWorkoutName={activeWorkout.name}
           templateName={template.name}

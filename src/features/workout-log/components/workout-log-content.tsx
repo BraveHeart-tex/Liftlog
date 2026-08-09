@@ -166,11 +166,13 @@ export function WorkoutLogContent() {
         contentContainerClassName="px-4 pt-4 pb-6"
       />
 
-      <WorkoutLogStartSheet
-        dateKey={selectedDateKey}
-        isOpen={isStartSheetOpen}
-        onClose={closeStartSheet}
-      />
+      {isStartSheetOpen ? (
+        <WorkoutLogStartSheet
+          dateKey={selectedDateKey}
+          isOpen
+          onClose={closeStartSheet}
+        />
+      ) : null}
     </>
   );
 }

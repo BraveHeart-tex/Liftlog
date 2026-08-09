@@ -195,14 +195,16 @@ export function RestTimerIdleContent({
         onPresetLongPress={openEditPreset}
       />
 
-      <RestTimerPresetEditorSheet
-        isOpen={isEditorOpen}
-        preset={editingPreset}
-        defaultDuration={totalSeconds}
-        onClose={closeEditor}
-        onSave={handleSavePreset}
-        onDelete={handleDeletePreset}
-      />
+      {isEditorOpen ? (
+        <RestTimerPresetEditorSheet
+          isOpen
+          preset={editingPreset}
+          defaultDuration={totalSeconds}
+          onClose={closeEditor}
+          onSave={handleSavePreset}
+          onDelete={handleDeletePreset}
+        />
+      ) : null}
     </>
   );
 }

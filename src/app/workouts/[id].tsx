@@ -365,33 +365,39 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
         )}
       </View>
 
-      <SaveWorkoutTemplateSheet
-        isOpen={isTemplateSheetOpen}
-        initialName={workoutName}
-        sourceWorkoutId={workout.id}
-        workoutExerciseRows={workoutExerciseRowsForTemplate}
-        onClose={closeTemplateSheet}
-      />
+      {isTemplateSheetOpen ? (
+        <SaveWorkoutTemplateSheet
+          isOpen
+          initialName={workoutName}
+          sourceWorkoutId={workout.id}
+          workoutExerciseRows={workoutExerciseRowsForTemplate}
+          onClose={closeTemplateSheet}
+        />
+      ) : null}
 
-      <WorkoutDetailActionsSheet
-        isOpen={isActionSheetOpen}
-        onClose={closeActions}
-        onEdit={editWorkout}
-        onRename={openRenameSheet}
-        onDelete={confirmDeleteWorkout}
-      />
+      {isActionSheetOpen ? (
+        <WorkoutDetailActionsSheet
+          isOpen
+          onClose={closeActions}
+          onEdit={editWorkout}
+          onRename={openRenameSheet}
+          onDelete={confirmDeleteWorkout}
+        />
+      ) : null}
 
-      <RenameSheet
-        isOpen={isRenameSheetOpen}
-        title="Rename workout"
-        description="Update the name shown in your workout history."
-        inputLabel="Workout name"
-        initialName={workoutName}
-        requiredMessage="Workout name is required."
-        fallbackErrorMessage="Could not rename workout. Try again."
-        onClose={closeRenameSheet}
-        onSubmit={handleRenameWorkout}
-      />
+      {isRenameSheetOpen ? (
+        <RenameSheet
+          isOpen
+          title="Rename workout"
+          description="Update the name shown in your workout history."
+          inputLabel="Workout name"
+          initialName={workoutName}
+          requiredMessage="Workout name is required."
+          fallbackErrorMessage="Could not rename workout. Try again."
+          onClose={closeRenameSheet}
+          onSubmit={handleRenameWorkout}
+        />
+      ) : null}
     </Screen>
   );
 }

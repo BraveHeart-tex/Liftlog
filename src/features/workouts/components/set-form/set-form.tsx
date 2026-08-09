@@ -216,13 +216,15 @@ export function SetForm({
           <SetFormEmptyState onAddSet={controller.addDraftRow} />
         </Animated.View>
       )}
-      <SetDurationPickerSheet
-        isOpen={Boolean(controller.activeDurationPicker)}
-        valueMs={controller.activeDurationValueMs}
-        enableStopwatch={enableStopwatch}
-        onClose={controller.closeDurationPicker}
-        onConfirm={controller.confirmDuration}
-      />
+      {controller.activeDurationPicker ? (
+        <SetDurationPickerSheet
+          isOpen
+          valueMs={controller.activeDurationValueMs}
+          enableStopwatch={enableStopwatch}
+          onClose={controller.closeDurationPicker}
+          onConfirm={controller.confirmDuration}
+        />
+      ) : null}
     </View>
   );
 }

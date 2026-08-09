@@ -181,14 +181,16 @@ export function StepsContent() {
         }
         renderItem={({ item }) => <StepDayRow day={item} goal={stepGoal} />}
       />
-      <StepsActionsSheet
-        availabilityLabel={availabilityLabel}
-        isOpen={isActionsSheetOpen}
-        isSyncing={isSyncing}
-        onClose={closeActionsSheet}
-        onManage={openHealthConnectSettings}
-        onRefresh={refreshSteps}
-      />
+      {isActionsSheetOpen ? (
+        <StepsActionsSheet
+          availabilityLabel={availabilityLabel}
+          isOpen
+          isSyncing={isSyncing}
+          onClose={closeActionsSheet}
+          onManage={openHealthConnectSettings}
+          onRefresh={refreshSteps}
+        />
+      ) : null}
     </>
   );
 }

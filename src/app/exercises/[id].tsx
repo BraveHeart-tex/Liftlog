@@ -375,26 +375,30 @@ export default function ExerciseDetailScreen() {
         ) : null}
       </View>
 
-      <ExerciseDetailActionsSheet
-        isOpen={isActionsOpen}
-        removeActionLabel={removeActionLabel}
-        onClose={closeActions}
-        onRename={openRenameSheet}
-        onEditDetails={handleEditDetails}
-        onRemove={handleRemoveCustomExercise}
-      />
+      {isActionsOpen ? (
+        <ExerciseDetailActionsSheet
+          isOpen
+          removeActionLabel={removeActionLabel}
+          onClose={closeActions}
+          onRename={openRenameSheet}
+          onEditDetails={handleEditDetails}
+          onRemove={handleRemoveCustomExercise}
+        />
+      ) : null}
 
-      <RenameSheet
-        isOpen={isRenameSheetOpen}
-        title="Rename exercise"
-        description="Update the custom exercise name shown in workouts and history."
-        inputLabel="Exercise name"
-        initialName={exercise.name}
-        requiredMessage="Exercise name is required."
-        fallbackErrorMessage="Could not rename exercise. Try again."
-        onClose={closeRenameSheet}
-        onSubmit={handleRenameExercise}
-      />
+      {isRenameSheetOpen ? (
+        <RenameSheet
+          isOpen
+          title="Rename exercise"
+          description="Update the custom exercise name shown in workouts and history."
+          inputLabel="Exercise name"
+          initialName={exercise.name}
+          requiredMessage="Exercise name is required."
+          fallbackErrorMessage="Could not rename exercise. Try again."
+          onClose={closeRenameSheet}
+          onSubmit={handleRenameExercise}
+        />
+      ) : null}
     </Screen>
   );
 }

@@ -149,23 +149,27 @@ export function TemplateExerciseEditor({
         />
       )}
 
-      <ExercisePickerSheet
-        mode="multiple"
-        isOpen={isExercisePickerOpen}
-        exercises={availableExercises}
-        isLoading={isLoadingExercises}
-        selectedExerciseIds={selectedExerciseIds}
-        onClose={closeExercisePicker}
-        onSelectExercises={selectExercises}
-        onCreateCustomExercise={openCreateCustomExercise}
-      />
+      {isExercisePickerOpen ? (
+        <ExercisePickerSheet
+          mode="multiple"
+          isOpen
+          exercises={availableExercises}
+          isLoading={isLoadingExercises}
+          selectedExerciseIds={selectedExerciseIds}
+          onClose={closeExercisePicker}
+          onSelectExercises={selectExercises}
+          onCreateCustomExercise={openCreateCustomExercise}
+        />
+      ) : null}
 
-      <CreateCustomExerciseSheet
-        isOpen={isCreateCustomExerciseOpen}
-        initialName={initialCustomExerciseName}
-        onClose={closeCreateCustomExercise}
-        onSave={saveCustomExercise}
-      />
+      {isCreateCustomExerciseOpen ? (
+        <CreateCustomExerciseSheet
+          isOpen
+          initialName={initialCustomExerciseName}
+          onClose={closeCreateCustomExercise}
+          onSave={saveCustomExercise}
+        />
+      ) : null}
     </>
   );
 }

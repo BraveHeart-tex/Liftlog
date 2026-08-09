@@ -150,33 +150,39 @@ export const ActiveWorkoutHeaderWithActions = ({
         />
       </View>
 
-      <ActiveWorkoutActionsSheet
-        isOpen={isActionSheetOpen}
-        canSaveTemplate={canSaveTemplate}
-        onClose={closeActions}
-        onRename={openRenameSheet}
-        onSaveTemplate={openTemplateDialog}
-        onDiscard={confirmDiscardWorkout}
-      />
+      {isActionSheetOpen ? (
+        <ActiveWorkoutActionsSheet
+          isOpen
+          canSaveTemplate={canSaveTemplate}
+          onClose={closeActions}
+          onRename={openRenameSheet}
+          onSaveTemplate={openTemplateDialog}
+          onDiscard={confirmDiscardWorkout}
+        />
+      ) : null}
 
-      <RenameSheet
-        isOpen={isRenameSheetOpen}
-        title="Rename workout"
-        description="Update the name shown while this workout is in progress."
-        inputLabel="Workout name"
-        initialName={workoutName}
-        requiredMessage="Workout name is required."
-        fallbackErrorMessage="Could not rename workout. Try again."
-        onClose={closeRenameSheet}
-        onSubmit={handleRenameWorkout}
-      />
+      {isRenameSheetOpen ? (
+        <RenameSheet
+          isOpen
+          title="Rename workout"
+          description="Update the name shown while this workout is in progress."
+          inputLabel="Workout name"
+          initialName={workoutName}
+          requiredMessage="Workout name is required."
+          fallbackErrorMessage="Could not rename workout. Try again."
+          onClose={closeRenameSheet}
+          onSubmit={handleRenameWorkout}
+        />
+      ) : null}
 
-      <SaveWorkoutTemplateSheet
-        isOpen={isTemplateSheetOpen}
-        initialName={workoutName}
-        workoutExerciseRows={workoutExerciseRows}
-        onClose={closeTemplateSheet}
-      />
+      {isTemplateSheetOpen ? (
+        <SaveWorkoutTemplateSheet
+          isOpen
+          initialName={workoutName}
+          workoutExerciseRows={workoutExerciseRows}
+          onClose={closeTemplateSheet}
+        />
+      ) : null}
     </Fragment>
   );
 };
