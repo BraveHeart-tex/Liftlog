@@ -37,10 +37,9 @@ export function RestTimerIdleContent({
     updateRestTimerPreset,
     deleteRestTimerPreset
   } = useSettings();
-  const durationSeconds = useRestTimerStore(state => state.durationSeconds);
   const startTimer = useRestTimerStore(state => state.start);
   const lastOpenTokenRef = useRef(openToken);
-  const [durationDraft] = useState(() => getDurationDraft(durationSeconds));
+  const [durationDraft] = useState(() => getDurationDraft(defaultDuration));
   const [minutes, setMinutes] = useState(durationDraft.minutes);
   const [seconds, setSeconds] = useState(durationDraft.seconds);
   const [editingPreset, setEditingPreset] = useState<RestTimerPreset | null>(
@@ -85,7 +84,12 @@ export function RestTimerIdleContent({
   }, []);
 
   const handleStart = () => {
-    const selectedTotalSeconds = minutesRef.current * 60 + secondsRef.current;
+    const liveTotalSeconds = minutesRef.current * 60 + secondsRef.current;
+    const draftTotalSeconds = minutes * 60 + seconds;
+    const selectedTotalSeconds =
+      liveTotalSeconds >= MIN_REST_TIMER_SECONDS
+        ? liveTotalSeconds
+        : draftTotalSeconds;
 
     if (selectedTotalSeconds < MIN_REST_TIMER_SECONDS) {
       return;
