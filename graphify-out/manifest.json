@@ -1680,8 +1680,8 @@
     "semantic_hash": ""
   },
   "docs/observability-plan.md": {
-    "mtime": 1786271286.194943,
-    "ast_hash": "ccf1ffff0504550c065a76e26b3e76ce",
+    "mtime": 1786271973.690314,
+    "ast_hash": "431c104a032d6b1566a2a3f1af15ebbd",
     "semantic_hash": ""
   },
   "tests/setup.ts": {
