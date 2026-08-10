@@ -1,10 +1,11 @@
-# Animation plans
+# Implementation plans
 
 | #   | Plan                                             | Severity | Status |
 | --- | ------------------------------------------------ | -------- | ------ |
 | 001 | Make BottomSheet dismissal latest-intent safe    | HIGH     | TODO   |
 | 002 | Make snackbar replacement interruptible          | HIGH     | TODO   |
 | 003 | Respect reduced motion in shared snackbar motion | HIGH     | TODO   |
+| 004 | Standardize empty and fallback states            | MEDIUM   | TODO   |
 
 ## Recommended execution order
 
@@ -12,10 +13,11 @@
 2. **002** — snackbar replacement and stale timeout/callback handoff.
 3. **003** — snackbar reduced-motion branch; depends on 002 because both edit
    the shared host effect and gesture return paths.
-4. Run typecheck/lint and the focused Android scenarios.
-5. Run `review-animations` against the complete diff. Resolve every blocker,
-   then repeat the Android matrix and mark plans DONE only after physical
-   validation.
+4. **004** — independent empty-state consistency refactor.
+5. Run each plan's verification checklist, including typecheck/lint and the
+   focused Android scenarios where applicable.
+6. Run `review-animations` against plans 001–003. Resolve every blocker, then
+   repeat the Android matrix and mark plans DONE only after physical validation.
 
 ## Shared acceptance matrix
 
