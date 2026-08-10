@@ -101,7 +101,9 @@ export function Screen({
   );
 
   const content = !scroll ? (
-    <View className={cn('flex-1', sharedContentClassName)}>{children}</View>
+    <View className={cn('min-h-0 flex-1', sharedContentClassName)}>
+      {children}
+    </View>
   ) : footer ? (
     <StyledScrollView
       ref={scrollRef}
@@ -128,7 +130,7 @@ export function Screen({
         <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
           {content}
           {footer ? (
-            <View className="border-border bg-background pb-safe-offset-3 border-t px-4 pt-4">
+            <View className="border-border bg-background pb-safe-offset-3 shrink-0 border-t px-4 pt-4">
               {footer}
             </View>
           ) : null}
@@ -138,7 +140,7 @@ export function Screen({
           {content}
           {footer ? (
             <View
-              className="border-border bg-background pb-safe-offset-3 border-t px-4 pt-4"
+              className="border-border bg-background pb-safe-offset-3 shrink-0 border-t px-4 pt-4"
               style={{
                 marginBottom: androidKeyboardOffset
               }}

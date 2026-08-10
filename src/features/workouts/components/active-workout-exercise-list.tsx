@@ -125,7 +125,7 @@ export function ActiveWorkoutExerciseList({
     return (
       <Animated.View
         key="edit-exercise-list"
-        className="flex-1"
+        className="min-h-0 flex-1"
         entering={shouldAnimateLocalState ? listEntering : undefined}
         exiting={shouldAnimateLocalState ? listExiting : undefined}
       >
@@ -140,7 +140,7 @@ export function ActiveWorkoutExerciseList({
   return (
     <Animated.View
       key="workout-exercise-card-list"
-      className="flex-1"
+      className="min-h-0 flex-1"
       entering={shouldAnimateLocalState ? listEntering : undefined}
       exiting={shouldAnimateLocalState ? listExiting : undefined}
     >

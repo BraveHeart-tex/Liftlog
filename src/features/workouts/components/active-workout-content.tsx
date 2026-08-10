@@ -285,9 +285,60 @@ export function ActiveWorkoutContent({
 
   const headerKey = isEditingExercises ? 'edit' : mode;
   const shouldAnimateLocalState = mode !== 'active';
+  const workoutChrome =
+    shouldShowWorkoutChrome &&
+    !workoutExerciseLoadError &&
+    workoutExerciseRows.length > 0 ? (
+      <Animated.View
+        entering={shouldAnimateLocalState ? chromeEntering : undefined}
+        exiting={shouldAnimateLocalState ? chromeExiting : undefined}
+        layout={shouldAnimateLocalState ? chromeLayout : undefined}
+      >
+        {mode === 'active' ? (
+          <RestTimerWidget
+            className={isEditingExercises ? undefined : 'mb-2'}
+          />
+        ) : null}
+
+        {!isEditingExercises ? (
+          <View className="flex-row items-center gap-2">
+            <View className="flex-1">
+              <Button
+                variant="secondary"
+                size="sm"
+                fullWidth
+                disabled={isLoadingWorkoutExercises}
+                leftIcon={<Icon as={PlusIcon} size="sm" tone="foreground" />}
+                onPress={openExercisePicker}
+              >
+                Add exercise
+              </Button>
+            </View>
+
+            {mode === 'active' ? (
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={!canFinishWorkout}
+                leftIcon={
+                  <Icon
+                    as={CircleCheckBig}
+                    size="sm"
+                    tone="primaryForeground"
+                  />
+                }
+                onPress={confirmFinishWorkout}
+              >
+                Finish
+              </Button>
+            ) : null}
+          </View>
+        ) : null}
+      </Animated.View>
+    ) : null;
 
   return (
-    <Screen withPadding={false} edges={[]}>
+    <Screen withPadding={false} edges={[]} footer={workoutChrome}>
       <Animated.View
         key={headerKey}
         entering={shouldAnimateLocalState ? headerEntering : undefined}
@@ -342,60 +393,6 @@ export function ActiveWorkoutContent({
           />
         </View>
       )}
-
-      {shouldShowWorkoutChrome &&
-        !workoutExerciseLoadError &&
-        workoutExerciseRows.length > 0 && (
-          <Animated.View
-            className="border-border bg-background pb-safe border-t px-4 pt-3"
-            entering={shouldAnimateLocalState ? chromeEntering : undefined}
-            exiting={shouldAnimateLocalState ? chromeExiting : undefined}
-            layout={shouldAnimateLocalState ? chromeLayout : undefined}
-          >
-            {mode === 'active' ? (
-              <RestTimerWidget
-                className={isEditingExercises ? undefined : 'mb-2'}
-              />
-            ) : null}
-
-            {!isEditingExercises ? (
-              <View className="flex-row items-center gap-2">
-                <View className="flex-1">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    fullWidth
-                    disabled={isLoadingWorkoutExercises}
-                    leftIcon={
-                      <Icon as={PlusIcon} size="sm" tone="foreground" />
-                    }
-                    onPress={openExercisePicker}
-                  >
-                    Add exercise
-                  </Button>
-                </View>
-
-                {mode === 'active' ? (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    disabled={!canFinishWorkout}
-                    leftIcon={
-                      <Icon
-                        as={CircleCheckBig}
-                        size="sm"
-                        tone="primaryForeground"
-                      />
-                    }
-                    onPress={confirmFinishWorkout}
-                  >
-                    Finish
-                  </Button>
-                ) : null}
-              </View>
-            ) : null}
-          </Animated.View>
-        )}
 
       {isExercisePickerOpen ? (
         <ActiveWorkoutExercisePickerSheet
