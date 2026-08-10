@@ -156,31 +156,36 @@ function DialogView({ request, isClosing, onExit }: DialogViewProps) {
 
 export function AlertDialogHost() {
   const request = useAlertDialogStore(state => state.request);
-  const [renderedRequest, setRenderedRequest] = useState<DialogRequest | null>(
-    null
-  );
+  const [renderedDialog, setRenderedDialog] = useState<{
+    request: DialogRequest;
+    isClosing: boolean;
+  } | null>(null);
+
   const handleExit = useCallback((dialogId: number) => {
-    setRenderedRequest(currentRequest =>
-      currentRequest?.id === dialogId ? null : currentRequest
+    setRenderedDialog(currentDialog =>
+      currentDialog?.request.id === dialogId ? null : currentDialog
     );
   }, []);
 
   useEffect(() => {
     if (request) {
-      setRenderedRequest(request);
+      setRenderedDialog({ request, isClosing: false });
+    } else {
+      setRenderedDialog(currentDialog =>
+        currentDialog ? { ...currentDialog, isClosing: true } : currentDialog
+      );
     }
   }, [request]);
 
-  const displayedRequest = request ?? renderedRequest;
-
-  if (!displayedRequest) {
+  if (!renderedDialog) {
     return null;
   }
 
   return (
     <DialogView
-      request={displayedRequest}
-      isClosing={!request}
+      key={renderedDialog.request.id}
+      request={renderedDialog.request}
+      isClosing={renderedDialog.isClosing}
       onExit={handleExit}
     />
   );
