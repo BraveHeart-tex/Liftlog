@@ -9,9 +9,10 @@ import {
 import { Button } from '@/src/components/ui/button';
 import { Text } from '@/src/components/ui/text';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  Easing,
   Modal,
   Pressable,
   View,
@@ -29,31 +30,56 @@ export { confirmDialog, dismissDialog, showDialog };
 
 interface DialogViewProps {
   request: DialogRequest;
+  isClosing: boolean;
+  onExit: (dialogId: number) => void;
 }
 
-function DialogView({ request }: DialogViewProps) {
+const DIALOG_EASING = Easing.bezier(0.23, 1, 0.32, 1);
+
+function DialogView({ request, isClosing, onExit }: DialogViewProps) {
   const progress = useRef(new Animated.Value(0)).current;
+  const [modalReady, setModalReady] = useState(false);
   const reduceMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
+  const verticalPadding = Math.max(insets.top, insets.bottom, 24);
 
   useEffect(() => {
     progress.stopAnimation();
 
-    if (reduceMotion) {
-      progress.setValue(1);
+    if (!modalReady) {
+      if (isClosing) {
+        onExit(request.id);
+      }
 
       return;
     }
 
-    progress.setValue(0);
+    if (reduceMotion) {
+      progress.setValue(isClosing ? 0 : 1);
+
+      if (isClosing) {
+        onExit(request.id);
+      }
+
+      return;
+    }
+
+    progress.setValue(isClosing ? 1 : 0);
     Animated.timing(progress, {
-      toValue: 1,
-      duration: MOTION_DURATION_MS.standard,
+      toValue: isClosing ? 0 : 1,
+      duration: isClosing
+        ? MOTION_DURATION_MS.exit
+        : MOTION_DURATION_MS.standard,
+      easing: DIALOG_EASING,
       useNativeDriver: true
-    }).start();
+    }).start(({ finished }) => {
+      if (finished && isClosing) {
+        onExit(request.id);
+      }
+    });
 
     return () => progress.stopAnimation();
-  }, [progress, reduceMotion, request.id]);
+  }, [isClosing, modalReady, onExit, progress, reduceMotion, request.id]);
 
   const handleDismiss = () => resolveDialog(request.id, false);
   const handleConfirm = (_event: GestureResponderEvent) =>
@@ -65,13 +91,13 @@ function DialogView({ request }: DialogViewProps) {
       transparent
       animationType="none"
       statusBarTranslucent
+      onShow={() => setModalReady(true)}
       onRequestClose={handleDismiss}
     >
       <View
         className="flex-1 justify-center px-6"
         style={{
-          paddingTop: Math.max(insets.top, 24),
-          paddingBottom: Math.max(insets.bottom, 24)
+          paddingVertical: verticalPadding
         }}
       >
         <Animated.View
@@ -89,15 +115,7 @@ function DialogView({ request }: DialogViewProps) {
           className="bg-card border-border w-full self-center rounded-2xl border p-5"
           style={{
             maxWidth: 420,
-            opacity: progress,
-            transform: [
-              {
-                scale: progress.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.96, 1]
-                })
-              }
-            ]
+            opacity: progress
           }}
           onStartShouldSetResponder={() => true}
         >
@@ -138,10 +156,32 @@ function DialogView({ request }: DialogViewProps) {
 
 export function AlertDialogHost() {
   const request = useAlertDialogStore(state => state.request);
+  const [renderedRequest, setRenderedRequest] = useState<DialogRequest | null>(
+    null
+  );
+  const handleExit = useCallback((dialogId: number) => {
+    setRenderedRequest(currentRequest =>
+      currentRequest?.id === dialogId ? null : currentRequest
+    );
+  }, []);
 
-  if (!request) {
+  useEffect(() => {
+    if (request) {
+      setRenderedRequest(request);
+    }
+  }, [request]);
+
+  const displayedRequest = request ?? renderedRequest;
+
+  if (!displayedRequest) {
     return null;
   }
 
-  return <DialogView key={request.id} request={request} />;
+  return (
+    <DialogView
+      request={displayedRequest}
+      isClosing={!request}
+      onExit={handleExit}
+    />
+  );
 }
