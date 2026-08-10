@@ -1,5 +1,6 @@
 import { DatabaseProvider } from '@/src/components/database-provider';
 import { ScreenErrorBoundary } from '@/src/components/screen-error-boundary';
+import { AlertDialogHost } from '@/src/components/ui/alert-dialog';
 import { SnackbarHost } from '@/src/components/ui/snackbar';
 import { SettingsProvider } from '@/src/features/settings/settings-provider';
 import { StepsSyncHost } from '@/src/features/steps/components/steps-sync-host';
@@ -41,6 +42,7 @@ export function CommonProviders({
                 <StepsSyncHost />
                 <RestTimerHost />
                 <SnackbarHost />
+                <AlertDialogHost />
               </BottomSheetModalProvider>
             </SettingsProvider>
           </ScreenErrorBoundary>

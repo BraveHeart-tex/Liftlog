@@ -1,8 +1,10 @@
+import { confirmDialog } from '@/src/components/ui/alert-dialog';
 import { Button } from '@/src/components/ui/button';
 import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import { ActiveWorkoutContent } from '@/src/features/workouts/components/active-workout-content';
 import { useHistoricalWorkoutDraftActions } from '@/src/features/workouts/hooks/use-historical-workout-draft-actions';
 import { useHistoricalWorkoutDraftScreen } from '@/src/features/workouts/hooks/use-historical-workout-draft-screen';
@@ -10,7 +12,6 @@ import { getRouteParamId } from '@/src/lib/utils/route.utils';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeftIcon } from 'lucide-react-native';
 import { useCallback } from 'react';
-import { Alert } from 'react-native';
 
 export default function HistoricalWorkoutDraftScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
@@ -48,18 +49,16 @@ export default function HistoricalWorkoutDraftScreen() {
         return;
       }
 
-      Alert.alert(
-        'Discard workout?',
-        `"${historicalWorkout.name}" and its logged exercises and sets will be removed.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Discard',
-            style: 'destructive',
-            onPress: discard
-          }
-        ]
-      );
+      void confirmDialog({
+        title: 'Discard workout?',
+        message: `"${historicalWorkout.name}" and its logged exercises and sets will be removed.`,
+        confirmLabel: 'Discard',
+        destructive: true
+      }).then(confirmed => {
+        if (confirmed) {
+          discard();
+        }
+      });
     },
     [discardDraft, historicalWorkout, leaveDraft]
   );
@@ -73,10 +72,10 @@ export default function HistoricalWorkoutDraftScreen() {
       const savedWorkout = saveDraft(historicalWorkout.id);
 
       if (!savedWorkout) {
-        Alert.alert(
-          'Add a set first',
-          'Log at least one completed set before saving this workout.'
-        );
+        showSnackbar({
+          message: 'Log at least one completed set before saving this workout.',
+          variant: 'warning'
+        });
 
         return;
       }
@@ -87,7 +86,10 @@ export default function HistoricalWorkoutDraftScreen() {
       });
     } catch (error) {
       console.error('Failed to save historical workout', error);
-      Alert.alert('Could not save workout', 'Please try again.');
+      showSnackbar({
+        message: 'Could not save workout. Please try again.',
+        variant: 'danger'
+      });
     }
   }, [historicalWorkout, saveDraft]);
 

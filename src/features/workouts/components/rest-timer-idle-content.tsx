@@ -1,5 +1,7 @@
+import { confirmDialog } from '@/src/components/ui/alert-dialog';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import type { RestTimerPreset } from '@/src/features/settings/settings.repository';
 import { RestTimerDurationPicker } from '@/src/features/workouts/components/rest-timer-duration-picker';
@@ -13,7 +15,7 @@ import {
 import { getTimerParts } from '@/src/lib/utils/date.utils';
 import { PlayIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 
 interface RestTimerIdleContentProps {
   defaultDuration: number;
@@ -138,10 +140,10 @@ export function RestTimerIdleContent({
           addRestTimerPreset(preset);
         }
       } catch {
-        Alert.alert(
-          'Preset not saved',
-          'Only 8 rest timer presets are allowed.'
-        );
+        showSnackbar({
+          message: 'Only 8 rest timer presets are allowed.',
+          variant: 'warning'
+        });
 
         return;
       }
@@ -153,17 +155,19 @@ export function RestTimerIdleContent({
 
   const handleDeletePreset = useCallback(
     (preset: RestTimerPreset) => {
-      Alert.alert('Delete preset?', `${preset.name} will be removed.`, [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            deleteRestTimerPreset(preset.id);
-            setIsEditorOpen(false);
-          }
+      void confirmDialog({
+        title: 'Delete preset?',
+        message: `${preset.name} will be removed.`,
+        confirmLabel: 'Delete',
+        destructive: true
+      }).then(confirmed => {
+        if (!confirmed) {
+          return;
         }
-      ]);
+
+        deleteRestTimerPreset(preset.id);
+        setIsEditorOpen(false);
+      });
     },
     [deleteRestTimerPreset]
   );

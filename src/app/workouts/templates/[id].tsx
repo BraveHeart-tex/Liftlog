@@ -1,3 +1,4 @@
+import { confirmDialog } from '@/src/components/ui/alert-dialog';
 import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
@@ -5,6 +6,7 @@ import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import { Text } from '@/src/components/ui/text';
 import { ActiveWorkoutEditHeader } from '@/src/features/workouts/components/active-workout-edit-header';
 import { ActiveWorkoutExercisePickerSheet } from '@/src/features/workouts/components/active-workout-exercise-picker-sheet';
@@ -14,8 +16,8 @@ import { NewTemplateExerciseList } from '@/src/features/workouts/components/new-
 import { RenameTemplateSheet } from '@/src/features/workouts/components/rename-template-sheet';
 import { SupersetIndicator } from '@/src/features/workouts/components/superset-indicator';
 import { WorkoutTemplateActionsSheet } from '@/src/features/workouts/components/workout-template-actions-sheet';
-import { useWorkoutTemplateExerciseDraft } from '@/src/features/workouts/hooks/use-workout-template-exercise-draft';
 import { useWorkoutTemplateDetail } from '@/src/features/workouts/hooks/use-workout-template-detail';
+import { useWorkoutTemplateExerciseDraft } from '@/src/features/workouts/hooks/use-workout-template-exercise-draft';
 import {
   getSupersetLabelByRowId,
   groupSupersetBlocks
@@ -33,7 +35,7 @@ import {
   PlusIcon
 } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Keyboard, Pressable, View } from 'react-native';
+import { Keyboard, Pressable, View } from 'react-native';
 
 export default function WorkoutTemplateDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
@@ -224,14 +226,16 @@ function WorkoutTemplateDetailLoaded({
       return;
     }
 
-    Alert.alert('Discard changes?', 'Your exercise changes will be lost.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Discard',
-        style: 'destructive',
-        onPress: exitExerciseEditMode
+    void confirmDialog({
+      title: 'Discard changes?',
+      message: 'Your exercise changes will be lost.',
+      confirmLabel: 'Discard',
+      destructive: true
+    }).then(confirmed => {
+      if (confirmed) {
+        exitExerciseEditMode();
       }
-    ]);
+    });
   };
 
   const saveExerciseChanges = () => {
@@ -252,37 +256,36 @@ function WorkoutTemplateDetailLoaded({
     }
 
     console.error('Failed to update template exercises', result.error);
-    Alert.alert(
-      'Could not save exercise edits',
-      result.status === 'conflict'
-        ? 'The template or exercise library changed. Your draft was kept; review it and try again.'
-        : 'Your draft was kept. Please try again.'
-    );
+    showSnackbar({
+      message:
+        result.status === 'conflict'
+          ? 'The template or exercise library changed. Your draft was kept; review it and try again.'
+          : 'Your draft was kept. Please try again.',
+      variant: result.status === 'conflict' ? 'warning' : 'danger'
+    });
   };
 
   usePreventRemove(isEditingExercises, confirmDiscardExerciseChanges);
 
   const confirmDeleteTemplate = useCallback(() => {
-    Alert.alert(
-      'Delete template?',
-      `"${template.name}" will be removed from your saved templates.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            removeTemplate(template.id);
+    void confirmDialog({
+      title: 'Delete template?',
+      message: `"${template.name}" will be removed from your saved templates.`,
+      confirmLabel: 'Delete',
+      destructive: true
+    }).then(confirmed => {
+      if (!confirmed) {
+        return;
+      }
 
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace('/(tabs)/workout');
-            }
-          }
-        }
-      ]
-    );
+      removeTemplate(template.id);
+
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)/workout');
+      }
+    });
   }, [removeTemplate, template.id, template.name]);
 
   const reorderDraftExercises = useCallback(

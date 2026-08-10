@@ -1,3 +1,4 @@
+import { confirmDialog } from '@/src/components/ui/alert-dialog';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { ReorderableHandle } from '@/src/components/ui/reorderable-list';
@@ -9,7 +10,7 @@ import { cn } from '@/src/lib/utils/cn.utils';
 import { formatWeightForUnit } from '@/src/lib/utils/weight.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { GripIcon, TrashIcon } from 'lucide-react-native';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 
 interface ActiveWorkoutExerciseEditRowProps {
   item: WorkoutExerciseWithSets;
@@ -55,23 +56,16 @@ export function ActiveWorkoutExerciseEditRow({
         ? `${exerciseName}\n${setCount} sets logged, ${completedSetCount} completed.`
         : `${exerciseName}\nNo sets logged yet.`;
 
-    Alert.alert(
-      'Remove exercise?',
-      `${selectedDetails}\n\nThis exercise and its sets will be removed from the workout when you save.`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel'
-        },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => {
-            onRemove?.();
-          }
-        }
-      ]
-    );
+    void confirmDialog({
+      title: 'Remove exercise?',
+      message: `${selectedDetails}\n\nThis exercise and its sets will be removed from the workout when you save.`,
+      confirmLabel: 'Remove',
+      destructive: true
+    }).then(confirmed => {
+      if (confirmed) {
+        onRemove?.();
+      }
+    });
   };
 
   return (

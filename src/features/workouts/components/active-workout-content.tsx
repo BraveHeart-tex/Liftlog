@@ -1,8 +1,10 @@
+import { confirmDialog } from '@/src/components/ui/alert-dialog';
 import { Button } from '@/src/components/ui/button';
 import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import type { Workout, WorkoutExercise } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import { ActiveWorkoutEditHeader } from '@/src/features/workouts/components/active-workout-edit-header';
@@ -22,7 +24,7 @@ import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { router } from 'expo-router';
 import { ArrowLeftIcon, CircleCheckBig, PlusIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Keyboard, View } from 'react-native';
+import { Keyboard, View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -139,7 +141,10 @@ export function ActiveWorkoutContent({
       setBaselineExerciseRows(undefined);
     } catch (error) {
       console.error('Failed to save workout exercise edits', error);
-      Alert.alert('Could not save exercise edits', 'Please try again.');
+      showSnackbar({
+        message: 'Could not save exercise edits. Please try again.',
+        variant: 'danger'
+      });
     }
   }, [baselineExerciseRows, draftExerciseRows, saveWorkoutExerciseEdits]);
 
@@ -155,19 +160,15 @@ export function ActiveWorkoutContent({
   );
 
   const confirmFinishWorkout = useCallback(() => {
-    Alert.alert(
-      'Finish workout?',
-      `"${workoutName}" will be saved to your workout history.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Finish',
-          onPress: () => {
-            finishWorkout(activeWorkout.id);
-          }
-        }
-      ]
-    );
+    void confirmDialog({
+      title: 'Finish workout?',
+      message: `"${workoutName}" will be saved to your workout history.`,
+      confirmLabel: 'Finish'
+    }).then(confirmed => {
+      if (confirmed) {
+        finishWorkout(activeWorkout.id);
+      }
+    });
   }, [activeWorkout.id, finishWorkout, workoutName]);
 
   const closeExercisePicker = useCallback(

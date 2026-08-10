@@ -1,3 +1,5 @@
+import { confirmDialog } from '@/src/components/ui/alert-dialog';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import type { Set } from '@/src/db/schema';
 import {
   getSetValues,
@@ -6,13 +8,6 @@ import {
   type TrackingType
 } from '@/src/features/progress/tracking.domain';
 import type { useSettings } from '@/src/features/settings/hooks/use-settings';
-import {
-  areSetValuesEqual,
-  getHasSavedChanges,
-  getInitialFieldValues,
-  parseDurationMsInput,
-  parseTrackingFieldValues
-} from '@/src/features/workouts/components/set-form/set-form.utils';
 import type {
   ActiveDurationPickerState,
   DraftRowState,
@@ -21,9 +16,16 @@ import type {
   PersistedSetFormRow,
   SetFormRow
 } from '@/src/features/workouts/components/set-form/set-form.types';
+import {
+  areSetValuesEqual,
+  getHasSavedChanges,
+  getInitialFieldValues,
+  parseDurationMsInput,
+  parseTrackingFieldValues
+} from '@/src/features/workouts/components/set-form/set-form.utils';
 import { formatDurationMs } from '@/src/lib/utils/format-time.utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard } from 'react-native';
+import { Keyboard } from 'react-native';
 
 interface UseSetFormControllerArgs {
   trackingType: TrackingType;
@@ -498,7 +500,10 @@ export function useSetFormController({
     } catch (error) {
       console.error('Failed to copy set', error);
       copiedSetOrderToAnimateRef.current = null;
-      Alert.alert('Could not copy set', 'Please try again.');
+      showSnackbar({
+        message: 'Could not copy set. Please try again.',
+        variant: 'danger'
+      });
     } finally {
       pendingCopyRef.current = false;
       setPendingCopyRowKeys(currentKeys => {
@@ -520,41 +525,47 @@ export function useSetFormController({
       return;
     }
 
-    Alert.alert('Delete set?', 'This set will be removed from the workout.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
+    void confirmDialog({
+      title: 'Delete set?',
+      message: 'This set will be removed from the workout.',
+      confirmLabel: 'Delete',
+      destructive: true
+    }).then(confirmed => {
+      if (!confirmed) {
+        return;
+      }
+
+      setPendingDeleteSetIds(currentIds => {
+        const nextIds = new Set(currentIds);
+
+        nextIds.add(row.set.id);
+
+        return nextIds;
+      });
+
+      void (async () => {
+        try {
+          await Promise.resolve(onDeleteSet(row.set.id));
+        } catch (error) {
+          console.error('Failed to delete set', error);
           setPendingDeleteSetIds(currentIds => {
+            if (!currentIds.has(row.set.id)) {
+              return currentIds;
+            }
+
             const nextIds = new Set(currentIds);
 
-            nextIds.add(row.set.id);
+            nextIds.delete(row.set.id);
 
             return nextIds;
           });
-
-          void (async () => {
-            try {
-              await Promise.resolve(onDeleteSet(row.set.id));
-            } catch (error) {
-              console.error('Failed to delete set', error);
-              setPendingDeleteSetIds(currentIds => {
-                if (!currentIds.has(row.set.id)) {
-                  return currentIds;
-                }
-
-                const nextIds = new Set(currentIds);
-
-                nextIds.delete(row.set.id);
-
-                return nextIds;
-              });
-            }
-          })();
+          showSnackbar({
+            message: 'Could not delete set. Please try again.',
+            variant: 'danger'
+          });
         }
-      }
-    ]);
+      })();
+    });
   };
 
   const deleteDraftRow = (row: DraftSetFormRow) => {

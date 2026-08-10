@@ -1,9 +1,11 @@
+import { confirmDialog } from '@/src/components/ui/alert-dialog';
 import { Button } from '@/src/components/ui/button';
 import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { RenameSheet } from '@/src/components/ui/rename-sheet';
 import { Screen } from '@/src/components/ui/screen';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import { Text } from '@/src/components/ui/text';
 import { ExerciseDetailActionsSheet } from '@/src/features/exercises/components/exercise-detail-actions-sheet';
 import { ExerciseProgressChart } from '@/src/features/exercises/components/exercise-progress-chart';
@@ -18,7 +20,7 @@ import { toTitleCase } from '@/src/lib/utils/string.utils';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { EllipsisIcon } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 
 function formatUsageBreakdown({
   workoutUsageCount,
@@ -170,39 +172,41 @@ export default function ExerciseDetailScreen() {
         ? `${exercise.name} is used in ${usageLabel}. It will be hidden from new workouts and templates, but your existing history stays intact.`
         : `${exercise.name} is not used in any workouts or templates and will be permanently deleted.`;
 
-    Alert.alert(title, message, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: removeActionLabel,
-        style: 'destructive',
-        onPress: () => {
-          let result: ReturnType<typeof removeCustomExerciseById>;
-
-          try {
-            result = removeCustomExerciseById(exercise.id);
-          } catch (error) {
-            console.error('Failed to remove custom exercise', error);
-            Alert.alert(
-              'Exercise was not changed',
-              'Could not update this exercise. Try again.'
-            );
-
-            return;
-          }
-
-          if (result === 'archived' || result === 'deleted') {
-            router.back();
-
-            return;
-          }
-
-          Alert.alert(
-            'Exercise was not changed',
-            'Only custom exercises can be archived or deleted.'
-          );
-        }
+    void confirmDialog({
+      title,
+      message,
+      confirmLabel: removeActionLabel,
+      destructive: true
+    }).then(confirmed => {
+      if (!confirmed) {
+        return;
       }
-    ]);
+
+      let result: ReturnType<typeof removeCustomExerciseById>;
+
+      try {
+        result = removeCustomExerciseById(exercise.id);
+      } catch (error) {
+        console.error('Failed to remove custom exercise', error);
+        showSnackbar({
+          message: 'Could not update this exercise. Try again.',
+          variant: 'danger'
+        });
+
+        return;
+      }
+
+      if (result === 'archived' || result === 'deleted') {
+        router.back();
+
+        return;
+      }
+
+      showSnackbar({
+        message: 'Only custom exercises can be archived or deleted.',
+        variant: 'warning'
+      });
+    });
   };
 
   const handleEditDetails = () => {

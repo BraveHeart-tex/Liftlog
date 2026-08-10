@@ -1,11 +1,13 @@
+import { StyledFlashList } from '@/src/components/styled/flash-list';
+import { confirmDialog } from '@/src/components/ui/alert-dialog';
 import { Button } from '@/src/components/ui/button';
 import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { RenameSheet } from '@/src/components/ui/rename-sheet';
 import { Screen } from '@/src/components/ui/screen';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import { Text } from '@/src/components/ui/text';
-import { StyledFlashList } from '@/src/components/styled/flash-list';
 import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
 import { SupersetIndicator } from '@/src/features/workouts/components/superset-indicator';
@@ -35,7 +37,7 @@ import {
   RepeatIcon
 } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 
 export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
@@ -178,52 +180,56 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
       const draftWorkout = startWorkoutEdit(workout.id);
 
       if (!draftWorkout) {
-        Alert.alert(
-          'Could not edit workout',
-          'This workout may have been deleted.'
-        );
+        showSnackbar({
+          message: 'This workout may have been deleted.',
+          variant: 'warning'
+        });
       }
     } catch (error) {
       console.error('Failed to start workout edit', error);
-      Alert.alert('Could not edit workout', 'Please try again.');
+      showSnackbar({
+        message: 'Could not edit workout. Please try again.',
+        variant: 'danger'
+      });
     }
   }, [startWorkoutEdit, workout.id]);
 
   const confirmDeleteWorkout = useCallback(() => {
-    Alert.alert(
-      'Delete workout?',
-      `${workoutName} and its logged sets will be permanently removed.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            try {
-              const didDelete = deleteWorkout(workout.id);
+    void confirmDialog({
+      title: 'Delete workout?',
+      message: `${workoutName} and its logged sets will be permanently removed.`,
+      confirmLabel: 'Delete',
+      destructive: true
+    }).then(confirmed => {
+      if (!confirmed) {
+        return;
+      }
 
-              if (!didDelete) {
-                Alert.alert(
-                  'Workout not found',
-                  'This workout may have already been deleted.'
-                );
+      try {
+        const didDelete = deleteWorkout(workout.id);
 
-                return;
-              }
+        if (!didDelete) {
+          showSnackbar({
+            message: 'This workout may have already been deleted.',
+            variant: 'warning'
+          });
 
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace('/(tabs)/log');
-              }
-            } catch (error) {
-              console.error('Failed to delete workout', error);
-              Alert.alert('Could not delete workout', 'Please try again.');
-            }
-          }
+          return;
         }
-      ]
-    );
+
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(tabs)/log');
+        }
+      } catch (error) {
+        console.error('Failed to delete workout', error);
+        showSnackbar({
+          message: 'Could not delete workout. Please try again.',
+          variant: 'danger'
+        });
+      }
+    });
   }, [deleteWorkout, workout.id, workoutName]);
 
   const handleRenameWorkout = useCallback(

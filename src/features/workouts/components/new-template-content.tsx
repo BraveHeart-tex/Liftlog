@@ -1,7 +1,9 @@
+import { confirmDialog } from '@/src/components/ui/alert-dialog';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Input } from '@/src/components/ui/input';
 import { Screen } from '@/src/components/ui/screen';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import {
   TemplateExerciseEditor,
   type TemplateExerciseEditorRow
@@ -11,7 +13,7 @@ import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { BookmarkIcon } from 'lucide-react-native';
 import { useRef, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 
 export function NewTemplateContent() {
   const navigation = useNavigation();
@@ -46,7 +48,10 @@ export function NewTemplateContent() {
     } catch {
       isSavingRef.current = false;
       setIsSaving(false);
-      Alert.alert('Could not save template', 'Please try again.');
+      showSnackbar({
+        message: 'Could not save template. Please try again.',
+        variant: 'danger'
+      });
     }
   };
 
@@ -57,18 +62,16 @@ export function NewTemplateContent() {
       return;
     }
 
-    Alert.alert(
-      'Discard template?',
-      'Your changes will be lost if you leave this screen.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Discard',
-          style: 'destructive',
-          onPress: () => navigation.dispatch(data.action)
-        }
-      ]
-    );
+    void confirmDialog({
+      title: 'Discard template?',
+      message: 'Your changes will be lost if you leave this screen.',
+      confirmLabel: 'Discard',
+      destructive: true
+    }).then(confirmed => {
+      if (confirmed) {
+        navigation.dispatch(data.action);
+      }
+    });
   });
 
   return (

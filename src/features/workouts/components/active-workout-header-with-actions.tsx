@@ -1,6 +1,8 @@
+import { confirmDialog } from '@/src/components/ui/alert-dialog';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { RenameSheet } from '@/src/components/ui/rename-sheet';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import { Text } from '@/src/components/ui/text';
 import type { Workout, WorkoutExercise } from '@/src/db';
 import { ActiveWorkoutActionsSheet } from '@/src/features/workouts/components/active-workout-actions-sheet';
@@ -11,7 +13,7 @@ import { useWorkoutRename } from '@/src/features/workouts/hooks/use-workout-rena
 import { Stack, router } from 'expo-router';
 import { EllipsisIcon } from 'lucide-react-native';
 import { Fragment, useCallback, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 
 interface ActiveWorkoutHeaderWithActionsProps {
   workoutName: string;
@@ -61,36 +63,37 @@ export const ActiveWorkoutHeaderWithActions = ({
   }, [canSaveTemplate, isTemplateSheetOpen]);
 
   const confirmDiscardWorkout = useCallback(() => {
-    Alert.alert(
-      'Discard workout?',
-      `"${workoutName}" and its logged exercises and sets will be permanently removed.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Discard',
-          style: 'destructive',
-          onPress: () => {
-            try {
-              const didDelete = deleteWorkout(workoutId);
+    void confirmDialog({
+      title: 'Discard workout?',
+      message: `"${workoutName}" and its logged exercises and sets will be permanently removed.`,
+      confirmLabel: 'Discard',
+      destructive: true
+    }).then(confirmed => {
+      if (!confirmed) {
+        return;
+      }
 
-              if (!didDelete) {
-                Alert.alert(
-                  'Workout not found',
-                  'This workout may have already been discarded.'
-                );
+      try {
+        const didDelete = deleteWorkout(workoutId);
 
-                return;
-              }
+        if (!didDelete) {
+          showSnackbar({
+            message: 'This workout may have already been discarded.',
+            variant: 'warning'
+          });
 
-              router.replace('/(tabs)/workout');
-            } catch (error) {
-              console.error('Failed to discard workout', error);
-              Alert.alert('Could not discard workout', 'Please try again.');
-            }
-          }
+          return;
         }
-      ]
-    );
+
+        router.replace('/(tabs)/workout');
+      } catch (error) {
+        console.error('Failed to discard workout', error);
+        showSnackbar({
+          message: 'Could not discard workout. Please try again.',
+          variant: 'danger'
+        });
+      }
+    });
   }, [deleteWorkout, workoutId, workoutName]);
 
   const handleRenameWorkout = useCallback(
