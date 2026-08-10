@@ -5,6 +5,7 @@ import {
   saveHistoricalWorkoutDraft
 } from '@/src/features/workouts/workout.repository';
 import { withDomainFlowSpan } from '@/src/lib/observability/observability-span';
+import { triggerHapticSuccess } from '@/src/lib/haptics/haptics';
 import { useCallback } from 'react';
 
 export function useHistoricalWorkoutDraftActions() {
@@ -20,6 +21,8 @@ export function useHistoricalWorkoutDraftActions() {
           if (!savedDraft) {
             return undefined;
           }
+
+          triggerHapticSuccess('historical workout save');
 
           return savedDraft.workout;
         }

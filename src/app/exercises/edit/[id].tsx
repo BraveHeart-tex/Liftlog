@@ -12,6 +12,7 @@ import {
   type TrackingType
 } from '@/src/features/progress/tracking.domain';
 import { getRouteParamId } from '@/src/lib/utils/route.utils';
+import { triggerHapticSuccess } from '@/src/lib/haptics/haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SaveIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
@@ -126,6 +127,8 @@ export default function EditExerciseScreen() {
 
         return;
       }
+
+      triggerHapticSuccess('custom exercise edit');
 
       if (router.canGoBack()) {
         router.back();

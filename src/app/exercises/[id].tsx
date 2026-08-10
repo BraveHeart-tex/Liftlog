@@ -16,6 +16,7 @@ import { formatMuscleList } from '@/src/features/exercises/muscle.utils';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { formatWorkoutDate } from '@/src/lib/utils/date.utils';
 import { getRouteParamId } from '@/src/lib/utils/route.utils';
+import { triggerHapticWarning } from '@/src/lib/haptics/haptics';
 import { toTitleCase } from '@/src/lib/utils/string.utils';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { EllipsisIcon } from 'lucide-react-native';
@@ -197,6 +198,7 @@ export default function ExerciseDetailScreen() {
       }
 
       if (result === 'archived' || result === 'deleted') {
+        triggerHapticWarning('custom exercise deletion');
         router.back();
 
         return;

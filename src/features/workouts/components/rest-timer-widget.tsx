@@ -5,6 +5,7 @@ import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sh
 import { REST_TIMER_INCREMENT_SECONDS } from '@/src/features/workouts/rest-timer.constants';
 import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { triggerHapticLight } from '@/src/lib/haptics/haptics';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { formatTime } from '@/src/lib/utils/format-time.utils';
 import { useCallback, useEffect, useState } from 'react';
@@ -40,6 +41,11 @@ export function RestTimerWidget({ className }: RestTimerWidgetProps) {
   const addThirtySeconds = useCallback(() => {
     addTime(REST_TIMER_INCREMENT_SECONDS);
   }, [addTime]);
+  const skipTimer = useCallback(() => {
+    if (cancelTimer()) {
+      triggerHapticLight('rest timer skip');
+    }
+  }, [cancelTimer]);
 
   useEffect(() => {
     if (status !== 'running') {
@@ -90,7 +96,6 @@ export function RestTimerWidget({ className }: RestTimerWidgetProps) {
               accessibilityLabel={`Open rest timer, ${timerLabel} ${
                 isPaused ? 'paused' : 'remaining'
               }`}
-              hapticFeedback="light"
               onPress={openSheet}
             >
               <Text
@@ -120,7 +125,7 @@ export function RestTimerWidget({ className }: RestTimerWidgetProps) {
               className="min-h-10 px-2.5 py-2"
               accessibilityLabel="Skip rest timer"
               textClassName="text-danger text-small"
-              onPress={cancelTimer}
+              onPress={skipTimer}
             >
               Skip
             </Button>

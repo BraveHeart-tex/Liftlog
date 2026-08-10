@@ -13,6 +13,7 @@ import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/cr
 import { useActiveWorkoutContent as useActiveWorkoutContentData } from '@/src/features/workouts/hooks/use-active-workout-content';
 import { useActiveWorkoutExerciseDraft } from '@/src/features/workouts/hooks/use-active-workout-exercise-draft';
 import { useActiveWorkoutScreen } from '@/src/features/workouts/hooks/use-active-workout-screen';
+import { triggerHapticMedium } from '@/src/lib/haptics/haptics';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { router } from 'expo-router';
 import {
@@ -149,6 +150,7 @@ function ActiveWorkoutEditExercisesContent({
     const result = save();
 
     if (result.status === 'saved') {
+      triggerHapticMedium('active workout exercise edits');
       leaveEditScreen();
 
       return;

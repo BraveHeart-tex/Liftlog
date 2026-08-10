@@ -12,6 +12,7 @@ import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { SearchInputIcon } from '@/src/components/ui/search-input-icon';
+import { triggerHapticLight } from '@/src/lib/haptics/haptics';
 import { Text } from '@/src/components/ui/text';
 import {
   buildAlphabetizedExerciseListItems,
@@ -408,12 +409,14 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
     }
 
     onSelectExercises?.(pendingExercises);
+    triggerHapticLight('exercise picker commit');
     onClose();
   }, [isMultiple, onClose, onSelectExercises, pendingExercises]);
 
   const createCustomExercise = useCallback(() => {
     if (isMultiple && pendingExercises.length > 0) {
       onSelectExercises?.(pendingExercises);
+      triggerHapticLight('exercise picker commit');
     }
 
     onCreateCustomExercise(latestQueryRef.current.trim());

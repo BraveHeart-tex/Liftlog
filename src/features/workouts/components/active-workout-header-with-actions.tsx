@@ -10,6 +10,7 @@ import { ActiveWorkoutHeaderDuration } from '@/src/features/workouts/components/
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
 import { useWorkoutDelete } from '@/src/features/workouts/hooks/use-workout-delete';
 import { useWorkoutRename } from '@/src/features/workouts/hooks/use-workout-rename';
+import { triggerHapticWarning } from '@/src/lib/haptics/haptics';
 import { Stack, router } from 'expo-router';
 import { EllipsisIcon } from 'lucide-react-native';
 import { Fragment, useCallback, useState } from 'react';
@@ -85,6 +86,7 @@ export const ActiveWorkoutHeaderWithActions = ({
           return;
         }
 
+        triggerHapticWarning('active workout discard');
         router.replace('/(tabs)/workout');
       } catch (error) {
         console.error('Failed to discard workout', error);

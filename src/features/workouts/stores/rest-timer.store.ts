@@ -31,11 +31,11 @@ interface RestTimerState {
   syncDefaultDuration: (defaultDuration: number) => void;
   syncOnOpen: (defaultDuration: number) => void;
   tick: (now?: number) => void;
-  start: (durationSeconds: number, context?: RestTimerContext) => void;
+  start: (durationSeconds: number, context?: RestTimerContext) => boolean;
   addTime: (seconds: number) => void;
   pause: () => void;
   resume: () => void;
-  cancel: () => void;
+  cancel: () => boolean;
   cancelForWorkout: (workoutId: string) => boolean;
 }
 
@@ -135,7 +135,7 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
     const totalSeconds = normalizeRestTimerInput(durationSeconds);
 
     if (totalSeconds < MIN_REST_TIMER_SECONDS) {
-      return;
+      return false;
     }
 
     set({
@@ -147,6 +147,8 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
       activeDurationSeconds: totalSeconds,
       context
     });
+
+    return true;
   },
   addTime: seconds => {
     const state = get();
@@ -230,7 +232,11 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
     });
   },
   cancel: () => {
-    const { cancellationCount, durationSeconds } = get();
+    const { cancellationCount, durationSeconds, status } = get();
+
+    if (status === 'idle') {
+      return false;
+    }
 
     set({
       status: 'idle',
@@ -241,6 +247,8 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
       context: {},
       cancellationCount: cancellationCount + 1
     });
+
+    return true;
   },
   cancelForWorkout: workoutId => {
     const state = get();

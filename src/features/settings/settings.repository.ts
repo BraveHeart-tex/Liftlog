@@ -272,8 +272,8 @@ export function updateRestTimerPreset(
   );
 }
 
-export function deleteRestTimerPreset(db: DrizzleDb, id: string): void {
-  withDatabaseSpan(
+export function deleteRestTimerPreset(db: DrizzleDb, id: string): boolean {
+  return withDatabaseSpan(
     {
       operation: 'settings.deleteRestTimerPreset',
       feature: 'settings',
@@ -281,11 +281,15 @@ export function deleteRestTimerPreset(db: DrizzleDb, id: string): void {
     },
     () => {
       const presets = getRestTimerPresets(db);
+      const nextPresets = presets.filter(preset => preset.id !== id);
 
-      setRestTimerPresets(
-        db,
-        presets.filter(preset => preset.id !== id)
-      );
+      if (nextPresets.length === presets.length) {
+        return false;
+      }
+
+      setRestTimerPresets(db, nextPresets);
+
+      return true;
     }
   );
 }

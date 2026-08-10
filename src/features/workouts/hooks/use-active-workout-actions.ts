@@ -5,6 +5,7 @@ import {
   addExerciseToWorkout,
   createCustomExerciseAndAddToWorkout
 } from '@/src/features/workouts/workout.repository';
+import { triggerHapticLight } from '@/src/lib/haptics/haptics';
 import { useCallback } from 'react';
 
 interface UseActiveWorkoutActionsParams {
@@ -43,6 +44,7 @@ export function useActiveWorkoutActions({
         workoutId: activeWorkout.id,
         exerciseId: exercise.id
       });
+      triggerHapticLight('exercise added to workout');
     },
     [
       activeWorkout.id,
@@ -66,6 +68,7 @@ export function useActiveWorkoutActions({
       );
 
       setIsExercisePickerOpen(false);
+      triggerHapticLight('custom exercise added to workout');
 
       return createdExercise;
     },

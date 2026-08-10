@@ -21,6 +21,7 @@ import { useSaveWorkoutExerciseEdits } from '@/src/features/workouts/hooks/use-r
 import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
 import { triggerWorkoutEditModeHaptics } from '@/src/features/workouts/workout.haptics';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { triggerHapticMedium } from '@/src/lib/haptics/haptics';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { ArrowLeftIcon, CircleCheckBig, PlusIcon } from 'lucide-react-native';
@@ -140,8 +141,27 @@ export function ActiveWorkoutContent({
       return;
     }
 
+    const hasChanges =
+      draftExerciseRows.length !== baselineExerciseRows.length ||
+      draftExerciseRows.some((row, order) => {
+        const baselineRow = baselineExerciseRows.find(
+          baseline => baseline.id === row.id
+        );
+
+        return (
+          !baselineRow ||
+          baselineRow.order !== order ||
+          baselineRow.supersetId !== row.supersetId
+        );
+      });
+
     try {
       saveWorkoutExerciseEdits(draftExerciseRows, baselineExerciseRows);
+
+      if (hasChanges) {
+        triggerHapticMedium('active workout exercise edits');
+      }
+
       setIsEditingExercises(false);
       setDraftExerciseRows(undefined);
       setBaselineExerciseRows(undefined);

@@ -4,6 +4,7 @@ import {
   type TrackingType
 } from '@/src/features/progress/tracking.domain';
 import type { WeightUnit } from '@/src/lib/utils/weight.utils';
+import { triggerHapticSelection } from '@/src/lib/haptics/haptics';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { appFonts } from '@/src/theme/fonts';
 import { nativeFontSizes } from '@/src/theme/sizes';
@@ -12,7 +13,6 @@ import {
   Line as SkiaLine,
   matchFont
 } from '@shopify/react-native-skia';
-import { selectionAsync } from 'expo-haptics';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useAnimatedReaction } from 'react-native-reanimated';
@@ -95,7 +95,7 @@ export function ExerciseProgressChartBody({
     }
 
     onSelectedPointChange(points[selectedIndex] ?? null);
-    void selectionAsync();
+    triggerHapticSelection('exercise progress point selection');
   }, [isPressActive, onSelectedPointChange, points, selectedIndex]);
 
   return (

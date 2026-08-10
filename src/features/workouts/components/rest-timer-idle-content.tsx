@@ -13,6 +13,10 @@ import {
   useRestTimerStore
 } from '@/src/features/workouts/stores/rest-timer.store';
 import { getTimerParts } from '@/src/lib/utils/date.utils';
+import {
+  triggerHapticLight,
+  triggerHapticWarning
+} from '@/src/lib/haptics/haptics';
 import { PlayIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
@@ -97,7 +101,9 @@ export function RestTimerIdleContent({
       return;
     }
 
-    startTimer(selectedTotalSeconds, context);
+    if (startTimer(selectedTotalSeconds, context)) {
+      triggerHapticLight('rest timer start');
+    }
   };
 
   const setDurationDraft = useCallback((nextDurationSeconds: number) => {
@@ -165,8 +171,10 @@ export function RestTimerIdleContent({
           return;
         }
 
-        deleteRestTimerPreset(preset.id);
-        setIsEditorOpen(false);
+        if (deleteRestTimerPreset(preset.id)) {
+          triggerHapticWarning('rest timer preset deletion');
+          setIsEditorOpen(false);
+        }
       });
     },
     [deleteRestTimerPreset]

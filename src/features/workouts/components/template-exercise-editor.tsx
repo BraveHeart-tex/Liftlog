@@ -10,6 +10,7 @@ import { ExercisePickerSheet } from '@/src/features/workouts/components/exercise
 import { NewTemplateExerciseList } from '@/src/features/workouts/components/new-template-exercise-list';
 import { normalizeSupersetRows } from '@/src/features/workouts/superset.utils';
 import { generateUuid } from '@/src/lib/utils/uuid.utils';
+import { triggerHapticSuccess } from '@/src/lib/haptics/haptics';
 import { ClipboardListIcon, PlusIcon } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { Keyboard, View } from 'react-native';
@@ -86,6 +87,7 @@ export function TemplateExerciseEditor({
   const saveCustomExercise = useCallback(
     (newExercise: Parameters<typeof createCustomExercise>[0]) => {
       const createdExercise = createCustomExercise(newExercise);
+      triggerHapticSuccess('custom exercise creation');
 
       onChange([
         ...rows,

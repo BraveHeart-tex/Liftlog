@@ -1,24 +1,10 @@
-import {
-  AndroidHaptics,
-  performAndroidHapticsAsync,
-  selectionAsync
-} from 'expo-haptics';
-import { Platform } from 'react-native';
-
-function triggerSelectionHaptics(androidHaptics: AndroidHaptics) {
-  if (Platform.OS === 'android') {
-    void performAndroidHapticsAsync(androidHaptics);
-
-    return;
-  }
-
-  void selectionAsync();
-}
+import { AndroidHaptics } from 'expo-haptics';
+import { triggerHapticSelection } from '@/src/lib/haptics/haptics';
 
 export function triggerBottomTabNavigationHaptics() {
-  triggerSelectionHaptics(AndroidHaptics.Virtual_Key);
+  triggerHapticSelection('bottom tab navigation', AndroidHaptics.Virtual_Key);
 }
 
 export function triggerSegmentSelectionHaptics() {
-  triggerSelectionHaptics(AndroidHaptics.Segment_Tick);
+  triggerHapticSelection('segment selection', AndroidHaptics.Segment_Tick);
 }

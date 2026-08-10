@@ -35,7 +35,7 @@ interface SettingsContextValue {
   setRestTimerDuration: (seconds: number) => void;
   addRestTimerPreset: (preset: Omit<RestTimerPreset, 'id'>) => void;
   updateRestTimerPreset: (preset: RestTimerPreset) => void;
-  deleteRestTimerPreset: (id: string) => void;
+  deleteRestTimerPreset: (id: string) => boolean;
   setHealthConnectStepsEnabled: (isEnabled: boolean) => void;
   setStepGoal: (goal: number) => void;
 }
@@ -86,9 +86,7 @@ export function SettingsProvider({ children }: PropsWithChildren) {
   );
 
   const deleteRestTimerPreset = useCallback(
-    (id: string) => {
-      deleteRestTimerPresetRepo(db, id);
-    },
+    (id: string) => deleteRestTimerPresetRepo(db, id),
     [db]
   );
 

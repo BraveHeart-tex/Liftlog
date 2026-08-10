@@ -26,6 +26,7 @@ import {
 import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date.utils';
 import { getRouteParamId } from '@/src/lib/utils/route.utils';
 import { formatWeightForUnit } from '@/src/lib/utils/weight.utils';
+import { triggerHapticWarning } from '@/src/lib/haptics/haptics';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
   BookmarkIcon,
@@ -216,6 +217,8 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
 
           return;
         }
+
+        triggerHapticWarning('completed workout deletion');
 
         if (router.canGoBack()) {
           router.back();

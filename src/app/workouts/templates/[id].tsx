@@ -25,6 +25,10 @@ import {
 import { triggerWorkoutEditModeHaptics } from '@/src/features/workouts/workout.haptics';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { getRouteParamId } from '@/src/lib/utils/route.utils';
+import {
+  triggerHapticMedium,
+  triggerHapticWarning
+} from '@/src/lib/haptics/haptics';
 import { usePreventRemove } from '@react-navigation/native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
@@ -246,6 +250,7 @@ function WorkoutTemplateDetailLoaded({
     const result = saveExerciseDraft();
 
     if (result.status === 'saved') {
+      triggerHapticMedium('template exercise edits');
       exitExerciseEditMode();
 
       return;
@@ -278,7 +283,11 @@ function WorkoutTemplateDetailLoaded({
         return;
       }
 
-      removeTemplate(template.id);
+      if (!removeTemplate(template.id)) {
+        return;
+      }
+
+      triggerHapticWarning('template deletion');
 
       if (router.canGoBack()) {
         router.back();

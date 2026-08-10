@@ -571,15 +571,18 @@ export function saveWorkoutTemplateExerciseDraft(
 export function deleteWorkoutTemplate(
   db: DrizzleDb,
   id: WorkoutTemplate['id']
-): void {
-  withDatabaseSpan(
+): boolean {
+  return withDatabaseSpan(
     {
       operation: 'workoutTemplate.delete',
       feature: 'workoutTemplate',
       access: 'write'
     },
     () => {
-      db.delete(workoutTemplates).where(eq(workoutTemplates.id, id)).run();
+      return (
+        db.delete(workoutTemplates).where(eq(workoutTemplates.id, id)).run()
+          .changes > 0
+      );
     }
   );
 }

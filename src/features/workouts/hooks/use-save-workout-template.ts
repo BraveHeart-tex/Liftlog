@@ -2,7 +2,7 @@ import { showSnackbar } from '@/src/components/ui/snackbar';
 import { useDrizzle } from '@/src/components/database-provider';
 import type { Workout, WorkoutTemplateExercise } from '@/src/db/schema';
 import { createWorkoutTemplate } from '@/src/features/workouts/workout-template.repository';
-import { NotificationFeedbackType, notificationAsync } from 'expo-haptics';
+import { triggerHapticSuccess } from '@/src/lib/haptics/haptics';
 import { useCallback } from 'react';
 
 export function useSaveWorkoutTemplate() {
@@ -23,7 +23,7 @@ export function useSaveWorkoutTemplate() {
         sourceWorkoutId
       });
 
-      void notificationAsync(NotificationFeedbackType.Success);
+      triggerHapticSuccess('template save');
       showSnackbar({ message: 'Template saved' });
 
       return template;

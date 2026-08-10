@@ -10,6 +10,7 @@ import {
 } from '@/src/features/workouts/workout-template.repository';
 import { getActiveWorkoutQuery } from '@/src/features/workouts/workout.repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
+import { triggerHapticMedium } from '@/src/lib/haptics/haptics';
 import { router, type Href } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 
@@ -54,6 +55,7 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
     });
 
     if (createdWorkout) {
+      triggerHapticMedium('workout creation');
       router.replace(activeWorkoutRoute, { withAnchor: true });
     }
   }, [db, template]);
@@ -69,6 +71,7 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
     });
 
     if (createdWorkout) {
+      triggerHapticMedium('workout replacement');
       useRestTimerStore.getState().cancelForWorkout(activeWorkout.id);
       router.replace(activeWorkoutRoute, { withAnchor: true });
     }
@@ -85,9 +88,8 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
   );
 
   const removeTemplate = useCallback(
-    (nextTemplateId: WorkoutTemplate['id']) => {
-      deleteWorkoutTemplate(db, nextTemplateId);
-    },
+    (nextTemplateId: WorkoutTemplate['id']) =>
+      deleteWorkoutTemplate(db, nextTemplateId),
     [db]
   );
 

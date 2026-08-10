@@ -7,6 +7,7 @@ import { ExerciseMetadataForm } from '@/src/features/exercises/components/exerci
 import { ExerciseNameConflictError } from '@/src/features/exercises/exercise.repository';
 import { useCustomExerciseForm } from '@/src/features/exercises/hooks/use-custom-exercise-form';
 import { useExerciseActions } from '@/src/features/exercises/hooks/use-exercise-actions';
+import { triggerHapticSuccess } from '@/src/lib/haptics/haptics';
 import { router } from 'expo-router';
 import { SaveIcon } from 'lucide-react-native';
 import { useRef, useState } from 'react';
@@ -35,6 +36,7 @@ export default function NewExerciseScreen() {
 
   const createExercise = (newExercise: NewExercise) => {
     const createdExercise = createCustomExercise(newExercise);
+    triggerHapticSuccess('custom exercise creation');
 
     router.replace(
       {

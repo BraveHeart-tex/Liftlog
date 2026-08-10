@@ -6,11 +6,10 @@ import {
   updateCompletedSet
 } from '@/src/features/workouts/workout.repository';
 import {
-  ImpactFeedbackStyle,
-  NotificationFeedbackType,
-  impactAsync,
-  notificationAsync
-} from 'expo-haptics';
+  triggerHapticLight,
+  triggerHapticSuccess,
+  triggerHapticWarning
+} from '@/src/lib/haptics/haptics';
 import { useCallback } from 'react';
 import type {
   SetValues,
@@ -62,9 +61,9 @@ export function useExerciseTrackActions({
       }
 
       if (isPR) {
-        void notificationAsync(NotificationFeedbackType.Success);
+        triggerHapticSuccess('personal record');
       } else {
-        void impactAsync(ImpactFeedbackStyle.Light);
+        triggerHapticLight('set completion');
       }
     },
     [enableFeedback]
@@ -115,8 +114,8 @@ export function useExerciseTrackActions({
         { maintainPersonalRecords: rebuildProgressOnChange }
       );
 
-      if (rebuildProgressOnChange && result) {
-        triggerFeedback(result.isNewPersonalRecord);
+      if (rebuildProgressOnChange && result?.isNewPersonalRecord) {
+        triggerFeedback(true);
       }
 
       setEditingSetId(null);
@@ -136,13 +135,19 @@ export function useExerciseTrackActions({
 
   const deleteExistingSet = useCallback(
     (setId: Set['id']) => {
-      deleteCompletedSet(db, setId, {
+      const deletedSet = deleteCompletedSet(db, setId, {
         maintainPersonalRecords: rebuildProgressOnChange
       });
+
+      if (deletedSet) {
+        triggerHapticWarning('set deletion');
+      }
 
       if (setId === editingSetId) {
         setEditingSetId(null);
       }
+
+      return deletedSet;
     },
     [db, editingSetId, rebuildProgressOnChange, setEditingSetId]
   );

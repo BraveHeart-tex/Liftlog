@@ -5,13 +5,12 @@ import {
   scheduleRestTimerNotification
 } from '@/src/features/workouts/rest-timer-notifications.service';
 import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
-import { useAudioPlayer } from 'expo-audio';
 import {
-  ImpactFeedbackStyle,
-  NotificationFeedbackType,
-  impactAsync,
-  notificationAsync
-} from 'expo-haptics';
+  triggerHapticImpact,
+  triggerHapticWarning
+} from '@/src/lib/haptics/haptics';
+import { useAudioPlayer } from 'expo-audio';
+import { ImpactFeedbackStyle } from 'expo-haptics';
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 
@@ -52,15 +51,14 @@ export function RestTimerHost() {
 
   const triggerCompletionHaptics = useCallback(() => {
     clearCompletionHapticTimeouts();
-    notificationAsync(NotificationFeedbackType.Warning).catch(error => {
-      console.error('Failed to trigger rest timer completion haptics', error);
-    });
+    triggerHapticWarning('rest timer completion');
 
     completionHapticTimeoutsRef.current = [200, 400].map(delay =>
       setTimeout(() => {
-        impactAsync(ImpactFeedbackStyle.Heavy).catch(error => {
-          console.error('Failed to trigger rest timer impact haptics', error);
-        });
+        triggerHapticImpact(
+          ImpactFeedbackStyle.Heavy,
+          'rest timer completion impact'
+        );
       }, delay)
     );
   }, [clearCompletionHapticTimeouts]);

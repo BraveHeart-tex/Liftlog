@@ -1,6 +1,10 @@
 import { usePressScale } from '@/src/lib/animations/use-press-scale.hook';
+import {
+  triggerHapticImpact,
+  triggerHapticSelection
+} from '@/src/lib/haptics/haptics';
 import { cn } from '@/src/lib/utils/cn.utils';
-import { ImpactFeedbackStyle, impactAsync, selectionAsync } from 'expo-haptics';
+import { ImpactFeedbackStyle } from 'expo-haptics';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import { Animated, Pressable, type GestureResponderEvent } from 'react-native';
 
@@ -32,12 +36,12 @@ const impactFeedbackStyles: Record<
 
 function triggerHapticFeedback(hapticFeedback: HapticFeedback) {
   if (hapticFeedback === 'selection') {
-    void selectionAsync();
+    triggerHapticSelection();
 
     return;
   }
 
-  void impactAsync(impactFeedbackStyles[hapticFeedback]);
+  triggerHapticImpact(impactFeedbackStyles[hapticFeedback]);
 }
 
 export function PressableSurface({
