@@ -34,17 +34,35 @@ interface DialogViewProps {
   onExit: (dialogId: number) => void;
 }
 
-const DIALOG_EASING = Easing.bezier(0.23, 1, 0.32, 1);
+const ENTER_EASING = Easing.out(Easing.cubic);
+const EXIT_EASING = Easing.in(Easing.cubic);
+const DIALOG_SCALE_DELTA = 0.97;
+
+const DIALOG_SHADOW = {
+  shadowColor: '#000000',
+  shadowOffset: { width: 0, height: 8 },
+  shadowOpacity: 0.24,
+  shadowRadius: 24,
+  elevation: 12
+};
 
 function DialogView({ request, isClosing, onExit }: DialogViewProps) {
-  const progress = useRef(new Animated.Value(0)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(DIALOG_SCALE_DELTA)).current;
   const [modalReady, setModalReady] = useState(false);
   const reduceMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
   const verticalPadding = Math.max(insets.top, insets.bottom, 24);
 
+  const hasResolvedRef = useRef(false);
+
   useEffect(() => {
-    progress.stopAnimation();
+    hasResolvedRef.current = false;
+  }, [request.id]);
+
+  useEffect(() => {
+    opacity.stopAnimation();
+    scale.stopAnimation();
 
     if (!modalReady) {
       if (isClosing) {
@@ -55,7 +73,8 @@ function DialogView({ request, isClosing, onExit }: DialogViewProps) {
     }
 
     if (reduceMotion) {
-      progress.setValue(isClosing ? 0 : 1);
+      opacity.setValue(isClosing ? 0 : 1);
+      scale.setValue(1);
 
       if (isClosing) {
         onExit(request.id);
@@ -64,26 +83,68 @@ function DialogView({ request, isClosing, onExit }: DialogViewProps) {
       return;
     }
 
-    progress.setValue(isClosing ? 1 : 0);
-    Animated.timing(progress, {
-      toValue: isClosing ? 0 : 1,
-      duration: isClosing
-        ? MOTION_DURATION_MS.exit
-        : MOTION_DURATION_MS.standard,
-      easing: DIALOG_EASING,
-      useNativeDriver: true
-    }).start(({ finished }) => {
-      if (finished && isClosing) {
-        onExit(request.id);
+    if (isClosing) {
+      opacity.setValue(1);
+      scale.setValue(1);
+      Animated.parallel([
+        Animated.timing(opacity, {
+          toValue: 0,
+          duration: MOTION_DURATION_MS.exit,
+          easing: EXIT_EASING,
+          useNativeDriver: true
+        }),
+        Animated.timing(scale, {
+          toValue: DIALOG_SCALE_DELTA,
+          duration: MOTION_DURATION_MS.exit,
+          easing: EXIT_EASING,
+          useNativeDriver: true
+        })
+      ]).start(({ finished }) => {
+        if (finished) {
+          onExit(request.id);
+        }
+      });
+    } else {
+      opacity.setValue(0);
+      scale.setValue(DIALOG_SCALE_DELTA);
+      Animated.parallel([
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: MOTION_DURATION_MS.standard,
+          easing: ENTER_EASING,
+          useNativeDriver: true
+        }),
+        Animated.timing(scale, {
+          toValue: 1,
+          duration: MOTION_DURATION_MS.standard,
+          easing: ENTER_EASING,
+          useNativeDriver: true
+        })
+      ]).start();
+    }
+
+    return () => {
+      opacity.stopAnimation();
+      scale.stopAnimation();
+    };
+  }, [isClosing, modalReady, onExit, opacity, reduceMotion, request.id, scale]);
+
+  const resolve = useCallback(
+    (value: boolean) => {
+      if (hasResolvedRef.current) {
+        return;
       }
-    });
 
-    return () => progress.stopAnimation();
-  }, [isClosing, modalReady, onExit, progress, reduceMotion, request.id]);
+      hasResolvedRef.current = true;
+      resolveDialog(request.id, value);
+    },
+    [request.id]
+  );
 
-  const handleDismiss = () => resolveDialog(request.id, false);
-  const handleConfirm = (_event: GestureResponderEvent) =>
-    resolveDialog(request.id, true);
+  const handleDismiss = () => resolve(false);
+  const handleConfirm = (_event: GestureResponderEvent) => resolve(true);
+
+  const interactive = !isClosing && !hasResolvedRef.current;
 
   return (
     <Modal
@@ -99,10 +160,11 @@ function DialogView({ request, isClosing, onExit }: DialogViewProps) {
         style={{
           paddingVertical: verticalPadding
         }}
+        pointerEvents={interactive ? 'auto' : 'none'}
       >
         <Animated.View
           className="absolute inset-0"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', opacity: progress }}
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', opacity }}
         />
         <Pressable
           accessibilityLabel="Dismiss dialog"
@@ -115,7 +177,9 @@ function DialogView({ request, isClosing, onExit }: DialogViewProps) {
           className="bg-card border-border w-full self-center rounded-2xl border p-5"
           style={{
             maxWidth: 420,
-            opacity: progress
+            opacity,
+            transform: [{ scale }],
+            ...DIALOG_SHADOW
           }}
           onStartShouldSetResponder={() => true}
         >
@@ -134,6 +198,7 @@ function DialogView({ request, isClosing, onExit }: DialogViewProps) {
                 variant="secondary"
                 size="sm"
                 accessibilityLabel={request.cancelLabel}
+                disabled={!interactive}
                 onPress={handleDismiss}
               >
                 {request.cancelLabel}
@@ -143,6 +208,7 @@ function DialogView({ request, isClosing, onExit }: DialogViewProps) {
               variant={request.destructive ? 'destructive' : 'primary'}
               size="sm"
               accessibilityLabel={request.confirmLabel}
+              disabled={!interactive}
               onPress={handleConfirm}
             >
               {request.confirmLabel}
@@ -168,13 +234,22 @@ export function AlertDialogHost() {
   }, []);
 
   useEffect(() => {
-    if (request) {
-      setRenderedDialog({ request, isClosing: false });
-    } else {
-      setRenderedDialog(currentDialog =>
-        currentDialog ? { ...currentDialog, isClosing: true } : currentDialog
-      );
-    }
+    setRenderedDialog(currentDialog => {
+      if (request) {
+        if (
+          currentDialog?.request.id === request.id &&
+          !currentDialog.isClosing
+        ) {
+          return currentDialog;
+        }
+
+        return { request, isClosing: false };
+      }
+
+      return currentDialog
+        ? { ...currentDialog, isClosing: true }
+        : currentDialog;
+    });
   }, [request]);
 
   if (!renderedDialog) {
