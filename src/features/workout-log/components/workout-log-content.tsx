@@ -17,11 +17,25 @@ import { router } from 'expo-router';
 import { PlusIcon } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
-import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  FadeIn,
+  FadeInDown,
+  FadeOutUp,
+  ReduceMotion
+} from 'react-native-reanimated';
 
 const WORKOUT_LOG_PAST_MONTH_RANGE = 12;
-const selectedDayEntering = FadeInDown.duration(MOTION_DURATION_MS.standard);
-const selectedDayExiting = FadeOutUp.duration(MOTION_DURATION_MS.exit);
+const workoutLogEaseOut = Easing.bezier(0.23, 1, 0.32, 1);
+const workoutRowEntering = FadeInDown.duration(MOTION_DURATION_MS.standard)
+  .easing(workoutLogEaseOut)
+  .reduceMotion(ReduceMotion.System);
+const workoutRowExiting = FadeOutUp.duration(MOTION_DURATION_MS.exit)
+  .easing(workoutLogEaseOut)
+  .reduceMotion(ReduceMotion.System);
+const selectedDayEntering = FadeIn.duration(MOTION_DURATION_MS.standard)
+  .easing(workoutLogEaseOut)
+  .reduceMotion(ReduceMotion.System);
 
 function formatSelectedDate(dateKey: string): string {
   const [year, month, day] = dateKey.split('-').map(Number);
@@ -51,8 +65,8 @@ export function WorkoutLogContent() {
     ({ item }: { item: CompletedWorkoutLogRow }) => (
       <Animated.View
         key={`${selectedDateKey}-${item.workout.id}`}
-        entering={selectedDayEntering}
-        exiting={selectedDayExiting}
+        entering={workoutRowEntering}
+        exiting={workoutRowExiting}
       >
         <WorkoutLogRow
           workout={item.workout}
@@ -94,7 +108,6 @@ export function WorkoutLogContent() {
           key={selectedDateKey}
           className="mt-6 flex-row items-end justify-between gap-4"
           entering={selectedDayEntering}
-          exiting={selectedDayExiting}
         >
           <View>
             <Text variant="caption" tone="muted">
