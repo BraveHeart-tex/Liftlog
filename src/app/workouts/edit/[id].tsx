@@ -24,52 +24,37 @@ export default function HistoricalWorkoutEditScreen() {
     useHistoricalWorkoutEditScreen({ draftWorkoutId, sourceWorkoutId });
   const { saveDraft, discardDraft } = useHistoricalWorkoutEditActions();
 
-  const leaveDraft = useCallback(() => {
-    if (router.canGoBack()) {
-      router.back();
-
-      return;
-    }
-
-    router.replace('/(tabs)/log');
-  }, []);
-
   const discardEditDraft = useCallback(
     (hasExercisesLogged: boolean) => {
       if (!draftWorkout) {
-        leaveDraft();
-
-        return;
+        return true;
       }
 
       const discard = () => {
         discardDraft(draftWorkout.id);
-        leaveDraft();
+
+        return true;
       };
 
       if (!hasExercisesLogged) {
-        discard();
-
-        return;
+        return discard();
       }
 
-      void confirmDialog({
+      return confirmDialog({
         title: 'Discard changes?',
         message: `Your edits to "${draftWorkout.name}" will be removed.`,
         confirmLabel: 'Discard',
         destructive: true
       }).then(confirmed => {
-        if (confirmed) {
-          discard();
-        }
+        return confirmed ? discard() : false;
       });
     },
-    [discardDraft, draftWorkout, leaveDraft]
+    [discardDraft, draftWorkout]
   );
 
   const saveEditDraft = useCallback(() => {
     if (!draftWorkout || !sourceWorkout) {
-      return;
+      return false;
     }
 
     try {
@@ -84,19 +69,23 @@ export default function HistoricalWorkoutEditScreen() {
           variant: 'warning'
         });
 
-        return;
+        return false;
       }
 
       router.dismissTo({
         pathname: '/workouts/[id]',
         params: { id: savedWorkout.id }
       });
+
+      return true;
     } catch (error) {
       console.error('Failed to save workout edits', error);
       showSnackbar({
         message: 'Could not save edits. Please try again.',
         variant: 'danger'
       });
+
+      return false;
     }
   }, [draftWorkout, saveDraft, sourceWorkout]);
 

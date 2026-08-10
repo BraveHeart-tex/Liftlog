@@ -115,6 +115,7 @@ function RootNavigator() {
         options={{
           presentation: 'modal',
           animation: 'slide_from_bottom',
+          headerShown: true,
           title: 'Edit workout'
         }}
       />

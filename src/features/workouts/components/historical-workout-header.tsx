@@ -1,9 +1,9 @@
-import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import type { Workout } from '@/src/db/schema';
 import { formatWorkoutDate } from '@/src/lib/utils/date.utils';
+import { Stack } from 'expo-router';
 import { SaveIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
@@ -12,7 +12,6 @@ interface HistoricalWorkoutHeaderProps {
   workoutName: string;
   startedAt: Workout['startedAt'];
   canSave: boolean;
-  onDiscard: () => void;
   onSave: () => void;
 }
 
@@ -21,27 +20,29 @@ export function HistoricalWorkoutHeader({
   workoutName,
   startedAt,
   canSave,
-  onDiscard,
   onSave
 }: HistoricalWorkoutHeaderProps) {
   return (
-    <View>
-      <View className="border-border bg-card flex-row items-center justify-between gap-3 border-b px-4 pt-4 pb-3">
-        <BackButton onPress={onDiscard} />
-
-        <View className="flex-1">
-          <Text variant="h3">{title}</Text>
-        </View>
-
-        <Button
-          size="sm"
-          disabled={!canSave}
-          leftIcon={<Icon as={SaveIcon} tone="primaryForeground" size="sm" />}
-          onPress={onSave}
-        >
-          Save
-        </Button>
-      </View>
+    <>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          title,
+          headerBackVisible: true,
+          headerRight: () => (
+            <Button
+              size="sm"
+              disabled={!canSave}
+              leftIcon={
+                <Icon as={SaveIcon} tone="primaryForeground" size="sm" />
+              }
+              onPress={onSave}
+            >
+              Save
+            </Button>
+          )
+        }}
+      />
 
       <View className="px-4 pt-4 pb-2">
         <Text variant="h2">{workoutName}</Text>
@@ -49,6 +50,6 @@ export function HistoricalWorkoutHeader({
           {formatWorkoutDate(startedAt, 'full')}
         </Text>
       </View>
-    </View>
+    </>
   );
 }

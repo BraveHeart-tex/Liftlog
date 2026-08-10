@@ -20,52 +20,37 @@ export default function HistoricalWorkoutDraftScreen() {
     useHistoricalWorkoutDraftScreen(workoutId);
   const { saveDraft, discardDraft } = useHistoricalWorkoutDraftActions();
 
-  const leaveDraft = useCallback(() => {
-    if (router.canGoBack()) {
-      router.back();
-
-      return;
-    }
-
-    router.replace('/(tabs)/log');
-  }, []);
-
   const discardHistoricalWorkout = useCallback(
     (hasExercisesLogged: boolean) => {
       if (!historicalWorkout) {
-        leaveDraft();
-
-        return;
+        return true;
       }
 
       const discard = () => {
         discardDraft(historicalWorkout.id);
-        leaveDraft();
+
+        return true;
       };
 
       if (!hasExercisesLogged) {
-        discard();
-
-        return;
+        return discard();
       }
 
-      void confirmDialog({
+      return confirmDialog({
         title: 'Discard workout?',
         message: `"${historicalWorkout.name}" and its logged exercises and sets will be removed.`,
         confirmLabel: 'Discard',
         destructive: true
       }).then(confirmed => {
-        if (confirmed) {
-          discard();
-        }
+        return confirmed ? discard() : false;
       });
     },
-    [discardDraft, historicalWorkout, leaveDraft]
+    [discardDraft, historicalWorkout]
   );
 
   const saveHistoricalWorkout = useCallback(() => {
     if (!historicalWorkout) {
-      return;
+      return false;
     }
 
     try {
@@ -77,19 +62,23 @@ export default function HistoricalWorkoutDraftScreen() {
           variant: 'warning'
         });
 
-        return;
+        return false;
       }
 
       router.replace({
         pathname: '/workouts/[id]',
         params: { id: savedWorkout.id }
       });
+
+      return true;
     } catch (error) {
       console.error('Failed to save historical workout', error);
       showSnackbar({
         message: 'Could not save workout. Please try again.',
         variant: 'danger'
       });
+
+      return false;
     }
   }, [historicalWorkout, saveDraft]);
 

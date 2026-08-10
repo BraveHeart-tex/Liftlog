@@ -21,9 +21,10 @@ import { useSaveWorkoutExerciseEdits } from '@/src/features/workouts/hooks/use-r
 import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
 import { triggerWorkoutEditModeHaptics } from '@/src/features/workouts/workout.haptics';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { ArrowLeftIcon, CircleCheckBig, PlusIcon } from 'lucide-react-native';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Keyboard, View } from 'react-native';
 import Animated, {
   FadeIn,
@@ -43,8 +44,10 @@ interface ActiveWorkoutContentProps {
   activeWorkout: Workout;
   exerciseRows?: ExerciseListItem[];
   mode?: 'active' | 'historical' | 'historical-edit';
-  onDiscardHistoricalWorkout?: (hasWorkoutExercises: boolean) => void;
-  onSaveHistoricalWorkout?: () => void;
+  onDiscardHistoricalWorkout?: (
+    hasWorkoutExercises: boolean
+  ) => boolean | Promise<boolean>;
+  onSaveHistoricalWorkout?: () => boolean;
 }
 
 export function ActiveWorkoutContent({
@@ -86,9 +89,12 @@ export function ActiveWorkoutContent({
   );
   const finishWorkout = useFinishWorkout();
   const restTimerStatus = useRestTimerStore(state => state.status);
+  const navigation = useNavigation();
+  const isConfirmedExitRef = useRef(false);
 
   const workoutName = activeWorkout.name;
   const hasWorkoutExercises = workoutExerciseRows.length > 0;
+  const isHistoricalMode = mode === 'historical' || mode === 'historical-edit';
   const canFinishWorkout = completedSetCount > 0;
   const canSaveHistoricalWorkout = completedSetCount > 0;
   const shouldShowWorkoutChrome =
@@ -212,6 +218,41 @@ export function ActiveWorkoutContent({
     }
   }, [isEditingExercises, workoutExerciseRows.length]);
 
+  usePreventRemove(isHistoricalMode, ({ data }) => {
+    if (isConfirmedExitRef.current) {
+      navigation.dispatch(data.action);
+
+      return;
+    }
+
+    if (!onDiscardHistoricalWorkout) {
+      navigation.dispatch(data.action);
+
+      return;
+    }
+
+    void Promise.resolve(onDiscardHistoricalWorkout(hasWorkoutExercises)).then(
+      didDiscard => {
+        if (didDiscard) {
+          isConfirmedExitRef.current = true;
+          navigation.dispatch(data.action);
+        }
+      }
+    );
+  });
+
+  const saveHistoricalWorkout = useCallback(() => {
+    if (!onSaveHistoricalWorkout) {
+      return;
+    }
+
+    isConfirmedExitRef.current = true;
+
+    if (!onSaveHistoricalWorkout()) {
+      isConfirmedExitRef.current = false;
+    }
+  }, [onSaveHistoricalWorkout]);
+
   const headerContent = isEditingExercises ? (
     <ActiveWorkoutEditHeader
       workoutName={workoutName}
@@ -224,8 +265,7 @@ export function ActiveWorkoutContent({
       workoutName={workoutName}
       startedAt={activeWorkout.startedAt}
       canSave={canSaveHistoricalWorkout}
-      onDiscard={() => onDiscardHistoricalWorkout?.(hasWorkoutExercises)}
-      onSave={onSaveHistoricalWorkout ?? (() => undefined)}
+      onSave={saveHistoricalWorkout}
     />
   ) : (
     <ActiveWorkoutHeaderWithActions
@@ -335,21 +375,23 @@ export function ActiveWorkoutContent({
                   </Button>
                 </View>
 
-                <Button
-                  variant="primary"
-                  size="sm"
-                  disabled={!canFinishWorkout}
-                  leftIcon={
-                    <Icon
-                      as={CircleCheckBig}
-                      size="sm"
-                      tone="primaryForeground"
-                    />
-                  }
-                  onPress={confirmFinishWorkout}
-                >
-                  Finish
-                </Button>
+                {mode === 'active' ? (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    disabled={!canFinishWorkout}
+                    leftIcon={
+                      <Icon
+                        as={CircleCheckBig}
+                        size="sm"
+                        tone="primaryForeground"
+                      />
+                    }
+                    onPress={confirmFinishWorkout}
+                  >
+                    Finish
+                  </Button>
+                ) : null}
               </View>
             ) : null}
           </Animated.View>
