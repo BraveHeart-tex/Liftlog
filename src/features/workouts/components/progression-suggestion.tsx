@@ -1,4 +1,5 @@
 import { Icon } from '@/src/components/ui/icon';
+import { Skeleton } from '@/src/components/ui/skeleton';
 import { Text } from '@/src/components/ui/text';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import type { ProgressionSuggestionData } from '@/src/features/workouts/components/progression-suggestion.utils';
@@ -17,6 +18,29 @@ interface ProgressionSuggestionProps {
       }
     | undefined;
   suggestion: ProgressionSuggestionData | null;
+}
+
+export function ProgressionSuggestionSkeleton() {
+  return (
+    <View
+      accessible
+      accessibilityLabel="Loading progression suggestion"
+      accessibilityRole="progressbar"
+      accessibilityState={{ busy: true }}
+      className="border-border bg-card mb-5 rounded-lg border px-3 py-2"
+    >
+      <View className="flex-row items-center gap-2">
+        <Skeleton className="h-8 w-8 rounded-lg" />
+
+        <View className="min-w-0 flex-1 gap-1">
+          <Skeleton className="h-4 w-32 rounded-sm" />
+          <Skeleton className="h-3 w-24 rounded-sm" />
+        </View>
+
+        <Skeleton className="h-4 w-16 rounded-sm" />
+      </View>
+    </View>
+  );
 }
 
 export function ProgressionSuggestion({

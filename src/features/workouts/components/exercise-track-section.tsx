@@ -10,7 +10,10 @@ import {
   type KeyboardEvent,
   type LayoutRectangle
 } from 'react-native';
-import { ProgressionSuggestion } from '@/src/features/workouts/components/progression-suggestion';
+import {
+  ProgressionSuggestion,
+  ProgressionSuggestionSkeleton
+} from '@/src/features/workouts/components/progression-suggestion';
 import { SetForm } from '@/src/features/workouts/components/set-form/set-form';
 import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task.utils';
 import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
@@ -34,6 +37,7 @@ export function ExerciseTrackSection({
 }: ExerciseTrackTabProps) {
   const {
     trackingType,
+    isHistoryLoading,
     progressionSuggestion,
     historyPreview,
     latestHistorySets,
@@ -202,11 +206,15 @@ export function ExerciseTrackSection({
 
   return (
     <View className="w-full flex-1">
-      <ProgressionSuggestion
-        workoutExerciseId={item.workoutExercise.id}
-        historyPreview={historyPreview}
-        suggestion={progressionSuggestion}
-      />
+      {isHistoryLoading ? (
+        <ProgressionSuggestionSkeleton />
+      ) : (
+        <ProgressionSuggestion
+          workoutExerciseId={item.workoutExercise.id}
+          historyPreview={historyPreview}
+          suggestion={progressionSuggestion}
+        />
+      )}
       <ScrollView
         ref={scrollViewRef}
         className="flex-1"

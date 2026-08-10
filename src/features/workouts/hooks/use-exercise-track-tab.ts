@@ -30,6 +30,7 @@ export function useExerciseTrackTab(
   const exerciseId = item.workoutExercise.exerciseId;
   const trackingType = resolveTrackingType(item.exercise?.trackingType);
   const [history, setHistory] = useState<ExerciseHistory>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const isMountedRef = useRef(true);
   const refreshRequestIdRef = useRef(0);
 
@@ -66,17 +67,20 @@ export function useExerciseTrackTab(
           historyRows.setRows
         ).slice(0, PROGRESSION_HISTORY_LIMIT)
       );
+      setIsHistoryLoading(false);
     } catch (error) {
       if (!isMountedRef.current || refreshRequestIdRef.current !== requestId) {
         return;
       }
 
+      setIsHistoryLoading(false);
       console.error('Failed to load exercise track history', error);
     }
   }, [db, exerciseId, historyBeforeStartedAt]);
 
   useEffect(() => {
     isMountedRef.current = true;
+    setIsHistoryLoading(true);
     void refreshHistory();
 
     return () => {
@@ -116,6 +120,7 @@ export function useExerciseTrackTab(
 
   return {
     trackingType,
+    isHistoryLoading,
     progressionSuggestion,
     historyPreview,
     latestHistorySets: history[0]?.sets ?? [],
