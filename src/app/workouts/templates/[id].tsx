@@ -56,19 +56,13 @@ export default function WorkoutTemplateDetailScreen() {
 
   if (!detail.template) {
     return (
-      <Screen
-        withPadding={false}
-        contentClassName="items-center justify-center px-6"
-      >
-        <Text variant="h3" className="text-center">
-          Template not found
-        </Text>
-        <Text variant="small" tone="muted" className="mt-2 text-center">
-          This template may have been deleted.
-        </Text>
-        <BackButton variant="text" className="mt-6">
-          Back to workouts
-        </BackButton>
+      <Screen withPadding={false} contentClassName="px-6">
+        <EmptyState
+          kind="not-found"
+          title="Template not found"
+          description="This template may have been deleted."
+          actions={<BackButton variant="text">Back to workouts</BackButton>}
+        />
       </Screen>
     );
   }
@@ -323,11 +317,12 @@ function WorkoutTemplateDetailLoaded({
         {draftTemplateExercises.length === 0 ? (
           <View className="flex-1 px-4 pb-6">
             <EmptyState
+              kind="empty"
               layout="section"
               icon={ClipboardListIcon}
               title="No exercises added"
               description="Add exercises to this template or save it empty."
-              action={
+              actions={
                 <Button
                   variant="secondary"
                   size="sm"
@@ -451,9 +446,10 @@ function WorkoutTemplateDetailLoaded({
 
         {templateExerciseRows.length === 0 ? (
           <EmptyState
+            kind="empty"
             layout="section"
             title="No exercises saved in this template."
-            className="mt-3 py-8"
+            className="mt-3"
           />
         ) : (
           <View className="mt-3">

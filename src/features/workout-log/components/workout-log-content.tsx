@@ -155,11 +155,11 @@ export function WorkoutLogContent() {
         ListEmptyComponent={
           areWorkoutRowsLive ? (
             <EmptyState
+              kind="empty"
               layout="section"
               title="No workouts"
               description="Completed sessions for this day will show here."
-              className="border-border bg-card rounded-lg border border-dashed px-6 py-10"
-              action={
+              actions={
                 <Button
                   variant="secondary"
                   size="sm"

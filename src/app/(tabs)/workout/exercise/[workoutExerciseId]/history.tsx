@@ -1,4 +1,5 @@
 import { BackButton } from '@/src/components/ui/back-button';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
@@ -39,17 +40,13 @@ export default function WorkoutExerciseHistoryScreen() {
 
   if (!exercise) {
     return (
-      <Screen
-        withPadding={false}
-        contentClassName="items-center justify-center px-6"
-      >
-        <Text variant="h3" className="text-center">
-          Exercise not found
-        </Text>
-        <Text variant="small" tone="muted" className="mt-2 text-center">
-          This exercise may have been deleted.
-        </Text>
-        <BackButton variant="text" className="mt-4" />
+      <Screen withPadding={false} contentClassName="px-6">
+        <EmptyState
+          kind="not-found"
+          title="Exercise not found"
+          description="This exercise may have been deleted."
+          actions={<BackButton variant="text" />}
+        />
       </Screen>
     );
   }

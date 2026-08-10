@@ -1,4 +1,5 @@
 import { confirmDialog } from '@/src/components/ui/alert-dialog';
+import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
@@ -101,16 +102,13 @@ export default function ExerciseDetailScreen() {
 
   if (!exercise) {
     return (
-      <Screen
-        withPadding={false}
-        contentClassName="items-center justify-center px-6"
-      >
-        <Text variant="h3" className="text-center">
-          Exercise not found
-        </Text>
-        <Text variant="small" tone="muted" className="mt-2 text-center">
-          The exercise you&apos;re looking for doesn&apos;t exist.
-        </Text>
+      <Screen withPadding={false} contentClassName="px-6">
+        <EmptyState
+          kind="not-found"
+          title="Exercise not found"
+          description="The exercise you're looking for doesn't exist."
+          actions={<BackButton variant="text" />}
+        />
       </Screen>
     );
   }
@@ -267,10 +265,11 @@ export default function ExerciseDetailScreen() {
           />
         ) : !strongestSet || !mostSetsRecord ? (
           <EmptyState
+            kind="insufficient-data"
             layout="section"
             title="No records yet"
             description="Complete sets for this exercise to build your records."
-            className="mt-4 py-0"
+            className="mt-4"
           />
         ) : (
           <View className="mt-3">

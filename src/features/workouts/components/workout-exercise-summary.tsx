@@ -1,4 +1,5 @@
 import { Text } from '@/src/components/ui/text';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import type { Set } from '@/src/db';
 import {
   formatTrackingValue,
@@ -94,9 +95,12 @@ export function WorkoutExerciseSummary({
           </Text>
         ) : null
       ) : emptyText ? (
-        <Text variant="small" tone="muted">
-          {emptyText}
-        </Text>
+        <EmptyState
+          kind="empty"
+          layout="inline"
+          title={emptyText}
+          className="justify-start px-0 py-0"
+        />
       ) : null}
 
       {shouldShowSetDetails ? (

@@ -1,4 +1,5 @@
 import { Icon } from '@/src/components/ui/icon';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { Text } from '@/src/components/ui/text';
 import type { HealthConnectAvailability } from '@/src/features/steps/health-connect.service';
 import { HeartIcon } from 'lucide-react-native';
@@ -23,26 +24,25 @@ export function StepsUnavailableState({
         : 'This device does not currently support Health Connect step data.';
 
   return (
-    <View className="flex-1 justify-center pt-16 pb-16">
-      <View className="items-center">
+    <EmptyState
+      kind="unavailable"
+      visual={
         <View className="bg-card h-40 w-40 items-center justify-center rounded-full">
           <Icon as={HeartIcon} size={56} tone="mutedForeground" />
         </View>
-
-        <Text variant="h1" className="mt-7 text-center">
-          {title}
-        </Text>
-        <Text variant="body" tone="muted" className="mt-4 max-w-80 text-center">
-          {description}
-        </Text>
-      </View>
-
-      <View className="bg-card mt-10 rounded-lg px-5 py-4">
-        <Text variant="bodyMedium">Your workouts still work</Text>
-        <Text variant="small" tone="muted" className="mt-2">
-          You can keep logging workouts without step tracking.
-        </Text>
-      </View>
-    </View>
+      }
+      title={title}
+      description={description}
+      actions={
+        <View className="w-full">
+          <View className="bg-card rounded-lg px-5 py-4">
+            <Text variant="bodyMedium">Your workouts still work</Text>
+            <Text variant="small" tone="muted" className="mt-2">
+              You can keep logging workouts without step tracking.
+            </Text>
+          </View>
+        </View>
+      }
+    />
   );
 }

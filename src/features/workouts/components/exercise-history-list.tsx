@@ -70,38 +70,53 @@ function ExerciseHistoryWidgets({
           <Text variant="caption" tone="muted" className="w-20">
             Latest PR
           </Text>
-          <Text
-            variant="small"
-            className={cn(
-              'min-w-0 flex-1',
-              latestPersonalRecord && 'text-success'
+          <View className="min-w-0 flex-1">
+            {latestPersonalRecord ? (
+              <Text
+                variant="small"
+                className={cn(
+                  'min-w-0 flex-1',
+                  latestPersonalRecord && 'text-success'
+                )}
+              >
+                {formatPersonalRecordValue(latestPersonalRecord, weightUnit)}
+              </Text>
+            ) : (
+              <EmptyState
+                kind="insufficient-data"
+                layout="inline"
+                title="No PR yet"
+                className="justify-start px-0 py-0"
+              />
             )}
-          >
-            {latestPersonalRecord
-              ? formatPersonalRecordValue(latestPersonalRecord, weightUnit)
-              : 'No PR yet'}
-          </Text>
+          </View>
         </View>
 
         <View className="border-border flex-row items-start gap-3 border-t py-2">
           <Text variant="caption" tone="muted" className="w-20">
             Progression
           </Text>
-          <Text
-            variant="small"
-            className={cn(
-              'min-w-0 flex-1',
-              monthlyProgression && progressionToneClassName
-            )}
-          >
-            {monthlyProgression
-              ? formatRollingProgression(
+          <View className="min-w-0 flex-1">
+            {monthlyProgression ? (
+              <Text
+                variant="small"
+                className={cn('min-w-0 flex-1', progressionToneClassName)}
+              >
+                {formatRollingProgression(
                   trackingType,
                   monthlyProgression.delta,
                   weightUnit
-                )
-              : 'No prior 30-day data'}
-          </Text>
+                )}
+              </Text>
+            ) : (
+              <EmptyState
+                kind="insufficient-data"
+                layout="inline"
+                title="No prior 30-day data"
+                className="justify-start px-0 py-0"
+              />
+            )}
+          </View>
         </View>
       </View>
     </View>
@@ -190,6 +205,7 @@ export function ExerciseHistoryList({
       }
       ListEmptyComponent={
         <EmptyState
+          kind="empty"
           layout="section"
           title="No history yet"
           description="Complete sets to see your history here."

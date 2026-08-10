@@ -1,4 +1,5 @@
 import { BackButton } from '@/src/components/ui/back-button';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
@@ -30,14 +31,12 @@ export default function HistoricalWorkoutExerciseScreen() {
 
   if (!item || workout?.status !== HISTORICAL_WORKOUT_DRAFT_STATUS) {
     return (
-      <Screen
-        withPadding={false}
-        contentClassName="items-center justify-center px-6"
-      >
-        <Text variant="h3" className="text-center">
-          Exercise not found
-        </Text>
-        <BackButton variant="text" className="mt-4" />
+      <Screen withPadding={false} contentClassName="px-6">
+        <EmptyState
+          kind="not-found"
+          title="Exercise not found"
+          actions={<BackButton variant="text" />}
+        />
       </Screen>
     );
   }

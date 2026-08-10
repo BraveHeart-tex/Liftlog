@@ -1,5 +1,6 @@
 import { StyledFlashList } from '@/src/components/styled/flash-list';
 import { confirmDialog } from '@/src/components/ui/alert-dialog';
+import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
 import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
@@ -56,16 +57,13 @@ export default function WorkoutDetailScreen() {
 
   if (!detail.workout) {
     return (
-      <Screen
-        withPadding={false}
-        contentClassName="items-center justify-center px-6"
-      >
-        <Text variant="h3" className="text-center">
-          Workout not found
-        </Text>
-        <Text variant="small" tone="muted" className="mt-2 text-center">
-          This workout may have been deleted.
-        </Text>
+      <Screen withPadding={false} contentClassName="px-6">
+        <EmptyState
+          kind="not-found"
+          title="Workout not found"
+          description="This workout may have been deleted."
+          actions={<BackButton variant="text" />}
+        />
       </Screen>
     );
   }
@@ -298,9 +296,10 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
 
           {workoutExerciseRows.length === 0 ? (
             <EmptyState
+              kind="empty"
               layout="section"
               title="No exercises were logged in this workout."
-              className="mt-3 py-8"
+              className="mt-3"
             />
           ) : null}
         </View>

@@ -49,11 +49,12 @@ export const RecentWorkoutsSection = () => {
         </View>
       ) : (
         <EmptyState
+          kind="empty"
           layout="section"
           icon={DumbbellIcon}
           title="No workouts yet"
           description="Start your first session to see history here."
-          className="mt-3 rounded-lg px-6 py-10"
+          className="mt-3"
         />
       )}
     </View>

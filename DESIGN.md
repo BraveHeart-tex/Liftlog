@@ -284,6 +284,16 @@ Sheets use a Steel Plate or Clean White surface, 20px top corners, a short tonal
 
 Snackbars float above navigation with a restrained shadow, border, and slim Ignition Orange status rail. Set-entry fields animate between neutral, valid, committed, and error tones; a successful save may use one brief spring pulse. Haptics reinforce selected high-value actions without becoming constant noise.
 
+### Empty and Fallback States
+
+`EmptyState` is the canonical shell for empty, no-results, missing, error, unavailable, and insufficient-data states. Screens own the copy and recovery behavior; the shared component owns hierarchy, spacing, icon treatment, surfaces, and action placement.
+
+- **Kinds:** Use `empty` for a genuinely empty collection, `no-results` for a search or filter with no matches, `not-found` for a missing entity, `error` for a failed load or unexpected failure, `unavailable` for an unsupported capability, and `insufficient-data` when a feature needs more history or measurements.
+- **Layouts:** Use `page` for a route-level fallback, `section` for a list or content region, and `inline` for a compact value-level fallback. Keep `LoadingState` for loading and never render both for the same state.
+- **Actions:** Pass one or more local actions through `actions`; the deprecated singular `action` prop remains a compatibility bridge for older consumers. Actions should recover, reset, create, retry, or navigate to a safe destination. Do not move domain copy or route decisions into the primitive.
+- **Compositions:** Use `visual` for feature-specific visuals such as Health Connect or exercise search, while retaining the shared title, description, and action treatment. Preserve privacy, filter, chart, and capability-specific content in the owning feature.
+- **Accessibility:** State titles are headers and action groups are exposed as a toolbar. Every recovery action must have a clear button label and remain reachable at the platform touch-target size.
+
 ## Do's and Don'ts
 
 ### Do:

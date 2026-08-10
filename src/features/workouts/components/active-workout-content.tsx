@@ -370,9 +370,10 @@ export function ActiveWorkoutContent({
       {workoutExerciseLoadError ? (
         <View className="flex-1 px-4 pb-6">
           <EmptyState
+            kind="error"
             title="Could not load exercises"
             description="Something went wrong while loading this workout."
-            action={
+            actions={
               <Button
                 leftIcon={<Icon as={ArrowLeftIcon} tone="primaryForeground" />}
                 onPress={() => router.replace('/(tabs)/workout')}
@@ -400,9 +401,10 @@ export function ActiveWorkoutContent({
       ) : (
         <View className="flex-1 px-4 pb-6">
           <EmptyState
+            kind="empty"
             title="No exercises yet"
             description="Add your first exercise to get started."
-            action={
+            actions={
               <Button
                 leftIcon={<Icon as={PlusIcon} tone="primaryForeground" />}
                 onPress={openExercisePicker}

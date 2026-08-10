@@ -1,4 +1,5 @@
 import { Card, CardContent } from '@/src/components/ui/card';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { Text } from '@/src/components/ui/text';
 import {
   formatSteps,
@@ -26,11 +27,18 @@ export function StepsSummaryCards({
           <Text variant="small" tone="muted">
             Recent activity
           </Text>
-          <Text variant="h2" className="mt-2">
-            {hasRecentStatus
-              ? `${formatSteps(averageSteps)} / day`
-              : 'Not enough data'}
-          </Text>
+          {hasRecentStatus ? (
+            <Text variant="h2" className="mt-2">
+              {`${formatSteps(averageSteps)} / day`}
+            </Text>
+          ) : (
+            <EmptyState
+              kind="insufficient-data"
+              layout="inline"
+              title="Not enough data"
+              className="mt-2 justify-start px-0 py-0"
+            />
+          )}
           <Text variant="caption" tone="muted" className="mt-1">
             {hasRecentStatus
               ? `${goalPercent}% of ${formatSteps(stepGoal)} goal`

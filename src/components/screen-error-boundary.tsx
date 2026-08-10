@@ -1,8 +1,8 @@
 import { Component, type ReactNode } from 'react';
 import { View } from 'react-native';
 import { Button } from '@/src/components/ui/button';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
-import { Text } from '@/src/components/ui/text';
 import { RefreshCwIcon } from 'lucide-react-native';
 
 interface Props {
@@ -37,21 +37,23 @@ export class ScreenErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <View className="bg-background flex-1 items-center justify-center px-6">
-          <Text variant="h3" className="text-center">
-            Something went wrong
-          </Text>
-          <Text variant="small" tone="muted" className="mt-2 text-center">
-            An unexpected error occurred.
-          </Text>
-          <Button
-            variant="secondary"
-            className="mt-6"
-            leftIcon={<Icon as={RefreshCwIcon} tone="secondaryForeground" />}
-            onPress={this.handleReset}
-          >
-            Try again
-          </Button>
+        <View className="bg-background flex-1">
+          <EmptyState
+            kind="error"
+            title="Something went wrong"
+            description="An unexpected error occurred."
+            actions={
+              <Button
+                variant="secondary"
+                leftIcon={
+                  <Icon as={RefreshCwIcon} tone="secondaryForeground" />
+                }
+                onPress={this.handleReset}
+              >
+                Try again
+              </Button>
+            }
+          />
         </View>
       );
     }

@@ -1,5 +1,6 @@
 import { StyledFlatList } from '@/src/components/styled/flat-list';
 import { Button } from '@/src/components/ui/button';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { Input } from '@/src/components/ui/input';
 import { LoadingState } from '@/src/components/ui/loading-state';
@@ -146,59 +147,62 @@ export default function ExercisesScreen() {
           isLoadingList ? (
             <LoadingState label="Loading exercises..." className="min-h-80" />
           ) : (
-            <View className="items-center px-2 pt-16 pb-10">
-              <View className="border-border/60 bg-card h-28 w-28 items-center justify-center rounded-full border">
-                <View className="bg-muted h-20 w-20 items-center justify-center rounded-full">
-                  <Icon as={SearchXIcon} size={28} tone="mutedForeground" />
+            <EmptyState
+              kind={
+                exerciseLoadError
+                  ? 'error'
+                  : hasActiveSearchOrFilter
+                    ? 'no-results'
+                    : 'empty'
+              }
+              layout="section"
+              visual={
+                <View className="border-border/60 bg-card h-28 w-28 items-center justify-center rounded-full border">
+                  <View className="bg-muted h-20 w-20 items-center justify-center rounded-full">
+                    <Icon as={SearchXIcon} size={28} tone="mutedForeground" />
+                  </View>
                 </View>
-              </View>
-
-              <Text variant="h2" className="mt-8 text-center">
-                {emptyTitle}
-              </Text>
-              <Text
-                variant="body"
-                tone="muted"
-                className="mt-4 max-w-80 text-center"
-              >
-                {emptyDescription}
-              </Text>
-
-              <View className="mt-10 w-full gap-4">
-                <Button
-                  size="md"
-                  fullWidth
-                  onPress={() => {
-                    router.navigate('/exercises/new');
-                    setQuery('');
-                    setSelectedFilter('all');
-                  }}
-                  leftIcon={
-                    <Icon
-                      as={PlusIcon}
-                      size={iconSizes.md}
-                      tone="primaryForeground"
-                    />
-                  }
-                >
-                  Create Custom Exercise
-                </Button>
-
-                {hasActiveSearchOrFilter ? (
+              }
+              title={emptyTitle}
+              description={emptyDescription}
+              className="px-2 pt-16 pb-10"
+              actions={
+                <View className="w-full gap-4">
                   <Button
-                    variant="ghost"
+                    size="md"
                     fullWidth
-                    leftIcon={<Icon as={SearchXIcon} tone="foreground" />}
                     onPress={() => {
+                      router.navigate('/exercises/new');
                       setQuery('');
                       setSelectedFilter('all');
                     }}
+                    leftIcon={
+                      <Icon
+                        as={PlusIcon}
+                        size={iconSizes.md}
+                        tone="primaryForeground"
+                      />
+                    }
                   >
-                    Clear Search
+                    Create Custom Exercise
                   </Button>
-                ) : null}
-              </View>
-            </View>
+
+                  {hasActiveSearchOrFilter ? (
+                    <Button
+                      variant="ghost"
+                      fullWidth
+                      leftIcon={<Icon as={SearchXIcon} tone="foreground" />}
+                      onPress={() => {
+                        setQuery('');
+                        setSelectedFilter('all');
+                      }}
+                    >
+                      Clear Search
+                    </Button>
+                  ) : null}
+                </View>
+              }
+            />
           )
         }
       />

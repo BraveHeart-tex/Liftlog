@@ -515,6 +515,11 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
           windowSize={7}
           ListEmptyComponent={
             <EmptyState
+              kind={
+                trimmedQuery.length > 0 || selectedFilter !== 'all'
+                  ? 'no-results'
+                  : 'empty'
+              }
               layout="section"
               title={emptyTitle}
               description={emptyDescription}

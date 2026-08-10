@@ -40,6 +40,7 @@ export class DatabaseErrorBoundary extends Component<Props, State> {
       return (
         <View className="bg-background p-safe flex-1">
           <EmptyState
+            kind="error"
             className="bg-background"
             title={
               exerciseNameConflict

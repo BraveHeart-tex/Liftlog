@@ -1,4 +1,5 @@
 import { Card, CardContent } from '@/src/components/ui/card';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Text } from '@/src/components/ui/text';
 import { ExerciseProgressChartBody } from '@/src/features/exercises/components/exercise-progress-chart-body';
@@ -88,14 +89,13 @@ export function ExerciseProgressChart({
             </View>
 
             {points.length < 2 ? (
-              <View className="border-border mt-4 min-h-40 items-center justify-center rounded-lg border border-dashed px-6">
-                <Text variant="h3" className="text-center">
-                  Not enough data yet
-                </Text>
-                <Text variant="small" tone="muted" className="mt-2 text-center">
-                  Log this exercise in two completed workouts to see a trend.
-                </Text>
-              </View>
+              <EmptyState
+                kind="insufficient-data"
+                layout="section"
+                title="Not enough data yet"
+                description="Log this exercise in two completed workouts to see a trend."
+                className="border-border mt-4 min-h-40 rounded-lg border border-dashed"
+              />
             ) : (
               <ExerciseProgressChartBody
                 points={points}

@@ -101,9 +101,10 @@ export default function HistoricalWorkoutEditScreen() {
     return (
       <Screen withPadding={false} contentClassName="px-6">
         <EmptyState
+          kind="not-found"
           title="Workout not found"
           description="This edit draft may have already been saved or discarded."
-          action={
+          actions={
             <Button
               leftIcon={<Icon as={ArrowLeftIcon} tone="primaryForeground" />}
               onPress={() => router.replace('/(tabs)/log')}

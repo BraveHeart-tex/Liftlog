@@ -55,12 +55,13 @@ export const WorkoutTemplatesSection = () => {
 
       {templates.length === 0 ? (
         <EmptyState
+          kind="empty"
           layout="section"
           icon={ClipboardListIcon}
           title="No templates yet"
           description="Save a routine to start faster next time."
           className="mt-3"
-          action={
+          actions={
             <Button
               variant="secondary"
               size="sm"

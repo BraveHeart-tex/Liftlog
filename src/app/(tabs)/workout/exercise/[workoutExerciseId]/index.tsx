@@ -1,4 +1,5 @@
 import { BackButton } from '@/src/components/ui/back-button';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
@@ -40,14 +41,12 @@ export default function ActiveWorkoutExerciseScreen() {
 
   if (!item) {
     return (
-      <Screen
-        withPadding={false}
-        contentClassName="items-center justify-center px-6"
-      >
-        <Text variant="h3" className="text-center">
-          Exercise not found
-        </Text>
-        <BackButton variant="text" className="mt-4" />
+      <Screen withPadding={false} contentClassName="px-6">
+        <EmptyState
+          kind="not-found"
+          title="Exercise not found"
+          actions={<BackButton variant="text" />}
+        />
       </Screen>
     );
   }

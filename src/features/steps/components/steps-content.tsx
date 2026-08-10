@@ -165,10 +165,10 @@ export function StepsContent() {
         }
         ListEmptyComponent={
           <EmptyState
+            kind="empty"
             layout="section"
             title="No step history"
             description="Sync steps to fill this in."
-            className="border-border bg-card rounded-lg border border-dashed px-6 py-10"
           />
         }
         ListFooterComponent={

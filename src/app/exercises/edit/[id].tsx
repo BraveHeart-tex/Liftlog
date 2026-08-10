@@ -1,4 +1,5 @@
 import { Button } from '@/src/components/ui/button';
+import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { Screen } from '@/src/components/ui/screen';
@@ -14,7 +15,7 @@ import {
 import { getRouteParamId } from '@/src/lib/utils/route.utils';
 import { triggerHapticSuccess } from '@/src/lib/haptics/haptics';
 import { router, useLocalSearchParams } from 'expo-router';
-import { SaveIcon } from 'lucide-react-native';
+import { ArrowLeftIcon, SaveIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Keyboard, View, type ScrollView } from 'react-native';
 
@@ -157,32 +158,42 @@ export default function EditExerciseScreen() {
 
   if (!exercise) {
     return (
-      <Screen
-        withPadding={false}
-        contentClassName="items-center justify-center px-6"
-      >
-        <Text variant="h3" className="text-center">
-          Exercise not found
-        </Text>
-        <Text variant="small" tone="muted" className="mt-2 text-center">
-          The exercise you&apos;re looking for doesn&apos;t exist.
-        </Text>
+      <Screen withPadding={false} contentClassName="px-6">
+        <EmptyState
+          kind="not-found"
+          title="Exercise not found"
+          description="The exercise you're looking for doesn't exist."
+          actions={
+            <Button
+              variant="secondary"
+              leftIcon={<Icon as={ArrowLeftIcon} tone="secondaryForeground" />}
+              onPress={() => router.back()}
+            >
+              Go back
+            </Button>
+          }
+        />
       </Screen>
     );
   }
 
   if (exercise.isCustom !== 1) {
     return (
-      <Screen
-        withPadding={false}
-        contentClassName="items-center justify-center px-6"
-      >
-        <Text variant="h3" className="text-center">
-          Exercise can&apos;t be edited
-        </Text>
-        <Text variant="small" tone="muted" className="mt-2 text-center">
-          Only custom exercises support detail editing.
-        </Text>
+      <Screen withPadding={false} contentClassName="px-6">
+        <EmptyState
+          kind="unavailable"
+          title="Exercise can't be edited"
+          description="Only custom exercises support detail editing."
+          actions={
+            <Button
+              variant="secondary"
+              leftIcon={<Icon as={ArrowLeftIcon} tone="secondaryForeground" />}
+              onPress={() => router.back()}
+            >
+              Go back
+            </Button>
+          }
+        />
       </Screen>
     );
   }
