@@ -16,7 +16,7 @@ import { useSetFormController } from '@/src/features/workouts/components/set-for
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { PlusIcon } from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { View, type LayoutChangeEvent } from 'react-native';
 import Animated, {
   Easing,
@@ -41,6 +41,9 @@ const formEaseOut = Easing.bezier(0.23, 1, 0.32, 1);
 const formStateEntering = FadeIn.duration(MOTION_DURATION_MS.standard).easing(
   formEaseOut
 );
+const formStateEnteringAfterEmpty = FadeIn.delay(MOTION_DURATION_MS.exit)
+  .duration(MOTION_DURATION_MS.standard)
+  .easing(formEaseOut);
 const formStateExiting = FadeOut.duration(MOTION_DURATION_MS.exit).easing(
   formEaseOut
 );
@@ -136,11 +139,17 @@ export function SetForm({
     onDeleteSet
   });
   const hasRows = controller.rows.length > 0;
+  const previousHasRowsRef = useRef(hasRows);
+  const isEnteringFilledState = hasRows && !previousHasRowsRef.current;
   const layoutTransition = reduceMotion ? undefined : formLayout;
 
   useEffect(() => {
     setShouldAnimateStateChange(true);
   }, []);
+
+  useEffect(() => {
+    previousHasRowsRef.current = hasRows;
+  }, [hasRows]);
 
   return (
     <View className="flex-1">
@@ -154,6 +163,7 @@ export function SetForm({
             weightUnit={weightUnit}
             fieldColors={animatedFieldColors}
             hasPendingCopy={controller.hasPendingCopy}
+            shouldDelayEntering={isEnteringFilledState && !reduceMotion}
             onFieldChange={controller.updateFieldValue}
             onCommit={controller.commitRow}
             onCopy={controller.copyRow}
@@ -168,7 +178,13 @@ export function SetForm({
       {hasRows ? (
         <Animated.View
           key="controls"
-          entering={shouldAnimateStateChange ? formStateEntering : undefined}
+          entering={
+            shouldAnimateStateChange
+              ? isEnteringFilledState && !reduceMotion
+                ? formStateEnteringAfterEmpty
+                : formStateEntering
+              : undefined
+          }
           exiting={shouldAnimateStateChange ? formStateExiting : undefined}
           layout={layoutTransition}
         >
@@ -205,10 +221,8 @@ export function SetForm({
               : undefined
           }
           exiting={
-            shouldAnimateStateChange
-              ? reduceMotion
-                ? formStateExiting
-                : emptyStateExiting
+            shouldAnimateStateChange && !reduceMotion
+              ? emptyStateExiting
               : undefined
           }
           layout={layoutTransition}
