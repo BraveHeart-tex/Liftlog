@@ -37,10 +37,8 @@ export function useWorkoutStart() {
   const activeWorkoutId = activeWorkout?.id;
 
   useEffect(() => {
-    if (activeWorkoutId) {
-      router.prefetch(activeWorkoutRoute);
-    }
-  }, [activeWorkoutId]);
+    router.prefetch(activeWorkoutRoute);
+  }, []);
 
   const startWorkout = useCallback(() => {
     withDomainFlowSpan(

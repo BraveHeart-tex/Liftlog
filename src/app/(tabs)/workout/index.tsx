@@ -6,12 +6,31 @@ import { ActiveWorkoutSummaryCard } from '@/src/features/workouts/components/act
 import { RecentWorkoutsSection } from '@/src/features/workouts/components/recent-workouts-section';
 import { WorkoutTemplatesSection } from '@/src/features/workouts/components/workout-templates-section';
 import { useWorkoutStart } from '@/src/features/workouts/hooks/use-workout-start';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { DumbbellIcon, SettingsIcon } from 'lucide-react-native';
+import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 
 export default function WorkoutStartScreen() {
   const { activeWorkout, startWorkout, resumeWorkout } = useWorkoutStart();
+  const [isStartingWorkout, setIsStartingWorkout] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsStartingWorkout(false);
+    }, [])
+  );
+
+  const handleStartWorkout = useCallback(() => {
+    if (isStartingWorkout) {
+      return;
+    }
+
+    // Keep the CTA mounted while the live query reflects the newly-created
+    // workout. The active route is still transitioning in above this screen.
+    setIsStartingWorkout(true);
+    startWorkout();
+  }, [isStartingWorkout, startWorkout]);
 
   return (
     <Screen scroll keyboardShouldPersistTaps="handled">
@@ -27,7 +46,7 @@ export default function WorkoutStartScreen() {
         </Button>
       </View>
 
-      {activeWorkout ? (
+      {activeWorkout && !isStartingWorkout ? (
         <View>
           <ActiveWorkoutSummaryCard
             workout={activeWorkout}
@@ -40,7 +59,8 @@ export default function WorkoutStartScreen() {
             className="mt-6"
             leftIcon={<Icon as={DumbbellIcon} tone="primaryForeground" />}
             fullWidth
-            onPress={startWorkout}
+            disabled={isStartingWorkout}
+            onPress={handleStartWorkout}
           >
             Start Workout
           </Button>
