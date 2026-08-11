@@ -5,14 +5,14 @@ import {
   ReorderableList,
   type ReorderableListRenderItem
 } from '@/src/components/ui/reorderable-list';
-import { Text } from '@/src/components/ui/text';
 import type { WorkoutExercise } from '@/src/db/schema';
 import { ActiveWorkoutExerciseEditRow } from '@/src/features/workouts/components/active-workout-exercise-edit-row';
 import { PairWithNextControl } from '@/src/features/workouts/components/pair-with-next-control';
+import { SupersetExerciseGroup } from '@/src/features/workouts/components/superset-exercise-group';
 import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
 import {
   flattenSupersetBlocks,
-  formatSupersetLetter,
+  formatSupersetLabel,
   groupSupersetBlocks,
   linkAdjacentSupersetRows,
   normalizeSupersetRows,
@@ -68,7 +68,7 @@ export const ActiveWorkoutExerciseEditList = memo(
         orderedRows
           .filter(block => block.supersetId)
           .map(
-            block => [block.id, formatSupersetLetter(supersetIndex++)] as const
+            block => [block.id, formatSupersetLabel(supersetIndex++)] as const
           )
       );
     }, [orderedRows]);
@@ -126,83 +126,34 @@ export const ActiveWorkoutExerciseEditList = memo(
         const supersetLabel = item.supersetId
           ? supersetLabelByBlockId.get(item.id)
           : undefined;
+        const removeRow = (rowId: WorkoutExercise['id']) => {
+          const nextWorkoutExerciseRows = normalizeSupersetRows(
+            flatRows
+              .filter(nextRow => nextRow.workoutExercise.id !== rowId)
+              .map(nextRow => nextRow.workoutExercise)
+          );
 
-        return (
-          <View className="py-2">
-            <View className="border-border border-b pb-2">
-              {item.supersetId ? (
-                <View className="mb-1 flex-row items-center justify-between gap-2">
-                  <View className="flex-row items-center gap-2">
-                    {shouldShowDragHandle ? (
-                      <ReorderableHandle>
-                        {({ onPressIn }) => (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            disabled={isDragging}
-                            accessibilityLabel={`Drag Superset ${supersetLabel}`}
-                            onPressIn={onPressIn}
-                          >
-                            <Icon
-                              as={GripIcon}
-                              size={iconSizes.sm}
-                              tone="mutedForeground"
-                            />
-                          </Button>
-                        )}
-                      </ReorderableHandle>
-                    ) : null}
-                    <Text variant="caption" tone="muted">
-                      Superset {supersetLabel}
-                    </Text>
-                  </View>
-                  <View className="shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="min-h-0 px-0 py-0"
-                      textClassName="text-danger text-sm"
-                      leftIcon={
-                        <Icon
-                          as={UnlinkIcon}
-                          size={iconSizes.xs}
-                          tone="danger"
-                        />
-                      }
-                      onPress={() => {
-                        const nextWorkoutExerciseRows = unlinkSupersetRows(
-                          flatRows.map(row => row.workoutExercise),
-                          item.supersetId!
-                        );
+          onChangeRows(nextWorkoutExerciseRows);
+          setRowsFromWorkoutExercises(flatRows, nextWorkoutExerciseRows);
+        };
 
-                        onChangeRows(nextWorkoutExerciseRows);
-                        setRowsFromWorkoutExercises(
-                          flatRows,
-                          nextWorkoutExerciseRows
-                        );
-                      }}
-                    >
-                      Unlink
-                    </Button>
-                  </View>
-                </View>
-              ) : null}
-
-              {item.rows.map(row => (
-                <ActiveWorkoutExerciseEditRow
-                  key={row.workoutExercise.id}
-                  item={row}
-                  isDragging={isDragging}
-                  label={supersetLabel}
-                  onRemove={() => {
-                    const nextWorkoutExerciseRows = normalizeSupersetRows(
-                      flatRows
-                        .filter(
-                          nextRow =>
-                            nextRow.workoutExercise.id !==
-                            row.workoutExercise.id
-                        )
-                        .map(nextRow => nextRow.workoutExercise)
+        const content = item.supersetId ? (
+          <SupersetExerciseGroup
+            supersetLabel={supersetLabel ?? 'Superset'}
+            renderHeaderActions={
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="min-h-0 px-0 py-0"
+                  textClassName="text-danger text-sm"
+                  leftIcon={
+                    <Icon as={UnlinkIcon} size={iconSizes.xs} tone="danger" />
+                  }
+                  onPress={() => {
+                    const nextWorkoutExerciseRows = unlinkSupersetRows(
+                      flatRows.map(row => row.workoutExercise),
+                      item.supersetId!
                     );
 
                     onChangeRows(nextWorkoutExerciseRows);
@@ -211,12 +162,63 @@ export const ActiveWorkoutExerciseEditList = memo(
                       nextWorkoutExerciseRows
                     );
                   }}
-                  shouldShowDragHandle={
-                    shouldShowDragHandle && !item.supersetId
-                  }
+                >
+                  Unlink
+                </Button>
+                {shouldShowDragHandle ? (
+                  <ReorderableHandle>
+                    {({ onPressIn }) => (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={isDragging}
+                        accessibilityLabel={`Drag Superset ${supersetLabel}`}
+                        onPressIn={onPressIn}
+                      >
+                        <Icon
+                          as={GripIcon}
+                          size={iconSizes.sm}
+                          tone="mutedForeground"
+                        />
+                      </Button>
+                    )}
+                  </ReorderableHandle>
+                ) : null}
+              </>
+            }
+            renderRow={({ label, position }) => {
+              const row = item.rows[position - 1];
+
+              return (
+                <ActiveWorkoutExerciseEditRow
+                  key={row.workoutExercise.id}
+                  item={row}
+                  isDragging={false}
+                  className="px-3"
+                  label={label}
+                  onRemove={() => removeRow(row.workoutExercise.id)}
+                  shouldShowDragHandle={false}
                 />
-              ))}
-            </View>
+              );
+            }}
+          />
+        ) : (
+          <View className="border-border border-b pb-2">
+            {item.rows.map(row => (
+              <ActiveWorkoutExerciseEditRow
+                key={row.workoutExercise.id}
+                item={row}
+                isDragging={isDragging}
+                onRemove={() => removeRow(row.workoutExercise.id)}
+                shouldShowDragHandle={shouldShowDragHandle}
+              />
+            ))}
+          </View>
+        );
+
+        return (
+          <View className="py-2">
+            {content}
 
             {canLinkWithNext ? (
               <PairWithNextControl

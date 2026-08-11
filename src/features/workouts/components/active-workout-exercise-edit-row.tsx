@@ -77,16 +77,12 @@ export function ActiveWorkoutExerciseEditRow({
       )}
     >
       {label ? (
-        <View className="bg-muted h-8 w-8 items-center justify-center rounded-lg">
+        <View className="bg-muted h-8 w-8 items-center justify-center rounded-full">
           <Text variant="caption" tone="muted">
             {label}
           </Text>
         </View>
       ) : null}
-
-      <Button variant="ghost" size="icon" onPress={handleRemoveExercise}>
-        <Icon as={TrashIcon} size={iconSizes.sm} tone="danger" />
-      </Button>
 
       <View className="flex-1">
         <Text variant="bodyMedium" numberOfLines={1}>
@@ -97,21 +93,31 @@ export function ActiveWorkoutExerciseEditRow({
         </Text>
       </View>
 
-      {shouldShowDragHandle && (
-        <ReorderableHandle>
-          {({ onPressIn }) => (
-            <Button
-              variant="ghost"
-              size="icon"
-              disabled={isDragging}
-              accessibilityLabel="Drag exercise"
-              onPressIn={onPressIn}
-            >
-              <Icon as={GripIcon} size={iconSizes.sm} tone="mutedForeground" />
-            </Button>
-          )}
-        </ReorderableHandle>
-      )}
+      <View className="shrink-0 flex-row items-center gap-1">
+        <Button variant="ghost" size="icon" onPress={handleRemoveExercise}>
+          <Icon as={TrashIcon} size={iconSizes.sm} tone="danger" />
+        </Button>
+
+        {shouldShowDragHandle ? (
+          <ReorderableHandle>
+            {({ onPressIn }) => (
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={isDragging}
+                accessibilityLabel="Drag exercise"
+                onPressIn={onPressIn}
+              >
+                <Icon
+                  as={GripIcon}
+                  size={iconSizes.sm}
+                  tone="mutedForeground"
+                />
+              </Button>
+            )}
+          </ReorderableHandle>
+        ) : null}
+      </View>
     </View>
   );
 }
