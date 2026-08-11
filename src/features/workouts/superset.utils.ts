@@ -32,6 +32,17 @@ export function formatSupersetLabel(index: number): string {
   return `Superset ${formatSupersetLetter(index)}`;
 }
 
+export function getSupersetLetter(label: string): string {
+  return label.replace(/^Superset\s+/, '').trim() || label;
+}
+
+export function formatSupersetExerciseLabel(
+  supersetLetter: string,
+  position: 1 | 2
+): string {
+  return `${supersetLetter}${position}`;
+}
+
 export function normalizeSupersetRows<T extends SupersetRow>(rows: T[]): T[] {
   const counts = new Map<string, number>();
   const validSupersetIds = new Set<string>();

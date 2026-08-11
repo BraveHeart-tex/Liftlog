@@ -4,7 +4,7 @@ import type { ExerciseListItem } from '@/src/features/exercises/exercise.reposit
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import { ActiveWorkoutExerciseCard } from '@/src/features/workouts/components/active-workout-exercise-card';
 import { ActiveWorkoutExerciseEditList } from '@/src/features/workouts/components/active-workout-exercise-edit-list';
-import { SupersetIndicator } from '@/src/features/workouts/components/superset-indicator';
+import { SupersetExerciseGroup } from '@/src/features/workouts/components/superset-exercise-group';
 import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
 import { useActiveWorkoutExerciseList } from '@/src/features/workouts/hooks/use-active-workout-exercise-list';
 import {
@@ -13,7 +13,6 @@ import {
 } from '@/src/features/workouts/superset.utils';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { useMemo } from 'react';
-import { View } from 'react-native';
 import Animated, { Keyframe } from 'react-native-reanimated';
 
 const listEntering = new Keyframe({
@@ -169,25 +168,23 @@ export function ActiveWorkoutExerciseList({
           const supersetLabel = supersetLabelByBlockId.get(block.id);
 
           return (
-            <View key={block.id} className="mt-4">
-              <ActiveWorkoutExerciseCard
-                item={block.rows[0]}
-                mode={mode}
-                supersetLabel={supersetLabel}
-                weightUnit={weightUnit}
-                onLongPress={onEnterEditMode}
-              />
-
-              <SupersetIndicator />
-
-              <ActiveWorkoutExerciseCard
-                item={block.rows[1]}
-                mode={mode}
-                supersetLabel={supersetLabel}
-                weightUnit={weightUnit}
-                onLongPress={onEnterEditMode}
-              />
-            </View>
+            <SupersetExerciseGroup
+              key={block.id}
+              className="mt-4"
+              supersetLabel={supersetLabel ?? 'Superset'}
+              renderRow={({ label, position }) => (
+                <ActiveWorkoutExerciseCard
+                  key={label}
+                  item={block.rows[position - 1]}
+                  mode={mode}
+                  supersetLabel={supersetLabel}
+                  supersetRowLabel={label}
+                  variant="grouped"
+                  weightUnit={weightUnit}
+                  onLongPress={onEnterEditMode}
+                />
+              )}
+            />
           );
         })}
       </StyledScrollView>
