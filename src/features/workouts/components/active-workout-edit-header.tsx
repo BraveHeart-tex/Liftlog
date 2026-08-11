@@ -2,7 +2,7 @@ import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { Stack } from 'expo-router';
-import { CheckIcon, XIcon } from 'lucide-react-native';
+import { XIcon } from 'lucide-react-native';
 import { Fragment } from 'react';
 import { View } from 'react-native';
 
@@ -29,22 +29,15 @@ export function ActiveWorkoutEditHeader({
           headerBackVisible: false,
           headerTitleAlign: 'center',
           headerLeft: () => (
-            <Button
-              variant="ghost"
-              size="sm"
-              leftIcon={<Icon as={XIcon} tone="foreground" size="sm" />}
-              onPress={onCancel}
-            >
-              Cancel
+            <Button variant="ghost" size="sm" onPress={onCancel}>
+              <Icon as={XIcon} tone="foreground" size="lg" />
             </Button>
           ),
           headerRight: () => (
             <Button
-              variant="ghost"
               size="sm"
               disabled={!canSave}
               loading={isSaving}
-              leftIcon={<Icon as={CheckIcon} tone="foreground" size="sm" />}
               onPress={onSave}
             >
               Save
