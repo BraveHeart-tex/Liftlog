@@ -14,7 +14,7 @@ import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/cr
 import { DiscardWorkoutSheet } from '@/src/features/workouts/components/discard-workout-sheet';
 import { NewTemplateExerciseList } from '@/src/features/workouts/components/new-template-exercise-list';
 import { RenameTemplateSheet } from '@/src/features/workouts/components/rename-template-sheet';
-import { SupersetIndicator } from '@/src/features/workouts/components/superset-indicator';
+import { SupersetExerciseGroup } from '@/src/features/workouts/components/superset-exercise-group';
 import { WorkoutTemplateActionsSheet } from '@/src/features/workouts/components/workout-template-actions-sheet';
 import { useWorkoutTemplateDetail } from '@/src/features/workouts/hooks/use-workout-template-detail';
 import { useWorkoutTemplateExerciseDraft } from '@/src/features/workouts/hooks/use-workout-template-exercise-draft';
@@ -459,12 +459,11 @@ function WorkoutTemplateDetailLoaded({
           <View className="mt-3">
             {supersetBlocks.map((block, blockIndex) => {
               const renderExerciseCard = (
-                templateExercise: (typeof templateExerciseRows)[number]
+                templateExercise: (typeof templateExerciseRows)[number],
+                label?: string,
+                isGrouped = false
               ) => {
                 const exercise = exerciseById.get(templateExercise.exerciseId);
-                const supersetLabel = supersetLabelByTemplateExerciseId.get(
-                  templateExercise.id
-                );
                 const exerciseIndex =
                   templateExerciseIndexById.get(templateExercise.id) ?? 0;
 
@@ -473,23 +472,14 @@ function WorkoutTemplateDetailLoaded({
                     key={templateExercise.id}
                     onLongPress={enterExerciseEditModeFromLongPress}
                   >
-                    <Card>
-                      <CardContent className="flex-row items-center gap-3">
-                        <View className="bg-muted h-9 w-9 items-center justify-center rounded-lg">
-                          <Text variant="caption" tone="muted">
-                            {exerciseIndex + 1}
+                    {isGrouped ? (
+                      <View className="flex-row items-center gap-3 px-3 py-3">
+                        <View className="bg-muted h-9 w-9 items-center justify-center rounded-full">
+                          <Text variant="bodyMedium" tone="muted">
+                            {label}
                           </Text>
                         </View>
                         <View className="flex-1">
-                          {supersetLabel ? (
-                            <Text
-                              variant="caption"
-                              tone="muted"
-                              className="mb-1"
-                            >
-                              {supersetLabel}
-                            </Text>
-                          ) : null}
                           <Text variant="bodyMedium">
                             {exercise?.name ?? 'Unknown exercise'}
                           </Text>
@@ -497,21 +487,54 @@ function WorkoutTemplateDetailLoaded({
                             {exercise?.category ?? 'Exercise'}
                           </Text>
                         </View>
-                      </CardContent>
-                    </Card>
+                      </View>
+                    ) : (
+                      <Card>
+                        <CardContent className="flex-row items-center gap-3">
+                          <View className="bg-muted h-9 w-9 items-center justify-center rounded-lg">
+                            <Text variant="caption" tone="muted">
+                              {exerciseIndex + 1}
+                            </Text>
+                          </View>
+                          <View className="flex-1">
+                            <Text variant="bodyMedium">
+                              {exercise?.name ?? 'Unknown exercise'}
+                            </Text>
+                            <Text
+                              variant="caption"
+                              tone="muted"
+                              className="mt-1"
+                            >
+                              {exercise?.category ?? 'Exercise'}
+                            </Text>
+                          </View>
+                        </CardContent>
+                      </Card>
+                    )}
                   </Pressable>
                 );
               };
 
               return (
                 <View key={block.id} className={cn(blockIndex > 0 && 'mt-3')}>
-                  {renderExerciseCard(block.rows[0])}
                   {block.supersetId ? (
-                    <>
-                      <SupersetIndicator />
-                      {renderExerciseCard(block.rows[1])}
-                    </>
-                  ) : null}
+                    <SupersetExerciseGroup
+                      supersetLabel={
+                        supersetLabelByTemplateExerciseId.get(
+                          block.rows[0].id
+                        ) ?? 'Superset'
+                      }
+                      renderRow={({ label, position }) =>
+                        renderExerciseCard(
+                          block.rows[position - 1],
+                          label,
+                          true
+                        )
+                      }
+                    />
+                  ) : (
+                    renderExerciseCard(block.rows[0])
+                  )}
                 </View>
               );
             })}
