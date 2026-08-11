@@ -10,7 +10,7 @@ import { showSnackbar } from '@/src/components/ui/snackbar';
 import { Text } from '@/src/components/ui/text';
 import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
-import { SupersetIndicator } from '@/src/features/workouts/components/superset-indicator';
+import { SupersetExerciseGroup } from '@/src/features/workouts/components/superset-exercise-group';
 import { WorkoutDetailActionsSheet } from '@/src/features/workouts/components/workout-detail-actions-sheet';
 import { WorkoutHistoryExerciseCard } from '@/src/features/workouts/components/workout-history-exercise-card';
 import { WorkoutMetrics } from '@/src/features/workouts/components/workout-metrics';
@@ -320,7 +320,8 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
     ({ item: block }: { item: (typeof supersetBlocks)[number] }) => {
       const renderExerciseCard = (
         workoutExercise: (typeof workoutExerciseRows)[number],
-        className?: string
+        className?: string,
+        supersetRowLabel?: string
       ) => {
         const exercise = exerciseById.get(workoutExercise.exerciseId);
         const completedSets =
@@ -330,8 +331,10 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
           <WorkoutHistoryExerciseCard
             key={workoutExercise.id}
             exerciseName={exercise?.name ?? 'Unknown exercise'}
+            variant={supersetRowLabel ? 'grouped' : 'default'}
+            supersetRowLabel={supersetRowLabel}
             supersetLabel={
-              block.supersetId
+              block.supersetId && !supersetRowLabel
                 ? supersetLabelByBlockId.get(block.id)
                 : undefined
             }
@@ -349,9 +352,12 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
 
       return (
         <View className="mt-3">
-          {renderExerciseCard(block.rows[0], 'mt-0')}
-          <SupersetIndicator />
-          {renderExerciseCard(block.rows[1], 'mt-0')}
+          <SupersetExerciseGroup
+            supersetLabel={supersetLabelByBlockId.get(block.id) ?? 'Superset'}
+            renderRow={({ label, position }) =>
+              renderExerciseCard(block.rows[position - 1], 'mt-0', label)
+            }
+          />
         </View>
       );
     },
