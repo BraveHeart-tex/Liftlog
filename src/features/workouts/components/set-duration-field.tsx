@@ -43,7 +43,7 @@ export function SetDurationField({
       >
         <Text
           variant="bodyMedium"
-          tone={value ? 'default' : 'muted'}
+          tone={value && !isCommitted ? 'default' : 'muted'}
           className="min-w-0 px-2 py-2 text-center"
           numberOfLines={1}
           adjustsFontSizeToFit

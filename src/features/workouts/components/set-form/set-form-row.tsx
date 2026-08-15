@@ -22,6 +22,7 @@ import type { SetFormRow as SetFormRowModel } from '@/src/features/workouts/comp
 import { getFieldHeaderLabel } from '@/src/features/workouts/components/set-form/set-form.utils';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { CheckIcon } from 'lucide-react-native';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { useEffect, useState } from 'react';
 import { View, type LayoutChangeEvent } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -309,7 +310,10 @@ function SetFormEditableField({
             editable={!row.isSaving}
             onFocus={() => onRowFocus?.(row.key)}
             containerClassName="min-h-12 flex-row items-center rounded-lg px-1"
-            inputClassName="text-body-medium min-w-0 flex-1 px-2 py-2"
+            inputClassName={cn(
+              'text-body-medium min-w-0 flex-1 px-2 py-2',
+              row.isCommitted && 'text-muted-foreground'
+            )}
             selection={value.length === 0 ? emptyInputSelection : undefined}
             textAlign="center"
             accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
