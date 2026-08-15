@@ -201,7 +201,7 @@ export function BottomSheetTitle({
   className
 }: BottomSheetSectionProps) {
   return (
-    <Text variant="h3" className={className}>
+    <Text variant="h3" accessibilityRole="header" className={className}>
       {children}
     </Text>
   );
