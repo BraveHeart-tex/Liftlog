@@ -1,5 +1,5 @@
 import { cn } from '@/src/lib/utils/cn.utils';
-import { appFonts, type AppFontFace } from '@/src/theme/fonts';
+import { appFonts } from '@/src/theme/fonts';
 import { cva, type VariantProps } from 'class-variance-authority';
 import {
   forwardRef,
@@ -19,6 +19,12 @@ const textVariantConfig = cva('', {
       small: 'text-small',
       caption: 'text-caption',
       overline: 'text-caption uppercase tracking-wider'
+    },
+    weight: {
+      regular: 'font-normal',
+      medium: 'font-medium',
+      semiBold: 'font-semibold',
+      bold: 'font-bold'
     },
     tone: {
       default: 'text-foreground',
@@ -43,17 +49,19 @@ const textVariants = (variants: TextVariants = {}) =>
 
 type TextVariant = NonNullable<TextVariants['variant']>;
 
+type TextWeight = keyof typeof appFonts.faces;
+
 type TextTone = NonNullable<TextVariants['tone']>;
 
-const variantFontFamilies: Record<TextVariant, AppFontFace> = {
-  h1: appFonts.faces.bold,
-  h2: appFonts.faces.semiBold,
-  h3: appFonts.faces.medium,
-  body: appFonts.faces.regular,
-  bodyMedium: appFonts.faces.medium,
-  small: appFonts.faces.regular,
-  caption: appFonts.faces.medium,
-  overline: appFonts.faces.medium
+const variantFontWeights: Record<TextVariant, TextWeight> = {
+  h1: 'bold',
+  h2: 'semiBold',
+  h3: 'medium',
+  body: 'regular',
+  bodyMedium: 'medium',
+  small: 'regular',
+  caption: 'medium',
+  overline: 'medium'
 };
 
 const nativeTextDefaults: TextStyle = {
@@ -68,6 +76,7 @@ type NativeTextProps = Omit<
 
 type TextProps = NativeTextProps & {
   variant?: TextVariant;
+  weight?: TextWeight;
   tone?: TextTone;
   className?: string;
 };
@@ -76,6 +85,7 @@ export const Text = forwardRef<ComponentRef<typeof NativeText>, TextProps>(
   function Text(
     {
       variant = 'body',
+      weight,
       tone = 'default',
       className,
       style,
@@ -84,13 +94,15 @@ export const Text = forwardRef<ComponentRef<typeof NativeText>, TextProps>(
     },
     ref
   ) {
+    const resolvedWeight = weight ?? variantFontWeights[variant];
+
     return (
       <NativeText
         ref={ref}
-        className={cn(textVariants({ variant, tone }), className)}
+        className={cn(textVariants({ variant, tone, weight }), className)}
         style={[
           nativeTextDefaults,
-          { fontFamily: variantFontFamilies[variant] },
+          { fontFamily: appFonts.faces[resolvedWeight] },
           style
         ]}
         {...props}
