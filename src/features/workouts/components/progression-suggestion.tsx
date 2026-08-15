@@ -2,22 +2,41 @@ import { Icon } from '@/src/components/ui/icon';
 import { Skeleton } from '@/src/components/ui/skeleton';
 import { Text } from '@/src/components/ui/text';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
-import type { ProgressionSuggestionData } from '@/src/features/workouts/components/progression-suggestion.utils';
 import { formatWeightForUnit } from '@/src/lib/utils/weight.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { Link } from 'expo-router';
 import { ChevronRightIcon, TrendingUpIcon } from 'lucide-react-native';
+import { createContext, useContext, type ReactNode } from 'react';
 import { View } from 'react-native';
+import { useExerciseTrackTab } from '@/src/features/workouts/hooks/use-exercise-track-tab';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
 
 interface ProgressionSuggestionProps {
   workoutExerciseId: string;
-  historyPreview:
-    | {
-        completedSetSummary: string | undefined;
-        completedSetCount: number;
-      }
-    | undefined;
-  suggestion: ProgressionSuggestionData | null;
+}
+
+interface ProgressionSuggestionContainerProps {
+  item: WorkoutExerciseWithSets;
+  historyBeforeStartedAt?: number;
+  children: ReactNode;
+}
+
+type ProgressionSuggestionContextValue = ReturnType<typeof useExerciseTrackTab>;
+
+const ProgressionSuggestionContext = createContext<
+  ProgressionSuggestionContextValue | undefined
+>(undefined);
+
+export function useProgressionSuggestionContext() {
+  const context = useContext(ProgressionSuggestionContext);
+
+  if (!context) {
+    throw new Error(
+      'useProgressionSuggestionContext must be used within ProgressionSuggestionContainer'
+    );
+  }
+
+  return context;
 }
 
 export function ProgressionSuggestionSkeleton() {
@@ -44,10 +63,10 @@ export function ProgressionSuggestionSkeleton() {
 }
 
 export function ProgressionSuggestion({
-  workoutExerciseId,
-  historyPreview,
-  suggestion
+  workoutExerciseId
 }: ProgressionSuggestionProps) {
+  const { historyPreview, progressionSuggestion: suggestion } =
+    useProgressionSuggestionContext();
   const { weightUnit } = useSettings();
 
   if (!historyPreview) {
@@ -94,5 +113,26 @@ export function ProgressionSuggestion({
         </Link>
       </View>
     </View>
+  );
+}
+
+export function ProgressionSuggestionContainer({
+  item,
+  historyBeforeStartedAt,
+  children
+}: ProgressionSuggestionContainerProps) {
+  const progressionState = useExerciseTrackTab(item, historyBeforeStartedAt);
+
+  return (
+    <ProgressionSuggestionContext.Provider value={progressionState}>
+      <View className="w-full flex-1">
+        {progressionState.isHistoryLoading ? (
+          <ProgressionSuggestionSkeleton />
+        ) : (
+          <ProgressionSuggestion workoutExerciseId={item.workoutExercise.id} />
+        )}
+        {children}
+      </View>
+    </ProgressionSuggestionContext.Provider>
   );
 }

@@ -1,18 +1,16 @@
 import { useExerciseTrackActions } from '@/src/features/workouts/hooks/use-exercise-track-actions';
-import { useExerciseTrackTab } from '@/src/features/workouts/hooks/use-exercise-track-tab';
 import type { Set } from '@/src/db/schema';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Keyboard,
   Platform,
   ScrollView,
-  View,
   type KeyboardEvent,
   type LayoutRectangle
 } from 'react-native';
 import {
-  ProgressionSuggestion,
-  ProgressionSuggestionSkeleton
+  ProgressionSuggestionContainer,
+  useProgressionSuggestionContext
 } from '@/src/features/workouts/components/progression-suggestion';
 import { SetForm } from '@/src/features/workouts/components/set-form/set-form';
 import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task.utils';
@@ -27,7 +25,18 @@ interface ExerciseTrackTabProps {
   onVerticalScrollEnd?: () => void;
 }
 
-export function ExerciseTrackSection({
+export function ExerciseTrackSection(props: ExerciseTrackTabProps) {
+  return (
+    <ProgressionSuggestionContainer
+      item={props.item}
+      historyBeforeStartedAt={props.historyBeforeStartedAt}
+    >
+      <ExerciseTrackContent {...props} />
+    </ProgressionSuggestionContainer>
+  );
+}
+
+function ExerciseTrackContent({
   item,
   historyBeforeStartedAt,
   mode = 'active',
@@ -35,14 +44,8 @@ export function ExerciseTrackSection({
   onVerticalScrollStart,
   onVerticalScrollEnd
 }: ExerciseTrackTabProps) {
-  const {
-    trackingType,
-    isHistoryLoading,
-    progressionSuggestion,
-    historyPreview,
-    latestHistorySets,
-    refreshHistory
-  } = useExerciseTrackTab(item, historyBeforeStartedAt);
+  const { trackingType, latestHistorySets, refreshHistory } =
+    useProgressionSuggestionContext();
 
   const scrollViewRef = useRef<ScrollView>(null);
   const focusedRowKeyRef = useRef<string | null>(null);
@@ -205,41 +208,30 @@ export function ExerciseTrackSection({
   };
 
   return (
-    <View className="w-full flex-1">
-      {isHistoryLoading ? (
-        <ProgressionSuggestionSkeleton />
-      ) : (
-        <ProgressionSuggestion
-          workoutExerciseId={item.workoutExercise.id}
-          historyPreview={historyPreview}
-          suggestion={progressionSuggestion}
-        />
-      )}
-      <ScrollView
-        ref={scrollViewRef}
-        className="flex-1"
-        nestedScrollEnabled={true}
-        directionalLockEnabled={true}
-        scrollIndicatorInsets={{ right: 1 }}
-        contentContainerStyle={{ paddingBottom: keyboardInset + 32 }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        onScrollBeginDrag={onVerticalScrollStart}
-        onScrollEndDrag={onVerticalScrollEnd}
-        onMomentumScrollEnd={onVerticalScrollEnd}
-      >
-        <SetForm
-          trackingType={trackingType}
-          sets={item.sets}
-          previousSets={latestHistorySets}
-          enableStopwatch={mode === 'active'}
-          onRowFocus={handleRowFocus}
-          onRowLayout={handleRowLayout}
-          onAddSet={handleAddSet}
-          onUpdateSet={handleUpdateSet}
-          onDeleteSet={handleDeleteSet}
-        />
-      </ScrollView>
-    </View>
+    <ScrollView
+      ref={scrollViewRef}
+      className="flex-1"
+      nestedScrollEnabled={true}
+      directionalLockEnabled={true}
+      scrollIndicatorInsets={{ right: 1 }}
+      contentContainerStyle={{ paddingBottom: keyboardInset + 32 }}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+      onScrollBeginDrag={onVerticalScrollStart}
+      onScrollEndDrag={onVerticalScrollEnd}
+      onMomentumScrollEnd={onVerticalScrollEnd}
+    >
+      <SetForm
+        trackingType={trackingType}
+        sets={item.sets}
+        previousSets={latestHistorySets}
+        enableStopwatch={mode === 'active'}
+        onRowFocus={handleRowFocus}
+        onRowLayout={handleRowLayout}
+        onAddSet={handleAddSet}
+        onUpdateSet={handleUpdateSet}
+        onDeleteSet={handleDeleteSet}
+      />
+    </ScrollView>
   );
 }
