@@ -15,11 +15,11 @@ const buttonVariantConfig = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-primary border-primary disabled:border-primary/50',
-        secondary: 'border-border bg-card disabled:border-border/50',
+        primary: 'bg-primary border-primary disabled:border-transparent',
+        secondary: 'border-border bg-card disabled:border-transparent',
         ghost: 'border-transparent bg-transparent',
         destructive:
-          'border-danger/30 bg-danger/10 disabled:border-danger/20 disabled:bg-danger/5'
+          'border-danger/30 bg-danger/10 disabled:border-transparent disabled:bg-danger/5'
       },
       size: {
         sm: 'min-h-12 px-3 py-3',
