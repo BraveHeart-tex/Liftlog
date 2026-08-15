@@ -46,9 +46,9 @@ export function ProgressionSuggestionSkeleton() {
       accessibilityLabel="Loading progression suggestion"
       accessibilityRole="progressbar"
       accessibilityState={{ busy: true }}
-      className="border-border bg-card mb-5 rounded-lg border px-3 py-2"
+      className="border-border bg-card mb-5 rounded-lg border p-3"
     >
-      <View className="flex-row items-center gap-2">
+      <View className="flex-row items-center gap-3">
         <Skeleton className="h-8 w-8 rounded-lg" />
 
         <View className="min-w-0 flex-1 gap-1">
