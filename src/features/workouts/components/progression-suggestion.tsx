@@ -2,14 +2,14 @@ import { Icon } from '@/src/components/ui/icon';
 import { Skeleton } from '@/src/components/ui/skeleton';
 import { Text } from '@/src/components/ui/text';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
+import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
+import { useExerciseTrackTab } from '@/src/features/workouts/hooks/use-exercise-track-tab';
 import { formatWeightForUnit } from '@/src/lib/utils/weight.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { Link } from 'expo-router';
 import { ChevronRightIcon, TrendingUpIcon } from 'lucide-react-native';
 import { createContext, useContext, type ReactNode } from 'react';
 import { View } from 'react-native';
-import { useExerciseTrackTab } from '@/src/features/workouts/hooks/use-exercise-track-tab';
-import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
 
 interface ProgressionSuggestionProps {
   workoutExerciseId: string;
@@ -80,14 +80,14 @@ export function ProgressionSuggestion({
     : null;
 
   return (
-    <View className="border-border bg-card mb-5 rounded-lg border px-3 py-2">
-      <View className="flex-row items-center gap-2">
+    <View className="border-border bg-card mb-5 rounded-lg border p-3">
+      <View className="flex-row items-center gap-3">
         <View className="bg-primary/10 h-8 w-8 items-center justify-center rounded-lg">
           <Icon as={TrendingUpIcon} tone="primary" size="sm" />
         </View>
 
         <View className="min-w-0 flex-1">
-          <Text variant="small" numberOfLines={1}>
+          <Text variant="small" numberOfLines={1} weight="medium">
             {historyPreview.completedSetSummary}
           </Text>
           {suggestedLabel ? (
@@ -105,7 +105,7 @@ export function ProgressionSuggestion({
           dangerouslySingular
         >
           <View className="flex-row items-center gap-1">
-            <Text tone="primary" variant="small">
+            <Text tone="primary" variant="small" weight="medium">
               History
             </Text>
             <Icon as={ChevronRightIcon} tone="primary" size={iconSizes.sm} />
