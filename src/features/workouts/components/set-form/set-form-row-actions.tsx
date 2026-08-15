@@ -28,23 +28,19 @@ export function SetFormRowActions({
         size="icon"
         disabled={isCopyDisabled}
         accessibilityLabel={`Copy set ${setNumber}`}
-        className="border-primary/30 bg-primary/10 h-16 w-16 rounded-lg"
+        className="bg-primary/10 h-16 w-16 rounded-lg border-transparent"
         onPress={() => {
           swipeable.close();
           onCopy();
         }}
       >
-        <Icon
-          as={CopyIcon}
-          tone={isCopyDisabled ? 'mutedForeground' : 'primary'}
-          size="md"
-        />
+        <Icon as={CopyIcon} tone="primary" size="md" />
       </Button>
       <Button
         variant="destructive"
         size="icon"
         accessibilityLabel={`Delete set ${setNumber}`}
-        className="border-danger/30 bg-danger/10 h-16 w-16 rounded-lg"
+        className="bg-danger/10 h-16 w-16 rounded-lg border-transparent"
         onPress={() => {
           if (shouldCloseBeforeDelete) {
             swipeable.close();
