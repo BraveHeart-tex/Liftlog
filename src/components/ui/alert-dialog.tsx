@@ -65,11 +65,12 @@ function DialogView({ request, isOpen, onExit }: DialogViewProps) {
           <BottomSheetDescription>{request.message}</BottomSheetDescription>
         ) : null}
       </BottomSheetHeader>
-      <BottomSheetSafeFooter className="justify-end">
+      <BottomSheetSafeFooter className="flex-row justify-end gap-3">
         {request.kind === 'confirm' ? (
           <Button
             variant="secondary"
             size="sm"
+            containerClassName="flex-1"
             accessibilityLabel={request.cancelLabel}
             disabled={!interactive}
             onPress={handleCancel}
@@ -80,6 +81,7 @@ function DialogView({ request, isOpen, onExit }: DialogViewProps) {
         <Button
           variant={request.destructive ? 'destructive' : 'primary'}
           size="sm"
+          containerClassName="flex-1"
           accessibilityLabel={request.confirmLabel}
           disabled={!interactive}
           onPress={handleConfirm}
