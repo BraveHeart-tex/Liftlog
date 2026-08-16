@@ -322,12 +322,15 @@ function WorkoutTemplateDetailLoaded({
 
         {draftTemplateExercises.length === 0 ? (
           <View className="flex-1 px-4 pb-6">
-            <EmptyState
-              layout="section"
-              icon={ClipboardListIcon}
-              title="No exercises added"
-              description="Add exercises to this template or save it empty."
-              action={
+            <EmptyState>
+              <EmptyState.Icon as={ClipboardListIcon} size="md" />
+              <EmptyState.Title variant="bodyMedium">
+                No exercises added
+              </EmptyState.Title>
+              <EmptyState.Description>
+                Add exercises to this template or save it empty.
+              </EmptyState.Description>
+              <EmptyState.Action>
                 <Button
                   variant="secondary"
                   size="sm"
@@ -336,8 +339,8 @@ function WorkoutTemplateDetailLoaded({
                 >
                   Add exercise
                 </Button>
-              }
-            />
+              </EmptyState.Action>
+            </EmptyState>
           </View>
         ) : (
           <>
@@ -450,11 +453,11 @@ function WorkoutTemplateDetailLoaded({
         </View>
 
         {templateExerciseRows.length === 0 ? (
-          <EmptyState
-            layout="section"
-            title="No exercises saved in this template."
-            className="mt-3 py-8"
-          />
+          <EmptyState className="mt-3 py-8">
+            <EmptyState.Title variant="bodyMedium">
+              No exercises saved in this template.
+            </EmptyState.Title>
+          </EmptyState>
         ) : (
           <View className="mt-3">
             {supersetBlocks.map((block, blockIndex) => {

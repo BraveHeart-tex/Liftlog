@@ -124,13 +124,15 @@ export function TemplateExerciseEditor({
 
       {rows.length === 0 ? (
         <View className="px-4">
-          <EmptyState
-            layout="section"
-            icon={ClipboardListIcon}
-            title="No exercises added"
-            description="Add exercises from your library to build this template."
-            className="py-8"
-            action={
+          <EmptyState className="py-8">
+            <EmptyState.Icon as={ClipboardListIcon} size="md" />
+            <EmptyState.Title variant="bodyMedium">
+              No exercises added
+            </EmptyState.Title>
+            <EmptyState.Description>
+              Add exercises from your library to build this template.
+            </EmptyState.Description>
+            <EmptyState.Action>
               <Button
                 variant="secondary"
                 size="sm"
@@ -140,8 +142,8 @@ export function TemplateExerciseEditor({
               >
                 Add exercise
               </Button>
-            }
-          />
+            </EmptyState.Action>
+          </EmptyState>
         </View>
       ) : (
         <NewTemplateExerciseList

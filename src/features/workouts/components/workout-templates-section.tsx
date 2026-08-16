@@ -54,13 +54,15 @@ export const WorkoutTemplatesSection = () => {
       </View>
 
       {templates.length === 0 ? (
-        <EmptyState
-          layout="section"
-          icon={ClipboardListIcon}
-          title="No templates yet"
-          description="Save a routine to start faster next time."
-          className="mt-3"
-          action={
+        <EmptyState className="mt-3 py-4">
+          <EmptyState.Icon as={ClipboardListIcon} size="md" />
+          <EmptyState.Title variant="bodyMedium">
+            No templates yet
+          </EmptyState.Title>
+          <EmptyState.Description>
+            Save a routine to start faster next time.
+          </EmptyState.Description>
+          <EmptyState.Action>
             <Button
               variant="secondary"
               size="sm"
@@ -72,8 +74,8 @@ export const WorkoutTemplatesSection = () => {
             >
               Create template
             </Button>
-          }
-        />
+          </EmptyState.Action>
+        </EmptyState>
       ) : (
         <StyledScrollView
           className="mt-3"

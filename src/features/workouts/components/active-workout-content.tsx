@@ -24,7 +24,12 @@ import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { triggerHapticMedium } from '@/src/lib/haptics/haptics';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { router } from 'expo-router';
-import { ArrowLeftIcon, CircleCheckBig, PlusIcon } from 'lucide-react-native';
+import {
+  ArrowLeftIcon,
+  CircleCheckBig,
+  DumbbellIcon,
+  PlusIcon
+} from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Keyboard, View } from 'react-native';
 import Animated, {
@@ -369,18 +374,22 @@ export function ActiveWorkoutContent({
 
       {workoutExerciseLoadError ? (
         <View className="flex-1 px-4 pb-6">
-          <EmptyState
-            title="Could not load exercises"
-            description="Something went wrong while loading this workout."
-            action={
+          <EmptyState className="flex-1 px-8">
+            <EmptyState.Title weight="semiBold">
+              Could not load exercises
+            </EmptyState.Title>
+            <EmptyState.Description>
+              Something went wrong while loading this workout.
+            </EmptyState.Description>
+            <EmptyState.Action>
               <Button
                 leftIcon={<Icon as={ArrowLeftIcon} tone="primaryForeground" />}
                 onPress={() => router.replace('/(tabs)/workout')}
               >
                 Go back
               </Button>
-            }
-          />
+            </EmptyState.Action>
+          </EmptyState>
         </View>
       ) : isLoadingWorkoutExercises ? (
         <View className="flex-1 px-4">
@@ -399,18 +408,24 @@ export function ActiveWorkoutContent({
         />
       ) : (
         <View className="flex-1 px-4 pb-6">
-          <EmptyState
-            title="No exercises yet"
-            description="Add your first exercise to get started."
-            action={
+          <EmptyState className="flex-1 px-8">
+            <EmptyState.Icon as={DumbbellIcon} />
+            <EmptyState.Title weight="semiBold">
+              No exercises yet
+            </EmptyState.Title>
+            <EmptyState.Description>
+              Add an exercise to start logging.
+            </EmptyState.Description>
+            <EmptyState.Action>
               <Button
                 leftIcon={<Icon as={PlusIcon} tone="primaryForeground" />}
                 onPress={openExercisePicker}
+                className="w-full"
               >
                 Add exercise
               </Button>
-            }
-          />
+            </EmptyState.Action>
+          </EmptyState>
         </View>
       )}
 

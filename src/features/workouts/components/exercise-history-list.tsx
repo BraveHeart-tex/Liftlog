@@ -189,12 +189,14 @@ export function ExerciseHistoryList({
         ) : null
       }
       ListEmptyComponent={
-        <EmptyState
-          layout="section"
-          title="No history yet"
-          description="Complete sets to see your history here."
-          className="mt-6"
-        />
+        <EmptyState className="mt-6 py-4">
+          <EmptyState.Title variant="bodyMedium">
+            No history yet
+          </EmptyState.Title>
+          <EmptyState.Description>
+            Complete sets to see your history here.
+          </EmptyState.Description>
+        </EmptyState>
       }
     />
   );

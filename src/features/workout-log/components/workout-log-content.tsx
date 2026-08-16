@@ -154,12 +154,14 @@ export function WorkoutLogContent() {
         ListFooterComponent={listFooter}
         ListEmptyComponent={
           areWorkoutRowsLive ? (
-            <EmptyState
-              layout="section"
-              title="No workouts"
-              description="Completed sessions for this day will show here."
-              className="border-border bg-card rounded-lg border border-dashed px-6 py-10"
-              action={
+            <EmptyState className="border-border bg-card rounded-lg border border-dashed px-6 py-10">
+              <EmptyState.Title variant="bodyMedium">
+                No workouts
+              </EmptyState.Title>
+              <EmptyState.Description>
+                Completed sessions for this day will show here.
+              </EmptyState.Description>
+              <EmptyState.Action>
                 <Button
                   variant="secondary"
                   size="sm"
@@ -170,8 +172,8 @@ export function WorkoutLogContent() {
                 >
                   Log workout
                 </Button>
-              }
-            />
+              </EmptyState.Action>
+            </EmptyState>
           ) : null
         }
         renderItem={renderWorkoutRow}

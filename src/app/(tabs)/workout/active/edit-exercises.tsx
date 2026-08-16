@@ -38,17 +38,19 @@ export default function ActiveWorkoutEditExercisesScreen() {
   if (!activeWorkout) {
     return (
       <Screen withPadding={false} edges={[]} contentClassName="px-6">
-        <EmptyState
-          title="No active workout"
-          action={
+        <EmptyState className="flex-1 px-8">
+          <EmptyState.Title weight="semiBold">
+            No active workout
+          </EmptyState.Title>
+          <EmptyState.Action>
             <Button
               leftIcon={<Icon as={ArrowLeftIcon} tone="primaryForeground" />}
               onPress={() => router.replace('/(tabs)/workout')}
             >
               Go back
             </Button>
-          }
-        />
+          </EmptyState.Action>
+        </EmptyState>
       </Screen>
     );
   }
@@ -200,12 +202,15 @@ function ActiveWorkoutEditExercisesContent({
         </View>
       ) : draftWorkoutExercises.length === 0 ? (
         <View className="flex-1 px-4 pb-6">
-          <EmptyState
-            layout="section"
-            icon={ClipboardListIcon}
-            title="No exercises added"
-            description="Add exercises to this workout or save it empty."
-            action={
+          <EmptyState>
+            <EmptyState.Icon as={ClipboardListIcon} size="md" />
+            <EmptyState.Title variant="bodyMedium">
+              No exercises added
+            </EmptyState.Title>
+            <EmptyState.Description>
+              Add exercises to this workout or save it empty.
+            </EmptyState.Description>
+            <EmptyState.Action>
               <Button
                 variant="secondary"
                 size="sm"
@@ -214,8 +219,8 @@ function ActiveWorkoutEditExercisesContent({
               >
                 Add exercise
               </Button>
-            }
-          />
+            </EmptyState.Action>
+          </EmptyState>
         </View>
       ) : (
         <>

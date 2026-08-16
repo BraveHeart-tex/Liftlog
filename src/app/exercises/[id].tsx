@@ -266,12 +266,14 @@ export default function ExerciseDetailScreen() {
             className="min-h-24 py-4"
           />
         ) : !strongestSet || !mostSetsRecord ? (
-          <EmptyState
-            layout="section"
-            title="No records yet"
-            description="Complete sets for this exercise to build your records."
-            className="mt-4 py-0"
-          />
+          <EmptyState className="mt-4 py-0">
+            <EmptyState.Title variant="bodyMedium">
+              No records yet
+            </EmptyState.Title>
+            <EmptyState.Description>
+              Complete sets for this exercise to build your records.
+            </EmptyState.Description>
+          </EmptyState>
         ) : (
           <View className="mt-3">
             <View className="border-border border-b py-3">

@@ -14,18 +14,22 @@ export default function ActiveWorkoutScreen() {
   if (error) {
     return (
       <Screen withPadding={false} edges={[]} contentClassName="px-6">
-        <EmptyState
-          title="Could not load workout"
-          description="Something went wrong while loading your active workout."
-          action={
+        <EmptyState className="flex-1 px-8">
+          <EmptyState.Title weight="semiBold">
+            Could not load workout
+          </EmptyState.Title>
+          <EmptyState.Description>
+            Something went wrong while loading your active workout.
+          </EmptyState.Description>
+          <EmptyState.Action>
             <Button
               leftIcon={<Icon as={ArrowLeftIcon} tone="primaryForeground" />}
               onPress={() => router.replace('/(tabs)/workout')}
             >
               Go back
             </Button>
-          }
-        />
+          </EmptyState.Action>
+        </EmptyState>
       </Screen>
     );
   }
@@ -41,17 +45,19 @@ export default function ActiveWorkoutScreen() {
   if (!activeWorkout) {
     return (
       <Screen withPadding={false} edges={[]} contentClassName="px-6">
-        <EmptyState
-          title="No active workout"
-          action={
+        <EmptyState className="flex-1 px-8">
+          <EmptyState.Title weight="semiBold">
+            No active workout
+          </EmptyState.Title>
+          <EmptyState.Action>
             <Button
               leftIcon={<Icon as={ArrowLeftIcon} tone="primaryForeground" />}
               onPress={() => router.replace('/(tabs)/workout')}
             >
               Go back
             </Button>
-          }
-        />
+          </EmptyState.Action>
+        </EmptyState>
       </Screen>
     );
   }

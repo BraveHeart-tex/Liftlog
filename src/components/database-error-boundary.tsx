@@ -39,19 +39,18 @@ export class DatabaseErrorBoundary extends Component<Props, State> {
 
       return (
         <View className="bg-background p-safe flex-1">
-          <EmptyState
-            className="bg-background"
-            title={
-              exerciseNameConflict
+          <EmptyState className="bg-background flex-1 px-8">
+            <EmptyState.Title weight="semiBold">
+              {exerciseNameConflict
                 ? 'Exercise names need attention'
-                : 'Database unavailable'
-            }
-            description={
-              exerciseNameConflict
+                : 'Database unavailable'}
+            </EmptyState.Title>
+            <EmptyState.Description>
+              {exerciseNameConflict
                 ? `The database upgrade was blocked by duplicate exercise names: ${conflictingNames}. Please contact support.`
-                : 'Failed to initialize the database. Please restart the app and try again.'
-            }
-          />
+                : 'Failed to initialize the database. Please restart the app and try again.'}
+            </EmptyState.Description>
+          </EmptyState>
         </View>
       );
     }

@@ -297,11 +297,11 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
           </View>
 
           {workoutExerciseRows.length === 0 ? (
-            <EmptyState
-              layout="section"
-              title="No exercises were logged in this workout."
-              className="mt-3 py-8"
-            />
+            <EmptyState className="mt-3 py-8">
+              <EmptyState.Title variant="bodyMedium">
+                No exercises were logged in this workout.
+              </EmptyState.Title>
+            </EmptyState>
           ) : null}
         </View>
       </View>

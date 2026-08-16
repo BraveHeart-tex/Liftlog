@@ -164,12 +164,14 @@ export function StepsContent() {
           </View>
         }
         ListEmptyComponent={
-          <EmptyState
-            layout="section"
-            title="No step history"
-            description="Sync steps to fill this in."
-            className="border-border bg-card rounded-lg border border-dashed px-6 py-10"
-          />
+          <EmptyState className="border-border bg-card rounded-lg border border-dashed px-6 py-10">
+            <EmptyState.Title variant="bodyMedium">
+              No step history
+            </EmptyState.Title>
+            <EmptyState.Description>
+              Sync steps to fill this in.
+            </EmptyState.Description>
+          </EmptyState>
         }
         ListFooterComponent={
           hasMoreStepHistory ? (

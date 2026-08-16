@@ -93,18 +93,22 @@ export default function HistoricalWorkoutDraftScreen() {
   if (!historicalWorkout) {
     return (
       <Screen withPadding={false} contentClassName="px-6">
-        <EmptyState
-          title="Workout not found"
-          description="This draft may have already been saved or discarded."
-          action={
+        <EmptyState className="flex-1 px-8">
+          <EmptyState.Title weight="semiBold">
+            Workout not found
+          </EmptyState.Title>
+          <EmptyState.Description>
+            This draft may have already been saved or discarded.
+          </EmptyState.Description>
+          <EmptyState.Action>
             <Button
               leftIcon={<Icon as={ArrowLeftIcon} tone="primaryForeground" />}
               onPress={() => router.replace('/(tabs)/log')}
             >
               Go back
             </Button>
-          }
-        />
+          </EmptyState.Action>
+        </EmptyState>
       </Screen>
     );
   }

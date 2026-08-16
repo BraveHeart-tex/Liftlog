@@ -514,12 +514,14 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
           renderItem={renderExerciseItem}
           windowSize={7}
           ListEmptyComponent={
-            <EmptyState
-              layout="section"
-              title={emptyTitle}
-              description={emptyDescription}
-              className="border-border bg-card mt-3 rounded-lg border border-dashed px-6 py-10"
-            />
+            <EmptyState className="border-border bg-card mt-3 rounded-lg border border-dashed px-6 py-10">
+              <EmptyState.Title variant="bodyMedium">
+                {emptyTitle}
+              </EmptyState.Title>
+              <EmptyState.Description>
+                {emptyDescription}
+              </EmptyState.Description>
+            </EmptyState>
           }
           ListFooterComponent={
             isMultiple ? (
