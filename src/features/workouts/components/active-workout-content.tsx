@@ -24,12 +24,7 @@ import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { triggerHapticMedium } from '@/src/lib/haptics/haptics';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { router } from 'expo-router';
-import {
-  ArrowLeftIcon,
-  CircleCheckBig,
-  DumbbellIcon,
-  PlusIcon
-} from 'lucide-react-native';
+import { ArrowLeftIcon, DumbbellIcon, PlusIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Keyboard, View } from 'react-native';
 import Animated, {
@@ -327,7 +322,7 @@ export function ActiveWorkoutContent({
 
         {!isEditingExercises ? (
           <View className="flex-row items-center gap-2">
-            <View className="flex-1">
+            <View className="w-[70%]">
               <Button
                 variant="secondary"
                 size="sm"
@@ -345,14 +340,8 @@ export function ActiveWorkoutContent({
                 variant="primary"
                 size="sm"
                 disabled={!canFinishWorkout}
-                leftIcon={
-                  <Icon
-                    as={CircleCheckBig}
-                    size="sm"
-                    tone="primaryForeground"
-                  />
-                }
                 onPress={confirmFinishWorkout}
+                containerClassName="flex-1"
               >
                 Finish
               </Button>
