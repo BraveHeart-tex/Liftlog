@@ -24,7 +24,6 @@ export default function ExercisesScreen() {
     setSelectedFilter,
     filteredExercises,
     exerciseListItems,
-    hasCustomExercise,
     exerciseLoadError,
     isLoadingExercises,
     isLoadingRecentExercises
@@ -129,7 +128,6 @@ export default function ExercisesScreen() {
             <ExercisePickerFilters
               selectedFilter={selectedFilter}
               setSelectedFilter={setSelectedFilter}
-              shouldShowCustomExerciseFilter={hasCustomExercise}
             />
 
             <View className="mt-4">

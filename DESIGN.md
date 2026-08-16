@@ -30,6 +30,10 @@ colors:
   steady-ash: '#8E8A85'
   drop-orange: '#FF7B2E'
   drop-ember: '#C93A00'
+  primary-subtle-dark: '#311E15'
+  primary-subtle-light: '#FFF1E9'
+  primary-subtle-border-dark: '#6A2B0F'
+  primary-subtle-border-light: '#FFB591'
 typography:
   display:
     fontFamily: 'Instrument Sans, system-ui, sans-serif'
@@ -112,14 +116,14 @@ components:
     typography: '{typography.label}'
     rounded: '{rounded.pill}'
     padding: '12px 16px'
-    height: '44px'
+    height: '48px'
   chip-unselected:
-    backgroundColor: '{colors.forged-carbon}'
+    backgroundColor: '{colors.steel-plate}'
     textColor: '{colors.muted-ash}'
     typography: '{typography.label}'
     rounded: '{rounded.pill}'
     padding: '12px 16px'
-    height: '44px'
+    height: '48px'
 ---
 
 # Design System: LiftLog
@@ -142,7 +146,7 @@ Polish reinforces momentum, confidence, and fast decision-making rather than ent
 
 ## Colors
 
-The palette pairs warm, material neutrals with a single high-energy orange signal and restrained semantic colors for workout feedback.
+The palette pairs warm, material neutrals with a single high-energy orange signal and restrained semantic colors for workout feedback. The implementation exposes these through semantic NativeWind tokens in `global.css`, with explicit light and dark theme overrides.
 
 ### Primary
 
@@ -167,6 +171,7 @@ The palette pairs warm, material neutrals with a single high-energy orange signa
 - **Steel Dust / Dark Steel:** Secondary foreground colors with stronger presence than muted text.
 - **Muted Ash / Muted Clay:** Supporting labels, metadata, and inactive navigation.
 - **Rack Gray / Chalk Edge:** Dark and light separators and subtle component borders.
+- **Primary Subtle / Primary Subtle Border:** Tinted selection and filter surfaces, with separate dark and light values for readable contrast.
 
 ### Named Rules
 
@@ -203,7 +208,7 @@ Large timer and step values are specialized instrument readouts, not additions t
 
 ## Layout
 
-LiftLog uses a four-point spacing rhythm with 16px screen gutters. The most common internal gaps are 8px, 12px, and 16px; top-level screens generally open with 24px vertical breathing room. Dense workout rows stay compact, while primary actions retain at least 44px on iOS and 48px on Android wherever the implementation can preserve both platform targets.
+LiftLog uses a four-point spacing rhythm with 16px screen gutters. The most common internal gaps are 8px, 12px, and 16px; top-level screens generally open with 24px vertical breathing room. Dense workout rows stay compact, while standard actions and selection controls use 48px targets; compact fields may reduce to 44px where the flow is already dense.
 
 Screens, fixed footers, sheets, and the bottom navigation honor safe-area and keyboard insets. The compact layout is portrait-first, while supported tablet widths must gain breathing room or an appropriate platform navigation treatment rather than stretching phone composition unchanged.
 
@@ -241,7 +246,7 @@ The component system is firm, tactile, and purpose-built. Controls communicate r
 ### Buttons
 
 - **Shape:** Controlled 16px corners with a one-pixel border.
-- **Primary:** Ignition Orange with Chalk White text; 48px standard height, with 44px compact and 56px large options.
+- **Primary:** Ignition Orange with Chalk White text; 48px standard height, with 56px large option. The current compact button variant remains 48px to preserve touch comfort.
 - **Secondary:** Steel Plate or Clean White surface with a subtle theme border and primary text.
 - **Ghost:** Transparent surface for low-emphasis actions.
 - **Destructive:** Tinted failure surface and border with semantic red text.
@@ -249,7 +254,7 @@ The component system is firm, tactile, and purpose-built. Controls communicate r
 
 ### Chips
 
-- **Style:** Compact 44px controls, usually pill-shaped, with 16px horizontal padding.
+- **Style:** Compact 48px controls, usually pill-shaped, with 16px horizontal padding.
 - **State:** Selected chips fill with Ignition Orange and switch to white text; unselected chips use a quiet tonal surface, border, and muted label.
 - **Use:** Filters, compact choices, and selection—not general navigation or large actions.
 
@@ -264,9 +269,9 @@ The component system is firm, tactile, and purpose-built. Controls communicate r
 ### Inputs / Fields
 
 - **Style:** Tonal field surface, subtle border, 12px corners, and 48px standard height.
-- **Focus:** The border shifts to Ignition Orange without adding glow or layout movement.
+- **Focus:** The border shifts to the `ring` token, Ignition Orange, without adding glow or layout movement.
 - **Error / Disabled:** Errors use the failure border and caption; disabled fields reduce opacity and move text to the muted role.
-- **Density:** A 44px compact option supports search and dense flows.
+- **Density:** A 44px compact option supports search and dense flows; the default field is 48px.
 
 ### Navigation
 

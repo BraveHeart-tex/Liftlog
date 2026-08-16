@@ -11,7 +11,7 @@ import type { ExercisePickerFilter } from '@/src/features/workouts/components/ex
 import { getRecentExerciseIdsQuery } from '@/src/features/workouts/workout.repository';
 import { RECENT_EXERCISES_LIMIT } from '@/src/features/workouts/workout.constants';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 function matchesExerciseFilter(
   exercise: ExerciseListItem,
@@ -64,17 +64,6 @@ export function useExercisesScreen() {
       ),
     [recentExerciseResult.data]
   );
-  const hasCustomExercise = useMemo(
-    () => exercises.some(exercise => exercise.isCustom === 1),
-    [exercises]
-  );
-
-  useEffect(() => {
-    if (!hasCustomExercise && selectedFilter === 'custom') {
-      setSelectedFilter('all');
-    }
-  }, [hasCustomExercise, selectedFilter]);
-
   const filteredExercises = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
 
@@ -108,7 +97,6 @@ export function useExercisesScreen() {
     exercises,
     filteredExercises,
     exerciseListItems,
-    hasCustomExercise,
     exerciseLoadError,
     isLoadingExercises,
     isLoadingRecentExercises

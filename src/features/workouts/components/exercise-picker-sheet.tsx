@@ -12,7 +12,6 @@ import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { SearchInputIcon } from '@/src/components/ui/search-input-icon';
-import { triggerHapticLight } from '@/src/lib/haptics/haptics';
 import { Text } from '@/src/components/ui/text';
 import {
   buildAlphabetizedExerciseListItems,
@@ -22,11 +21,15 @@ import {
   type ExerciseListSectionHeaderItem
 } from '@/src/features/exercises/exercise-display.utils';
 import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
-import {
-  ExercisePickerFilters,
-  type ExercisePickerFilter
-} from '@/src/features/workouts/components/exercise-picker-filters';
+import { EquipmentPickerSheet } from '@/src/features/workouts/components/equipment-picker-sheet';
+import type {
+  ExercisePickerEquipmentFilter,
+  ExercisePickerPrimaryFilter
+} from '@/src/features/workouts/components/exercise-picker-filter.types';
+import { ExercisePickerFilters } from '@/src/features/workouts/components/exercise-picker-filters';
 import { ExercisePickerRow } from '@/src/features/workouts/components/exercise-picker-row';
+import { matchesExercisePickerFilters } from '@/src/features/workouts/exercise-picker-filter.utils';
+import { triggerHapticLight } from '@/src/lib/haptics/haptics';
 import { PlusIcon, XIcon } from 'lucide-react-native';
 import {
   memo,
@@ -122,7 +125,7 @@ const ExercisePickerSearchInput = memo(function ExercisePickerSearchInput({
         query.length > 0 ? (
           <PressableSurface
             accessibilityLabel="Clear exercise search"
-            className="h-11 w-11 items-center justify-center"
+            className="h-9 w-9 items-center justify-center"
             onPress={clearQuery}
           >
             <Icon as={XIcon} size="sm" tone="mutedForeground" />
@@ -133,26 +136,6 @@ const ExercisePickerSearchInput = memo(function ExercisePickerSearchInput({
     />
   );
 });
-
-function exerciseMatchesFilter(
-  exercise: ExerciseListItem,
-  selectedFilter: ExercisePickerFilter,
-  recentExerciseIdSet: Set<ExerciseListItem['id']>
-) {
-  if (selectedFilter === 'all') {
-    return true;
-  }
-
-  if (selectedFilter === 'recent') {
-    return recentExerciseIdSet.has(exercise.id);
-  }
-
-  if (selectedFilter === 'custom') {
-    return exercise.isCustom === 1;
-  }
-
-  return exercise.category === selectedFilter;
-}
 
 export function ExercisePickerSheet(props: ExercisePickerSheetProps) {
   const { isOpen, onClose } = props;
@@ -211,7 +194,10 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
   const latestQueryRef = useRef('');
   const [committedQuery, setCommittedQuery] = useState('');
   const [selectedFilter, setSelectedFilter] =
-    useState<ExercisePickerFilter>('all');
+    useState<ExercisePickerPrimaryFilter>('all');
+  const [selectedEquipment, setSelectedEquipment] =
+    useState<ExercisePickerEquipmentFilter>(null);
+  const [isEquipmentSheetOpen, setIsEquipmentSheetOpen] = useState(false);
   const [pendingExercises, setPendingExercises] = useState<ExerciseListItem[]>(
     []
   );
@@ -228,15 +214,13 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
     () => new Set(pendingExercises.map(exercise => exercise.id)),
     [pendingExercises]
   );
-  const shouldShowCustomExerciseFilter = exercises.some(
-    exercise => exercise.isCustom === 1
-  );
-
   useEffect(() => {
     if (!isOpen) {
       latestQueryRef.current = '';
       setCommittedQuery('');
       setSelectedFilter('all');
+      setSelectedEquipment(null);
+      setIsEquipmentSheetOpen(false);
       setPendingExercises([]);
     }
   }, [isOpen]);
@@ -258,7 +242,12 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
     const matches = exercises.filter(exercise => {
       return (
         !selectedExerciseIdSet.has(exercise.id) &&
-        exerciseMatchesFilter(exercise, selectedFilter, recentExerciseIdSet) &&
+        matchesExercisePickerFilters(
+          exercise,
+          selectedFilter,
+          selectedEquipment,
+          recentExerciseIdSet
+        ) &&
         matchesExerciseSearch(exercise, normalizedQuery)
       );
     });
@@ -276,6 +265,7 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
     committedQuery,
     exercises,
     recentExerciseIds,
+    selectedEquipment,
     selectedExerciseIds,
     selectedFilter
   ]);
@@ -288,13 +278,19 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
     return exercises.some(
       exercise =>
         selectedExerciseIdSet.has(exercise.id) &&
-        exerciseMatchesFilter(exercise, selectedFilter, recentExerciseIdSet) &&
+        matchesExercisePickerFilters(
+          exercise,
+          selectedFilter,
+          selectedEquipment,
+          recentExerciseIdSet
+        ) &&
         matchesExerciseSearch(exercise, normalizedQuery)
     );
   }, [
     committedQuery,
     exercises,
     recentExerciseIds,
+    selectedEquipment,
     selectedExerciseIds,
     selectedFilter
   ]);
@@ -488,12 +484,31 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
         <ExercisePickerFilters
           selectedFilter={selectedFilter}
           setSelectedFilter={filter => {
+            if (
+              filter !== 'all' &&
+              filter !== 'recent' &&
+              filter !== 'custom'
+            ) {
+              return;
+            }
+
             Keyboard.dismiss();
             setSelectedFilter(filter);
           }}
-          shouldShowCustomExerciseFilter={shouldShowCustomExerciseFilter}
+          selectedEquipment={selectedEquipment}
+          onOpenEquipmentSheet={() => {
+            Keyboard.dismiss();
+            setIsEquipmentSheetOpen(true);
+          }}
         />
       </View>
+
+      <EquipmentPickerSheet
+        isOpen={isEquipmentSheetOpen}
+        selectedEquipment={selectedEquipment}
+        onClose={() => setIsEquipmentSheetOpen(false)}
+        onSelectEquipment={setSelectedEquipment}
+      />
 
       {isLoading ? (
         <View className="flex-1 px-4">

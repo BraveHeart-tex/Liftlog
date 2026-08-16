@@ -2,11 +2,16 @@ import { StyledGestureScrollView } from '@/src/components/styled/scroll-view';
 import { ChoiceChip } from '@/src/components/ui/chip';
 import type { IconComponent } from '@/src/components/ui/icon';
 import { Icon } from '@/src/components/ui/icon';
+import { Text } from '@/src/components/ui/text';
 import {
   CATEGORY_FILTERS,
   type ExerciseCategory
 } from '@/src/features/exercises/exercise.constants';
-import { UserIcon } from 'lucide-react-native';
+import type {
+  ExercisePickerEquipmentFilter,
+  ExercisePickerPrimaryFilter
+} from '@/src/features/workouts/components/exercise-picker-filter.types';
+import { ChevronDownIcon, ListFilterIcon } from 'lucide-react-native';
 import {
   useCallback,
   useEffect,
@@ -17,9 +22,7 @@ import {
 import { View } from 'react-native';
 
 export type ExercisePickerFilter =
-  | 'all'
-  | 'recent'
-  | 'custom'
+  | ExercisePickerPrimaryFilter
   | ExerciseCategory;
 
 interface ExercisePickerFilterOption {
@@ -31,7 +34,8 @@ interface ExercisePickerFilterOption {
 interface ExercisePickerFiltersProps {
   selectedFilter: ExercisePickerFilter;
   setSelectedFilter: (filter: ExercisePickerFilter) => void;
-  shouldShowCustomExerciseFilter: boolean;
+  selectedEquipment?: ExercisePickerEquipmentFilter;
+  onOpenEquipmentSheet?: () => void;
 }
 
 type CategoryOption = Extract<
@@ -46,7 +50,8 @@ const CATEGORY_OPTIONS = CATEGORY_FILTERS.filter(
 export function ExercisePickerFilters({
   selectedFilter,
   setSelectedFilter,
-  shouldShowCustomExerciseFilter
+  selectedEquipment,
+  onOpenEquipmentSheet
 }: ExercisePickerFiltersProps) {
   const filterScrollRef =
     useRef<ComponentRef<typeof StyledGestureScrollView>>(null);
@@ -58,10 +63,13 @@ export function ExercisePickerFilters({
   const leadingFilters: ExercisePickerFilterOption[] = [
     { label: 'All', value: 'all' },
     { label: 'Recent', value: 'recent' },
-    ...(shouldShowCustomExerciseFilter
-      ? [{ label: 'Custom', value: 'custom', icon: UserIcon } as const]
-      : [])
+    { label: 'Custom', value: 'custom' }
   ];
+  const isEquipmentSheetMode = onOpenEquipmentSheet !== undefined;
+  const hasSelectedEquipment = selectedEquipment != null;
+  const equipmentLabel =
+    CATEGORY_FILTERS.find(category => category.value === selectedEquipment)
+      ?.label ?? 'Equipment';
 
   const renderFilter = (filter: ExercisePickerFilterOption) => {
     const isSelected = filter.value === selectedFilter;
@@ -124,12 +132,6 @@ export function ExercisePickerFilters({
   );
 
   useEffect(() => {
-    if (!shouldShowCustomExerciseFilter && selectedFilter === 'custom') {
-      setSelectedFilter('all');
-    }
-  }, [selectedFilter, setSelectedFilter, shouldShowCustomExerciseFilter]);
-
-  useEffect(() => {
     const animationFrame = requestAnimationFrame(() => {
       scrollFilterIntoView(selectedFilter);
     });
@@ -154,10 +156,42 @@ export function ExercisePickerFilters({
       }}
     >
       {leadingFilters.map(renderFilter)}
-      <View className="justify-center px-1" pointerEvents="none">
-        <View className="bg-border h-6 w-px" />
-      </View>
-      {CATEGORY_OPTIONS.map(renderFilter)}
+      {isEquipmentSheetMode ? (
+        <ChoiceChip
+          selected={hasSelectedEquipment}
+          onPress={onOpenEquipmentSheet}
+          className={
+            hasSelectedEquipment
+              ? 'border-primary-subtle-border bg-primary-subtle'
+              : undefined
+          }
+          leftIcon={
+            <Icon
+              as={ListFilterIcon}
+              size="sm"
+              tone={hasSelectedEquipment ? 'primary' : 'mutedForeground'}
+            />
+          }
+        >
+          <Text
+            variant="small"
+            weight="medium"
+            tone="inherit"
+            className={
+              hasSelectedEquipment ? 'text-primary' : 'text-muted-foreground'
+            }
+          >
+            {equipmentLabel}
+          </Text>
+          <Icon
+            as={ChevronDownIcon}
+            size="sm"
+            tone={hasSelectedEquipment ? 'primary' : 'mutedForeground'}
+          />
+        </ChoiceChip>
+      ) : (
+        CATEGORY_OPTIONS.map(renderFilter)
+      )}
     </StyledGestureScrollView>
   );
 }

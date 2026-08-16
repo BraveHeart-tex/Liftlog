@@ -11,7 +11,8 @@ import {
   BottomSheetView,
   type BottomSheetBackdropProps,
   type BottomSheetBackgroundProps,
-  type BottomSheetFooterProps
+  type BottomSheetFooterProps,
+  type BottomSheetModalProps
 } from '@gorhom/bottom-sheet';
 import {
   memo,
@@ -46,6 +47,7 @@ interface BottomSheetComponentProps {
   footer?: ReactNode;
   className?: string;
   enableContentPanningGesture?: boolean;
+  stackBehavior?: NonNullable<BottomSheetModalProps['stackBehavior']>;
 }
 
 interface BottomSheetSectionProps {
@@ -88,7 +90,8 @@ export function BottomSheet({
   children,
   footer,
   className,
-  enableContentPanningGesture
+  enableContentPanningGesture,
+  stackBehavior = 'switch'
 }: BottomSheetComponentProps) {
   const sheetRef = useRef<BottomSheetModal>(null);
   const [isContentReady, setIsContentReady] = useState(false);
@@ -176,6 +179,7 @@ export function BottomSheet({
       onChange={handleChange}
       onDismiss={handleDismiss}
       snapPoints={resolvedSnapPoints}
+      stackBehavior={stackBehavior}
       enableContentPanningGesture={enableContentPanningGesture}
     >
       {enableDynamicSizing ? (

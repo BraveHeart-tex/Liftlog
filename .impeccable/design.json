@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-08T00:00:00Z",
+  "generatedAt": "2026-08-16T00:00:00Z",
   "title": "Design System: LiftLog",
   "extensions": {
     "colorMeta": {
@@ -423,6 +423,66 @@
           "oklch(87% 0.2 35)",
           "oklch(95% 0.2 35)"
         ]
+      },
+      "primary-subtle-dark": {
+        "role": "primary",
+        "displayName": "Primary Subtle Dark",
+        "canonical": "#311E15",
+        "tonalRamp": [
+          "oklch(15% 0.06 38)",
+          "oklch(27% 0.06 38)",
+          "oklch(39% 0.06 38)",
+          "oklch(51% 0.06 38)",
+          "oklch(63% 0.06 38)",
+          "oklch(75% 0.06 38)",
+          "oklch(87% 0.06 38)",
+          "oklch(95% 0.06 38)"
+        ]
+      },
+      "primary-subtle-light": {
+        "role": "primary",
+        "displayName": "Primary Subtle Light",
+        "canonical": "#FFF1E9",
+        "tonalRamp": [
+          "oklch(15% 0.03 38)",
+          "oklch(27% 0.03 38)",
+          "oklch(39% 0.03 38)",
+          "oklch(51% 0.03 38)",
+          "oklch(63% 0.03 38)",
+          "oklch(75% 0.03 38)",
+          "oklch(87% 0.03 38)",
+          "oklch(95% 0.03 38)"
+        ]
+      },
+      "primary-subtle-border-dark": {
+        "role": "primary",
+        "displayName": "Primary Subtle Border Dark",
+        "canonical": "#6A2B0F",
+        "tonalRamp": [
+          "oklch(15% 0.12 35)",
+          "oklch(27% 0.12 35)",
+          "oklch(39% 0.12 35)",
+          "oklch(51% 0.12 35)",
+          "oklch(63% 0.12 35)",
+          "oklch(75% 0.12 35)",
+          "oklch(87% 0.12 35)",
+          "oklch(95% 0.12 35)"
+        ]
+      },
+      "primary-subtle-border-light": {
+        "role": "primary",
+        "displayName": "Primary Subtle Border Light",
+        "canonical": "#FFB591",
+        "tonalRamp": [
+          "oklch(15% 0.08 35)",
+          "oklch(27% 0.08 35)",
+          "oklch(39% 0.08 35)",
+          "oklch(51% 0.08 35)",
+          "oklch(63% 0.08 35)",
+          "oklch(75% 0.08 35)",
+          "oklch(87% 0.08 35)",
+          "oklch(95% 0.08 35)"
+        ]
       }
     },
     "typographyMeta": {
@@ -535,7 +595,7 @@
       "refersTo": "chip-selected",
       "description": "A compact selection control with a decisive filled active state.",
       "html": "<div class=\"ds-chip-row\"><button class=\"ds-chip ds-chip-active\">All</button><button class=\"ds-chip\">Chest</button><button class=\"ds-chip\">Back</button></div>",
-      "css": ".ds-chip-row { display: flex; gap: 8px; } .ds-chip { min-height: 44px; padding: 12px 16px; border: 1px solid #3D3B38; border-radius: 9999px; background: rgba(26, 25, 23, 0.5); color: #8F8A85; font: 500 13px 'Instrument Sans', system-ui, sans-serif; transition: opacity 120ms ease, transform 120ms ease, background 180ms ease; } .ds-chip-active { border-color: #FF4D00; background: #FF4D00; color: #FFFFFF; } .ds-chip:hover { opacity: 0.9; } .ds-chip:active { transform: scale(0.97); } .ds-chip:focus-visible { outline: 2px solid #FF4D00; outline-offset: 2px; }"
+      "css": ".ds-chip-row { display: flex; gap: 8px; } .ds-chip { min-height: 48px; padding: 12px 16px; border: 1px solid #3D3B38; border-radius: 9999px; background: rgba(26, 25, 23, 0.5); color: #8F8A85; font: 500 13px 'Instrument Sans', system-ui, sans-serif; transition: opacity 120ms ease, transform 120ms ease, background 180ms ease; } .ds-chip-active { border-color: #FF4D00; background: #FF4D00; color: #FFFFFF; } .ds-chip:hover { opacity: 0.9; } .ds-chip:active { transform: scale(0.97); } .ds-chip:focus-visible { outline: 2px solid #FF4D00; outline-offset: 2px; }"
     },
     {
       "name": "Workout Card",
@@ -550,7 +610,7 @@
       "kind": "custom",
       "description": "Equal-width compact modes on a tonal track with a quiet sliding selection.",
       "html": "<div class=\"ds-segmented\"><button class=\"ds-segment ds-segment-active\">Workouts</button><button class=\"ds-segment\">Steps</button></div>",
-      "css": ".ds-segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 0; padding: 4px; border-radius: 12px; background: #252422; } .ds-segment { min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: transparent; color: #8F8A85; font: 500 15px 'Instrument Sans', system-ui, sans-serif; transition: background 180ms ease, color 180ms ease, opacity 120ms ease; } .ds-segment-active { background: #3D3B38; color: #F0ECE8; } .ds-segment:hover { opacity: 0.88; } .ds-segment:focus-visible { outline: 2px solid #FF4D00; outline-offset: -2px; }"
+      "css": ".ds-segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 0; padding: 4px; border-radius: 12px; background: #252422; } .ds-segment { min-height: 48px; padding: 0 16px; border: 0; border-radius: 12px; background: transparent; color: #8F8A85; font: 500 15px 'Instrument Sans', system-ui, sans-serif; transition: background 180ms ease, color 180ms ease, opacity 120ms ease; } .ds-segment-active { background: #3D3B38; color: #F0ECE8; } .ds-segment:hover { opacity: 0.88; } .ds-segment:focus-visible { outline: 2px solid #FF4D00; outline-offset: -2px; }"
     },
     {
       "name": "Bottom Navigation",
@@ -564,7 +624,7 @@
       "kind": "custom",
       "description": "Transient feedback with a restrained float and a slim orange status rail.",
       "html": "<div class=\"ds-snackbar\" role=\"status\"><span class=\"ds-snackbar-rail\"></span><strong>Workout saved</strong><button>Undo</button></div>",
-      "css": ".ds-snackbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid #3D3B38; border-radius: 12px; background: #252422; color: #F0ECE8; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.24), 0 4px 6px -4px rgba(0, 0, 0, 0.18); font: 500 15px 'Instrument Sans', system-ui, sans-serif; } .ds-snackbar-rail { width: 4px; height: 32px; border-radius: 8px; background: #FF4D00; } .ds-snackbar strong { flex: 1; font-weight: 500; } .ds-snackbar button { min-height: 32px; padding: 4px 8px; border: 0; background: transparent; color: #FF4D00; font: 600 13px 'Instrument Sans', system-ui, sans-serif; } .ds-snackbar button:hover { opacity: 0.82; } .ds-snackbar button:active { transform: scale(0.97); } .ds-snackbar button:focus-visible { outline: 2px solid #FF4D00; outline-offset: 2px; }"
+      "css": ".ds-snackbar { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 1px solid #3D3B38; border-radius: 16px; background: #2E2C2A; color: #F0ECE8; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.24), 0 4px 6px -4px rgba(0, 0, 0, 0.18); font: 500 15px 'Instrument Sans', system-ui, sans-serif; } .ds-snackbar-rail { width: 6px; height: 36px; border-radius: 8px; background: #FF4D00; } .ds-snackbar strong { flex: 1; font-weight: 500; } .ds-snackbar button { min-height: 32px; padding: 4px 8px; border: 0; background: transparent; color: #FF4D00; font: 600 13px 'Instrument Sans', system-ui, sans-serif; } .ds-snackbar button:hover { opacity: 0.82; } .ds-snackbar button:active { transform: scale(0.97); } .ds-snackbar button:focus-visible { outline: 2px solid #FF4D00; outline-offset: 2px; }"
     }
   ],
   "narrative": {
