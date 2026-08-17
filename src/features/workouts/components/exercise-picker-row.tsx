@@ -31,13 +31,13 @@ export const ExercisePickerRow = memo(function ExercisePickerRow({
         <View
           className={cn(
             'border-border bg-card h-12 w-12 items-center justify-center rounded-full border',
-            isSelected && 'border-primary bg-primary'
+            isSelected && 'border-primary-subtle-border bg-primary-subtle'
           )}
         >
           <Icon
             as={isSelected ? CheckIcon : PlusIcon}
             size="sm"
-            tone={isSelected ? 'primaryForeground' : 'secondaryForeground'}
+            tone={isSelected ? 'primary' : 'secondaryForeground'}
           />
         </View>
       }

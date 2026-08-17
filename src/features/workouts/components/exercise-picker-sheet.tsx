@@ -549,11 +549,7 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
           ListFooterComponent={
             isMultiple ? (
               <View className="pt-3">
-                <Button
-                  variant="secondary"
-                  leftIcon={<Icon as={PlusIcon} tone="secondaryForeground" />}
-                  onPress={createCustomExercise}
-                >
+                <Button variant="secondary" onPress={createCustomExercise}>
                   {createButtonLabel}
                 </Button>
               </View>
@@ -566,7 +562,6 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
         {isMultiple ? (
           <Button
             disabled={pendingExercises.length === 0}
-            leftIcon={<Icon as={PlusIcon} tone="primaryForeground" />}
             onPress={addPendingExercises}
           >
             {addButtonLabel}
