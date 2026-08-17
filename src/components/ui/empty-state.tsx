@@ -15,6 +15,10 @@ type EmptyStateTextProps = ComponentPropsWithoutRef<typeof Text> & {
   children: ReactNode;
 };
 
+type EmptyStateIconProps = ComponentPropsWithoutRef<typeof Icon> & {
+  containerClassName?: string;
+};
+
 type EmptyStateActionProps = Omit<
   ComponentPropsWithoutRef<typeof View>,
   'children'
@@ -33,8 +37,23 @@ function EmptyStateRoot({ children, className, ...props }: EmptyStateProps) {
   );
 }
 
-function EmptyStateIcon(props: ComponentPropsWithoutRef<typeof Icon>) {
-  return <Icon size="empty" tone="mutedForeground" {...props} />;
+function EmptyStateIcon({
+  className,
+  containerClassName,
+  size = 'xl',
+  tone = 'foreground',
+  ...props
+}: EmptyStateIconProps) {
+  return (
+    <View
+      className={cn(
+        'border-input bg-card items-center justify-center rounded-2xl border p-4',
+        containerClassName
+      )}
+    >
+      <Icon {...props} className={className} size={size} tone={tone} />
+    </View>
+  );
 }
 
 function EmptyStateTitle({
@@ -75,7 +94,7 @@ function EmptyStateAction({
   ...props
 }: EmptyStateActionProps) {
   return (
-    <View {...props} className={className}>
+    <View {...props} className={cn('mt-2', className)}>
       {children}
     </View>
   );

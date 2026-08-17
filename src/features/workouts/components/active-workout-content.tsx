@@ -398,13 +398,7 @@ export function ActiveWorkoutContent({
       ) : (
         <View className="flex-1 px-4 pb-6">
           <EmptyState className="flex-1 gap-4 px-8">
-            <View className="bg-card border-input flex items-center justify-center rounded-2xl border p-4">
-              <EmptyState.Icon
-                as={DumbbellIcon}
-                size="xl"
-                className="text-card-foreground rotate-45"
-              />
-            </View>
+            <EmptyState.Icon as={DumbbellIcon} />
             <View className="gap-2">
               <EmptyState.Title weight="semiBold">
                 No exercises yet

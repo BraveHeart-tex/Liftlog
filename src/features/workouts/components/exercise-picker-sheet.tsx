@@ -31,7 +31,7 @@ import { ExercisePickerFilters } from '@/src/features/workouts/components/exerci
 import { ExercisePickerRow } from '@/src/features/workouts/components/exercise-picker-row';
 import { matchesExercisePickerFilters } from '@/src/features/workouts/exercise-picker-filter.utils';
 import { triggerHapticLight } from '@/src/lib/haptics/haptics';
-import { PlusIcon, XIcon } from 'lucide-react-native';
+import { DumbbellIcon, PlusIcon, XIcon } from 'lucide-react-native';
 import {
   memo,
   useCallback,
@@ -537,45 +537,54 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
           renderItem={renderExerciseItem}
           windowSize={7}
           ListEmptyComponent={
-            <EmptyState className="border-border bg-card mt-3 rounded-lg border border-dashed px-6 py-10">
-              <EmptyState.Title variant="bodyMedium">
-                {emptyTitle}
-              </EmptyState.Title>
-              <EmptyState.Description>
-                {emptyDescription}
-              </EmptyState.Description>
-            </EmptyState>
-          }
-          ListFooterComponent={
-            isMultiple ? (
-              <View className="pt-3">
-                <Button variant="secondary" onPress={createCustomExercise}>
+            <EmptyState className="border-border bg-card mt-3 w-full gap-4 rounded-lg border border-dashed px-6 py-10">
+              <EmptyState.Icon
+                as={DumbbellIcon}
+                containerClassName="bg-secondary border-0"
+              />
+              <View className="items-center gap-2">
+                <EmptyState.Title variant="h3" weight="medium">
+                  {emptyTitle}
+                </EmptyState.Title>
+                <EmptyState.Description>
+                  {emptyDescription}
+                </EmptyState.Description>
+              </View>
+              <EmptyState.Action className="w-full">
+                <Button
+                  variant="primary"
+                  fullWidth
+                  leftIcon={<Icon as={PlusIcon} tone="primaryForeground" />}
+                  onPress={createCustomExercise}
+                >
                   {createButtonLabel}
                 </Button>
-              </View>
-            ) : null
+              </EmptyState.Action>
+            </EmptyState>
           }
         />
       )}
 
-      <View className="border-border bg-card pb-safe border-t px-4 pt-3">
-        {isMultiple ? (
-          <Button
-            disabled={pendingExercises.length === 0}
-            onPress={addPendingExercises}
-          >
-            {addButtonLabel}
-          </Button>
-        ) : (
-          <Button
-            variant="secondary"
-            leftIcon={<Icon as={PlusIcon} tone="secondaryForeground" />}
-            onPress={createCustomExercise}
-          >
-            {createButtonLabel}
-          </Button>
-        )}
-      </View>
+      {filteredExercises.length > 0 ? (
+        <View className="border-border bg-card pb-safe border-t px-4 pt-3">
+          {isMultiple ? (
+            <Button
+              disabled={pendingExercises.length === 0}
+              onPress={addPendingExercises}
+            >
+              {addButtonLabel}
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              leftIcon={<Icon as={PlusIcon} tone="secondaryForeground" />}
+              onPress={createCustomExercise}
+            >
+              {createButtonLabel}
+            </Button>
+          )}
+        </View>
+      ) : null}
     </>
   );
 });
