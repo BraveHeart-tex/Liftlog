@@ -7,6 +7,7 @@ import {
 } from '@/src/components/ui/bottom-sheet';
 import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
 import { Button } from '@/src/components/ui/button';
+import { Field, FieldError, FieldLabel } from '@/src/components/ui/field';
 import { Icon } from '@/src/components/ui/icon';
 import type { Workout, WorkoutExercise } from '@/src/db/schema';
 import { useSaveWorkoutTemplate } from '@/src/features/workouts/hooks/use-save-workout-template';
@@ -134,23 +135,28 @@ const SaveWorkoutTemplateSheetContent = memo(
         </BottomSheetHeader>
 
         <View className="px-4 pt-4">
-          <BottomSheetInput
-            ref={templateInputRef}
-            label="Template name"
-            value={templateName}
-            onChangeText={nextName => {
-              setTemplateName(nextName);
-              setTemplateError(undefined);
-            }}
-            autoCapitalize="words"
-            autoCorrect={false}
-            returnKeyType="done"
-            maxLength={80}
-            error={templateError}
-            blurOnSubmit={false}
-            submitBehavior="submit"
-            onSubmitEditing={submitTemplate}
-          />
+          <Field>
+            <FieldLabel>Template name</FieldLabel>
+            <BottomSheetInput
+              ref={templateInputRef}
+              value={templateName}
+              onChangeText={nextName => {
+                setTemplateName(nextName);
+                setTemplateError(undefined);
+              }}
+              autoCapitalize="words"
+              autoCorrect={false}
+              returnKeyType="done"
+              maxLength={80}
+              accessibilityLabel="Template name"
+              invalid={Boolean(templateError)}
+              className="mt-2"
+              blurOnSubmit={false}
+              submitBehavior="submit"
+              onSubmitEditing={submitTemplate}
+            />
+            {templateError ? <FieldError>{templateError}</FieldError> : null}
+          </Field>
         </View>
 
         <View className="border-border mt-4 border-t" />

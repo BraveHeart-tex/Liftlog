@@ -1,4 +1,5 @@
 import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
+import { Field, FieldError, FieldLabel } from '@/src/components/ui/field';
 import { Input } from '@/src/components/ui/input';
 import { View, type LayoutChangeEvent } from 'react-native';
 
@@ -25,33 +26,37 @@ export function ExerciseNameField({
 }: ExerciseNameFieldProps) {
   return (
     <View onLayout={onLayout}>
-      {inputVariant === 'bottom-sheet' ? (
-        <BottomSheetInput
-          ref={onInputRef}
-          label="1. Name"
-          value={name}
-          onChangeText={onChangeName}
-          placeholder="Incline Bench Press"
-          autoCapitalize="words"
-          autoCorrect={false}
-          returnKeyType="done"
-          error={error}
-          density="compact"
-        />
-      ) : (
-        <Input
-          ref={onInputRef}
-          label="1. Name"
-          value={name}
-          onChangeText={onChangeName}
-          placeholder="Incline Bench Press"
-          autoCapitalize="words"
-          autoCorrect={false}
-          returnKeyType="done"
-          error={error}
-          density="compact"
-        />
-      )}
+      <Field>
+        <FieldLabel>1. Name</FieldLabel>
+        {inputVariant === 'bottom-sheet' ? (
+          <BottomSheetInput
+            ref={onInputRef}
+            value={name}
+            onChangeText={onChangeName}
+            placeholder="Incline Bench Press"
+            autoCapitalize="words"
+            autoCorrect={false}
+            returnKeyType="done"
+            accessibilityLabel="1. Name"
+            invalid={Boolean(error)}
+            className="mt-2 h-11 px-3 py-2"
+          />
+        ) : (
+          <Input
+            ref={onInputRef}
+            value={name}
+            onChangeText={onChangeName}
+            placeholder="Incline Bench Press"
+            autoCapitalize="words"
+            autoCorrect={false}
+            returnKeyType="done"
+            accessibilityLabel="1. Name"
+            invalid={Boolean(error)}
+            className="mt-2 h-11 px-3 py-2"
+          />
+        )}
+        {error ? <FieldError>{error}</FieldError> : null}
+      </Field>
     </View>
   );
 }

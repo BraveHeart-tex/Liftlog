@@ -1,5 +1,6 @@
 import { StyledFlatList } from '@/src/components/styled/flat-list';
 import { Button } from '@/src/components/ui/button';
+import { InputGroup, InputSlot } from '@/src/components/ui/input-group';
 import { Icon } from '@/src/components/ui/icon';
 import { Input } from '@/src/components/ui/input';
 import { LoadingState } from '@/src/components/ui/loading-state';
@@ -99,17 +100,21 @@ export default function ExercisesScreen() {
           </Button>
         </View>
 
-        <Input
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search exercises"
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="search"
-          density="compact"
-          containerClassName="mt-4"
-          leftIcon={<SearchInputIcon />}
-        />
+        <InputGroup className="mt-4 min-h-11 px-3 py-2">
+          <InputSlot className="mr-3">
+            <SearchInputIcon />
+          </InputSlot>
+          <Input
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search exercises"
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+            accessibilityLabel="Search exercises"
+            className="h-auto min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 py-0"
+          />
+        </InputGroup>
       </View>
 
       <StyledFlatList

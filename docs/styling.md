@@ -16,3 +16,26 @@ Use styled wrappers for third-party components with multiple style props. Avoid 
 - Do not add global `lineHeight` tokens; React Native treats line height as layout height.
 
 Use the shared text primitive and typography classes.
+
+### Inputs
+
+Inputs are primitives. Their `className` styles the native text input directly,
+so sizing is explicit:
+
+```tsx
+<Input className="h-14" accessibilityLabel="Name" />
+```
+
+Compose labels and supporting text with `Field`, `FieldLabel`,
+`FieldDescription`, and `FieldError`. Use `invalid` for the input state:
+
+```tsx
+<Field>
+  <FieldLabel>Name</FieldLabel>
+  <Input accessibilityLabel="Name" invalid={Boolean(error)} />
+  {error ? <FieldError>{error}</FieldError> : null}
+</Field>
+```
+
+Use `InputGroup` and `InputSlot` for icons or controls around an input. The
+group owns the shell; the input removes its own shell with direct classes.

@@ -1,137 +1,59 @@
+import {
+  getInputClassName,
+  useInputBehavior,
+  type InputProps
+} from '@/src/components/ui/input.shared';
 import { StyledTextInput } from '@/src/components/styled/text-input';
-import { InputFieldLayout } from '@/src/components/ui/input-field-layout';
-import { cn } from '@/src/lib/utils/cn.utils';
-import {
-  forwardRef,
-  useEffect,
-  useRef,
-  useState,
-  type ComponentPropsWithoutRef,
-  type ReactNode
-} from 'react';
-import {
-  AccessibilityInfo,
-  type AccessibilityState,
-  type TextInput
-} from 'react-native';
+import { forwardRef, type ComponentRef } from 'react';
 
-type NativeTextInputProps = ComponentPropsWithoutRef<typeof TextInput>;
-type InputAccessibilityState = AccessibilityState & { invalid?: boolean };
+export type { InputProps } from '@/src/components/ui/input.shared';
 
-type InputProps = NativeTextInputProps & {
-  density?: 'default' | 'compact';
-  label?: string;
-  hint?: string;
-  error?: string;
-  leftIcon?: ReactNode;
-  rightIcon?: ReactNode;
-  leftIconContainerClassName?: string;
-  rightIconContainerClassName?: string;
-  withContainerDefaults?: boolean;
-  className?: string;
-  containerClassName?: string;
-  inputClassName?: string;
-  labelClassName?: string;
-  hintClassName?: string;
-  errorClassName?: string;
-  disabled?: boolean;
-};
-
-export const Input = forwardRef<TextInput, InputProps>(function Input(
+export const Input = forwardRef<
+  ComponentRef<typeof StyledTextInput>,
+  InputProps
+>(function Input(
   {
-    label,
-    density = 'default',
-    hint,
-    error,
-    leftIcon,
-    rightIcon,
-    leftIconContainerClassName,
-    rightIconContainerClassName,
-    withContainerDefaults = true,
     className,
-    containerClassName,
-    inputClassName,
-    labelClassName,
-    hintClassName,
-    errorClassName,
     disabled = false,
     editable,
-    accessibilityLabel,
-    accessibilityHint,
+    invalid = false,
+    multiline,
     accessibilityState,
     onBlur,
     onFocus,
+    placeholderClassName = 'text-muted-foreground',
+    selectionClassName = 'text-primary',
     ...props
   },
   ref
 ) {
-  const [focused, setFocused] = useState(false);
-  const hasError = Boolean(error);
-  const isEditable = editable ?? !disabled;
-  const previousError = useRef<string | undefined>(undefined);
-
-  useEffect(() => {
-    if (error && error !== previousError.current) {
-      AccessibilityInfo.announceForAccessibility(error);
-    }
-
-    previousError.current = error;
-  }, [error]);
-
-  const supportingText = [accessibilityHint, error, hint]
-    .filter(Boolean)
-    .join('. ');
-  const inputState = accessibilityState as InputAccessibilityState | undefined;
-  const inputAccessibilityState: InputAccessibilityState = {
-    ...inputState,
-    disabled: disabled || inputState?.disabled,
-    invalid: hasError || inputState?.invalid
-  };
+  const behavior = useInputBehavior({
+    accessibilityState,
+    disabled,
+    editable,
+    invalid,
+    onBlur,
+    onFocus
+  });
 
   return (
-    <InputFieldLayout
-      density={density}
-      label={label}
-      hint={hint}
-      error={error}
-      leftIcon={leftIcon}
-      rightIcon={rightIcon}
-      leftIconContainerClassName={leftIconContainerClassName}
-      rightIconContainerClassName={rightIconContainerClassName}
-      withContainerDefaults={withContainerDefaults}
-      className={className}
-      containerClassName={containerClassName}
-      labelClassName={labelClassName}
-      hintClassName={hintClassName}
-      errorClassName={errorClassName}
-      disabled={disabled}
-      focused={focused}
-    >
-      <StyledTextInput
-        {...props}
-        ref={ref}
-        className={cn(
-          'text-body text-foreground flex-1',
-          props.multiline && 'min-h-20',
-          disabled && 'text-muted-foreground',
-          inputClassName
-        )}
-        textAlignVertical={props.multiline ? 'top' : 'center'}
-        editable={isEditable}
-        accessibilityLabel={label ?? accessibilityLabel}
-        accessibilityHint={supportingText || undefined}
-        accessibilityState={inputAccessibilityState}
-        onBlur={event => {
-          setFocused(false);
-          onBlur?.(event);
-        }}
-        onFocus={event => {
-          setFocused(true);
-          onFocus?.(event);
-        }}
-        placeholderClassName="text-muted-foreground"
-        selectionClassName="text-primary"
-      />
-    </InputFieldLayout>
+    <StyledTextInput
+      {...props}
+      ref={ref}
+      className={getInputClassName({
+        className,
+        disabled,
+        focused: behavior.focused,
+        invalid,
+        multiline
+      })}
+      textAlignVertical={multiline ? 'top' : 'center'}
+      editable={behavior.editable}
+      accessibilityState={behavior.accessibilityState}
+      onBlur={behavior.onBlur}
+      onFocus={behavior.onFocus}
+      placeholderClassName={placeholderClassName}
+      selectionClassName={selectionClassName}
+    />
   );
 });

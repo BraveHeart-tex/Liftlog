@@ -1,5 +1,6 @@
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
+import { InputGroup } from '@/src/components/ui/input-group';
 import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
 import { StyledActivityIndicator } from '@/src/components/styled/activity-indicator';
@@ -301,23 +302,23 @@ function SetFormEditableField({
         />
       ) : (
         <View className="relative">
-          <Input
-            value={value}
-            onChangeText={value => onFieldChange(row, field, value)}
-            keyboardType={field.keyboardType}
-            placeholder=""
-            withContainerDefaults={false}
-            editable={!row.isSaving}
-            onFocus={() => onRowFocus?.(row.key)}
-            containerClassName="min-h-12 flex-row items-center rounded-lg px-1"
-            inputClassName={cn(
-              'text-body-medium min-w-0 flex-1 px-2 py-2',
-              row.isCommitted && 'text-muted-foreground'
-            )}
-            selection={value.length === 0 ? emptyInputSelection : undefined}
-            textAlign="center"
-            accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
-          />
+          <InputGroup className="min-h-12 rounded-lg border-transparent bg-transparent px-1 py-0">
+            <Input
+              value={value}
+              onChangeText={value => onFieldChange(row, field, value)}
+              keyboardType={field.keyboardType}
+              placeholder=""
+              editable={!row.isSaving}
+              onFocus={() => onRowFocus?.(row.key)}
+              className={cn(
+                'text-body-medium h-auto min-w-0 flex-1 rounded-none border-0 bg-transparent px-2 py-2',
+                row.isCommitted && 'text-muted-foreground'
+              )}
+              selection={value.length === 0 ? emptyInputSelection : undefined}
+              textAlign="center"
+              accessibilityLabel={`Set ${row.setNumber} ${field.label.toLowerCase()}`}
+            />
+          </InputGroup>
           {value.length === 0 ? (
             <View
               pointerEvents="none"

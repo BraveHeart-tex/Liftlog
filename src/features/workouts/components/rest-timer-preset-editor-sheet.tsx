@@ -5,6 +5,7 @@ import {
 } from '@/src/components/ui/bottom-sheet';
 import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
 import { Button } from '@/src/components/ui/button';
+import { Field, FieldError, FieldLabel } from '@/src/components/ui/field';
 import { Icon } from '@/src/components/ui/icon';
 import { RestTimerDurationPicker } from '@/src/features/workouts/components/rest-timer-duration-picker';
 import {
@@ -162,18 +163,23 @@ const RestTimerPresetEditorSheetContent = memo(
         </BottomSheetHeader>
 
         <View className="pb-safe-offset-4 gap-5 px-4 pt-2">
-          <BottomSheetInput
-            label="Name"
-            value={name}
-            maxLength={REST_TIMER_PRESET_NAME_MAX_LENGTH}
-            placeholder="Preset name"
-            returnKeyType="done"
-            error={
-              !trimmedName && name.length > 0 ? 'Name is required.' : undefined
-            }
-            onChangeText={handleNameChange}
-            onSubmitEditing={handleSave}
-          />
+          <Field>
+            <FieldLabel>Name</FieldLabel>
+            <BottomSheetInput
+              value={name}
+              maxLength={REST_TIMER_PRESET_NAME_MAX_LENGTH}
+              placeholder="Preset name"
+              returnKeyType="done"
+              accessibilityLabel="Name"
+              invalid={!trimmedName && name.length > 0}
+              className="mt-2"
+              onChangeText={handleNameChange}
+              onSubmitEditing={handleSave}
+            />
+            {!trimmedName && name.length > 0 ? (
+              <FieldError>Name is required.</FieldError>
+            ) : null}
+          </Field>
 
           <RestTimerDurationPicker
             minutes={minutes}

@@ -9,6 +9,7 @@ import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
 import { Button } from '@/src/components/ui/button';
 import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
+import { InputGroup, InputSlot } from '@/src/components/ui/input-group';
 import { LoadingState } from '@/src/components/ui/loading-state';
 import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { SearchInputIcon } from '@/src/components/ui/search-input-icon';
@@ -112,17 +113,23 @@ const ExercisePickerSearchInput = memo(function ExercisePickerSearchInput({
   }, [onChangeQuery, onCommitQuery]);
 
   return (
-    <BottomSheetInput
-      ref={inputRef}
-      value={query}
-      onChangeText={handleChangeText}
-      placeholder="Search exercises"
-      autoCapitalize="none"
-      autoCorrect={false}
-      returnKeyType="search"
-      leftIcon={<SearchInputIcon />}
-      rightIcon={
-        query.length > 0 ? (
+    <InputGroup className="h-12 px-3 py-0">
+      <InputSlot className="mr-3">
+        <SearchInputIcon />
+      </InputSlot>
+      <BottomSheetInput
+        ref={inputRef}
+        value={query}
+        onChangeText={handleChangeText}
+        placeholder="Search exercises"
+        autoCapitalize="none"
+        autoCorrect={false}
+        returnKeyType="search"
+        accessibilityLabel="Search exercises"
+        className="h-12 min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 py-0"
+      />
+      {query.length > 0 ? (
+        <InputSlot className="ml-2">
           <PressableSurface
             accessibilityLabel="Clear exercise search"
             className="h-9 w-9 items-center justify-center"
@@ -130,10 +137,9 @@ const ExercisePickerSearchInput = memo(function ExercisePickerSearchInput({
           >
             <Icon as={XIcon} size="sm" tone="mutedForeground" />
           </PressableSurface>
-        ) : undefined
-      }
-      density="compact"
-    />
+        </InputSlot>
+      ) : null}
+    </InputGroup>
   );
 });
 
@@ -476,11 +482,13 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
       </BottomSheetHeader>
 
       <View className="px-4 pb-3">
-        <ExercisePickerSearchInput
-          isOpen={isOpen}
-          onChangeQuery={handleQueryChange}
-          onCommitQuery={setCommittedQuery}
-        />
+        <View className="mt-2">
+          <ExercisePickerSearchInput
+            isOpen={isOpen}
+            onChangeQuery={handleQueryChange}
+            onCommitQuery={setCommittedQuery}
+          />
+        </View>
         <ExercisePickerFilters
           selectedFilter={selectedFilter}
           setSelectedFilter={filter => {
