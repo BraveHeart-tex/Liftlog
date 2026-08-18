@@ -4,6 +4,7 @@ import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { WorkoutTemplateCard } from '@/src/features/workouts/components/workout-template-card';
 import { useWorkoutTemplates } from '@/src/features/workouts/hooks/use-workout-templates';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { useRouter } from 'expo-router';
 import { PlusIcon } from 'lucide-react-native';
@@ -30,7 +31,11 @@ export const WorkoutTemplatesSection = () => {
 
   return (
     <View className="mt-8 mb-6">
-      <View className="flex-row items-center justify-between">
+      <View
+        className={cn('flex-row items-center justify-between', {
+          'border-border border-b pb-4': templates.length > 0
+        })}
+      >
         <Text variant="overline" tone="muted">
           Templates
         </Text>
