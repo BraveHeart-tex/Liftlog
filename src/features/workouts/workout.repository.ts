@@ -323,9 +323,14 @@ function getWorkoutTemplateRecordById(
 
 export function getRecentWorkoutsQuery(db: DrizzleDb, limit: number) {
   return db
-    .select()
+    .select({
+      workout: workouts,
+      exerciseCount: countDistinct(workoutExercises.id)
+    })
     .from(workouts)
+    .leftJoin(workoutExercises, eq(workoutExercises.workoutId, workouts.id))
     .where(eq(workouts.status, 'completed'))
+    .groupBy(workouts.id)
     .orderBy(desc(workouts.startedAt))
     .limit(limit);
 }
