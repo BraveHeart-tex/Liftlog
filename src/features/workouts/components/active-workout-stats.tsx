@@ -12,15 +12,19 @@ export function ActiveWorkoutStats({
   exerciseCount
 }: ActiveWorkoutStatsProps) {
   return (
-    <View className="my-4 flex-row items-baseline justify-center">
-      <Text variant="bodyMedium">{exerciseCount}</Text>
+    <View className="flex-row">
+      <Text variant="bodyMedium" tone="muted">
+        {exerciseCount}
+      </Text>
       <Text variant="small" tone="muted" className="ml-1">
         {pluralizeUnit(exerciseCount, 'exercise')}
       </Text>
       <Text variant="small" tone="muted" className="mx-2">
         ·
       </Text>
-      <Text variant="bodyMedium">{completedSetCount}</Text>
+      <Text variant="bodyMedium" tone="muted">
+        {completedSetCount}
+      </Text>
       <Text variant="small" tone="muted" className="ml-1">
         {pluralizeUnit(completedSetCount, 'set')}
       </Text>
