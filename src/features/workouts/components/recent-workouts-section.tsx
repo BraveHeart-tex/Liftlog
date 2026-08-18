@@ -14,17 +14,21 @@ export const RecentWorkoutsSection = () => {
 
   return (
     <View className="mt-8">
-      <View className="flex-row items-center justify-between">
+      <View
+        className={cn('flex-row items-center justify-between', {
+          'border-border border-b pb-4': recentWorkouts.length > 0
+        })}
+      >
         <Text variant="overline" tone="muted">
           Recent workouts
         </Text>
         {recentWorkouts.length > 0 && (
           <Link asChild href="/(tabs)/log">
             <View className="flex-row items-center gap-1">
-              <Text tone="primary" variant="small">
+              <Text tone="primary" weight="medium" variant="small">
                 View all
               </Text>
-              <Icon as={ChevronRightIcon} tone="primary" size={iconSizes.xs} />
+              <Icon as={ChevronRightIcon} tone="primary" size={iconSizes.sm} />
             </View>
           </Link>
         )}
