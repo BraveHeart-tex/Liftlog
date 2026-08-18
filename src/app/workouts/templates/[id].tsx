@@ -13,6 +13,7 @@ import { ActiveWorkoutExercisePickerSheet } from '@/src/features/workouts/compon
 import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/create-custom-exercise-sheet';
 import { DiscardWorkoutSheet } from '@/src/features/workouts/components/discard-workout-sheet';
 import { NewTemplateExerciseList } from '@/src/features/workouts/components/new-template-exercise-list';
+import { NewTemplateExerciseRow } from '@/src/features/workouts/components/new-template-exercise-row';
 import { RenameTemplateSheet } from '@/src/features/workouts/components/rename-template-sheet';
 import { SupersetExerciseGroup } from '@/src/features/workouts/components/superset-exercise-group';
 import { WorkoutTemplateActionsSheet } from '@/src/features/workouts/components/workout-template-actions-sheet';
@@ -462,9 +463,7 @@ function WorkoutTemplateDetailLoaded({
           <View className="mt-3">
             {supersetBlocks.map((block, blockIndex) => {
               const renderExerciseCard = (
-                templateExercise: (typeof templateExerciseRows)[number],
-                label?: string,
-                isGrouped = false
+                templateExercise: (typeof templateExerciseRows)[number]
               ) => {
                 const exercise = exerciseById.get(templateExercise.exerciseId);
                 const exerciseIndex =
@@ -475,11 +474,11 @@ function WorkoutTemplateDetailLoaded({
                     key={templateExercise.id}
                     onLongPress={enterExerciseEditModeFromLongPress}
                   >
-                    {isGrouped ? (
-                      <View className="flex-row items-center gap-3 px-3 py-3">
-                        <View className="bg-muted h-9 w-9 items-center justify-center rounded-full">
-                          <Text variant="bodyMedium" tone="muted">
-                            {label}
+                    <Card>
+                      <CardContent className="flex-row items-center gap-3">
+                        <View className="bg-muted h-9 w-9 items-center justify-center rounded-lg">
+                          <Text variant="caption" tone="muted">
+                            {exerciseIndex + 1}
                           </Text>
                         </View>
                         <View className="flex-1">
@@ -490,50 +489,39 @@ function WorkoutTemplateDetailLoaded({
                             {exercise?.category ?? 'Exercise'}
                           </Text>
                         </View>
-                      </View>
-                    ) : (
-                      <Card>
-                        <CardContent className="flex-row items-center gap-3">
-                          <View className="bg-muted h-9 w-9 items-center justify-center rounded-lg">
-                            <Text variant="caption" tone="muted">
-                              {exerciseIndex + 1}
-                            </Text>
-                          </View>
-                          <View className="flex-1">
-                            <Text variant="bodyMedium">
-                              {exercise?.name ?? 'Unknown exercise'}
-                            </Text>
-                            <Text
-                              variant="caption"
-                              tone="muted"
-                              className="mt-1"
-                            >
-                              {exercise?.category ?? 'Exercise'}
-                            </Text>
-                          </View>
-                        </CardContent>
-                      </Card>
-                    )}
+                      </CardContent>
+                    </Card>
                   </Pressable>
                 );
               };
+
+              const renderGroupedExerciseRow = (
+                templateExercise: (typeof templateExerciseRows)[number]
+              ) => (
+                <Pressable
+                  key={templateExercise.id}
+                  className="flex-1"
+                  onLongPress={enterExerciseEditModeFromLongPress}
+                >
+                  <NewTemplateExerciseRow
+                    exercise={exerciseById.get(templateExercise.exerciseId)}
+                    isDragging={false}
+                    className="flex-1"
+                  />
+                </Pressable>
+              );
 
               return (
                 <View key={block.id} className={cn(blockIndex > 0 && 'mt-3')}>
                   {block.supersetId ? (
                     <SupersetExerciseGroup
+                      rows={block.rows}
                       supersetLabel={
                         supersetLabelByTemplateExerciseId.get(
                           block.rows[0].id
                         ) ?? 'Superset'
                       }
-                      renderRow={({ label, position }) =>
-                        renderExerciseCard(
-                          block.rows[position - 1],
-                          label,
-                          true
-                        )
-                      }
+                      renderRow={({ row }) => renderGroupedExerciseRow(row)}
                     />
                   ) : (
                     renderExerciseCard(block.rows[0])

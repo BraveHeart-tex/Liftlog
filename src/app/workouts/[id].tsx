@@ -321,7 +321,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
       const renderExerciseCard = (
         workoutExercise: (typeof workoutExerciseRows)[number],
         className?: string,
-        supersetRowLabel?: string
+        isGrouped = false
       ) => {
         const exercise = exerciseById.get(workoutExercise.exerciseId);
         const completedSets =
@@ -331,13 +331,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
           <WorkoutHistoryExerciseCard
             key={workoutExercise.id}
             exerciseName={exercise?.name ?? 'Unknown exercise'}
-            variant={supersetRowLabel ? 'grouped' : 'default'}
-            supersetRowLabel={supersetRowLabel}
-            supersetLabel={
-              block.supersetId && !supersetRowLabel
-                ? supersetLabelByBlockId.get(block.id)
-                : undefined
-            }
+            variant={isGrouped ? 'grouped' : 'default'}
             completedSets={completedSets}
             weightUnit={weightUnit}
             trackingType={resolveTrackingType(exercise?.trackingType)}
@@ -353,10 +347,9 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
       return (
         <View className="mt-3">
           <SupersetExerciseGroup
+            rows={block.rows}
             supersetLabel={supersetLabelByBlockId.get(block.id) ?? 'Superset'}
-            renderRow={({ label, position }) =>
-              renderExerciseCard(block.rows[position - 1], 'mt-0', label)
-            }
+            renderRow={({ row }) => renderExerciseCard(row, 'mt-0', true)}
           />
         </View>
       );

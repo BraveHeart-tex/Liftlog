@@ -1,5 +1,4 @@
 import { Icon } from '@/src/components/ui/icon';
-import { Text } from '@/src/components/ui/text';
 import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
 import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
 import { WorkoutExerciseSummary } from '@/src/features/workouts/components/workout-exercise-summary';
@@ -15,8 +14,6 @@ interface ActiveWorkoutExerciseCardProps {
   item: WorkoutExerciseWithSets;
   className?: string;
   mode?: 'active' | 'historical' | 'historical-edit';
-  supersetLabel?: string;
-  supersetRowLabel?: string;
   variant?: 'default' | 'grouped';
   weightUnit: WeightUnit;
   onLongPress?: () => void;
@@ -26,8 +23,6 @@ export function ActiveWorkoutExerciseCard({
   item,
   className,
   mode = 'active',
-  supersetLabel,
-  supersetRowLabel,
   variant = 'default',
   weightUnit,
   onLongPress
@@ -58,11 +53,7 @@ export function ActiveWorkoutExerciseCard({
     >
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={
-          supersetRowLabel && supersetLabel
-            ? `${exerciseName}, ${supersetLabel}, exercise ${supersetRowLabel.slice(-1)} of 2`
-            : exerciseName
-        }
+        accessibilityLabel={exerciseName}
         onPress={() =>
           router.navigate({
             pathname,
@@ -76,13 +67,10 @@ export function ActiveWorkoutExerciseCard({
         {isGrouped ? (
           <View
             className={cn(
-              'flex-row items-center gap-3 px-3 py-3',
+              'flex-row items-center gap-3 py-3',
               pressed && 'bg-secondary'
             )}
           >
-            <View className="bg-muted h-9 w-9 items-center justify-center rounded-full">
-              <Text variant="bodyMedium">{supersetRowLabel}</Text>
-            </View>
             <WorkoutExerciseSummary
               exerciseName={exerciseName}
               completedSets={completedSets}

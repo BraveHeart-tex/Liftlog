@@ -12,47 +12,52 @@ import { View } from 'react-native';
 
 type SupersetExercisePosition = 1 | 2;
 
-interface SupersetExerciseGroupProps {
+interface SupersetExerciseGroupProps<TRow> {
+  rows: readonly TRow[];
   supersetLabel: string;
   className?: string;
-  variant?: 'default' | 'edit';
   renderHeaderActions?: ReactNode;
   renderRow: (params: {
-    label: string;
+    row: TRow;
     position: SupersetExercisePosition;
   }) => ReactNode;
 }
 
-export function SupersetExerciseGroup({
+export function SupersetExerciseGroup<TRow>({
+  rows,
   supersetLabel,
   className,
-  variant = 'default',
   renderHeaderActions,
   renderRow
-}: SupersetExerciseGroupProps) {
+}: SupersetExerciseGroupProps<TRow>) {
   const supersetLetter = getSupersetLetter(supersetLabel);
+  const firstRow = rows[0];
+  const secondRow = rows[1];
+
+  if (firstRow === undefined || secondRow === undefined) {
+    return null;
+  }
+
+  const renderGroupRow = (row: TRow, position: SupersetExercisePosition) => (
+    <View className="flex-row items-center gap-3 px-4">
+      <View className="w-10 shrink-0">
+        <Text variant="body" tone="muted">
+          {formatSupersetExerciseLabel(supersetLetter, position)}
+        </Text>
+      </View>
+      <View className="min-w-0 flex-1">{renderRow({ row, position })}</View>
+    </View>
+  );
 
   return (
     <View
       className={cn(
-        'border-border bg-card overflow-hidden border',
-        variant === 'edit' ? 'rounded-2xl' : 'rounded-lg',
+        'border-border bg-card overflow-hidden rounded-2xl border',
         className
       )}
     >
-      <View
-        className={cn(
-          'flex-row items-center justify-between gap-2 px-4',
-          variant === 'edit' ? 'border-border border-b py-3' : 'pt-4'
-        )}
-      >
-        <View
-          className={cn(
-            'flex-row items-center gap-2',
-            variant === 'default' &&
-              'bg-primary/15 self-start rounded-full px-3 py-2'
-          )}
-        >
+      <View className="border-border flex-row items-center justify-between gap-2 border-b px-4 py-3">
+        <View className="flex-row items-center gap-2">
           <Icon
             as={Repeat2Icon}
             size={iconSizes.sm}
@@ -71,26 +76,11 @@ export function SupersetExerciseGroup({
       </View>
 
       <View className="pt-2 pb-2">
-        <View>
-          {renderRow({
-            label: formatSupersetExerciseLabel(supersetLetter, 1),
-            position: 1
-          })}
-        </View>
+        {renderGroupRow(firstRow, 1)}
 
-        <View
-          className={cn(
-            'bg-border/70 h-px',
-            variant === 'edit' ? 'mx-4 ml-14' : 'mr-3 ml-14'
-          )}
-        />
+        <View className="bg-border/70 mx-4 ml-14 h-px" />
 
-        <View>
-          {renderRow({
-            label: formatSupersetExerciseLabel(supersetLetter, 2),
-            position: 2
-          })}
-        </View>
+        {renderGroupRow(secondRow, 2)}
       </View>
     </View>
   );

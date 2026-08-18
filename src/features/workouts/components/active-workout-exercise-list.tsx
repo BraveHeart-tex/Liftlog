@@ -171,16 +171,16 @@ export function ActiveWorkoutExerciseList({
             <SupersetExerciseGroup
               key={block.id}
               className="mt-4"
+              rows={block.rows}
               supersetLabel={supersetLabel ?? 'Superset'}
-              renderRow={({ label, position }) => (
+              renderRow={({ row }) => (
                 <ActiveWorkoutExerciseCard
-                  key={label}
-                  item={block.rows[position - 1]}
+                  key={row.workoutExercise.id}
+                  item={row}
                   mode={mode}
-                  supersetLabel={supersetLabel}
-                  supersetRowLabel={label}
                   variant="grouped"
                   weightUnit={weightUnit}
+                  className="flex-1"
                   onLongPress={onEnterEditMode}
                 />
               )}

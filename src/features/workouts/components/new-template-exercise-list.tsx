@@ -52,6 +52,7 @@ export function NewTemplateExerciseList({
         : undefined;
       const content = item.supersetId ? (
         <SupersetExerciseGroup
+          rows={item.rows}
           supersetLabel={supersetLabel ?? 'Superset'}
           renderHeaderActions={
             <>
@@ -90,16 +91,13 @@ export function NewTemplateExerciseList({
               ) : null}
             </>
           }
-          renderRow={({ label, position }) => {
-            const row = item.rows[position - 1];
-
+          renderRow={({ row }) => {
             return (
               <NewTemplateExerciseRow
                 key={row.id}
                 exercise={row.exercise}
                 isDragging={false}
-                className="px-3"
-                label={label}
+                className="flex-1"
                 onDelete={() => onDeleteExercise(row.id)}
                 shouldShowDragHandle={false}
               />

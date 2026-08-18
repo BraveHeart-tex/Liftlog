@@ -158,8 +158,8 @@ export const ActiveWorkoutExerciseEditList = memo(
           : undefined;
         const content = item.supersetId ? (
           <SupersetExerciseGroup
+            rows={item.rows}
             supersetLabel={supersetLabel ?? 'Superset'}
-            variant="edit"
             renderHeaderActions={
               <>
                 <Button
@@ -195,16 +195,13 @@ export const ActiveWorkoutExerciseEditList = memo(
                 ) : null}
               </>
             }
-            renderRow={({ label, position }) => {
-              const row = item.rows[position - 1];
-
+            renderRow={({ row }) => {
               return (
                 <ActiveWorkoutExerciseEditRow
                   key={row.workoutExercise.id}
                   item={row}
                   isDragging={false}
-                  className="px-4"
-                  label={label}
+                  className="flex-1"
                   onOpenActions={() =>
                     setSelectedExerciseId(row.workoutExercise.id)
                   }
@@ -236,7 +233,6 @@ export const ActiveWorkoutExerciseEditList = memo(
             {canLinkWithNext ? (
               <PairWithNextControl
                 isReordering={isReordering}
-                variant="edit"
                 onPress={() => {
                   const nextWorkoutExerciseRows = linkAdjacentSupersetRows(
                     flatRows.map(row => row.workoutExercise),
@@ -261,7 +257,6 @@ export const ActiveWorkoutExerciseEditList = memo(
         shouldShowDragHandle,
         supersetLabelByBlockId,
         flatRows,
-        removeRow,
         unlinkSuperset
       ]
     );

@@ -10,24 +10,26 @@ import { GripIcon, TrashIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
 interface NewTemplateExerciseRowProps {
-  exercise: ExerciseListItem;
+  exercise?: ExerciseListItem;
   className?: string;
   isDragging: boolean;
-  label?: string;
-  onDelete: () => void;
-  shouldShowDragHandle: boolean;
+  onDelete?: () => void;
+  shouldShowDragHandle?: boolean;
 }
 
 export function NewTemplateExerciseRow({
   exercise,
   className,
   isDragging,
-  label,
   onDelete,
-  shouldShowDragHandle
+  shouldShowDragHandle = false
 }: NewTemplateExerciseRowProps) {
   const subtitle =
-    exercise.isCustom === 1 ? 'Custom' : getCategoryLabel(exercise.category);
+    exercise === undefined
+      ? 'Exercise'
+      : exercise.isCustom === 1
+        ? 'Custom'
+        : getCategoryLabel(exercise.category);
 
   return (
     <View
@@ -37,17 +39,9 @@ export function NewTemplateExerciseRow({
         className
       )}
     >
-      {label ? (
-        <View className="bg-muted h-8 w-8 items-center justify-center rounded-full">
-          <Text variant="caption" tone="muted">
-            {label}
-          </Text>
-        </View>
-      ) : null}
-
       <View className="flex-1">
         <Text variant="bodyMedium" numberOfLines={1}>
-          {exercise.name}
+          {exercise?.name ?? 'Unknown exercise'}
         </Text>
         <Text variant="small" tone="muted" className="mt-0.5">
           {subtitle}
@@ -55,14 +49,16 @@ export function NewTemplateExerciseRow({
       </View>
 
       <View className="shrink-0 flex-row items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          accessibilityLabel={`Delete ${exercise.name}`}
-          onPress={onDelete}
-        >
-          <Icon as={TrashIcon} size={iconSizes.sm} tone="danger" />
-        </Button>
+        {onDelete ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            accessibilityLabel={`Delete ${exercise?.name ?? 'exercise'}`}
+            onPress={onDelete}
+          >
+            <Icon as={TrashIcon} size={iconSizes.sm} tone="danger" />
+          </Button>
+        ) : null}
 
         {shouldShowDragHandle ? (
           <ReorderableHandle>

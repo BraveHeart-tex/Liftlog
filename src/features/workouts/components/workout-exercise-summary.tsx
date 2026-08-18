@@ -19,7 +19,6 @@ import {
 
 interface WorkoutExerciseSummaryProps {
   exerciseName: string;
-  supersetLabel?: string;
   completedSets: Set[];
   weightUnit: WeightUnit;
   trackingType?: TrackingType;
@@ -30,7 +29,6 @@ interface WorkoutExerciseSummaryProps {
 
 export function WorkoutExerciseSummary({
   exerciseName,
-  supersetLabel,
   completedSets,
   weightUnit,
   trackingType = 'weight_reps',
@@ -57,11 +55,6 @@ export function WorkoutExerciseSummary({
     <View className={cn('gap-3', className)}>
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
-          {supersetLabel ? (
-            <Text variant="caption" tone="muted" className="mb-1">
-              {supersetLabel}
-            </Text>
-          ) : null}
           <Text variant="bodyMedium" numberOfLines={2}>
             {exerciseName}
           </Text>
