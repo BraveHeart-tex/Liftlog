@@ -1,6 +1,6 @@
 import type { NewExercise, Workout, WorkoutExercise } from '@/src/db/schema';
-import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import { normalizeExerciseName } from '@/src/features/exercises/exercise-name.utils';
+import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import { useSaveActiveWorkoutExerciseDraft } from '@/src/features/workouts/hooks/use-reorder-workout-exercises';
 import {
   ActiveWorkoutExerciseDraftConflictError,
@@ -79,9 +79,10 @@ export function useActiveWorkoutExerciseDraft({
   isLoadingWorkoutExercises
 }: UseActiveWorkoutExerciseDraftParams) {
   const isSavingRef = useRef(false);
-  const draftExerciseRowsRef = useRef<DraftExerciseRow[]>();
-  const baselineExerciseRowsRef =
-    useRef<ActiveWorkoutExerciseDraftBaselineRow[]>();
+  const draftExerciseRowsRef = useRef<DraftExerciseRow[]>([]);
+  const baselineExerciseRowsRef = useRef<
+    ActiveWorkoutExerciseDraftBaselineRow[]
+  >([]);
   const [draftExerciseRows, setDraftExerciseRows] =
     useState<DraftExerciseRow[]>();
   const [baselineExerciseRows, setBaselineExerciseRows] =
