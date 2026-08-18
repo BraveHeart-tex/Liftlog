@@ -54,9 +54,9 @@ export default function WorkoutStartScreen() {
           />
         </View>
       ) : (
-        <View className="gap-4">
+        <View className="mb-6 gap-4">
           <Button
-            className="mt-6"
+            className="mt-6 h-14"
             leftIcon={<Icon as={DumbbellIcon} tone="primaryForeground" />}
             fullWidth
             disabled={isStartingWorkout}

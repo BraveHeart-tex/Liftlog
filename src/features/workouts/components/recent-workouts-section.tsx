@@ -1,4 +1,3 @@
-import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { RecentWorkoutCard } from '@/src/features/workouts/components/recent-workout-card';
@@ -6,7 +5,7 @@ import { useRecentWorkouts } from '@/src/features/workouts/hooks/use-recent-work
 import { cn } from '@/src/lib/utils/cn.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { Link, useRouter } from 'expo-router';
-import { ChevronRightIcon, DumbbellIcon } from 'lucide-react-native';
+import { ChevronRightIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
 export const RecentWorkoutsSection = () => {
@@ -48,15 +47,12 @@ export const RecentWorkoutsSection = () => {
           ))}
         </View>
       ) : (
-        <EmptyState className="mt-3 rounded-lg px-6 py-10">
-          <EmptyState.Icon as={DumbbellIcon} />
-          <EmptyState.Title variant="bodyMedium">
-            No workouts yet
-          </EmptyState.Title>
-          <EmptyState.Description>
-            Start your first session to see history here.
-          </EmptyState.Description>
-        </EmptyState>
+        <View className="border-border mt-6 border-t border-b py-4">
+          <Text variant="bodyMedium">No workouts yet</Text>
+          <Text variant="small" tone="muted" className="mt-1">
+            Your completed sessions will appear here.
+          </Text>
+        </View>
       )}
     </View>
   );

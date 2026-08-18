@@ -149,7 +149,7 @@ export function Button({
           )}
         </View>
       ) : (
-        <View className="flex-row items-center justify-center gap-1">
+        <View className="flex-row items-center justify-center gap-2">
           {leftIcon}
           {label !== null ? (
             <Text
