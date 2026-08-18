@@ -6,6 +6,7 @@ import {
   type ReorderableListRenderItem
 } from '@/src/components/ui/reorderable-list';
 import type { WorkoutExercise } from '@/src/db/schema';
+import { ActiveWorkoutExerciseActionsSheet } from '@/src/features/workouts/components/active-workout-exercise-actions-sheet';
 import { ActiveWorkoutExerciseEditRow } from '@/src/features/workouts/components/active-workout-exercise-edit-row';
 import { PairWithNextControl } from '@/src/features/workouts/components/pair-with-next-control';
 import { SupersetExerciseGroup } from '@/src/features/workouts/components/superset-exercise-group';
@@ -20,7 +21,7 @@ import {
   type SupersetBlock
 } from '@/src/features/workouts/superset.utils';
 import { iconSizes } from '@/src/theme/sizes';
-import { GripIcon, UnlinkIcon } from 'lucide-react-native';
+import { GripIcon } from 'lucide-react-native';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
@@ -53,6 +54,8 @@ export const ActiveWorkoutExerciseEditList = memo(
       [editableRows]
     );
     const [orderedRows, setOrderedRows] = useState(blocks);
+    const [selectedExerciseId, setSelectedExerciseId] =
+      useState<WorkoutExercise['id']>();
     const rowIds = rows
       .map(r => `${r.workoutExercise.id}:${r.workoutExercise.supersetId ?? ''}`)
       .join(',');
@@ -114,6 +117,33 @@ export const ActiveWorkoutExerciseEditList = memo(
       []
     );
 
+    const removeRow = useCallback(
+      (rowId: WorkoutExercise['id']) => {
+        const nextWorkoutExerciseRows = normalizeSupersetRows(
+          flatRows
+            .filter(nextRow => nextRow.workoutExercise.id !== rowId)
+            .map(nextRow => nextRow.workoutExercise)
+        );
+
+        onChangeRows(nextWorkoutExerciseRows);
+        setRowsFromWorkoutExercises(flatRows, nextWorkoutExerciseRows);
+      },
+      [flatRows, onChangeRows, setRowsFromWorkoutExercises]
+    );
+
+    const unlinkSuperset = useCallback(
+      (supersetId: string) => {
+        const nextWorkoutExerciseRows = unlinkSupersetRows(
+          flatRows.map(row => row.workoutExercise),
+          supersetId
+        );
+
+        onChangeRows(nextWorkoutExerciseRows);
+        setRowsFromWorkoutExercises(flatRows, nextWorkoutExerciseRows);
+      },
+      [flatRows, onChangeRows, setRowsFromWorkoutExercises]
+    );
+
     const renderRow = useCallback<
       ReorderableListRenderItem<SupersetBlock<EditableWorkoutExerciseRow>>
     >(
@@ -126,41 +156,20 @@ export const ActiveWorkoutExerciseEditList = memo(
         const supersetLabel = item.supersetId
           ? supersetLabelByBlockId.get(item.id)
           : undefined;
-        const removeRow = (rowId: WorkoutExercise['id']) => {
-          const nextWorkoutExerciseRows = normalizeSupersetRows(
-            flatRows
-              .filter(nextRow => nextRow.workoutExercise.id !== rowId)
-              .map(nextRow => nextRow.workoutExercise)
-          );
-
-          onChangeRows(nextWorkoutExerciseRows);
-          setRowsFromWorkoutExercises(flatRows, nextWorkoutExerciseRows);
-        };
-
         const content = item.supersetId ? (
           <SupersetExerciseGroup
             supersetLabel={supersetLabel ?? 'Superset'}
+            variant="edit"
             renderHeaderActions={
               <>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="min-h-0 px-0 py-0"
-                  textClassName="text-danger text-sm"
-                  leftIcon={
-                    <Icon as={UnlinkIcon} size={iconSizes.xs} tone="danger" />
-                  }
+                  textClassName="text-muted-foreground text-small"
+                  accessibilityLabel={`Unlink ${supersetLabel ?? 'superset'}`}
                   onPress={() => {
-                    const nextWorkoutExerciseRows = unlinkSupersetRows(
-                      flatRows.map(row => row.workoutExercise),
-                      item.supersetId!
-                    );
-
-                    onChangeRows(nextWorkoutExerciseRows);
-                    setRowsFromWorkoutExercises(
-                      flatRows,
-                      nextWorkoutExerciseRows
-                    );
+                    unlinkSuperset(item.supersetId!);
                   }}
                 >
                   Unlink
@@ -194,9 +203,11 @@ export const ActiveWorkoutExerciseEditList = memo(
                   key={row.workoutExercise.id}
                   item={row}
                   isDragging={false}
-                  className="px-3"
+                  className="px-4"
                   label={label}
-                  onRemove={() => removeRow(row.workoutExercise.id)}
+                  onOpenActions={() =>
+                    setSelectedExerciseId(row.workoutExercise.id)
+                  }
                   shouldShowDragHandle={false}
                 />
               );
@@ -209,7 +220,9 @@ export const ActiveWorkoutExerciseEditList = memo(
                 key={row.workoutExercise.id}
                 item={row}
                 isDragging={isDragging}
-                onRemove={() => removeRow(row.workoutExercise.id)}
+                onOpenActions={() =>
+                  setSelectedExerciseId(row.workoutExercise.id)
+                }
                 shouldShowDragHandle={shouldShowDragHandle}
               />
             ))}
@@ -223,6 +236,7 @@ export const ActiveWorkoutExerciseEditList = memo(
             {canLinkWithNext ? (
               <PairWithNextControl
                 isReordering={isReordering}
+                variant="edit"
                 onPress={() => {
                   const nextWorkoutExerciseRows = linkAdjacentSupersetRows(
                     flatRows.map(row => row.workoutExercise),
@@ -246,7 +260,9 @@ export const ActiveWorkoutExerciseEditList = memo(
         setRowsFromWorkoutExercises,
         shouldShowDragHandle,
         supersetLabelByBlockId,
-        flatRows
+        flatRows,
+        removeRow,
+        unlinkSuperset
       ]
     );
 
@@ -255,19 +271,47 @@ export const ActiveWorkoutExerciseEditList = memo(
       []
     );
 
+    const selectedItem = editableRows.find(
+      row => row.workoutExercise.id === selectedExerciseId
+    );
+
     return (
-      <ReorderableList
-        className="flex-1 px-4"
-        data={orderedRows}
-        keyExtractor={getRowKey}
-        onReorder={data => {
-          setOrderedRows(data);
-          onChangeRows(
-            flattenSupersetBlocks(data).map(row => row.workoutExercise)
-          );
-        }}
-        renderItem={renderRow}
-      />
+      <>
+        <ReorderableList
+          className="flex-1 px-4"
+          data={orderedRows}
+          keyExtractor={getRowKey}
+          onReorder={data => {
+            setOrderedRows(data);
+            onChangeRows(
+              flattenSupersetBlocks(data).map(row => row.workoutExercise)
+            );
+          }}
+          renderItem={renderRow}
+        />
+        <ActiveWorkoutExerciseActionsSheet
+          isOpen={selectedItem !== undefined}
+          item={selectedItem}
+          isInSuperset={Boolean(selectedItem?.workoutExercise.supersetId)}
+          onClose={() => setSelectedExerciseId(undefined)}
+          onRemoveFromSuperset={() => {
+            const supersetId = selectedItem?.workoutExercise.supersetId;
+
+            if (supersetId) {
+              unlinkSuperset(supersetId);
+            }
+
+            setSelectedExerciseId(undefined);
+          }}
+          onRemoveFromWorkout={() => {
+            if (selectedItem) {
+              removeRow(selectedItem.workoutExercise.id);
+            }
+
+            setSelectedExerciseId(undefined);
+          }}
+        />
+      </>
     );
   }
 );

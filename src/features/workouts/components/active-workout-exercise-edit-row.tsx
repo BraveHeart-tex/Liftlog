@@ -1,15 +1,11 @@
-import { confirmDialog } from '@/src/components/ui/alert-dialog';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { ReorderableHandle } from '@/src/components/ui/reorderable-list';
 import { Text } from '@/src/components/ui/text';
-import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
-import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
 import { cn } from '@/src/lib/utils/cn.utils';
-import { formatWeightForUnit } from '@/src/lib/utils/weight.utils';
 import { iconSizes } from '@/src/theme/sizes';
-import { GripIcon, TrashIcon } from 'lucide-react-native';
+import { EllipsisIcon, GripIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
 interface ActiveWorkoutExerciseEditRowProps {
@@ -17,7 +13,7 @@ interface ActiveWorkoutExerciseEditRowProps {
   className?: string;
   isDragging: boolean;
   label?: string;
-  onRemove?: () => void;
+  onOpenActions?: () => void;
   shouldShowDragHandle: boolean;
 }
 
@@ -26,59 +22,24 @@ export function ActiveWorkoutExerciseEditRow({
   className,
   isDragging,
   label,
-  onRemove,
+  onOpenActions,
   shouldShowDragHandle = true
 }: ActiveWorkoutExerciseEditRowProps) {
-  const { weightUnit } = useSettings();
-  const completedSets = item.sets.filter(set => set.status === 'completed');
-  const trackingType = resolveTrackingType(item.exercise?.trackingType);
-  const volume = completedSets.reduce(
-    (sum, set) => sum + (set.weightKg ?? 0) * (set.reps ?? 0),
-    0
-  );
-  const setLabel = `${completedSets.length} ${
-    completedSets.length === 1 ? 'set' : 'sets'
+  const detail = `${item.sets.length} ${
+    item.sets.length === 1 ? 'set' : 'sets'
   }`;
-  const detail =
-    trackingType === 'weight_reps' && volume > 0
-      ? `${setLabel} · ${formatWeightForUnit(volume, weightUnit, {
-          useGrouping: true,
-          maximumFractionDigits: 0
-        })} ${weightUnit}`
-      : setLabel;
-
-  const handleRemoveExercise = () => {
-    const exerciseName = item.exercise?.name ?? 'Unknown exercise';
-    const setCount = item.sets.length;
-    const completedSetCount = completedSets.length;
-    const selectedDetails =
-      setCount > 0
-        ? `${exerciseName}\n${setCount} sets logged, ${completedSetCount} completed.`
-        : `${exerciseName}\nNo sets logged yet.`;
-
-    void confirmDialog({
-      title: 'Remove exercise?',
-      message: `${selectedDetails}\n\nThis exercise and its sets will be removed from the workout when you save.`,
-      confirmLabel: 'Remove',
-      destructive: true
-    }).then(confirmed => {
-      if (confirmed) {
-        onRemove?.();
-      }
-    });
-  };
 
   return (
     <View
       className={cn(
-        'flex-row items-center gap-3 py-3',
+        'flex-row items-center gap-3 py-1',
         isDragging && 'bg-muted/50',
         className
       )}
     >
       {label ? (
-        <View className="bg-muted h-8 w-8 items-center justify-center rounded-full">
-          <Text variant="caption" tone="muted">
+        <View className="w-10">
+          <Text variant="body" tone="muted">
             {label}
           </Text>
         </View>
@@ -88,14 +49,19 @@ export function ActiveWorkoutExerciseEditRow({
         <Text variant="bodyMedium" numberOfLines={1}>
           {item.exercise?.name ?? 'Unknown exercise'}
         </Text>
-        <Text variant="small" tone="muted" className="mt-0.5">
+        <Text variant="caption" tone="muted" className="mt-0.5">
           {detail}
         </Text>
       </View>
 
       <View className="shrink-0 flex-row items-center gap-1">
-        <Button variant="ghost" size="icon" onPress={handleRemoveExercise}>
-          <Icon as={TrashIcon} size={iconSizes.sm} tone="danger" />
+        <Button
+          variant="ghost"
+          size="icon"
+          accessibilityLabel={`Actions for ${item.exercise?.name ?? 'exercise'}`}
+          onPress={onOpenActions}
+        >
+          <Icon as={EllipsisIcon} size="lg" tone="mutedForeground" />
         </Button>
 
         {shouldShowDragHandle ? (

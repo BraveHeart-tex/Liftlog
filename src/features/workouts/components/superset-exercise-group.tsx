@@ -15,6 +15,7 @@ type SupersetExercisePosition = 1 | 2;
 interface SupersetExerciseGroupProps {
   supersetLabel: string;
   className?: string;
+  variant?: 'default' | 'edit';
   renderHeaderActions?: ReactNode;
   renderRow: (params: {
     label: string;
@@ -25,6 +26,7 @@ interface SupersetExerciseGroupProps {
 export function SupersetExerciseGroup({
   supersetLabel,
   className,
+  variant = 'default',
   renderHeaderActions,
   renderRow
 }: SupersetExerciseGroupProps) {
@@ -33,19 +35,31 @@ export function SupersetExerciseGroup({
   return (
     <View
       className={cn(
-        'border-border bg-card overflow-hidden rounded-lg border',
+        'border-border bg-card overflow-hidden border',
+        variant === 'edit' ? 'rounded-2xl' : 'rounded-lg',
         className
       )}
     >
-      <View className="flex-row items-center justify-between gap-2 px-4 pt-4">
-        <View className="bg-primary/15 flex-row items-center gap-2 self-start rounded-full px-3 py-2">
+      <View
+        className={cn(
+          'flex-row items-center justify-between gap-2 px-4',
+          variant === 'edit' ? 'border-border border-b py-3' : 'pt-4'
+        )}
+      >
+        <View
+          className={cn(
+            'flex-row items-center gap-2',
+            variant === 'default' &&
+              'bg-primary/15 self-start rounded-full px-3 py-2'
+          )}
+        >
           <Icon
             as={Repeat2Icon}
             size={iconSizes.sm}
             tone="primary"
             strokeWidth={2.25}
           />
-          <Text variant="bodyMedium" tone="primary">
+          <Text variant="bodyMedium" tone="primary" weight="semiBold">
             {supersetLabel}
           </Text>
         </View>
@@ -56,9 +70,7 @@ export function SupersetExerciseGroup({
         ) : null}
       </View>
 
-      <View className="relative pt-2 pb-2">
-        <View className="bg-border absolute top-12 bottom-12 left-7 w-px" />
-
+      <View className="pt-2 pb-2">
         <View>
           {renderRow({
             label: formatSupersetExerciseLabel(supersetLetter, 1),
@@ -66,7 +78,12 @@ export function SupersetExerciseGroup({
           })}
         </View>
 
-        <View className="bg-border/70 mr-3 ml-14 h-px" />
+        <View
+          className={cn(
+            'bg-border/70 h-px',
+            variant === 'edit' ? 'mx-4 ml-14' : 'mr-3 ml-14'
+          )}
+        />
 
         <View>
           {renderRow({

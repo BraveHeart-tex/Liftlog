@@ -16,11 +16,13 @@ const pairControlEaseOut = Easing.bezier(0.23, 1, 0.32, 1);
 
 interface PairWithNextControlProps {
   isReordering: boolean;
+  variant?: 'default' | 'edit';
   onPress: () => void;
 }
 
 export function PairWithNextControl({
   isReordering,
+  variant = 'default',
   onPress
 }: PairWithNextControlProps) {
   const visibilityProgress = useSharedValue(isReordering ? 0 : 1);
@@ -43,14 +45,22 @@ export function PairWithNextControl({
       pointerEvents={isReordering ? 'none' : 'auto'}
       accessibilityElementsHidden={isReordering}
       importantForAccessibility={isReordering ? 'no-hide-descendants' : 'auto'}
-      className="mt-4 ml-12 flex-row items-center gap-3 pb-1"
+      className={
+        variant === 'edit'
+          ? 'ml-4 flex-row items-center gap-3'
+          : 'mt-4 ml-12 flex-row items-center gap-3 pb-1'
+      }
       style={visibilityStyle}
     >
-      <View className="bg-border h-7 w-px" />
+      <View
+        className={
+          variant === 'edit' ? 'bg-border h-14 w-px' : 'bg-border h-7 w-px'
+        }
+      />
       <Button
-        variant="secondary"
+        variant="ghost"
         size="sm"
-        className="min-h-0 rounded-full px-3 py-2"
+        className="min-h-0 px-0 py-2"
         textClassName="text-muted-foreground text-sm"
         leftIcon={
           <Icon as={LinkIcon} size={iconSizes.xs} tone="mutedForeground" />

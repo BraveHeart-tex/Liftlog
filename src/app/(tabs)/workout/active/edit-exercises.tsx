@@ -81,6 +81,7 @@ function ActiveWorkoutEditExercisesContent({
   const {
     addExercises,
     changeRows,
+    changeCount,
     draftExerciseById,
     draftWorkoutExercises,
     hasChanges: hasExerciseChanges,
@@ -190,6 +191,8 @@ function ActiveWorkoutEditExercisesContent({
     <Screen withPadding={false} edges={[]}>
       <ActiveWorkoutEditHeader
         workoutName={activeWorkout.name}
+        exerciseCount={draftWorkoutExercises.length}
+        changeCount={changeCount}
         canSave={hasExerciseChanges && !isSaving}
         isSaving={isSaving}
         onCancel={cancelExerciseEdits}
@@ -201,27 +204,7 @@ function ActiveWorkoutEditExercisesContent({
           <LoadingState label="Loading exercises..." />
         </View>
       ) : draftWorkoutExercises.length === 0 ? (
-        <View className="flex-1 px-4 pb-6">
-          <EmptyState>
-            <EmptyState.Icon as={ClipboardListIcon} size="md" />
-            <EmptyState.Title variant="bodyMedium">
-              No exercises added
-            </EmptyState.Title>
-            <EmptyState.Description>
-              Add exercises to this workout or save it empty.
-            </EmptyState.Description>
-            <EmptyState.Action>
-              <Button
-                variant="secondary"
-                size="sm"
-                leftIcon={<Icon as={PlusIcon} size="sm" tone="primary" />}
-                onPress={openExercisePicker}
-              >
-                Add exercise
-              </Button>
-            </EmptyState.Action>
-          </EmptyState>
-        </View>
+        <ScreenEmptyState onAddExercise={openExercisePicker} />
       ) : (
         <>
           <ActiveWorkoutExerciseList
@@ -234,7 +217,7 @@ function ActiveWorkoutEditExercisesContent({
           <View className="border-border pb-safe border-t px-4 pt-3">
             <Button
               variant="secondary"
-              size="sm"
+              size="md"
               fullWidth
               leftIcon={<Icon as={PlusIcon} size="sm" tone="foreground" />}
               onPress={openExercisePicker}
@@ -272,5 +255,35 @@ function ActiveWorkoutEditExercisesContent({
         />
       ) : null}
     </Screen>
+  );
+}
+
+interface ScreenEmptyStateProps {
+  onAddExercise: () => void;
+}
+
+function ScreenEmptyState({ onAddExercise }: ScreenEmptyStateProps) {
+  return (
+    <View className="flex-1 px-4">
+      <EmptyState className="flex-1 px-8">
+        <EmptyState.Icon as={ClipboardListIcon} size="md" />
+        <EmptyState.Title variant="bodyMedium">
+          No exercises added
+        </EmptyState.Title>
+        <EmptyState.Description>
+          Add exercises to this workout or save it empty.
+        </EmptyState.Description>
+        <EmptyState.Action>
+          <Button
+            variant="secondary"
+            size="md"
+            leftIcon={<Icon as={PlusIcon} size="sm" tone="foreground" />}
+            onPress={onAddExercise}
+          >
+            Add exercise
+          </Button>
+        </EmptyState.Action>
+      </EmptyState>
+    </View>
   );
 }

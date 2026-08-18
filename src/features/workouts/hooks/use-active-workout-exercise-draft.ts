@@ -29,6 +29,49 @@ type SaveActiveWorkoutExerciseDraftResult =
   | { status: 'conflict'; error: ActiveWorkoutExerciseDraftConflictError }
   | { status: 'error'; error: unknown };
 
+function matchesBaseline(
+  rows: DraftExerciseRow[],
+  baselineRows: ActiveWorkoutExerciseDraftBaselineRow[]
+) {
+  if (rows.length !== baselineRows.length) {
+    return false;
+  }
+
+  return rows.every(({ workoutExercise }, order) => {
+    const baselineRow = baselineRows[order];
+
+    return (
+      baselineRow?.id === workoutExercise.id &&
+      baselineRow.exerciseId === workoutExercise.exerciseId &&
+      baselineRow.order === order &&
+      baselineRow.supersetId === workoutExercise.supersetId
+    );
+  });
+}
+
+function areDraftRowsEqual(
+  firstRows: DraftExerciseRow[],
+  secondRows: DraftExerciseRow[]
+) {
+  if (firstRows.length !== secondRows.length) {
+    return false;
+  }
+
+  return firstRows.every((firstRow, index) => {
+    const secondRow = secondRows[index];
+
+    return (
+      secondRow?.workoutExercise.id === firstRow.workoutExercise.id &&
+      secondRow.workoutExercise.exerciseId ===
+        firstRow.workoutExercise.exerciseId &&
+      secondRow.workoutExercise.supersetId ===
+        firstRow.workoutExercise.supersetId &&
+      Boolean(secondRow.stagedCustomExercise) ===
+        Boolean(firstRow.stagedCustomExercise)
+    );
+  });
+}
+
 export function useActiveWorkoutExerciseDraft({
   activeWorkout,
   workoutExerciseRows,
@@ -36,10 +79,14 @@ export function useActiveWorkoutExerciseDraft({
   isLoadingWorkoutExercises
 }: UseActiveWorkoutExerciseDraftParams) {
   const isSavingRef = useRef(false);
+  const draftExerciseRowsRef = useRef<DraftExerciseRow[]>();
+  const baselineExerciseRowsRef =
+    useRef<ActiveWorkoutExerciseDraftBaselineRow[]>();
   const [draftExerciseRows, setDraftExerciseRows] =
     useState<DraftExerciseRow[]>();
   const [baselineExerciseRows, setBaselineExerciseRows] =
     useState<ActiveWorkoutExerciseDraftBaselineRow[]>();
+  const [changeCount, setChangeCount] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const saveActiveWorkoutExerciseDraft = useSaveActiveWorkoutExerciseDraft(
     activeWorkout.id
@@ -50,19 +97,20 @@ export function useActiveWorkoutExerciseDraft({
       return;
     }
 
-    setDraftExerciseRows(
-      workoutExerciseRows.map(workoutExercise => ({
-        workoutExercise
-      }))
-    );
-    setBaselineExerciseRows(
-      workoutExerciseRows.map(workoutExercise => ({
-        id: workoutExercise.id,
-        exerciseId: workoutExercise.exerciseId,
-        order: workoutExercise.order,
-        supersetId: workoutExercise.supersetId
-      }))
-    );
+    const initialDraftRows = workoutExerciseRows.map(workoutExercise => ({
+      workoutExercise
+    }));
+    const initialBaselineRows = workoutExerciseRows.map(workoutExercise => ({
+      id: workoutExercise.id,
+      exerciseId: workoutExercise.exerciseId,
+      order: workoutExercise.order,
+      supersetId: workoutExercise.supersetId
+    }));
+
+    draftExerciseRowsRef.current = initialDraftRows;
+    baselineExerciseRowsRef.current = initialBaselineRows;
+    setDraftExerciseRows(initialDraftRows);
+    setBaselineExerciseRows(initialBaselineRows);
   }, [baselineExerciseRows, isLoadingWorkoutExercises, workoutExerciseRows]);
 
   const hasChanges = useMemo(() => {
@@ -70,24 +118,27 @@ export function useActiveWorkoutExerciseDraft({
       return false;
     }
 
-    const baselineById = new Map(
-      baselineExerciseRows.map(row => [row.id, row] as const)
-    );
-
-    return (
-      draftExerciseRows.length !== baselineExerciseRows.length ||
-      draftExerciseRows.some(({ workoutExercise }, order) => {
-        const baselineRow = baselineById.get(workoutExercise.id);
-
-        return (
-          !baselineRow ||
-          baselineRow.order !== order ||
-          baselineRow.exerciseId !== workoutExercise.exerciseId ||
-          baselineRow.supersetId !== workoutExercise.supersetId
-        );
-      })
-    );
+    return !matchesBaseline(draftExerciseRows, baselineExerciseRows);
   }, [baselineExerciseRows, draftExerciseRows]);
+
+  const applyDraftRows = useCallback((nextRows: DraftExerciseRow[]) => {
+    const currentRows = draftExerciseRowsRef.current;
+
+    if (!currentRows || areDraftRowsEqual(currentRows, nextRows)) {
+      return;
+    }
+
+    draftExerciseRowsRef.current = nextRows;
+    setDraftExerciseRows(nextRows);
+
+    const currentBaselineRows = baselineExerciseRowsRef.current;
+
+    setChangeCount(currentCount =>
+      currentBaselineRows && matchesBaseline(nextRows, currentBaselineRows)
+        ? 0
+        : currentCount + 1
+    );
+  }, []);
 
   const draftWorkoutExercises = useMemo(
     () =>
@@ -127,68 +178,69 @@ export function useActiveWorkoutExerciseDraft({
 
   const changeRows = useCallback(
     (rows: Pick<WorkoutExercise, 'id' | 'supersetId'>[]) => {
-      setDraftExerciseRows(currentRows => {
-        if (!currentRows) {
-          return currentRows;
-        }
+      const currentRows = draftExerciseRowsRef.current;
 
-        const currentRowById = new Map(
-          currentRows.map(row => [row.workoutExercise.id, row] as const)
-        );
+      if (!currentRows) {
+        return;
+      }
 
-        return rows.flatMap((row, order) => {
-          const currentRow = currentRowById.get(row.id);
+      const currentRowById = new Map(
+        currentRows.map(row => [row.workoutExercise.id, row] as const)
+      );
+      const nextRows = rows.flatMap((row, order) => {
+        const currentRow = currentRowById.get(row.id);
 
-          return currentRow
-            ? [
-                {
-                  ...currentRow,
-                  workoutExercise: {
-                    ...currentRow.workoutExercise,
-                    order,
-                    supersetId: row.supersetId
-                  }
+        return currentRow
+          ? [
+              {
+                ...currentRow,
+                workoutExercise: {
+                  ...currentRow.workoutExercise,
+                  order,
+                  supersetId: row.supersetId
                 }
-              ]
-            : [];
-        });
+              }
+            ]
+          : [];
       });
+
+      applyDraftRows(nextRows);
     },
-    []
+    [applyDraftRows]
   );
 
   const addExercises = useCallback(
     (exercises: ExerciseListItem[]) => {
-      setDraftExerciseRows(currentRows => {
-        if (!currentRows) {
-          return currentRows;
-        }
+      const currentRows = draftExerciseRowsRef.current;
 
-        const selectedExerciseIdSet = new Set(
-          currentRows.map(row => row.workoutExercise.exerciseId)
-        );
-        const addedExercises = exercises.filter(
-          exercise => !selectedExerciseIdSet.has(exercise.id)
-        );
+      if (!currentRows) {
+        return;
+      }
 
-        return [
-          ...currentRows,
-          ...addedExercises.map((exercise, index) => ({
-            workoutExercise: {
-              id: generateUuid(),
-              workoutId: activeWorkout.id,
-              exerciseId: exercise.id,
-              order: currentRows.length + index,
-              supersetId: null,
-              notes: null,
-              sourceWorkoutExerciseId: null
-            },
-            exercise
-          }))
-        ];
-      });
+      const selectedExerciseIdSet = new Set(
+        currentRows.map(row => row.workoutExercise.exerciseId)
+      );
+      const addedExercises = exercises.filter(
+        exercise => !selectedExerciseIdSet.has(exercise.id)
+      );
+
+      applyDraftRows([
+        ...currentRows,
+        ...addedExercises.map((exercise, index) => ({
+          workoutExercise: {
+            id: generateUuid(),
+            workoutId: activeWorkout.id,
+            exerciseId: exercise.id,
+            order: currentRows.length + index,
+            supersetId: null,
+            notes: null,
+            sourceWorkoutExerciseId: null
+          },
+          exercise
+        }))
+      ]);
     },
-    [activeWorkout.id]
+    [activeWorkout.id, applyDraftRows]
   );
 
   const stageCustomExercise = useCallback(
@@ -206,28 +258,30 @@ export function useActiveWorkoutExerciseDraft({
         createdAt: exercise.createdAt ?? Date.now()
       };
 
-      setDraftExerciseRows(currentRows =>
-        currentRows
-          ? [
-              ...currentRows,
-              {
-                workoutExercise: {
-                  id: generateUuid(),
-                  workoutId: activeWorkout.id,
-                  exerciseId: stagedCustomExercise.id,
-                  order: currentRows.length,
-                  supersetId: null,
-                  notes: null,
-                  sourceWorkoutExerciseId: null
-                },
-                exercise: stagedCustomExercise,
-                stagedCustomExercise
-              }
-            ]
-          : currentRows
-      );
+      const currentRows = draftExerciseRowsRef.current;
+
+      if (!currentRows) {
+        return;
+      }
+
+      applyDraftRows([
+        ...currentRows,
+        {
+          workoutExercise: {
+            id: generateUuid(),
+            workoutId: activeWorkout.id,
+            exerciseId: stagedCustomExercise.id,
+            order: currentRows.length,
+            supersetId: null,
+            notes: null,
+            sourceWorkoutExerciseId: null
+          },
+          exercise: stagedCustomExercise,
+          stagedCustomExercise
+        }
+      ]);
     },
-    [activeWorkout.id]
+    [activeWorkout.id, applyDraftRows]
   );
 
   const save = useCallback((): SaveActiveWorkoutExerciseDraftResult => {
@@ -275,6 +329,7 @@ export function useActiveWorkoutExerciseDraft({
   return {
     addExercises,
     changeRows,
+    changeCount,
     draftExerciseById,
     draftWorkoutExercises,
     hasChanges,
