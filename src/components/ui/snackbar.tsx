@@ -4,78 +4,69 @@ import { Text } from '@/src/components/ui/text';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { cn } from '@/src/lib/utils/cn.utils';
 import {
+  CircleAlert,
   CircleCheck,
-  CircleX,
   Info,
-  TriangleAlert,
-  X
+  TriangleAlert
 } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, PanResponder, View } from 'react-native';
+import {
+  AccessibilityInfo,
+  Animated,
+  Keyboard,
+  PanResponder,
+  Platform,
+  View
+} from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
 
 const DEFAULT_SNACKBAR_DURATION_MS = 4000;
-const SNACKBAR_BOTTOM_OFFSET = 88;
+const SNACKBAR_DEDUPLICATION_WINDOW_MS = 1500;
+const SNACKBAR_BOTTOM_OFFSET = 78;
+const SNACKBAR_KEYBOARD_TRANSITION_MS = 220;
+const SNACKBAR_ENTER_OFFSET = 12;
+const SNACKBAR_EXIT_OFFSET = 12;
+const SNACKBAR_ENTER_SCALE = 0.985;
+const SNACKBAR_EXIT_SCALE = 0.99;
 const SWIPE_DISMISS_DISTANCE = 48;
 const SWIPE_DISMISS_VELOCITY = 0.75;
 
 export type SnackbarVariant = 'success' | 'info' | 'warning' | 'danger';
 
-interface SnackbarOptions {
+export interface SnackbarOptions {
   key?: string;
   message: string;
   actionLabel?: string;
-  onAction?: () => void;
+  onAction?: () => void | Promise<void>;
   onDismiss?: () => void;
   durationMs?: number;
   variant?: SnackbarVariant;
 }
 
 interface SnackbarVariantStyles {
-  borderClassName: string;
-  indicatorClassName: string;
-  iconContainerClassName: string;
   icon: IconComponent;
-  actionTextClassName: string;
+  iconContainerClassName: string;
 }
 
 const snackbarVariantStyles: Record<SnackbarVariant, SnackbarVariantStyles> = {
   success: {
-    borderClassName: 'border-success/40',
-    indicatorClassName: 'bg-success',
-    iconContainerClassName: 'bg-success/15 border-success/25',
     icon: CircleCheck,
-    actionTextClassName: 'text-success'
+    iconContainerClassName: 'bg-success/15'
   },
   info: {
-    borderClassName: 'border-info/40',
-    indicatorClassName: 'bg-info',
-    iconContainerClassName: 'bg-info/15 border-info/25',
     icon: Info,
-    actionTextClassName: 'text-info'
+    iconContainerClassName: 'bg-info/15'
   },
   warning: {
-    borderClassName: 'border-warning/40',
-    indicatorClassName: 'bg-warning',
-    iconContainerClassName: 'bg-warning/15 border-warning/25',
     icon: TriangleAlert,
-    actionTextClassName: 'text-warning'
+    iconContainerClassName: 'bg-warning/15'
   },
   danger: {
-    borderClassName: 'border-danger/40',
-    indicatorClassName: 'bg-danger',
-    iconContainerClassName: 'bg-danger/15 border-danger/25',
-    icon: CircleX,
-    actionTextClassName: 'text-danger'
+    icon: CircleAlert,
+    iconContainerClassName: 'bg-danger/15'
   }
-};
-
-const snackbarAnnouncementLabels: Record<SnackbarVariant, string> = {
-  success: 'Success',
-  info: 'Information',
-  warning: 'Warning',
-  danger: 'Error'
 };
 
 type SnackbarMessage = SnackbarOptions & {
@@ -86,9 +77,20 @@ interface SnackbarState {
   message: SnackbarMessage | null;
   showSnackbar: (options: SnackbarOptions) => void;
   dismissSnackbar: (key?: string) => void;
+  dismissSnackbarForId: (id: number) => void;
 }
 
 let nextSnackbarId = 1;
+let lastSnackbarSignature: string | null = null;
+let lastSnackbarShownAt = 0;
+
+function getSnackbarSignature(options: SnackbarOptions) {
+  return JSON.stringify([
+    options.variant ?? 'info',
+    options.message,
+    options.actionLabel ?? ''
+  ]);
+}
 
 function notifySnackbarDismissed(message: SnackbarMessage) {
   try {
@@ -101,29 +103,45 @@ function notifySnackbarDismissed(message: SnackbarMessage) {
 const useSnackbarStore = create<SnackbarState>((set, get) => ({
   message: null,
   showSnackbar: options => {
-    const currentMessage = get().message;
+    const now = Date.now();
+    const signature = getSnackbarSignature(options);
 
-    set({
-      message: {
-        id: nextSnackbarId,
-        ...options
-      }
-    });
+    if (
+      signature === lastSnackbarSignature &&
+      now - lastSnackbarShownAt < SNACKBAR_DEDUPLICATION_WINDOW_MS
+    ) {
+      return;
+    }
+
+    lastSnackbarSignature = signature;
+    lastSnackbarShownAt = now;
+
+    const currentMessage = get().message;
+    const nextMessage: SnackbarMessage = {
+      id: nextSnackbarId++,
+      ...options
+    };
+
+    set({ message: nextMessage });
 
     if (currentMessage) {
       notifySnackbarDismissed(currentMessage);
     }
-
-    nextSnackbarId += 1;
   },
   dismissSnackbar: key => {
     const currentMessage = get().message;
 
-    if (!currentMessage) {
+    if (!currentMessage || (key && currentMessage.key !== key)) {
       return;
     }
 
-    if (key && currentMessage.key !== key) {
+    set({ message: null });
+    notifySnackbarDismissed(currentMessage);
+  },
+  dismissSnackbarForId: id => {
+    const currentMessage = get().message;
+
+    if (!currentMessage || currentMessage.id !== id) {
       return;
     }
 
@@ -140,14 +158,80 @@ export function dismissSnackbar(key?: string) {
   useSnackbarStore.getState().dismissSnackbar(key);
 }
 
+function resetSnackbarDrag(dragY: Animated.Value, reduceMotion: boolean) {
+  dragY.stopAnimation();
+
+  if (reduceMotion) {
+    dragY.setValue(0);
+
+    return;
+  }
+
+  Animated.spring(dragY, {
+    toValue: 0,
+    damping: 18,
+    stiffness: 220,
+    useNativeDriver: true
+  }).start();
+}
+
 export function SnackbarHost() {
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReducedMotion() ?? false;
   const message = useSnackbarStore(state => state.message);
   const dismissSnackbar = useSnackbarStore(state => state.dismissSnackbar);
+  const dismissSnackbarForId = useSnackbarStore(
+    state => state.dismissSnackbarForId
+  );
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [isActionPending, setIsActionPending] = useState(false);
   const [renderedMessage, setRenderedMessage] =
     useState<SnackbarMessage | null>(message);
   const progress = useRef(new Animated.Value(message ? 1 : 0)).current;
+  const entranceOffset = useRef(
+    new Animated.Value(reduceMotion ? 0 : message ? 0 : SNACKBAR_ENTER_OFFSET)
+  ).current;
+  const entranceScale = useRef(
+    new Animated.Value(reduceMotion || message ? 1 : SNACKBAR_ENTER_SCALE)
+  ).current;
+  const keyboardOffset = useRef(new Animated.Value(0)).current;
   const dragY = useRef(new Animated.Value(0)).current;
+  const reduceMotionRef = useRef(reduceMotion);
+
+  useEffect(() => {
+    reduceMotionRef.current = reduceMotion;
+  }, [reduceMotion]);
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === 'ios' ? 'keyboardWillChangeFrame' : 'keyboardDidShow';
+    const hideEvent =
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSubscription = Keyboard.addListener(showEvent, event => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    const animation = Animated.timing(keyboardOffset, {
+      toValue: -keyboardHeight,
+      duration: SNACKBAR_KEYBOARD_TRANSITION_MS,
+      useNativeDriver: true
+    });
+
+    animation.start();
+
+    return () => animation.stop();
+  }, [keyboardHeight, keyboardOffset]);
+
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) =>
@@ -167,23 +251,92 @@ export function SnackbarHost() {
           return;
         }
 
-        Animated.spring(dragY, {
-          toValue: 0,
-          damping: 18,
-          stiffness: 220,
-          useNativeDriver: true
-        }).start();
+        resetSnackbarDrag(dragY, reduceMotionRef.current);
       },
       onPanResponderTerminate: () => {
-        Animated.spring(dragY, {
-          toValue: 0,
-          damping: 18,
-          stiffness: 220,
-          useNativeDriver: true
-        }).start();
+        resetSnackbarDrag(dragY, reduceMotionRef.current);
       }
     })
   ).current;
+
+  useEffect(() => {
+    if (!message) {
+      progress.stopAnimation();
+      entranceOffset.stopAnimation();
+      entranceScale.stopAnimation();
+
+      const exitAnimation = Animated.parallel([
+        Animated.timing(progress, {
+          toValue: 0,
+          duration: MOTION_DURATION_MS.exit,
+          useNativeDriver: true
+        }),
+        Animated.timing(entranceOffset, {
+          toValue: reduceMotion ? 0 : SNACKBAR_EXIT_OFFSET,
+          duration: MOTION_DURATION_MS.exit,
+          useNativeDriver: true
+        }),
+        Animated.timing(entranceScale, {
+          toValue: reduceMotion ? 1 : SNACKBAR_EXIT_SCALE,
+          duration: MOTION_DURATION_MS.exit,
+          useNativeDriver: true
+        })
+      ]);
+
+      exitAnimation.start(({ finished }) => {
+        if (finished && !useSnackbarStore.getState().message) {
+          setRenderedMessage(null);
+        }
+      });
+
+      return () => exitAnimation.stop();
+    }
+
+    progress.stopAnimation();
+    entranceOffset.stopAnimation();
+    entranceScale.stopAnimation();
+    setRenderedMessage(message);
+    resetSnackbarDrag(dragY, reduceMotion);
+
+    const entranceAnimation = Animated.parallel([
+      Animated.timing(progress, {
+        toValue: 1,
+        duration: MOTION_DURATION_MS.standard,
+        useNativeDriver: true
+      }),
+      Animated.timing(entranceOffset, {
+        toValue: 0,
+        duration: MOTION_DURATION_MS.standard,
+        useNativeDriver: true
+      }),
+      Animated.timing(entranceScale, {
+        toValue: 1,
+        duration: MOTION_DURATION_MS.standard,
+        useNativeDriver: true
+      })
+    ]);
+
+    entranceAnimation.start();
+
+    return () => entranceAnimation.stop();
+  }, [dragY, entranceOffset, entranceScale, message, progress, reduceMotion]);
+
+  useEffect(() => {
+    setIsActionPending(false);
+  }, [message?.id]);
+
+  useEffect(() => {
+    if (!message || message.actionLabel) {
+      return;
+    }
+
+    const timeoutId = setTimeout(
+      () => dismissSnackbarForId(message.id),
+      message.durationMs ?? DEFAULT_SNACKBAR_DURATION_MS
+    );
+
+    return () => clearTimeout(timeoutId);
+  }, [dismissSnackbarForId, message]);
 
   useEffect(() => {
     if (!message) {
@@ -191,12 +344,7 @@ export function SnackbarHost() {
     }
 
     const messageId = message.id;
-    const variant = message.variant ?? 'info';
-    const announcement = [
-      snackbarAnnouncementLabels[variant],
-      message.message,
-      message.actionLabel
-    ]
+    const announcement = [message.message, message.actionLabel]
       .filter(Boolean)
       .join('. ');
     const timeoutId = setTimeout(() => {
@@ -210,55 +358,44 @@ export function SnackbarHost() {
     return () => clearTimeout(timeoutId);
   }, [message]);
 
-  useEffect(() => {
-    progress.stopAnimation();
+  const handleAction = async () => {
+    if (!renderedMessage || isActionPending) {
+      return;
+    }
 
-    if (!message) {
-      Animated.timing(progress, {
-        toValue: 0,
-        duration: MOTION_DURATION_MS.exit,
-        useNativeDriver: true
-      }).start(({ finished }) => {
-        if (finished && !useSnackbarStore.getState().message) {
-          setRenderedMessage(null);
-        }
-      });
+    if (!renderedMessage.onAction) {
+      dismissSnackbar();
 
       return;
     }
 
-    setRenderedMessage(message);
-    progress.setValue(0);
-    dragY.setValue(0);
-    Animated.timing(progress, {
-      toValue: 1,
-      duration: MOTION_DURATION_MS.standard,
-      useNativeDriver: true
-    }).start();
+    const messageId = renderedMessage.id;
+    setIsActionPending(true);
 
-    const timeoutId = setTimeout(
-      dismissSnackbar,
-      message.durationMs ?? DEFAULT_SNACKBAR_DURATION_MS
-    );
+    try {
+      await renderedMessage.onAction();
 
-    return () => {
-      clearTimeout(timeoutId);
-      progress.stopAnimation();
-    };
-  }, [dismissSnackbar, dragY, message, progress]);
+      dismissSnackbarForId(messageId);
+    } catch (error) {
+      console.error('Snackbar action failed', error);
+    } finally {
+      setIsActionPending(false);
+    }
+  };
 
   if (!renderedMessage) {
     return null;
   }
 
-  const handleAction = () => {
-    renderedMessage.onAction?.();
-    dismissSnackbar();
-  };
-
   const variant = renderedMessage.variant ?? 'info';
   const variantStyles = snackbarVariantStyles[variant];
   const StatusIcon = variantStyles.icon;
+  const isUrgent = variant === 'danger' || variant === 'warning';
+  const dragOpacity = dragY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [1, 1 / 3],
+    extrapolate: 'clamp'
+  });
 
   return (
     <View
@@ -267,70 +404,59 @@ export function SnackbarHost() {
       style={{ bottom: insets.bottom + SNACKBAR_BOTTOM_OFFSET }}
     >
       <Animated.View
-        style={{
-          opacity: progress,
-          transform: [
-            {
-              translateY: progress.interpolate({
-                inputRange: [0, 1],
-                outputRange: [12, 0]
-              })
-            },
-            { translateY: dragY }
-          ]
-        }}
-        {...panResponder.panHandlers}
+        pointerEvents="box-none"
+        style={{ transform: [{ translateY: keyboardOffset }] }}
       >
-        <View
-          className={cn(
-            'bg-popover flex-row items-center gap-3 rounded-lg border px-3 py-2 shadow-xl',
-            variantStyles.borderClassName
-          )}
+        <Animated.View
+          style={{
+            opacity: Animated.multiply(progress, dragOpacity),
+            transform: [
+              { translateY: entranceOffset },
+              { translateY: dragY },
+              { scale: entranceScale }
+            ]
+          }}
         >
           <View
-            className={cn(
-              'h-9 w-1.5 shrink-0 rounded-sm',
-              variantStyles.indicatorClassName
-            )}
-          />
-          <View
-            className={cn(
-              'h-8 w-8 shrink-0 items-center justify-center rounded-md border',
-              variantStyles.iconContainerClassName
-            )}
+            accessibilityLiveRegion={isUrgent ? 'assertive' : 'polite'}
+            accessibilityRole={isUrgent ? 'alert' : undefined}
+            className="border-border bg-popover min-h-14 w-full flex-row items-center gap-2.5 rounded-md border py-1.5 pr-2 pl-3.5 shadow-xl"
           >
-            <Icon as={StatusIcon} size="sm" tone={variant} />
-          </View>
-          <Text
-            variant="bodyMedium"
-            className="min-w-0 flex-1"
-            numberOfLines={2}
-          >
-            {renderedMessage.message}
-          </Text>
-
-          {renderedMessage.actionLabel ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="shrink-0 px-2"
-              textClassName={variantStyles.actionTextClassName}
-              onPress={handleAction}
+            <View
+              {...panResponder.panHandlers}
+              className="min-w-0 flex-1 flex-row items-center gap-2.5"
             >
-              {renderedMessage.actionLabel}
-            </Button>
-          ) : null}
+              <View
+                className={cn(
+                  'h-8 w-8 shrink-0 items-center justify-center rounded-full',
+                  variantStyles.iconContainerClassName
+                )}
+              >
+                <Icon as={StatusIcon} size="sm" tone={variant} />
+              </View>
+              <Text variant="body" className="min-w-0 flex-1" numberOfLines={2}>
+                {renderedMessage.message}
+              </Text>
+            </View>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="shrink-0"
-            accessibilityLabel="Dismiss notification"
-            onPress={() => dismissSnackbar()}
-          >
-            <Icon as={X} size="md" tone="mutedForeground" strokeWidth={2.25} />
-          </Button>
-        </View>
+            {renderedMessage.actionLabel ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="min-h-11 min-w-11 shrink-0 rounded-[10px] px-2.5"
+                textClassName="text-primary"
+                accessibilityLabel={
+                  isActionPending ? 'Retrying' : renderedMessage.actionLabel
+                }
+                loading={isActionPending}
+                loadingLabel="Retrying"
+                onPress={handleAction}
+              >
+                {renderedMessage.actionLabel}
+              </Button>
+            ) : null}
+          </View>
+        </Animated.View>
       </Animated.View>
     </View>
   );
