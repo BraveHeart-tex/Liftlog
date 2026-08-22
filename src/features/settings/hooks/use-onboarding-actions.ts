@@ -1,4 +1,5 @@
 import { useDrizzle } from '@/src/components/database-provider';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import { completeOnboardingWithPreferences } from '@/src/features/settings/onboarding.repository';
 import type { WeightUnit } from '@/src/features/settings/settings.repository';
 import { router } from 'expo-router';
@@ -37,6 +38,10 @@ export function useOnboardingActions({
       isStartingRef.current = false;
       setIsStarting(false);
       console.error('Failed to complete onboarding', error);
+      showSnackbar({
+        message: 'Could not finish setup. Please try again.',
+        variant: 'danger'
+      });
     }
   }, [db, weightUnitPreference]);
 

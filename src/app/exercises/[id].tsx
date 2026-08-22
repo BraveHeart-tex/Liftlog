@@ -199,6 +199,18 @@ export default function ExerciseDetailScreen() {
 
       if (result === 'archived' || result === 'deleted') {
         triggerHapticWarning('custom exercise deletion');
+        const requestedDelete = removeActionLabel === 'Delete';
+        const wasArchivedInsteadOfDeleted =
+          requestedDelete && result === 'archived';
+        showSnackbar({
+          message:
+            result === 'deleted'
+              ? 'Exercise deleted.'
+              : wasArchivedInsteadOfDeleted
+                ? 'Exercise was archived instead. Existing history is safe.'
+                : 'Exercise archived.',
+          variant: wasArchivedInsteadOfDeleted ? 'warning' : 'success'
+        });
         router.back();
 
         return;

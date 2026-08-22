@@ -9,6 +9,7 @@ import {
 import { Button } from '@/src/components/ui/button';
 import { ChoiceChip } from '@/src/components/ui/chip';
 import { Icon } from '@/src/components/ui/icon';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import { Text } from '@/src/components/ui/text';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import {
@@ -105,8 +106,16 @@ const StepGoalSheetContent = memo(function StepGoalSheetContent({
       return;
     }
 
-    setStepGoal(draftGoal);
-    onClose();
+    try {
+      setStepGoal(draftGoal);
+      onClose();
+    } catch (error) {
+      console.error('Failed to save step goal', error);
+      showSnackbar({
+        message: 'Could not save step goal. Please try again.',
+        variant: 'danger'
+      });
+    }
   };
 
   const handleClose = () => {

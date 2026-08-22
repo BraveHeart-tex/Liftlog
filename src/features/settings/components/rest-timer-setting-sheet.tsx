@@ -5,6 +5,7 @@ import {
 } from '@/src/components/ui/bottom-sheet';
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import { Text } from '@/src/components/ui/text';
 import { WheelPicker } from '@/src/components/ui/wheel-picker';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
@@ -89,8 +90,16 @@ const RestTimerSettingSheetContent = memo(
         return;
       }
 
-      setRestTimerDuration(selectedTotalSeconds);
-      onClose();
+      try {
+        setRestTimerDuration(selectedTotalSeconds);
+        onClose();
+      } catch (error) {
+        console.error('Failed to save rest timer duration', error);
+        showSnackbar({
+          message: 'Could not save rest timer. Please try again.',
+          variant: 'danger'
+        });
+      }
     };
 
     const handleClose = () => {

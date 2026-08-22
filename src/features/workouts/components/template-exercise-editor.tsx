@@ -1,6 +1,7 @@
 import { Button } from '@/src/components/ui/button';
 import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import { Text } from '@/src/components/ui/text';
 import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import { useExerciseActions } from '@/src/features/exercises/hooks/use-exercise-actions';
@@ -86,18 +87,26 @@ export function TemplateExerciseEditor({
 
   const saveCustomExercise = useCallback(
     (newExercise: Parameters<typeof createCustomExercise>[0]) => {
-      const createdExercise = createCustomExercise(newExercise);
-      triggerHapticSuccess('custom exercise creation');
+      try {
+        const createdExercise = createCustomExercise(newExercise);
+        triggerHapticSuccess('custom exercise creation');
 
-      onChange([
-        ...rows,
-        {
-          id: createdExercise.id,
-          exercise: createdExercise,
-          supersetId: null
-        }
-      ]);
-      setIsCreateCustomExerciseOpen(false);
+        onChange([
+          ...rows,
+          {
+            id: createdExercise.id,
+            exercise: createdExercise,
+            supersetId: null
+          }
+        ]);
+        setIsCreateCustomExerciseOpen(false);
+      } catch (error) {
+        console.error('Failed to create custom exercise in template', error);
+        showSnackbar({
+          message: 'Could not create exercise. Please try again.',
+          variant: 'danger'
+        });
+      }
     },
     [createCustomExercise, onChange, rows]
   );

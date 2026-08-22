@@ -1,4 +1,5 @@
 import { useDrizzle } from '@/src/components/database-provider';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import type { HealthStepDay } from '@/src/db/schema';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import {
@@ -138,6 +139,15 @@ export function useStepsScreen() {
         if (isMountedRef.current) {
           setErrorMessage('Could not sync steps from Health Connect.');
         }
+
+        if (!isInitial) {
+          showSnackbar({
+            message: 'Could not refresh steps from Health Connect.',
+            actionLabel: 'Retry',
+            onAction: () => syncSteps({ isInitial: false }),
+            variant: 'danger'
+          });
+        }
       } finally {
         if (isMountedRef.current) {
           setSyncState('idle');
@@ -172,6 +182,13 @@ export function useStepsScreen() {
       if (isMountedRef.current) {
         setErrorMessage('Could not connect to Health Connect.');
       }
+
+      showSnackbar({
+        message: 'Could not connect to Health Connect.',
+        actionLabel: 'Retry',
+        onAction: connectSteps,
+        variant: 'danger'
+      });
     } finally {
       if (isMountedRef.current) {
         setSyncState('idle');

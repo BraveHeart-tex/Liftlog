@@ -27,7 +27,29 @@ export default function HistoricalWorkoutDraftScreen() {
       }
 
       const discard = () => {
-        discardDraft(historicalWorkout.id);
+        try {
+          if (!discardDraft(historicalWorkout.id)) {
+            showSnackbar({
+              message: 'This workout draft may have already been discarded.',
+              variant: 'warning'
+            });
+
+            return false;
+          }
+
+          showSnackbar({
+            message: 'Workout draft discarded.',
+            variant: 'success'
+          });
+        } catch (error) {
+          console.error('Failed to discard historical workout', error);
+          showSnackbar({
+            message: 'Could not discard workout draft. Please try again.',
+            variant: 'danger'
+          });
+
+          return false;
+        }
 
         return true;
       };

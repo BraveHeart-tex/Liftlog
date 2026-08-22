@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/src/components/ui/card';
 import { Icon } from '@/src/components/ui/icon';
 import { Switch } from '@/src/components/ui/switch';
 import { Text } from '@/src/components/ui/text';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import { StepGoalSheet } from '@/src/features/settings/components/step-goal-sheet';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import { openStepHealthConnectSettings } from '@/src/features/steps/health-connect.service';
@@ -20,6 +21,20 @@ export const StepsSection = () => {
   const closeStepGoalSheet = useCallback(
     () => setIsStepGoalSheetOpen(false),
     []
+  );
+  const handleHealthConnectToggle = useCallback(
+    (isEnabled: boolean) => {
+      try {
+        setHealthConnectStepsEnabled(isEnabled);
+      } catch (error) {
+        console.error('Failed to save Health Connect setting', error);
+        showSnackbar({
+          message: 'Could not update Health Connect steps. Please try again.',
+          variant: 'danger'
+        });
+      }
+    },
+    [setHealthConnectStepsEnabled]
   );
 
   return shouldShowStepsSettings ? (
@@ -39,7 +54,7 @@ export const StepsSection = () => {
               </View>
               <Switch
                 checked={healthConnectStepsEnabled}
-                onCheckedChange={setHealthConnectStepsEnabled}
+                onCheckedChange={handleHealthConnectToggle}
               />
             </View>
 

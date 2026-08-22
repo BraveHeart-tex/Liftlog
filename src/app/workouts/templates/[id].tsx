@@ -284,16 +284,30 @@ function WorkoutTemplateDetailLoaded({
         return;
       }
 
-      if (!removeTemplate(template.id)) {
-        return;
-      }
+      try {
+        if (!removeTemplate(template.id)) {
+          showSnackbar({
+            message: 'This template may have already been deleted.',
+            variant: 'warning'
+          });
 
-      triggerHapticWarning('template deletion');
+          return;
+        }
 
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/(tabs)/workout');
+        triggerHapticWarning('template deletion');
+        showSnackbar({ message: 'Template deleted.', variant: 'success' });
+
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(tabs)/workout');
+        }
+      } catch (error) {
+        console.error('Failed to delete template', error);
+        showSnackbar({
+          message: 'Could not delete template. Please try again.',
+          variant: 'danger'
+        });
       }
     });
   }, [removeTemplate, template.id, template.name]);

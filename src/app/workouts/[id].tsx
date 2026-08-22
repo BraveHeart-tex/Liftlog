@@ -219,6 +219,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
         }
 
         triggerHapticWarning('completed workout deletion');
+        showSnackbar({ message: 'Workout deleted.', variant: 'success' });
 
         if (router.canGoBack()) {
           router.back();

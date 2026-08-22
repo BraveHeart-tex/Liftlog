@@ -371,19 +371,27 @@ export function useSetFormController({
           onUpdateSet({ setId: row.set.id, ...validatedValues })
         );
 
-        setPersistedEditsBySetId(currentEdits => {
-          const existingEdit = currentEdits[row.set.id];
-
-          if (!existingEdit) {
-            return currentEdits;
-          }
-
-          if (!updatedSet) {
+        if (!updatedSet) {
+          setPersistedEditsBySetId(currentEdits => {
             const nextEdits = { ...currentEdits };
 
             delete nextEdits[row.set.id];
 
             return nextEdits;
+          });
+          showSnackbar({
+            message: 'This set may have already been removed.',
+            variant: 'warning'
+          });
+
+          return;
+        }
+
+        setPersistedEditsBySetId(currentEdits => {
+          const existingEdit = currentEdits[row.set.id];
+
+          if (!existingEdit) {
+            return currentEdits;
           }
 
           return {
@@ -412,6 +420,12 @@ export function useSetFormController({
               values: existingEdit.values
             }
           };
+        });
+        showSnackbar({
+          message: 'Could not save set. Please try again.',
+          actionLabel: 'Retry',
+          onAction: () => commitRowValues(row, validatedValues, fieldValues),
+          variant: 'danger'
         });
       }
 
@@ -458,6 +472,10 @@ export function useSetFormController({
             : currentRow
         )
       );
+      showSnackbar({
+        message: 'Could not add set. Please try again.',
+        variant: 'danger'
+      });
     }
   };
 
@@ -546,6 +564,7 @@ export function useSetFormController({
       void (async () => {
         try {
           await Promise.resolve(onDeleteSet(row.set.id));
+          showSnackbar({ message: 'Set deleted.', variant: 'success' });
         } catch (error) {
           console.error('Failed to delete set', error);
           setPendingDeleteSetIds(currentIds => {

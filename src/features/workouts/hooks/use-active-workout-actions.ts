@@ -1,4 +1,5 @@
 import { useDrizzle } from '@/src/components/database-provider';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import type { NewExercise, Workout, WorkoutExercise } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import {
@@ -40,11 +41,20 @@ export function useActiveWorkoutActions({
       }
 
       setIsExercisePickerOpen(false);
-      addExerciseToWorkout(db, {
-        workoutId: activeWorkout.id,
-        exerciseId: exercise.id
-      });
-      triggerHapticLight('exercise added to workout');
+
+      try {
+        addExerciseToWorkout(db, {
+          workoutId: activeWorkout.id,
+          exerciseId: exercise.id
+        });
+        triggerHapticLight('exercise added to workout');
+      } catch (error) {
+        console.error('Failed to add exercise to workout', error);
+        showSnackbar({
+          message: 'Could not add exercise. Please try again.',
+          variant: 'danger'
+        });
+      }
     },
     [
       activeWorkout.id,
@@ -61,16 +71,23 @@ export function useActiveWorkoutActions({
         return null;
       }
 
-      const { exercise: createdExercise } = createCustomExerciseAndAddToWorkout(
-        db,
-        activeWorkout.id,
-        exercise
-      );
+      try {
+        const { exercise: createdExercise } =
+          createCustomExerciseAndAddToWorkout(db, activeWorkout.id, exercise);
 
-      setIsExercisePickerOpen(false);
-      triggerHapticLight('custom exercise added to workout');
+        setIsExercisePickerOpen(false);
+        triggerHapticLight('custom exercise added to workout');
 
-      return createdExercise;
+        return createdExercise;
+      } catch (error) {
+        console.error('Failed to create custom exercise in workout', error);
+        showSnackbar({
+          message: 'Could not create exercise. Please try again.',
+          variant: 'danger'
+        });
+
+        return null;
+      }
     },
     [activeWorkout.id, db, isLoadingWorkoutExercises, setIsExercisePickerOpen]
   );

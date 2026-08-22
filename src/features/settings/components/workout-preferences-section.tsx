@@ -2,6 +2,7 @@ import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Icon } from '@/src/components/ui/icon';
 import { SegmentedControl } from '@/src/components/ui/segmented-control';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import { Text } from '@/src/components/ui/text';
 import { RestTimerSettingSheet } from '@/src/features/settings/components/rest-timer-setting-sheet';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
@@ -26,6 +27,20 @@ export const WorkoutPreferencesSection = () => {
     useSettings();
   const openTimerSheet = useCallback(() => setIsTimerSheetOpen(true), []);
   const closeTimerSheet = useCallback(() => setIsTimerSheetOpen(false), []);
+  const handleWeightUnitChange = useCallback(
+    (nextUnit: WeightUnit) => {
+      try {
+        setWeightUnit(nextUnit);
+      } catch (error) {
+        console.error('Failed to save weight unit', error);
+        showSnackbar({
+          message: 'Could not save weight unit. Please try again.',
+          variant: 'danger'
+        });
+      }
+    },
+    [setWeightUnit]
+  );
 
   return (
     <>
@@ -42,7 +57,7 @@ export const WorkoutPreferencesSection = () => {
               <SegmentedControl
                 value={weightUnit}
                 options={WEIGHT_UNIT_OPTIONS}
-                onChange={setWeightUnit}
+                onChange={handleWeightUnitChange}
                 accessibilityMode="radioGroup"
                 className="bg-muted ml-4 w-32"
                 indicatorClassName="bg-card"

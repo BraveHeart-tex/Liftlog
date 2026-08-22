@@ -145,10 +145,17 @@ export function RestTimerIdleContent({
         } else {
           addRestTimerPreset(preset);
         }
-      } catch {
+      } catch (error) {
+        const isPresetLimitError =
+          error instanceof RangeError &&
+          error.message === 'Only 8 rest timer presets are allowed.';
+
+        console.error('Failed to save rest timer preset', error);
         showSnackbar({
-          message: 'Only 8 rest timer presets are allowed.',
-          variant: 'warning'
+          message: isPresetLimitError
+            ? 'Only 8 rest timer presets are allowed.'
+            : 'Could not save rest timer preset. Please try again.',
+          variant: isPresetLimitError ? 'warning' : 'danger'
         });
 
         return;
@@ -171,9 +178,25 @@ export function RestTimerIdleContent({
           return;
         }
 
-        if (deleteRestTimerPreset(preset.id)) {
+        try {
+          if (!deleteRestTimerPreset(preset.id)) {
+            showSnackbar({
+              message: 'This preset may have already been deleted.',
+              variant: 'warning'
+            });
+
+            return;
+          }
+
           triggerHapticWarning('rest timer preset deletion');
           setIsEditorOpen(false);
+          showSnackbar({ message: 'Preset deleted.', variant: 'success' });
+        } catch (error) {
+          console.error('Failed to delete rest timer preset', error);
+          showSnackbar({
+            message: 'Could not delete rest timer preset. Please try again.',
+            variant: 'danger'
+          });
         }
       });
     },

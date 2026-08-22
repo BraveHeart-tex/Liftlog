@@ -1,4 +1,5 @@
 import { useDrizzle } from '@/src/components/database-provider';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import type { WorkoutTemplate } from '@/src/db/schema';
 import {
   createWorkout,
@@ -42,18 +43,26 @@ export function useWorkoutStart() {
   }, []);
 
   const startWorkout = useCallback(() => {
-    withDomainFlowSpan(
-      { operation: 'workout.start', feature: 'workout' },
-      () => {
-        createWorkout(db, {
-          name: formatWorkoutName(new Date()),
-          status: 'in_progress'
-        });
-        triggerHapticMedium('workout creation');
+    try {
+      withDomainFlowSpan(
+        { operation: 'workout.start', feature: 'workout' },
+        () => {
+          createWorkout(db, {
+            name: formatWorkoutName(new Date()),
+            status: 'in_progress'
+          });
+          triggerHapticMedium('workout creation');
 
-        router.navigate(activeWorkoutRoute);
-      }
-    );
+          router.navigate(activeWorkoutRoute);
+        }
+      );
+    } catch (error) {
+      console.error('Failed to start workout', error);
+      showSnackbar({
+        message: 'Could not start workout. Please try again.',
+        variant: 'danger'
+      });
+    }
   }, [db]);
 
   const resumeWorkout = useCallback(() => {
@@ -62,44 +71,78 @@ export function useWorkoutStart() {
 
   const startWorkoutFromTemplate = useCallback(
     (templateId: WorkoutTemplate['id']) => {
-      withDomainFlowSpan(
-        { operation: 'workout.start', feature: 'workout' },
-        () => {
-          const createdWorkout = createWorkoutFromTemplate(db, {
-            templateId
-          });
+      try {
+        withDomainFlowSpan(
+          { operation: 'workout.start', feature: 'workout' },
+          () => {
+            const createdWorkout = createWorkoutFromTemplate(db, {
+              templateId
+            });
 
-          if (createdWorkout) {
+            if (!createdWorkout) {
+              showSnackbar({
+                message: 'This template is no longer available.',
+                variant: 'warning'
+              });
+
+              return;
+            }
+
             triggerHapticMedium('workout creation');
             router.navigate(activeWorkoutRoute);
           }
-        }
-      );
+        );
+      } catch (error) {
+        console.error('Failed to start workout from template', error);
+        showSnackbar({
+          message: 'Could not start workout. Please try again.',
+          variant: 'danger'
+        });
+      }
     },
     [db]
   );
 
   const discardActiveWorkoutAndStartTemplate = useCallback(
     (templateId: WorkoutTemplate['id']) => {
-      withDomainFlowSpan(
-        { operation: 'workout.start', feature: 'workout' },
-        () => {
-          const createdWorkout = createWorkoutFromTemplate(db, {
-            templateId,
-            discardWorkoutId: activeWorkoutId
-          });
+      try {
+        withDomainFlowSpan(
+          { operation: 'workout.start', feature: 'workout' },
+          () => {
+            const createdWorkout = createWorkoutFromTemplate(db, {
+              templateId,
+              discardWorkoutId: activeWorkoutId
+            });
 
-          if (createdWorkout) {
+            if (!createdWorkout) {
+              showSnackbar({
+                message: 'Could not replace workout. Please try again.',
+                variant: 'warning'
+              });
+
+              return;
+            }
+
             triggerHapticMedium('workout replacement');
 
             if (activeWorkoutId) {
               useRestTimerStore.getState().cancelForWorkout(activeWorkoutId);
             }
 
+            showSnackbar({
+              message: 'Previous workout discarded. New workout started.',
+              variant: 'success'
+            });
             router.navigate(activeWorkoutRoute);
           }
-        }
-      );
+        );
+      } catch (error) {
+        console.error('Failed to replace active workout', error);
+        showSnackbar({
+          message: 'Could not replace workout. Please try again.',
+          variant: 'danger'
+        });
+      }
     },
     [activeWorkoutId, db]
   );

@@ -96,6 +96,7 @@ export const ActiveWorkoutHeaderWithActions = ({
         }
 
         triggerHapticWarning('active workout discard');
+        showSnackbar({ message: 'Workout discarded.', variant: 'success' });
         router.replace('/(tabs)/workout');
       } catch (error) {
         console.error('Failed to discard workout', error);

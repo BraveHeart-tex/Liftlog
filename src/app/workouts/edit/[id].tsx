@@ -31,7 +31,26 @@ export default function HistoricalWorkoutEditScreen() {
       }
 
       const discard = () => {
-        discardDraft(draftWorkout.id);
+        try {
+          if (!discardDraft(draftWorkout.id)) {
+            showSnackbar({
+              message: 'These edits may have already been discarded.',
+              variant: 'warning'
+            });
+
+            return false;
+          }
+
+          showSnackbar({ message: 'Edits discarded.', variant: 'success' });
+        } catch (error) {
+          console.error('Failed to discard workout edits', error);
+          showSnackbar({
+            message: 'Could not discard edits. Please try again.',
+            variant: 'danger'
+          });
+
+          return false;
+        }
 
         return true;
       };
