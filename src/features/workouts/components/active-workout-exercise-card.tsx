@@ -17,6 +17,24 @@ interface ActiveWorkoutExerciseCardProps {
   variant?: 'default' | 'grouped';
   weightUnit: WeightUnit;
   onLongPress?: () => void;
+  pressable?: boolean;
+}
+
+export function navigateToWorkoutExercise(
+  item: WorkoutExerciseWithSets,
+  mode: 'active' | 'historical' | 'historical-edit' = 'active'
+) {
+  const pathname =
+    mode === 'historical'
+      ? '/workouts/backfill/exercise/[workoutExerciseId]'
+      : mode === 'historical-edit'
+        ? '/workouts/edit/exercise/[workoutExerciseId]'
+        : '/(tabs)/workout/exercise/[workoutExerciseId]';
+
+  router.navigate({
+    pathname,
+    params: { workoutExerciseId: item.workoutExercise.id }
+  });
 }
 
 export function ActiveWorkoutExerciseCard({
@@ -25,7 +43,8 @@ export function ActiveWorkoutExerciseCard({
   mode = 'active',
   variant = 'default',
   weightUnit,
-  onLongPress
+  onLongPress,
+  pressable = true
 }: ActiveWorkoutExerciseCardProps) {
   const isGrouped = variant === 'grouped';
   const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale({
@@ -34,12 +53,35 @@ export function ActiveWorkoutExerciseCard({
 
   const completedSets = item.sets.filter(set => set.status === 'completed');
   const exerciseName = item.exercise?.name ?? 'Unknown exercise';
-  const pathname =
-    mode === 'historical'
-      ? '/workouts/backfill/exercise/[workoutExerciseId]'
-      : mode === 'historical-edit'
-        ? '/workouts/edit/exercise/[workoutExerciseId]'
-        : '/(tabs)/workout/exercise/[workoutExerciseId]';
+  const content = isGrouped ? (
+    <View
+      className={cn(
+        'flex-row items-center gap-3 py-3',
+        pressed && 'bg-secondary'
+      )}
+    >
+      <WorkoutExerciseSummary
+        exerciseName={exerciseName}
+        completedSets={completedSets}
+        weightUnit={weightUnit}
+        trackingType={resolveTrackingType(item.exercise?.trackingType)}
+        emptyText="Tap to log sets"
+        className="min-w-0 flex-1"
+      />
+      <Icon as={ChevronRightIcon} size={iconSizes.md} tone="mutedForeground" />
+    </View>
+  ) : (
+    <View className={cn('bg-card', pressed && 'opacity-80')}>
+      <WorkoutExerciseSummary
+        exerciseName={exerciseName}
+        completedSets={completedSets}
+        weightUnit={weightUnit}
+        trackingType={resolveTrackingType(item.exercise?.trackingType)}
+        emptyText="Tap to log sets"
+        className="p-4"
+      />
+    </View>
+  );
 
   return (
     <Animated.View
@@ -51,53 +93,20 @@ export function ActiveWorkoutExerciseCard({
         className
       )}
     >
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={exerciseName}
-        onPress={() =>
-          router.navigate({
-            pathname,
-            params: { workoutExerciseId: item.workoutExercise.id }
-          })
-        }
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
-        onLongPress={onLongPress}
-      >
-        {isGrouped ? (
-          <View
-            className={cn(
-              'flex-row items-center gap-3 py-3',
-              pressed && 'bg-secondary'
-            )}
-          >
-            <WorkoutExerciseSummary
-              exerciseName={exerciseName}
-              completedSets={completedSets}
-              weightUnit={weightUnit}
-              trackingType={resolveTrackingType(item.exercise?.trackingType)}
-              emptyText="Tap to log sets"
-              className="min-w-0 flex-1"
-            />
-            <Icon
-              as={ChevronRightIcon}
-              size={iconSizes.md}
-              tone="mutedForeground"
-            />
-          </View>
-        ) : (
-          <View className={cn('bg-card', pressed && 'opacity-80')}>
-            <WorkoutExerciseSummary
-              exerciseName={exerciseName}
-              completedSets={completedSets}
-              weightUnit={weightUnit}
-              trackingType={resolveTrackingType(item.exercise?.trackingType)}
-              emptyText="Tap to log sets"
-              className="p-4"
-            />
-          </View>
-        )}
-      </Pressable>
+      {pressable ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={exerciseName}
+          onPress={() => navigateToWorkoutExercise(item, mode)}
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+          onLongPress={onLongPress}
+        >
+          {content}
+        </Pressable>
+      ) : (
+        content
+      )}
     </Animated.View>
   );
 }

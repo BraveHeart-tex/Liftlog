@@ -2,7 +2,10 @@ import { StyledScrollView } from '@/src/components/styled/scroll-view';
 import type { Set, WorkoutExercise } from '@/src/db/schema';
 import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
-import { ActiveWorkoutExerciseCard } from '@/src/features/workouts/components/active-workout-exercise-card';
+import {
+  ActiveWorkoutExerciseCard,
+  navigateToWorkoutExercise
+} from '@/src/features/workouts/components/active-workout-exercise-card';
 import { ActiveWorkoutExerciseEditList } from '@/src/features/workouts/components/active-workout-exercise-edit-list';
 import { SupersetExerciseGroup } from '@/src/features/workouts/components/superset-exercise-group';
 import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
@@ -173,6 +176,12 @@ export function ActiveWorkoutExerciseList({
               className="mt-4"
               rows={block.rows}
               supersetLabel={supersetLabel ?? 'Superset'}
+              rowInteraction={{
+                onPress: row => navigateToWorkoutExercise(row, mode),
+                onLongPress: () => onEnterEditMode?.(),
+                getAccessibilityLabel: row =>
+                  row.exercise?.name ?? 'Unknown exercise'
+              }}
               renderRow={({ row }) => (
                 <ActiveWorkoutExerciseCard
                   key={row.workoutExercise.id}
@@ -180,8 +189,8 @@ export function ActiveWorkoutExerciseList({
                   mode={mode}
                   variant="grouped"
                   weightUnit={weightUnit}
+                  pressable={false}
                   className="flex-1"
-                  onLongPress={onEnterEditMode}
                 />
               )}
             />

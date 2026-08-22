@@ -8,7 +8,7 @@ import { cn } from '@/src/lib/utils/cn.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { Repeat2Icon } from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 type SupersetExercisePosition = 1 | 2;
 
@@ -17,6 +17,11 @@ interface SupersetExerciseGroupProps<TRow> {
   supersetLabel: string;
   className?: string;
   renderHeaderActions?: ReactNode;
+  rowInteraction?: {
+    onPress: (row: TRow) => void;
+    onLongPress?: (row: TRow) => void;
+    getAccessibilityLabel: (row: TRow) => string;
+  };
   renderRow: (params: {
     row: TRow;
     position: SupersetExercisePosition;
@@ -28,6 +33,7 @@ export function SupersetExerciseGroup<TRow>({
   supersetLabel,
   className,
   renderHeaderActions,
+  rowInteraction,
   renderRow
 }: SupersetExerciseGroupProps<TRow>) {
   const supersetLetter = getSupersetLetter(supersetLabel);
@@ -38,16 +44,43 @@ export function SupersetExerciseGroup<TRow>({
     return null;
   }
 
-  const renderGroupRow = (row: TRow, position: SupersetExercisePosition) => (
-    <View className="flex-row items-center gap-3 px-4">
-      <View className="w-10 shrink-0">
-        <Text variant="body" tone="muted">
-          {formatSupersetExerciseLabel(supersetLetter, position)}
-        </Text>
+  const renderGroupRow = (row: TRow, position: SupersetExercisePosition) => {
+    const rowContent = (pressed: boolean) => (
+      <View
+        className={cn(
+          'flex-row items-center gap-3 px-4',
+          pressed && 'bg-secondary'
+        )}
+      >
+        <View className="w-10 shrink-0">
+          <Text variant="body" tone="muted">
+            {formatSupersetExerciseLabel(supersetLetter, position)}
+          </Text>
+        </View>
+        <View className="min-w-0 flex-1">{renderRow({ row, position })}</View>
       </View>
-      <View className="min-w-0 flex-1">{renderRow({ row, position })}</View>
-    </View>
-  );
+    );
+
+    if (!rowInteraction) {
+      return rowContent(false);
+    }
+
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={rowInteraction.getAccessibilityLabel(row)}
+        className="w-full"
+        onPress={() => rowInteraction.onPress(row)}
+        onLongPress={
+          rowInteraction.onLongPress
+            ? () => rowInteraction.onLongPress?.(row)
+            : undefined
+        }
+      >
+        {({ pressed }) => rowContent(pressed)}
+      </Pressable>
+    );
+  };
 
   return (
     <View
