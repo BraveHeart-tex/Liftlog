@@ -52,7 +52,7 @@ export function RestTimerActiveContent() {
   };
 
   return (
-    <View className="flex-1 items-center justify-between">
+    <View className="flex-1 items-center justify-end gap-4">
       <RestTimerCountdown
         status={isPaused ? 'paused' : 'running'}
         secondsRemaining={secondsRemaining}

@@ -15,11 +15,7 @@ import {
 import { cn } from '@/src/lib/utils/cn.utils';
 import { XIcon } from 'lucide-react-native';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { useWindowDimensions, View } from 'react-native';
-
-const ACTIVE_CONTENT_MAX_HEIGHT = 695;
-const ACTIVE_SHEET_CHROME_HEIGHT = 149;
-const ACTIVE_CONTENT_MIN_HEIGHT = 420;
+import { View } from 'react-native';
 
 interface RestTimerSheetProps {
   isOpen: boolean;
@@ -86,7 +82,6 @@ const RestTimerSheetContent = memo(function RestTimerSheetContent({
   onClose
 }: RestTimerSheetContentProps) {
   const { restTimerDuration: defaultDuration } = useSettings();
-  const { height: windowHeight } = useWindowDimensions();
   const status = useRestTimerStore(state => state.status);
   const activeContext = useRestTimerStore(state => state.context);
   const syncDefaultDuration = useRestTimerStore(
@@ -95,13 +90,6 @@ const RestTimerSheetContent = memo(function RestTimerSheetContent({
   const syncOnOpen = useRestTimerStore(state => state.syncOnOpen);
   const wasOpenRef = useRef(false);
   const [openToken, setOpenToken] = useState(0);
-  const activeContentHeight = Math.min(
-    Math.max(
-      windowHeight - ACTIVE_SHEET_CHROME_HEIGHT,
-      ACTIVE_CONTENT_MIN_HEIGHT
-    ),
-    ACTIVE_CONTENT_MAX_HEIGHT
-  );
   const subtitle =
     status === 'idle'
       ? 'Set the next rest interval'
@@ -153,7 +141,6 @@ const RestTimerSheetContent = memo(function RestTimerSheetContent({
           'pb-safe-offset-2 px-4 pt-2',
           status === 'idle' && 'gap-4'
         )}
-        style={status === 'idle' ? undefined : { height: activeContentHeight }}
       >
         <View
           pointerEvents={status === 'idle' ? 'auto' : 'none'}
