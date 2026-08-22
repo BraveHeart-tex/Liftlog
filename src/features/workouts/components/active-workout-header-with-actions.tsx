@@ -7,6 +7,8 @@ import { Text } from '@/src/components/ui/text';
 import type { Workout, WorkoutExercise } from '@/src/db';
 import { ActiveWorkoutActionsSheet } from '@/src/features/workouts/components/active-workout-actions-sheet';
 import { ActiveWorkoutHeaderDuration } from '@/src/features/workouts/components/active-workout-header-duration';
+import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sheet';
+import { RestTimerTrigger } from '@/src/features/workouts/components/rest-timer-trigger';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/components/save-workout-template-sheet';
 import { useWorkoutDelete } from '@/src/features/workouts/hooks/use-workout-delete';
 import { useWorkoutRename } from '@/src/features/workouts/hooks/use-workout-rename';
@@ -39,6 +41,7 @@ export const ActiveWorkoutHeaderWithActions = ({
   workoutExerciseRows
 }: ActiveWorkoutHeaderWithActionsProps) => {
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
+  const [isRestTimerOpen, setIsRestTimerOpen] = useState(false);
   const [isRenameSheetOpen, setIsRenameSheetOpen] = useState(false);
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
   const hasWorkoutExercises = exerciseCount > 0;
@@ -48,6 +51,8 @@ export const ActiveWorkoutHeaderWithActions = ({
 
   const openActions = useCallback(() => setIsActionSheetOpen(true), []);
   const closeActions = useCallback(() => setIsActionSheetOpen(false), []);
+  const openRestTimer = useCallback(() => setIsRestTimerOpen(true), []);
+  const closeRestTimer = useCallback(() => setIsRestTimerOpen(false), []);
   const openRenameSheet = useCallback(() => setIsRenameSheetOpen(true), []);
   const closeRenameSheet = useCallback(() => setIsRenameSheetOpen(false), []);
   const closeTemplateSheet = useCallback(
@@ -143,9 +148,16 @@ export const ActiveWorkoutHeaderWithActions = ({
       <View
         className={hasWorkoutExercises ? 'px-4 pt-3 pb-2' : 'px-4 pt-4 pb-3'}
       >
-        <Text variant={hasWorkoutExercises ? 'h3' : 'h2'} numberOfLines={1}>
-          {workoutName}
-        </Text>
+        <View className="flex-row items-center gap-2">
+          <Text
+            variant={hasWorkoutExercises ? 'h3' : 'h2'}
+            className="min-w-0 flex-1"
+            numberOfLines={1}
+          >
+            {workoutName}
+          </Text>
+          <RestTimerTrigger onPress={openRestTimer} />
+        </View>
         <ActiveWorkoutHeaderDuration
           startedAt={startedAt}
           exerciseCount={hasWorkoutExercises ? exerciseCount : undefined}
@@ -154,6 +166,14 @@ export const ActiveWorkoutHeaderWithActions = ({
           }
         />
       </View>
+
+      {isRestTimerOpen ? (
+        <RestTimerSheet
+          isOpen
+          context={{ workoutId }}
+          onClose={closeRestTimer}
+        />
+      ) : null}
 
       {isActionSheetOpen ? (
         <ActiveWorkoutActionsSheet

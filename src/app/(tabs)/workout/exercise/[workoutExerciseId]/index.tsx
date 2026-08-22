@@ -9,7 +9,7 @@ import { RestTimerSheet } from '@/src/features/workouts/components/rest-timer-sh
 import { RestTimerTrigger } from '@/src/features/workouts/components/rest-timer-trigger';
 import { useActiveWorkoutExerciseDetail } from '@/src/features/workouts/hooks/use-active-workout-exercise-detail';
 import { getRouteParamId } from '@/src/lib/utils/route.utils';
-import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowRightIcon } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
@@ -70,15 +70,14 @@ export default function ActiveWorkoutExerciseScreen() {
         ) : undefined
       }
     >
-      <Stack.Screen
-        options={{
-          headerRight: () => <RestTimerTrigger onPress={openRestTimer} />
-        }}
-      />
-
       <View className="min-h-0 flex-1 px-4">
         <View className="pt-6 pb-4">
-          <Text variant="h2">{item.exercise?.name ?? 'Unknown exercise'}</Text>
+          <View className="flex-row items-center gap-2">
+            <Text variant="h2" className="min-w-0 flex-1" numberOfLines={1}>
+              {item.exercise?.name ?? 'Unknown exercise'}
+            </Text>
+            <RestTimerTrigger onPress={openRestTimer} />
+          </View>
         </View>
         <ExerciseTrackSection item={item} />
       </View>

@@ -13,7 +13,6 @@ import { ActiveWorkoutExercisePickerSheet } from '@/src/features/workouts/compon
 import { ActiveWorkoutHeaderWithActions } from '@/src/features/workouts/components/active-workout-header-with-actions';
 import { CreateCustomExerciseSheet } from '@/src/features/workouts/components/create-custom-exercise-sheet';
 import { HistoricalWorkoutHeader } from '@/src/features/workouts/components/historical-workout-header';
-import { RestTimerWidget } from '@/src/features/workouts/components/rest-timer-widget';
 import { useActiveWorkoutActions } from '@/src/features/workouts/hooks/use-active-workout-actions';
 import { useActiveWorkoutContent as useActiveWorkoutContentData } from '@/src/features/workouts/hooks/use-active-workout-content';
 import { useFinishWorkout } from '@/src/features/workouts/hooks/use-finish-workout';
@@ -314,12 +313,6 @@ export function ActiveWorkoutContent({
         exiting={shouldAnimateLocalState ? chromeExiting : undefined}
         layout={shouldAnimateLocalState ? chromeLayout : undefined}
       >
-        {mode === 'active' ? (
-          <RestTimerWidget
-            className={isEditingExercises ? undefined : 'mb-2'}
-          />
-        ) : null}
-
         {!isEditingExercises ? (
           <View className="flex-row items-center gap-2">
             <View className="w-[70%]">
