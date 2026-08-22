@@ -12,7 +12,7 @@ import { getRouteParamId } from '@/src/lib/utils/route.utils';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { ArrowRightIcon } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
-import { KeyboardAvoidingView, Platform, View } from 'react-native';
+import { View } from 'react-native';
 
 export default function ActiveWorkoutExerciseScreen() {
   const { workoutExerciseId: rawId } = useLocalSearchParams<{
@@ -26,9 +26,6 @@ export default function ActiveWorkoutExerciseScreen() {
 
   const { item, pairedWorkoutExercise, pairedExercise, isLoading } =
     useActiveWorkoutExerciseDetail(workoutExerciseId);
-
-  const keyboardAvoidingBehavior =
-    Platform.OS === 'ios' ? ('padding' as const) : ('height' as const);
 
   if (workoutExerciseId && isLoading) {
     return (
@@ -53,27 +50,11 @@ export default function ActiveWorkoutExerciseScreen() {
   }
 
   return (
-    <Screen withPadding={false} edges={[]}>
-      <Stack.Screen
-        options={{
-          headerRight: () => <RestTimerTrigger onPress={openRestTimer} />
-        }}
-      />
-
-      <View className="flex-1 px-4">
-        <View className="pt-6 pb-4">
-          <Text variant="h2">{item.exercise?.name ?? 'Unknown exercise'}</Text>
-        </View>
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={keyboardAvoidingBehavior}
-          className="w-full flex-1"
-        >
-          <ExerciseTrackSection item={item} />
-        </KeyboardAvoidingView>
-      </View>
-      {pairedWorkoutExercise ? (
-        <View className="border-border bg-background pb-safe border-t px-4 py-4">
+    <Screen
+      withPadding={false}
+      edges={[]}
+      footer={
+        pairedWorkoutExercise ? (
           <Button
             fullWidth
             rightIcon={<Icon as={ArrowRightIcon} tone="primaryForeground" />}
@@ -86,8 +67,21 @@ export default function ActiveWorkoutExerciseScreen() {
           >
             {`Switch to ${pairedExercise?.name ?? 'paired exercise'}`}
           </Button>
+        ) : undefined
+      }
+    >
+      <Stack.Screen
+        options={{
+          headerRight: () => <RestTimerTrigger onPress={openRestTimer} />
+        }}
+      />
+
+      <View className="min-h-0 flex-1 px-4">
+        <View className="pt-6 pb-4">
+          <Text variant="h2">{item.exercise?.name ?? 'Unknown exercise'}</Text>
         </View>
-      ) : null}
+        <ExerciseTrackSection item={item} />
+      </View>
       {isRestTimerOpen ? (
         <RestTimerSheet
           isOpen
