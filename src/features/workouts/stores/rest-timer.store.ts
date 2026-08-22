@@ -206,12 +206,10 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
       return;
     }
 
-    const resumeSeconds =
-      state.pausedRemainingMs === null
-        ? normalizeRestTimerInput(state.secondsRemaining)
-        : Math.ceil(state.pausedRemainingMs / 1000);
+    const remainingMs =
+      state.pausedRemainingMs ?? state.secondsRemaining * 1000;
 
-    if (resumeSeconds <= 0) {
+    if (remainingMs <= 0) {
       set({
         status: 'idle',
         endTime: null,
@@ -225,9 +223,9 @@ export const useRestTimerStore = create<RestTimerState>((set, get) => ({
 
     set({
       status: 'running',
-      endTime: Date.now() + resumeSeconds * 1000,
+      endTime: Date.now() + remainingMs,
       pausedRemainingMs: null,
-      secondsRemaining: resumeSeconds,
+      secondsRemaining: Math.ceil(remainingMs / 1000),
       activeDurationSeconds: state.activeDurationSeconds
     });
   },

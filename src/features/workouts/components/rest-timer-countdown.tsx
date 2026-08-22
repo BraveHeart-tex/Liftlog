@@ -1,6 +1,6 @@
 import { Text } from '@/src/components/ui/text';
-import { formatTime } from '@/src/lib/utils/format-time.utils';
 import { cn } from '@/src/lib/utils/cn.utils';
+import { formatTime } from '@/src/lib/utils/format-time.utils';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { nativeFontSizes } from '@/src/theme/sizes';
 import { Canvas, Circle, Path, Skia } from '@shopify/react-native-skia';
@@ -17,6 +17,10 @@ interface RestTimerCountdownProps {
   status: 'running' | 'paused';
   secondsRemaining: number;
   activeDuration: number;
+  /** Precise timestamp (ms since epoch) the timer will hit zero. Only meaningful while running. */
+  endTime: number | null;
+  /** Precise remaining ms captured at the moment the timer was paused. Only meaningful while paused. */
+  pausedRemainingMs: number | null;
 }
 
 const CHART_SIZE = 286;
@@ -27,53 +31,87 @@ const RING_INSET = CENTER - RADIUS;
 const START_ANGLE_DEGREES = -90;
 const MAX_SWEEP_DEGREES = 359.9;
 
-function getSafeProgress({
-  secondsRemaining,
-  activeDuration
+function getProgressFromMs({
+  remainingMs,
+  totalMs
 }: {
-  secondsRemaining: number;
-  activeDuration: number;
+  remainingMs: number;
+  totalMs: number;
 }) {
-  if (activeDuration <= 0) {
+  if (totalMs <= 0) {
     return 0;
   }
 
-  return Math.min(Math.max(secondsRemaining / activeDuration, 0), 1);
+  return Math.min(Math.max(remainingMs / totalMs, 0), 1);
+}
+
+function getCurrentRemainingMs({
+  status,
+  endTime,
+  pausedRemainingMs
+}: {
+  status: 'running' | 'paused';
+  endTime: number | null;
+  pausedRemainingMs: number | null;
+}) {
+  if (status === 'running') {
+    return Math.max(0, (endTime ?? Date.now()) - Date.now());
+  }
+
+  return Math.max(0, pausedRemainingMs ?? 0);
 }
 
 export function RestTimerCountdown({
   status,
   secondsRemaining,
-  activeDuration
+  activeDuration,
+  endTime,
+  pausedRemainingMs
 }: RestTimerCountdownProps) {
   const { colors } = useAppTheme();
-  const progress = getSafeProgress({ secondsRemaining, activeDuration });
-  const progressEnd = useSharedValue(progress);
+  const totalMs = activeDuration * 1000;
   const ringColor = status === 'paused' ? colors.accent : colors.info;
 
+  const progressEnd = useSharedValue(
+    getProgressFromMs({
+      remainingMs: getCurrentRemainingMs({
+        status,
+        endTime,
+        pausedRemainingMs
+      }),
+      totalMs
+    })
+  );
+
   useEffect(() => {
-    if (status !== 'running') {
-      cancelAnimation(progressEnd);
-      progressEnd.value = progress;
+    const remainingMs = getCurrentRemainingMs({
+      status,
+      endTime,
+      pausedRemainingMs
+    });
+    const currentProgress = getProgressFromMs({ remainingMs, totalMs });
 
-      return;
+    cancelAnimation(progressEnd);
+    // Always re-anchor to the exact, precisely-known progress for right
+    // now. Since this is computed from real ms (not a rounded whole
+    // second), it can never drift or "rewind" no matter how fast status
+    // is toggled, and it self-corrects on every effect run.
+    progressEnd.value = currentProgress;
+
+    if (status === 'running' && remainingMs > 0) {
+      progressEnd.value = withTiming(0, {
+        duration: remainingMs,
+        easing: Easing.linear
+      });
     }
-
-    const nextProgress = getSafeProgress({
-      secondsRemaining: Math.max(secondsRemaining - 1, 0),
-      activeDuration
-    });
-
-    progressEnd.value = progress;
-    progressEnd.value = withTiming(nextProgress, {
-      duration: 1000,
-      easing: Easing.linear
-    });
 
     return () => {
       cancelAnimation(progressEnd);
     };
-  }, [activeDuration, progress, progressEnd, secondsRemaining, status]);
+
+    // secondsRemaining intentionally excluded: it's a rounded display
+    // value that ticks every ~second and shouldn't restart the animation.
+  }, [status, endTime, pausedRemainingMs, totalMs, progressEnd]);
 
   const progressPath = useMemo(() => {
     const path = Skia.Path.Make();
@@ -123,7 +161,7 @@ export function RestTimerCountdown({
           </Canvas>
         </View>
 
-        <View className="w-[220px] items-center gap-1 px-2">
+        <View className="w-55 items-center gap-1 px-2">
           <Text
             variant="caption"
             className={cn(

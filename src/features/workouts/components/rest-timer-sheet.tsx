@@ -6,9 +6,8 @@ import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
+import { RestTimerActiveContent } from '@/src/features/workouts/components/rest-timer-active-content';
 import { RestTimerIdleContent } from '@/src/features/workouts/components/rest-timer-idle-content';
-import { RestTimerPausedContent } from '@/src/features/workouts/components/rest-timer-paused-content';
-import { RestTimerRunningContent } from '@/src/features/workouts/components/rest-timer-running-content';
 import {
   type RestTimerContext,
   useRestTimerStore
@@ -173,8 +172,7 @@ const RestTimerSheetContent = memo(function RestTimerSheetContent({
             openToken={openToken}
           />
         </View>
-        {status === 'running' ? <RestTimerRunningContent /> : null}
-        {status === 'paused' ? <RestTimerPausedContent /> : null}
+        {status !== 'idle' ? <RestTimerActiveContent /> : null}
       </View>
     </>
   );
