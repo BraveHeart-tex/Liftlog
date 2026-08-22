@@ -16,6 +16,7 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { hideAsync, preventAutoHideAsync } from 'expo-splash-screen';
 import { useCallback, useEffect, useState } from 'react';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 
 initSentry({
   dsn: 'https://1bdaf14c00267e50ae9ecee83e794a69@o4507100890726400.ingest.de.sentry.io/4511688205467728',
@@ -42,10 +43,12 @@ void preventAutoHideAsync();
 
 function RootNavigator() {
   const { colors } = useAppTheme();
+  const reduceMotion = useReducedMotion();
 
   return (
     <Stack
       screenOptions={{
+        animation: reduceMotion ? 'none' : undefined,
         headerShown: false,
         headerShadowVisible: true,
         headerStyle: {
@@ -68,7 +71,7 @@ function RootNavigator() {
         name="settings"
         singular
         options={{
-          animation: 'slide_from_right',
+          animation: reduceMotion ? 'none' : 'slide_from_right',
           headerShown: true,
           title: 'Settings'
         }}
@@ -77,7 +80,7 @@ function RootNavigator() {
         name="exercises/[id]"
         singular
         options={{
-          animation: 'slide_from_right',
+          animation: reduceMotion ? 'none' : 'slide_from_right',
           headerShown: true,
           title: 'Exercise'
         }}
@@ -87,7 +90,7 @@ function RootNavigator() {
         singular
         options={{
           presentation: 'modal',
-          animation: 'slide_from_bottom',
+          animation: reduceMotion ? 'none' : 'slide_from_bottom',
           headerShown: true,
           title: 'Create exercise'
         }}
@@ -96,25 +99,28 @@ function RootNavigator() {
         name="workouts/[id]"
         singular
         options={{
-          animation: 'slide_from_right',
+          animation: reduceMotion ? 'none' : 'slide_from_right',
           headerShown: true,
           title: 'Workout'
         }}
       />
       <Stack.Screen
         name="workouts/backfill/[id]"
-        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+        options={{
+          presentation: 'modal',
+          animation: reduceMotion ? 'none' : 'slide_from_bottom'
+        }}
       />
       <Stack.Screen
         name="workouts/backfill/exercise/[workoutExerciseId]"
         singular
-        options={{ animation: 'slide_from_right' }}
+        options={{ animation: reduceMotion ? 'none' : 'slide_from_right' }}
       />
       <Stack.Screen
         name="workouts/edit/[id]"
         options={{
           presentation: 'modal',
-          animation: 'slide_from_bottom',
+          animation: reduceMotion ? 'none' : 'slide_from_bottom',
           headerShown: true,
           title: 'Edit workout'
         }}
@@ -123,7 +129,7 @@ function RootNavigator() {
         name="workouts/edit/exercise/[workoutExerciseId]"
         singular
         options={{
-          animation: 'slide_from_right',
+          animation: reduceMotion ? 'none' : 'slide_from_right',
           headerShown: true,
           title: 'Exercise'
         }}
@@ -132,7 +138,7 @@ function RootNavigator() {
         name="workouts/templates/[id]"
         singular
         options={{
-          animation: 'slide_from_right',
+          animation: reduceMotion ? 'none' : 'slide_from_right',
           headerShown: true,
           title: 'Template'
         }}
@@ -142,7 +148,7 @@ function RootNavigator() {
         singular
         options={{
           presentation: 'modal',
-          animation: 'slide_from_bottom',
+          animation: reduceMotion ? 'none' : 'slide_from_bottom',
           headerShown: true,
           title: 'Create template'
         }}

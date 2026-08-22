@@ -2,6 +2,7 @@ import { Button } from '@/src/components/ui/button';
 import { Icon, type IconComponent } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { cn } from '@/src/lib/utils/cn.utils';
 import {
   CircleAlert,
@@ -19,7 +20,6 @@ import {
   Platform,
   View
 } from 'react-native';
-import { useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
 
@@ -354,13 +354,13 @@ export function SnackbarHost() {
       const exitAnimations = [
         Animated.timing(progress, {
           toValue: 0,
-          duration: MOTION_DURATION_MS.exit,
+          duration: reduceMotion ? 0 : MOTION_DURATION_MS.exit,
           easing: SNACKBAR_EASE_OUT,
           useNativeDriver: true
         }),
         Animated.timing(entranceOffset, {
           toValue: reduceMotion ? 0 : SNACKBAR_EXIT_OFFSET,
-          duration: MOTION_DURATION_MS.exit,
+          duration: reduceMotion ? 0 : MOTION_DURATION_MS.exit,
           easing: SNACKBAR_EASE_OUT,
           useNativeDriver: true
         })
@@ -409,13 +409,13 @@ export function SnackbarHost() {
     const entranceAnimation = Animated.parallel([
       Animated.timing(progress, {
         toValue: 1,
-        duration: MOTION_DURATION_MS.standard,
+        duration: reduceMotion ? 0 : MOTION_DURATION_MS.standard,
         easing: SNACKBAR_EASE_OUT,
         useNativeDriver: true
       }),
       Animated.timing(entranceOffset, {
         toValue: 0,
-        duration: MOTION_DURATION_MS.standard,
+        duration: reduceMotion ? 0 : MOTION_DURATION_MS.standard,
         easing: SNACKBAR_EASE_OUT,
         useNativeDriver: true
       })

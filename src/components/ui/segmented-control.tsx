@@ -1,5 +1,6 @@
 import { Text } from '@/src/components/ui/text';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { triggerSegmentSelectionHaptics } from '@/src/lib/haptics/navigation.haptics';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { useEffect, useMemo, useState } from 'react';
@@ -7,8 +8,7 @@ import { Pressable, View, type LayoutChangeEvent } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withTiming,
-  useReducedMotion
+  withTiming
 } from 'react-native-reanimated';
 
 interface SegmentedControlOption<T extends string> {

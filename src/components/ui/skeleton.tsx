@@ -1,10 +1,10 @@
 import { cn } from '@/src/lib/utils/cn.utils';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withRepeat,
   withTiming

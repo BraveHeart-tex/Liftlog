@@ -1,7 +1,7 @@
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing } from 'react-native';
-import { useReducedMotion } from 'react-native-reanimated';
 
 interface UsePressScaleOptions {
   pressedScale?: number;

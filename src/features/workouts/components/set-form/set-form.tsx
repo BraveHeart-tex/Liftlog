@@ -14,6 +14,7 @@ import type { SetFormFieldColors } from '@/src/features/workouts/components/set-
 import { SetFormRow } from '@/src/features/workouts/components/set-form/set-form-row';
 import { useSetFormController } from '@/src/features/workouts/components/set-form/use-set-form-controller';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { PlusIcon } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -23,8 +24,7 @@ import Animated, {
   FadeIn,
   FadeOut,
   Keyframe,
-  LinearTransition,
-  useReducedMotion
+  LinearTransition
 } from 'react-native-reanimated';
 
 const lightFeedbackColors = {
@@ -179,13 +179,17 @@ export function SetForm({
         <Animated.View
           key="controls"
           entering={
-            shouldAnimateStateChange
-              ? isEnteringFilledState && !reduceMotion
+            shouldAnimateStateChange && !reduceMotion
+              ? isEnteringFilledState
                 ? formStateEnteringAfterEmpty
                 : formStateEntering
               : undefined
           }
-          exiting={shouldAnimateStateChange ? formStateExiting : undefined}
+          exiting={
+            shouldAnimateStateChange && !reduceMotion
+              ? formStateExiting
+              : undefined
+          }
           layout={layoutTransition}
         >
           <Button
@@ -200,9 +204,15 @@ export function SetForm({
           {sets.length > 0 ? (
             <Animated.View
               entering={
-                shouldAnimateStateChange ? formStateEntering : undefined
+                shouldAnimateStateChange && !reduceMotion
+                  ? formStateEntering
+                  : undefined
               }
-              exiting={shouldAnimateStateChange ? formStateExiting : undefined}
+              exiting={
+                shouldAnimateStateChange && !reduceMotion
+                  ? formStateExiting
+                  : undefined
+              }
             >
               <Text variant="caption" tone="muted" className="mt-3 text-center">
                 Swipe left on a row to copy or delete it.
@@ -214,10 +224,8 @@ export function SetForm({
         <Animated.View
           key="empty"
           entering={
-            shouldAnimateStateChange
-              ? reduceMotion
-                ? formStateEntering
-                : emptyStateEntering
+            shouldAnimateStateChange && !reduceMotion
+              ? emptyStateEntering
               : undefined
           }
           exiting={

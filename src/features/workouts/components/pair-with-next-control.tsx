@@ -1,6 +1,7 @@
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { iconSizes } from '@/src/theme/sizes';
 import { LinkIcon } from 'lucide-react-native';
 import { useEffect } from 'react';
@@ -25,16 +26,21 @@ export function PairWithNextControl({
   variant = 'default',
   onPress
 }: PairWithNextControlProps) {
+  const reduceMotion = useReducedMotion();
   const visibilityProgress = useSharedValue(isReordering ? 0 : 1);
 
   useEffect(() => {
-    visibilityProgress.value = withTiming(isReordering ? 0 : 1, {
-      duration: isReordering
-        ? MOTION_DURATION_MS.pressOut
-        : MOTION_DURATION_MS.pressIn,
-      easing: pairControlEaseOut
-    });
-  }, [isReordering, visibilityProgress]);
+    visibilityProgress.value = reduceMotion
+      ? isReordering
+        ? 0
+        : 1
+      : withTiming(isReordering ? 0 : 1, {
+          duration: isReordering
+            ? MOTION_DURATION_MS.pressOut
+            : MOTION_DURATION_MS.pressIn,
+          easing: pairControlEaseOut
+        });
+  }, [isReordering, reduceMotion, visibilityProgress]);
 
   const visibilityStyle = useAnimatedStyle(() => ({
     opacity: visibilityProgress.value

@@ -1,6 +1,7 @@
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { formatTime } from '@/src/lib/utils/format-time.utils';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { nativeFontSizes } from '@/src/theme/sizes';
 import { Canvas, Circle, Path, Skia } from '@shopify/react-native-skia';
@@ -69,6 +70,7 @@ export function RestTimerCountdown({
   pausedRemainingMs
 }: RestTimerCountdownProps) {
   const { colors } = useAppTheme();
+  const reduceMotion = useReducedMotion();
   const totalMs = activeDuration * 1000;
   const ringColor = status === 'paused' ? colors.accent : colors.info;
 
@@ -98,7 +100,7 @@ export function RestTimerCountdown({
     // is toggled, and it self-corrects on every effect run.
     progressEnd.value = currentProgress;
 
-    if (status === 'running' && remainingMs > 0) {
+    if (!reduceMotion && status === 'running' && remainingMs > 0) {
       progressEnd.value = withTiming(0, {
         duration: remainingMs,
         easing: Easing.linear
@@ -111,7 +113,30 @@ export function RestTimerCountdown({
 
     // secondsRemaining intentionally excluded: it's a rounded display
     // value that ticks every ~second and shouldn't restart the animation.
-  }, [status, endTime, pausedRemainingMs, totalMs, progressEnd]);
+  }, [status, endTime, pausedRemainingMs, totalMs, progressEnd, reduceMotion]);
+
+  useEffect(() => {
+    if (!reduceMotion) {
+      return;
+    }
+
+    progressEnd.value = getProgressFromMs({
+      remainingMs: getCurrentRemainingMs({
+        status,
+        endTime,
+        pausedRemainingMs
+      }),
+      totalMs
+    });
+  }, [
+    endTime,
+    pausedRemainingMs,
+    progressEnd,
+    reduceMotion,
+    secondsRemaining,
+    status,
+    totalMs
+  ]);
 
   const progressPath = useMemo(() => {
     const path = Skia.Path.Make();

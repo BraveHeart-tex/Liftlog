@@ -15,6 +15,7 @@ import {
   groupSupersetBlocks
 } from '@/src/features/workouts/superset.utils';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { useMemo } from 'react';
 import Animated, { Keyframe } from 'react-native-reanimated';
 
@@ -69,7 +70,8 @@ export function ActiveWorkoutExerciseList({
   isEditing
 }: ActiveWorkoutExerciseListProps) {
   const { weightUnit } = useSettings();
-  const shouldAnimateLocalState = mode !== 'active';
+  const reduceMotion = useReducedMotion();
+  const shouldAnimateLocalState = mode !== 'active' && !reduceMotion;
   const workoutExerciseById = useMemo(() => {
     if (!isEditing || !draftExerciseRows) {
       return undefined;

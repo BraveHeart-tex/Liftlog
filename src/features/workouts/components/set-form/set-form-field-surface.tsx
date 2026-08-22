@@ -1,4 +1,5 @@
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { useEffect, type ReactNode } from 'react';
 import Animated, {
@@ -35,13 +36,16 @@ export function SetFormFieldSurface({
   colors,
   tone
 }: SetFormFieldSurfaceProps) {
+  const reduceMotion = useReducedMotion();
   const progress = useSharedValue(toneProgress[tone]);
 
   useEffect(() => {
-    progress.value = withTiming(toneProgress[tone], {
-      duration: MOTION_DURATION_MS.standard
-    });
-  }, [progress, tone]);
+    progress.value = reduceMotion
+      ? toneProgress[tone]
+      : withTiming(toneProgress[tone], {
+          duration: MOTION_DURATION_MS.standard
+        });
+  }, [progress, reduceMotion, tone]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(
@@ -73,13 +77,16 @@ export function SetFormSaveSurface({
   colors,
   tone
 }: SetFormSaveSurfaceProps) {
+  const reduceMotion = useReducedMotion();
   const progress = useSharedValue(toneProgress[tone]);
 
   useEffect(() => {
-    progress.value = withTiming(toneProgress[tone], {
-      duration: MOTION_DURATION_MS.standard
-    });
-  }, [progress, tone]);
+    progress.value = reduceMotion
+      ? toneProgress[tone]
+      : withTiming(toneProgress[tone], {
+          duration: MOTION_DURATION_MS.standard
+        });
+  }, [progress, reduceMotion, tone]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(

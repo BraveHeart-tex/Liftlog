@@ -22,6 +22,7 @@ import { SetFormRowActions } from '@/src/features/workouts/components/set-form/s
 import type { SetFormRow as SetFormRowModel } from '@/src/features/workouts/components/set-form/set-form.types';
 import { getFieldHeaderLabel } from '@/src/features/workouts/components/set-form/set-form.utils';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { CheckIcon } from 'lucide-react-native';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { useEffect, useState } from 'react';
@@ -32,8 +33,7 @@ import Animated, {
   FadeIn,
   FadeInUp,
   FadeOut,
-  LinearTransition,
-  useReducedMotion
+  LinearTransition
 } from 'react-native-reanimated';
 
 const TRAILING_REGION_WIDTH = 56;
@@ -45,9 +45,6 @@ const rowEntering = FadeInUp.duration(MOTION_DURATION_MS.standard)
     transform: [{ translateY: 8 }]
   });
 const rowEnteringAfterEmpty = rowEntering.delay(MOTION_DURATION_MS.exit);
-const reducedMotionRowEntering = FadeIn.duration(
-  MOTION_DURATION_MS.standard
-).easing(rowEaseOut);
 const rowExiting = FadeOut.duration(MOTION_DURATION_MS.exit).easing(rowEaseOut);
 const rowLayout = LinearTransition.springify().dampingRatio(1).stiffness(200);
 const saveStateEntering = FadeIn.duration(MOTION_DURATION_MS.pressIn).easing(
@@ -112,18 +109,17 @@ export function SetFormRow({
         weightUnit
       )
     : '-';
-  const entering = row.animateOnMount
-    ? reduceMotion
-      ? reducedMotionRowEntering
-      : shouldDelayEntering
+  const entering =
+    row.animateOnMount && !reduceMotion
+      ? shouldDelayEntering
         ? rowEnteringAfterEmpty
         : rowEntering
-    : undefined;
+      : undefined;
 
   return (
     <Animated.View
       entering={entering}
-      exiting={rowExiting}
+      exiting={reduceMotion ? undefined : rowExiting}
       layout={reduceMotion ? undefined : rowLayout}
       onLayout={event => onRowLayout?.(row.key, event.nativeEvent.layout)}
     >
@@ -348,6 +344,7 @@ function SetFormTrailingRegion({
   isValid: boolean;
   onCommit: SetFormRowProps['onCommit'];
 }) {
+  const reduceMotion = useReducedMotion();
   const [shouldAnimateSaveState, setShouldAnimateSaveState] = useState(false);
   const showCommitAction = isValid && !row.isCommitted && !row.isSaving;
 
@@ -361,8 +358,16 @@ function SetFormTrailingRegion({
         {row.isSaving ? (
           <Animated.View
             key="saving"
-            entering={shouldAnimateSaveState ? saveStateEntering : undefined}
-            exiting={shouldAnimateSaveState ? saveStateExiting : undefined}
+            entering={
+              shouldAnimateSaveState && !reduceMotion
+                ? saveStateEntering
+                : undefined
+            }
+            exiting={
+              shouldAnimateSaveState && !reduceMotion
+                ? saveStateExiting
+                : undefined
+            }
             accessible
             accessibilityLabel={`Saving set ${row.setNumber}`}
             accessibilityRole="progressbar"
@@ -373,8 +378,16 @@ function SetFormTrailingRegion({
         ) : (
           <Animated.View
             key="commit"
-            entering={shouldAnimateSaveState ? saveStateEntering : undefined}
-            exiting={shouldAnimateSaveState ? saveStateExiting : undefined}
+            entering={
+              shouldAnimateSaveState && !reduceMotion
+                ? saveStateEntering
+                : undefined
+            }
+            exiting={
+              shouldAnimateSaveState && !reduceMotion
+                ? saveStateExiting
+                : undefined
+            }
             className="absolute inset-0"
           >
             <Button

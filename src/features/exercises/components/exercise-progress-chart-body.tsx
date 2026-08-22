@@ -4,6 +4,7 @@ import {
   type TrackingType
 } from '@/src/features/progress/tracking.domain';
 import type { WeightUnit } from '@/src/lib/utils/weight.utils';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { triggerHapticSelection } from '@/src/lib/haptics/haptics';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { appFonts } from '@/src/theme/fonts';
@@ -66,6 +67,7 @@ export function ExerciseProgressChartBody({
   onSelectedPointChange
 }: ExerciseProgressChartBodyProps) {
   const { colors } = useAppTheme();
+  const reduceMotion = useReducedMotion();
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const { state: pressState, isActive: isPressActive } = useChartPressState({
     x: points[0]?.date ?? 0,
@@ -143,7 +145,9 @@ export function ExerciseProgressChartBody({
                 color={colors.primary}
                 strokeWidth={2}
                 curveType="natural"
-                animate={{ type: 'timing', duration: 350 }}
+                animate={
+                  reduceMotion ? undefined : { type: 'timing', duration: 350 }
+                }
               />
               <Scatter
                 points={chartPoints.value}

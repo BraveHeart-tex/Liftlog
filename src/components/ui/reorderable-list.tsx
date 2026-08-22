@@ -1,4 +1,5 @@
 import { styled } from 'nativewind';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import {
   useCallback,
   useState,
@@ -73,6 +74,7 @@ export function ReorderableList<T>({
   className,
   contentContainerClassName
 }: ReorderableListProps<T>) {
+  const reduceMotion = useReducedMotion();
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const isReordering = draggingIndex !== null;
 
@@ -127,8 +129,12 @@ export function ReorderableList<T>({
 
   return (
     <StyledReorderableList
-      animationDuration={120}
-      cellAnimations={{ transform: [{ scale: 1.02 }], opacity: 0.96 }}
+      animationDuration={reduceMotion ? 0 : 120}
+      cellAnimations={
+        reduceMotion
+          ? undefined
+          : { transform: [{ scale: 1.02 }], opacity: 0.96 }
+      }
       className={className}
       contentContainerClassName={contentContainerClassName}
       data={data}

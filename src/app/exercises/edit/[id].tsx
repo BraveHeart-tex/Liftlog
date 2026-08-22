@@ -13,12 +13,14 @@ import {
 } from '@/src/features/progress/tracking.domain';
 import { getRouteParamId } from '@/src/lib/utils/route.utils';
 import { triggerHapticSuccess } from '@/src/lib/haptics/haptics';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SaveIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Keyboard, View, type ScrollView } from 'react-native';
 
 export default function EditExerciseScreen() {
+  const reduceMotion = useReducedMotion();
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const exerciseId = getRouteParamId(id);
   const { exercise, primaryMuscles, secondaryMuscles, isLoading } =
@@ -227,7 +229,7 @@ export default function EditExerciseScreen() {
             primaryMusclesError={primaryMusclesError}
             errorScrollRequestId={errorScrollRequestId}
             onScrollToError={y =>
-              scrollRef.current?.scrollTo({ y, animated: true })
+              scrollRef.current?.scrollTo({ y, animated: !reduceMotion })
             }
             setCategory={handleCategoryChange}
             setTrackingType={handleTrackingTypeChange}

@@ -1,4 +1,5 @@
 import { triggerBottomTabNavigationHaptics } from '@/src/lib/haptics/navigation.haptics';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { useTabBarTheme } from '@/src/theme/app-theme-provider';
 import { appFonts } from '@/src/theme/fonts';
 import { iconSizes, nativeFontSizes } from '@/src/theme/sizes';
@@ -37,6 +38,7 @@ const ACTIVE_PILL_WIDTH = 48;
 const ACTIVE_PILL_HEIGHT = 34;
 
 function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+  const reduceMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
   const tabBarTheme = useTabBarTheme();
   const [barWidth, setBarWidth] = useState(0);
@@ -65,12 +67,14 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const indicatorIndex = useSharedValue(activeIndex);
 
   useEffect(() => {
-    indicatorIndex.value = withSpring(activeIndex, {
-      damping: 22,
-      stiffness: 260,
-      mass: 0.8
-    });
-  }, [activeIndex, indicatorIndex]);
+    indicatorIndex.value = reduceMotion
+      ? activeIndex
+      : withSpring(activeIndex, {
+          damping: 22,
+          stiffness: 260,
+          mass: 0.8
+        });
+  }, [activeIndex, indicatorIndex, reduceMotion]);
 
   const indicatorStyle = useAnimatedStyle(() => {
     const centeredOffset = (tabWidth - ACTIVE_PILL_WIDTH) / 2;

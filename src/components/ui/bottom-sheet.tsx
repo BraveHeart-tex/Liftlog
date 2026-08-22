@@ -4,6 +4,7 @@ import {
 } from '@/src/components/styled/bottom-sheet';
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn.utils';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import {
   BottomSheetFooter,
@@ -25,6 +26,7 @@ import {
 } from 'react';
 import { Keyboard, Platform, View } from 'react-native';
 import type { PanGestureHandlerProps } from 'react-native-gesture-handler';
+import { ReduceMotion } from 'react-native-reanimated';
 
 interface BottomSheetRenderState {
   isContentReady: boolean;
@@ -96,6 +98,7 @@ export function BottomSheet({
   const sheetRef = useRef<BottomSheetModal>(null);
   const [isContentReady, setIsContentReady] = useState(false);
   const { colors } = useAppTheme();
+  const reduceMotion = useReducedMotion();
 
   const resolvedAndroidKeyboardInputMode =
     androidKeyboardInputMode ??
@@ -178,6 +181,9 @@ export function BottomSheet({
       keyboardBlurBehavior={'restore'}
       onChange={handleChange}
       onDismiss={handleDismiss}
+      overrideReduceMotion={
+        reduceMotion ? ReduceMotion.Always : ReduceMotion.Never
+      }
       snapPoints={resolvedSnapPoints}
       stackBehavior={stackBehavior}
       enableContentPanningGesture={enableContentPanningGesture}

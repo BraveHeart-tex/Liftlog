@@ -1,8 +1,8 @@
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, {
   Easing,
-  useReducedMotion,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,

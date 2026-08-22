@@ -20,6 +20,7 @@ import { useSaveWorkoutExerciseEdits } from '@/src/features/workouts/hooks/use-r
 import { useRestTimerStore } from '@/src/features/workouts/stores/rest-timer.store';
 import { triggerWorkoutEditModeHaptics } from '@/src/features/workouts/workout.haptics';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { triggerHapticMedium } from '@/src/lib/haptics/haptics';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { router } from 'expo-router';
@@ -57,6 +58,7 @@ export function ActiveWorkoutContent({
   onDiscardHistoricalWorkout,
   onSaveHistoricalWorkout
 }: ActiveWorkoutContentProps) {
+  const reduceMotion = useReducedMotion();
   const [isEditingExercises, setIsEditingExercises] = useState(false);
   const [draftExerciseRows, setDraftExerciseRows] =
     useState<Pick<WorkoutExercise, 'id' | 'supersetId'>[]>();
@@ -304,7 +306,7 @@ export function ActiveWorkoutContent({
   );
 
   const headerKey = isEditingExercises ? 'edit' : mode;
-  const shouldAnimateLocalState = mode !== 'active';
+  const shouldAnimateLocalState = mode !== 'active' && !reduceMotion;
   const workoutChrome =
     shouldShowWorkoutChrome &&
     !workoutExerciseLoadError &&

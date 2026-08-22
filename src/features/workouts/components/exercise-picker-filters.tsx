@@ -3,6 +3,7 @@ import { ChoiceChip } from '@/src/components/ui/chip';
 import type { IconComponent } from '@/src/components/ui/icon';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import {
   CATEGORY_FILTERS,
   type ExerciseCategory
@@ -53,6 +54,7 @@ export function ExercisePickerFilters({
   selectedEquipment,
   onOpenEquipmentSheet
 }: ExercisePickerFiltersProps) {
+  const reduceMotion = useReducedMotion();
   const filterScrollRef =
     useRef<ComponentRef<typeof StyledGestureScrollView>>(null);
   const filterLayoutsRef = useRef<
@@ -125,10 +127,10 @@ export function ExercisePickerFilters({
 
       filterScrollRef.current?.scrollTo({
         x: Math.max(0, centeredX),
-        animated: true
+        animated: !reduceMotion
       });
     },
-    [filterViewportWidth]
+    [filterViewportWidth, reduceMotion]
   );
 
   useEffect(() => {

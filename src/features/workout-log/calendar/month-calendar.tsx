@@ -12,6 +12,7 @@ import type {
   CalendarDay
 } from '@/src/features/workout-log/calendar/workout-log-calendar.types';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { memo, useEffect, useMemo } from 'react';
 import { Pressable, View } from 'react-native';
@@ -131,13 +132,16 @@ function AnimatedSelectedDay({
   primaryColor: string;
   primaryForegroundColor: string;
 }) {
+  const reduceMotion = useReducedMotion();
   const selectedProgress = useSharedValue(0);
 
   useEffect(() => {
-    selectedProgress.value = withTiming(1, {
-      duration: MOTION_DURATION_MS.standard
-    });
-  }, [selectedProgress]);
+    selectedProgress.value = reduceMotion
+      ? 1
+      : withTiming(1, {
+          duration: MOTION_DURATION_MS.standard
+        });
+  }, [reduceMotion, selectedProgress]);
 
   const selectionStyle = useAnimatedStyle(() => ({
     opacity: selectedProgress.value,

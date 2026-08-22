@@ -1,11 +1,11 @@
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { useEffect } from 'react';
 import { Pressable, type ViewStyle } from 'react-native';
 import Animated, {
   interpolateColor,
-  useReducedMotion,
   useAnimatedStyle,
   useSharedValue,
   withTiming

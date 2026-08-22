@@ -21,6 +21,7 @@ import {
 } from 'react';
 import { SaveIcon } from 'lucide-react-native';
 import { Keyboard, View } from 'react-native';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 
 interface CreateCustomExerciseSheetProps {
   isOpen: boolean;
@@ -82,6 +83,7 @@ const CreateCustomExerciseSheetContent = memo(
     onClose,
     onSave
   }: CreateCustomExerciseSheetProps) {
+    const reduceMotion = useReducedMotion();
     const scrollRef =
       useRef<ComponentRef<typeof StyledBottomSheetScrollView>>(null);
     const [errorScrollRequestId, setErrorScrollRequestId] = useState(0);
@@ -149,7 +151,7 @@ const CreateCustomExerciseSheetContent = memo(
             primaryMusclesError={primaryMusclesError}
             errorScrollRequestId={errorScrollRequestId}
             onScrollToError={y =>
-              scrollRef.current?.scrollTo({ y, animated: true })
+              scrollRef.current?.scrollTo({ y, animated: !reduceMotion })
             }
             setName={setName}
             setCategory={setCategory}

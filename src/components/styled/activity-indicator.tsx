@@ -1,7 +1,22 @@
 import { styled } from 'nativewind';
-import { ActivityIndicator } from 'react-native';
+import {
+  ActivityIndicator,
+  Text as NativeText,
+  type ActivityIndicatorProps
+} from 'react-native';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
+import { cn } from '@/src/lib/utils/cn.utils';
 
-export const StyledActivityIndicator = styled(ActivityIndicator, {
+const StyledNativeText = styled(NativeText);
+
+type StyledActivityIndicatorProps = ActivityIndicatorProps & {
+  className?: string;
+};
+
+const staticIndicatorSize = (size: ActivityIndicatorProps['size']) =>
+  typeof size === 'number' ? size : size === 'large' ? 16 : 10;
+
+const StyledNativeActivityIndicator = styled(ActivityIndicator, {
   className: {
     target: 'style',
     nativeStyleMapping: {
@@ -9,3 +24,31 @@ export const StyledActivityIndicator = styled(ActivityIndicator, {
     }
   }
 });
+
+export function StyledActivityIndicator({
+  className,
+  size = 'small',
+  ...props
+}: StyledActivityIndicatorProps) {
+  const reduceMotion = useReducedMotion();
+
+  if (reduceMotion) {
+    return (
+      <StyledNativeText
+        accessible={false}
+        className={cn('text-foreground', className)}
+        style={{ fontSize: staticIndicatorSize(size) }}
+      >
+        ●
+      </StyledNativeText>
+    );
+  }
+
+  return (
+    <StyledNativeActivityIndicator
+      {...props}
+      className={className}
+      size={size}
+    />
+  );
+}

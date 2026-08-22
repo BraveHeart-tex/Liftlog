@@ -8,12 +8,14 @@ import { ExerciseNameConflictError } from '@/src/features/exercises/exercise.rep
 import { useCustomExerciseForm } from '@/src/features/exercises/hooks/use-custom-exercise-form';
 import { useExerciseActions } from '@/src/features/exercises/hooks/use-exercise-actions';
 import { triggerHapticSuccess } from '@/src/lib/haptics/haptics';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { router } from 'expo-router';
 import { SaveIcon } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { Keyboard, View, type ScrollView } from 'react-native';
 
 export default function NewExerciseScreen() {
+  const reduceMotion = useReducedMotion();
   const { createCustomExercise } = useExerciseActions();
   const scrollRef = useRef<ScrollView>(null);
   const [errorScrollRequestId, setErrorScrollRequestId] = useState(0);
@@ -111,7 +113,7 @@ export default function NewExerciseScreen() {
             primaryMusclesError={primaryMusclesError}
             errorScrollRequestId={errorScrollRequestId}
             onScrollToError={y =>
-              scrollRef.current?.scrollTo({ y, animated: true })
+              scrollRef.current?.scrollTo({ y, animated: !reduceMotion })
             }
             setName={setName}
             setCategory={setCategory}

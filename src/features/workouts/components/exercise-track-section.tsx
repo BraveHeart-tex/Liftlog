@@ -14,6 +14,7 @@ import {
 } from '@/src/features/workouts/components/progression-suggestion';
 import { SetForm } from '@/src/features/workouts/components/set-form/set-form';
 import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task.utils';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import type { WorkoutExerciseWithSets } from '@/src/features/workouts/components/workout-components.types';
 
 interface ExerciseTrackTabProps {
@@ -44,6 +45,7 @@ function ExerciseTrackContent({
   onVerticalScrollStart,
   onVerticalScrollEnd
 }: ExerciseTrackTabProps) {
+  const reduceMotion = useReducedMotion();
   const { trackingType, latestHistorySets, refreshHistory } =
     useProgressionSuggestionContext();
 
@@ -57,11 +59,11 @@ function ExerciseTrackContent({
   const scrollToBottom = useCallback(() => {
     const animationFrame = requestAnimationFrame(() => {
       pendingAnimationFramesRef.current.delete(animationFrame);
-      scrollViewRef.current?.scrollToEnd({ animated: true });
+      scrollViewRef.current?.scrollToEnd({ animated: !reduceMotion });
     });
 
     pendingAnimationFramesRef.current.add(animationFrame);
-  }, []);
+  }, [reduceMotion]);
 
   const schedulePostMutationWork = useCallback(
     ({ shouldScroll }: { shouldScroll: boolean }) => {
@@ -95,10 +97,10 @@ function ExerciseTrackContent({
     }
 
     scrollViewRef.current?.scrollTo({
-      animated: true,
+      animated: !reduceMotion,
       y: Math.max(0, rowLayout.y - 12)
     });
-  }, []);
+  }, [reduceMotion]);
 
   const scheduleScrollToFocusedRow = useCallback(() => {
     setTimeout(scrollToFocusedRow, 100);

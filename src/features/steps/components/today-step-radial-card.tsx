@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/src/components/ui/card';
 import { Text } from '@/src/components/ui/text';
 import { formatSteps } from '@/src/features/steps/steps-display.utils';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { nativeFontSizes } from '@/src/theme/sizes';
@@ -31,6 +32,7 @@ export function TodayStepRadialCard({
   progress
 }: TodayStepRadialCardProps) {
   const { colors } = useAppTheme();
+  const reduceMotion = useReducedMotion();
 
   const safeProgress = Math.min(Math.max(progress, 0), 100);
   const progressEnd = useSharedValue(safeProgress / 100);
@@ -57,18 +59,22 @@ export function TodayStepRadialCard({
   }, [chartSize, strokeWidth]);
 
   useEffect(() => {
-    progressEnd.value = withTiming(safeProgress / 100, {
-      duration: MOTION_DURATION_MS.standard,
-      easing: Easing.out(Easing.cubic)
-    });
-  }, [progressEnd, safeProgress]);
+    progressEnd.value = reduceMotion
+      ? safeProgress / 100
+      : withTiming(safeProgress / 100, {
+          duration: MOTION_DURATION_MS.standard,
+          easing: Easing.out(Easing.cubic)
+        });
+  }, [progressEnd, reduceMotion, safeProgress]);
 
   useEffect(() => {
-    stepValue.value = withTiming(steps, {
-      duration: MOTION_DURATION_MS.standard,
-      easing: Easing.out(Easing.cubic)
-    });
-  }, [stepValue, steps]);
+    stepValue.value = reduceMotion
+      ? steps
+      : withTiming(steps, {
+          duration: MOTION_DURATION_MS.standard,
+          easing: Easing.out(Easing.cubic)
+        });
+  }, [reduceMotion, stepValue, steps]);
 
   return (
     <Card className={cn('overflow-hidden', compact ? 'mt-4' : 'mt-5')}>
