@@ -67,7 +67,7 @@ export function NewTemplateExerciseRow({
                 variant="ghost"
                 size="icon"
                 disabled={isDragging}
-                accessibilityLabel={`Reorder ${exercise.name}`}
+                accessibilityLabel={`Reorder ${exercise?.name ?? 'exercise'}`}
                 onPressIn={onPressIn}
               >
                 <Icon

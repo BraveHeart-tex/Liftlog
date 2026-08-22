@@ -13,6 +13,7 @@ export function RestTimerRunningContent() {
   const activeDuration = useRestTimerStore(
     state => state.activeDurationSeconds
   );
+  const endTime = useRestTimerStore(state => state.endTime);
   const addTime = useRestTimerStore(state => state.addTime);
   const pauseTimer = useRestTimerStore(state => state.pause);
   const cancelTimer = useRestTimerStore(state => state.cancel);
@@ -43,6 +44,8 @@ export function RestTimerRunningContent() {
         status="running"
         secondsRemaining={secondsRemaining}
         activeDuration={activeDuration}
+        endTime={endTime}
+        pausedRemainingMs={null}
       />
 
       <View className="w-full gap-2">

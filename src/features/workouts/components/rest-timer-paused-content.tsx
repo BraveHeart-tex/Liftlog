@@ -13,6 +13,7 @@ export function RestTimerPausedContent() {
   const activeDuration = useRestTimerStore(
     state => state.activeDurationSeconds
   );
+  const pausedRemainingMs = useRestTimerStore(state => state.pausedRemainingMs);
   const addTime = useRestTimerStore(state => state.addTime);
   const resumeTimer = useRestTimerStore(state => state.resume);
   const cancelTimer = useRestTimerStore(state => state.cancel);
@@ -44,6 +45,8 @@ export function RestTimerPausedContent() {
         status="paused"
         secondsRemaining={secondsRemaining}
         activeDuration={activeDuration}
+        endTime={null}
+        pausedRemainingMs={pausedRemainingMs}
       />
 
       <View className="w-full gap-2">
