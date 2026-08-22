@@ -6,6 +6,7 @@
 | 002 | Make snackbar replacement interruptible          | HIGH     | TODO   |
 | 003 | Respect reduced motion in shared snackbar motion | HIGH     | TODO   |
 | 004 | Standardize empty and fallback states            | MEDIUM   | TODO   |
+| 005 | Migrate to domain-first folder structure         | ARCH     | TODO   |
 
 ## Recommended execution order
 
