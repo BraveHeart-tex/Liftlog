@@ -56,7 +56,7 @@ export const ExerciseMuscleSelector = memo(function ExerciseMuscleSelector({
 
   return (
     <View className="mt-6" onLayout={onLayout}>
-      <Text variant="overline">{title}</Text>
+      <Text variant="caption">{title}</Text>
       <Text variant="caption" tone="muted" className="mt-1">
         {hint}
       </Text>

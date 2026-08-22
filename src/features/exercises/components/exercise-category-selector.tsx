@@ -28,7 +28,7 @@ export function ExerciseCategorySelector({
 }: ExerciseCategorySelectorProps) {
   return (
     <View className={hasNameField ? 'mt-6' : undefined}>
-      <Text variant="overline">2. Category</Text>
+      <Text variant="caption">Category</Text>
       <View className="mt-3 flex-row flex-wrap gap-2">
         {CATEGORY_OPTIONS.map(categoryOption => (
           <ChoiceChip

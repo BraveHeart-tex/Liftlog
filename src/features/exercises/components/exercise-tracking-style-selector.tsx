@@ -26,7 +26,7 @@ export function ExerciseTrackingStyleSelector({
 }: ExerciseTrackingStyleSelectorProps) {
   return (
     <View className="mt-6">
-      <Text variant="overline">3. Tracking Style</Text>
+      <Text variant="caption">Tracking style</Text>
       <Text variant="caption" tone="muted" className="mt-1">
         How you&apos;ll record sets for this exercise.
       </Text>

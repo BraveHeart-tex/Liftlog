@@ -1,8 +1,7 @@
 import { confirmDialog } from '@/src/components/ui/alert-dialog';
 import { Button } from '@/src/components/ui/button';
-import { Field, FieldLabel } from '@/src/components/ui/field';
+import { FloatingField } from '@/src/components/ui/floating-field';
 import { Icon } from '@/src/components/ui/icon';
-import { Input } from '@/src/components/ui/input';
 import { Screen } from '@/src/components/ui/screen';
 import { showSnackbar } from '@/src/components/ui/snackbar';
 import {
@@ -92,18 +91,17 @@ export function NewTemplateContent() {
       }
     >
       <View className="px-4 pt-6">
-        <Field>
-          <FieldLabel>Template name</FieldLabel>
-          <Input
-            value={name}
-            onChangeText={setName}
-            placeholder="e.g. Push day"
-            autoCapitalize="sentences"
-            returnKeyType="done"
-            accessibilityLabel="Template name"
-            className="mt-2"
-          />
-        </Field>
+        <FloatingField
+          label="Template name"
+          inputProps={{
+            value: name,
+            onChangeText: setName,
+            placeholder: 'e.g. Push day',
+            autoCapitalize: 'sentences',
+            returnKeyType: 'done',
+            accessibilityLabel: 'Template name'
+          }}
+        />
       </View>
 
       <View className="mt-6 flex-1">

@@ -181,7 +181,7 @@ export function ExerciseMetadataForm({
       />
 
       <ExerciseMuscleSelector
-        title="4. Primary muscles"
+        title="Primary muscles"
         hint="Pick at least one."
         selectedMuscles={selectedPrimaryMuscles}
         error={primaryMusclesError}
@@ -191,7 +191,7 @@ export function ExerciseMetadataForm({
 
       {shouldRenderSecondaryMuscles ? (
         <ExerciseMuscleSelector
-          title="5. Secondary muscles"
+          title="Secondary muscles"
           hint="Optional. Selecting a muscle here removes it from primary."
           selectedMuscles={selectedSecondaryMuscles}
           error={secondaryMusclesError}

@@ -1,6 +1,4 @@
-import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
-import { Field, FieldError, FieldLabel } from '@/src/components/ui/field';
-import { Input } from '@/src/components/ui/input';
+import { FloatingField } from '@/src/components/ui/floating-field';
 import { View, type LayoutChangeEvent } from 'react-native';
 
 interface FocusableInput {
@@ -26,37 +24,22 @@ export function ExerciseNameField({
 }: ExerciseNameFieldProps) {
   return (
     <View onLayout={onLayout}>
-      <Field>
-        <FieldLabel>1. Name</FieldLabel>
-        {inputVariant === 'bottom-sheet' ? (
-          <BottomSheetInput
-            ref={onInputRef}
-            value={name}
-            onChangeText={onChangeName}
-            placeholder="Incline Bench Press"
-            autoCapitalize="words"
-            autoCorrect={false}
-            returnKeyType="done"
-            accessibilityLabel="1. Name"
-            invalid={Boolean(error)}
-            className="mt-2 h-11 px-3 py-2"
-          />
-        ) : (
-          <Input
-            ref={onInputRef}
-            value={name}
-            onChangeText={onChangeName}
-            placeholder="Incline Bench Press"
-            autoCapitalize="words"
-            autoCorrect={false}
-            returnKeyType="done"
-            accessibilityLabel="1. Name"
-            invalid={Boolean(error)}
-            className="mt-2 h-11 px-3 py-2"
-          />
-        )}
-        {error ? <FieldError>{error}</FieldError> : null}
-      </Field>
+      <FloatingField
+        label="Name"
+        inputVariant={inputVariant}
+        error={error}
+        inputProps={{
+          value: name,
+          onChangeText: onChangeName,
+          placeholder: 'Incline Bench Press',
+          autoCapitalize: 'words',
+          autoCorrect: false,
+          returnKeyType: 'done',
+          accessibilityLabel: 'Name',
+          className: 'h-11 px-3 py-2'
+        }}
+        ref={onInputRef}
+      />
     </View>
   );
 }
