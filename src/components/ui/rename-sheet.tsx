@@ -6,7 +6,8 @@ import {
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
 import { Button } from '@/src/components/ui/button';
-import { FloatingField } from '@/src/components/ui/floating-field';
+import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
+import { Field, FieldError, FieldLabel } from '@/src/components/ui/field';
 import { Icon } from '@/src/components/ui/icon';
 import { XIcon } from 'lucide-react-native';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
@@ -164,26 +165,26 @@ const RenameSheetContent = memo(function RenameSheetContent({
       </BottomSheetHeader>
 
       <View className="px-4 pt-4">
-        <FloatingField
-          label={inputLabel}
-          inputVariant="bottom-sheet"
-          error={error}
-          inputProps={{
-            value: name,
-            onChangeText: nextName => {
+        <Field>
+          <FieldLabel>{inputLabel}</FieldLabel>
+          <BottomSheetInput
+            value={name}
+            onChangeText={nextName => {
               setName(nextName);
               setError(undefined);
-            },
-            autoCapitalize: 'words',
-            autoCorrect: false,
-            returnKeyType: 'done',
-            maxLength: 80,
-            accessibilityLabel: inputLabel,
-            blurOnSubmit: false,
-            submitBehavior: 'submit',
-            onSubmitEditing: handleSubmit
-          }}
-        />
+            }}
+            autoCapitalize="words"
+            autoCorrect={false}
+            returnKeyType="done"
+            maxLength={80}
+            accessibilityLabel={inputLabel}
+            blurOnSubmit={false}
+            submitBehavior="submit"
+            onSubmitEditing={handleSubmit}
+            invalid={Boolean(error)}
+          />
+          {error ? <FieldError>{error}</FieldError> : null}
+        </Field>
       </View>
 
       <View className="border-border mt-4 border-t" />

@@ -24,7 +24,7 @@ type FieldTextProps = {
 
 export function FieldLabel({ children, className }: FieldTextProps) {
   return (
-    <Text variant="caption" className={className}>
+    <Text variant="caption" className={cn('mb-2', className)}>
       {children}
     </Text>
   );

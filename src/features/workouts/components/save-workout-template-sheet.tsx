@@ -6,9 +6,9 @@ import {
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
 import { Button } from '@/src/components/ui/button';
-import { FloatingField } from '@/src/components/ui/floating-field';
+import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
+import { Field, FieldError, FieldLabel } from '@/src/components/ui/field';
 import { Icon } from '@/src/components/ui/icon';
-import type { Input } from '@/src/components/ui/input';
 import type { Workout, WorkoutExercise } from '@/src/db/schema';
 import { useSaveWorkoutTemplate } from '@/src/features/workouts/hooks/use-save-workout-template';
 import { BookmarkIcon, XIcon } from 'lucide-react-native';
@@ -27,7 +27,7 @@ interface SaveWorkoutTemplateSheetProps {
   onClose: () => void;
 }
 
-type FloatingFieldInputRef = ComponentRef<typeof Input>;
+type TemplateInputRef = ComponentRef<typeof BottomSheetInput>;
 
 export function SaveWorkoutTemplateSheet({
   isOpen,
@@ -67,7 +67,7 @@ const SaveWorkoutTemplateSheetContent = memo(
     workoutExerciseRows,
     onClose
   }: SaveWorkoutTemplateSheetProps) {
-    const templateInputRef = useRef<FloatingFieldInputRef>(null);
+    const templateInputRef = useRef<TemplateInputRef>(null);
     const isSavingTemplateRef = useRef(false);
     const [templateName, setTemplateName] = useState('');
     const [templateError, setTemplateError] = useState<string | undefined>();
@@ -129,27 +129,27 @@ const SaveWorkoutTemplateSheetContent = memo(
         </BottomSheetHeader>
 
         <View className="px-4 pt-4">
-          <FloatingField
-            ref={templateInputRef}
-            label="Template name"
-            inputVariant="bottom-sheet"
-            error={templateError}
-            inputProps={{
-              value: templateName,
-              onChangeText: nextName => {
+          <Field>
+            <FieldLabel>Template name</FieldLabel>
+            <BottomSheetInput
+              ref={templateInputRef}
+              value={templateName}
+              onChangeText={nextName => {
                 setTemplateName(nextName);
                 setTemplateError(undefined);
-              },
-              autoCapitalize: 'words',
-              autoCorrect: false,
-              returnKeyType: 'done',
-              maxLength: 80,
-              accessibilityLabel: 'Template name',
-              blurOnSubmit: false,
-              submitBehavior: 'submit',
-              onSubmitEditing: submitTemplate
-            }}
-          />
+              }}
+              autoCapitalize="words"
+              autoCorrect={false}
+              returnKeyType="done"
+              maxLength={80}
+              accessibilityLabel="Template name"
+              blurOnSubmit={false}
+              submitBehavior="submit"
+              onSubmitEditing={submitTemplate}
+              invalid={Boolean(templateError)}
+            />
+            {templateError ? <FieldError>{templateError}</FieldError> : null}
+          </Field>
         </View>
 
         <View className="border-border mt-4 border-t" />

@@ -4,7 +4,8 @@ import {
   BottomSheetTitle
 } from '@/src/components/ui/bottom-sheet';
 import { Button } from '@/src/components/ui/button';
-import { FloatingField } from '@/src/components/ui/floating-field';
+import { BottomSheetInput } from '@/src/components/ui/bottom-sheet-input';
+import { Field, FieldError, FieldLabel } from '@/src/components/ui/field';
 import { Icon } from '@/src/components/ui/icon';
 import { RestTimerDurationPicker } from '@/src/features/workouts/components/rest-timer-duration-picker';
 import {
@@ -90,6 +91,8 @@ const RestTimerPresetEditorSheetContent = memo(
     }, [defaultDuration, isOpen, preset]);
 
     const trimmedName = name.trim();
+    const nameError =
+      !trimmedName && name.length > 0 ? 'Name is required.' : null;
     const totalSeconds = minutes * 60 + seconds;
     const canSave =
       trimmedName.length > 0 &&
@@ -162,20 +165,20 @@ const RestTimerPresetEditorSheetContent = memo(
         </BottomSheetHeader>
 
         <View className="pb-safe-offset-4 gap-5 px-4 pt-2">
-          <FloatingField
-            label="Name"
-            inputVariant="bottom-sheet"
-            error={!trimmedName && name.length > 0 ? 'Name is required.' : null}
-            inputProps={{
-              value: name,
-              maxLength: REST_TIMER_PRESET_NAME_MAX_LENGTH,
-              placeholder: 'Preset name',
-              returnKeyType: 'done',
-              accessibilityLabel: 'Name',
-              onChangeText: handleNameChange,
-              onSubmitEditing: handleSave
-            }}
-          />
+          <Field>
+            <FieldLabel>Name</FieldLabel>
+            <BottomSheetInput
+              value={name}
+              maxLength={REST_TIMER_PRESET_NAME_MAX_LENGTH}
+              placeholder="Preset name"
+              returnKeyType="done"
+              accessibilityLabel="Name"
+              onChangeText={handleNameChange}
+              onSubmitEditing={handleSave}
+              invalid={Boolean(nameError)}
+            />
+            {nameError ? <FieldError>{nameError}</FieldError> : null}
+          </Field>
 
           <RestTimerDurationPicker
             minutes={minutes}

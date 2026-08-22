@@ -39,21 +39,25 @@ Compose labels and supporting text with `Field`, `FieldLabel`,
 </Field>
 ```
 
-Use `FloatingField` for conventional single-line text fields when the label
-should share the field’s vertical space. It supports both regular and
-bottom-sheet inputs, preserves the visible label for accessibility, and keeps
-search, set-entry, multiline, and selector controls on their existing layouts:
+Use `Field`, `FieldLabel`, and the appropriate input primitive for conventional
+text fields. Keep search, set-entry, multiline, and selector controls on their
+existing layouts:
 
 ```tsx
-<FloatingField
-  label="Template name"
-  inputProps={{
-    value: name,
-    onChangeText: setName,
-    placeholder: 'e.g. Push day'
-  }}
-/>
+<Field>
+  <FieldLabel>Template name</FieldLabel>
+  <Input
+    value={name}
+    onChangeText={setName}
+    placeholder="e.g. Push day"
+    accessibilityLabel="Template name"
+  />
+</Field>
 ```
+
+Use `BottomSheetInput` in the same composition when the field is inside a
+bottom sheet. Keep placeholders only when they provide useful examples or
+additional guidance; do not repeat the visible label.
 
 Use `InputGroup` and `InputSlot` for icons or controls around an input. The
 group owns the shell; the input removes its own shell with direct classes.
