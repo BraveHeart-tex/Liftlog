@@ -7,6 +7,10 @@
 - Generated artifacts are outputs, not edit targets. Change source schema and tooling inputs; never hand-edit Drizzle migrations, snapshots, generated SQL, or other generated files.
 - Configure Expo audio mode once at the app/provider boundary. Leaf components only control their own players; they do not call `setAudioModeAsync` or `setIsAudioActiveAsync`.
 
+## Agent problem log
+
+When a tool, script, command, or other agent-facing operation causes a non-trivial retry, workaround, escalation, or blocker, read and follow [`docs/agent-problems.md`](docs/agent-problems.md). Append a sanitized entry as soon as the problem is understood and before the final handoff.
+
 ## Documentation routing
 
 Read the applicable document before changing its subsystem. These documents are reference rules; this file owns the shared workflow and validation.

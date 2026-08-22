@@ -7,6 +7,7 @@
 
 ## Engineering rules
 
+- [Agent problem log](agent-problems.md)
 - [Bottom sheets](bottom-sheet.md)
 - [Data access](data-access.md)
 - [Database](database.md)
