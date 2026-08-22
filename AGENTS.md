@@ -8,6 +8,26 @@
 - Read `/docs` only for touched subsystems: `bottom-sheet`, `data-access`, `database`, `layout`, `styling`, `ux-display`, `expo-router`.
 - Expo audio: configure app audio mode once at app level; no leaf `setAudioModeAsync`/`setIsAudioActiveAsync`.
 
+## Validation
+
+After modifying code, run the smallest relevant validation set before finishing.
+
+- TypeScript changes: run `rtk tsc --noEmit --project ./tsconfig.json`.
+- JS/TS/TSX changes: run `rtk lint`.
+- Formatting-sensitive changes: run `rtk prettier --check .`.
+- Logic or behavior changes: run the relevant tests with `rtk test <command>`. Use `rtk test pnpm run test` when the change is broad or no narrower test command is appropriate.
+- Database/schema changes: run the applicable existing database checks, but never generate, edit, or rewrite migrations/snapshots unless explicitly requested.
+- After code changes, run `graphify update .`.
+
+Do not use `rtk timeout` or invent validation commands. Prefer RTK's native wrappers (`rtk tsc`, `rtk lint`, `rtk prettier`, `rtk test`) for compact output.
+
+Validation failures:
+
+- Fix failures caused by your changes.
+- Do not fix unrelated pre-existing failures.
+- If a check cannot run or fails for an unrelated reason, report the exact command and concise reason.
+- Do not claim validation passed unless the command completed successfully.
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
