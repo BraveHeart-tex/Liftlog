@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   Animated,
+  Easing,
   Keyboard,
   PanResponder,
   Platform,
@@ -28,10 +29,36 @@ const SNACKBAR_BOTTOM_OFFSET = 78;
 const SNACKBAR_KEYBOARD_TRANSITION_MS = 220;
 const SNACKBAR_ENTER_OFFSET = 12;
 const SNACKBAR_EXIT_OFFSET = 12;
-const SNACKBAR_ENTER_SCALE = 0.985;
-const SNACKBAR_EXIT_SCALE = 0.99;
+const SNACKBAR_EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
+const SNACKBAR_DISMISS_EXTRA_OFFSET = 24;
+const SNACKBAR_FALLBACK_HEIGHT = 56;
 const SWIPE_DISMISS_DISTANCE = 48;
 const SWIPE_DISMISS_VELOCITY = 0.75;
+
+interface SnackbarKeyboardAnimation {
+  duration: number;
+  easing: (value: number) => number;
+}
+
+const FALLBACK_SNACKBAR_KEYBOARD_ANIMATION: SnackbarKeyboardAnimation = {
+  duration: SNACKBAR_KEYBOARD_TRANSITION_MS,
+  easing: Easing.inOut(Easing.ease)
+};
+
+function getSnackbarKeyboardEasing(easing?: string) {
+  switch (easing) {
+    case 'linear':
+      return Easing.linear;
+    case 'easeIn':
+      return Easing.in(Easing.ease);
+    case 'easeOut':
+      return Easing.out(Easing.ease);
+    case 'easeInEaseOut':
+      return Easing.inOut(Easing.ease);
+    default:
+      return FALLBACK_SNACKBAR_KEYBOARD_ANIMATION.easing;
+  }
+}
 
 export type SnackbarVariant = 'success' | 'info' | 'warning' | 'danger';
 
@@ -184,6 +211,7 @@ export function SnackbarHost() {
     state => state.dismissSnackbarForId
   );
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [snackbarHeight, setSnackbarHeight] = useState(0);
   const [isActionPending, setIsActionPending] = useState(false);
   const [renderedMessage, setRenderedMessage] =
     useState<SnackbarMessage | null>(message);
@@ -191,12 +219,15 @@ export function SnackbarHost() {
   const entranceOffset = useRef(
     new Animated.Value(reduceMotion ? 0 : message ? 0 : SNACKBAR_ENTER_OFFSET)
   ).current;
-  const entranceScale = useRef(
-    new Animated.Value(reduceMotion || message ? 1 : SNACKBAR_ENTER_SCALE)
-  ).current;
   const keyboardOffset = useRef(new Animated.Value(0)).current;
   const dragY = useRef(new Animated.Value(0)).current;
+  const snackbarHeightRef = useRef(0);
+  const swipeDismissTargetRef = useRef<number | null>(null);
+  const swipeDismissVelocityRef = useRef(0);
   const reduceMotionRef = useRef(reduceMotion);
+  const keyboardAnimationRef = useRef<SnackbarKeyboardAnimation>(
+    FALLBACK_SNACKBAR_KEYBOARD_ANIMATION
+  );
 
   useEffect(() => {
     reduceMotionRef.current = reduceMotion;
@@ -208,9 +239,39 @@ export function SnackbarHost() {
     const hideEvent =
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
     const showSubscription = Keyboard.addListener(showEvent, event => {
+      if (Platform.OS === 'ios') {
+        keyboardAnimationRef.current = {
+          duration:
+            typeof event.duration === 'number' && event.duration >= 0
+              ? event.duration
+              : FALLBACK_SNACKBAR_KEYBOARD_ANIMATION.duration,
+          easing: getSnackbarKeyboardEasing(event.easing)
+        };
+      } else {
+        keyboardAnimationRef.current = {
+          duration: 0,
+          easing: Easing.linear
+        };
+      }
+
       setKeyboardHeight(event.endCoordinates.height);
     });
-    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+    const hideSubscription = Keyboard.addListener(hideEvent, event => {
+      if (Platform.OS === 'ios') {
+        keyboardAnimationRef.current = {
+          duration:
+            typeof event.duration === 'number' && event.duration >= 0
+              ? event.duration
+              : FALLBACK_SNACKBAR_KEYBOARD_ANIMATION.duration,
+          easing: getSnackbarKeyboardEasing(event.easing)
+        };
+      } else {
+        keyboardAnimationRef.current = {
+          duration: 0,
+          easing: Easing.linear
+        };
+      }
+
       setKeyboardHeight(0);
     });
 
@@ -221,16 +282,24 @@ export function SnackbarHost() {
   }, []);
 
   useEffect(() => {
+    keyboardOffset.stopAnimation();
+
+    if (reduceMotion || keyboardAnimationRef.current.duration === 0) {
+      keyboardOffset.setValue(-keyboardHeight);
+
+      return;
+    }
+
     const animation = Animated.timing(keyboardOffset, {
       toValue: -keyboardHeight,
-      duration: SNACKBAR_KEYBOARD_TRANSITION_MS,
+      ...keyboardAnimationRef.current,
       useNativeDriver: true
     });
 
     animation.start();
 
     return () => animation.stop();
-  }, [keyboardHeight, keyboardOffset]);
+  }, [keyboardHeight, keyboardOffset, reduceMotion]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -246,14 +315,27 @@ export function SnackbarHost() {
           gestureState.vy > SWIPE_DISMISS_VELOCITY;
 
         if (shouldDismiss) {
+          const effectiveHeight = Math.max(
+            snackbarHeightRef.current,
+            snackbarHeight,
+            SNACKBAR_FALLBACK_HEIGHT
+          );
+
+          swipeDismissTargetRef.current =
+            gestureState.dy + effectiveHeight + SNACKBAR_DISMISS_EXTRA_OFFSET;
+          swipeDismissVelocityRef.current = Math.max(0, gestureState.vy);
           dismissSnackbar();
 
           return;
         }
 
+        swipeDismissTargetRef.current = null;
+        swipeDismissVelocityRef.current = 0;
         resetSnackbarDrag(dragY, reduceMotionRef.current);
       },
       onPanResponderTerminate: () => {
+        swipeDismissTargetRef.current = null;
+        swipeDismissVelocityRef.current = 0;
         resetSnackbarDrag(dragY, reduceMotionRef.current);
       }
     })
@@ -261,27 +343,54 @@ export function SnackbarHost() {
 
   useEffect(() => {
     if (!message) {
+      const swipeDismissTarget = swipeDismissTargetRef.current;
+      const swipeDismissVelocity = swipeDismissVelocityRef.current;
+      swipeDismissTargetRef.current = null;
+      swipeDismissVelocityRef.current = 0;
+
       progress.stopAnimation();
       entranceOffset.stopAnimation();
-      entranceScale.stopAnimation();
 
-      const exitAnimation = Animated.parallel([
+      const exitAnimations = [
         Animated.timing(progress, {
           toValue: 0,
           duration: MOTION_DURATION_MS.exit,
+          easing: SNACKBAR_EASE_OUT,
           useNativeDriver: true
         }),
         Animated.timing(entranceOffset, {
           toValue: reduceMotion ? 0 : SNACKBAR_EXIT_OFFSET,
           duration: MOTION_DURATION_MS.exit,
-          useNativeDriver: true
-        }),
-        Animated.timing(entranceScale, {
-          toValue: reduceMotion ? 1 : SNACKBAR_EXIT_SCALE,
-          duration: MOTION_DURATION_MS.exit,
+          easing: SNACKBAR_EASE_OUT,
           useNativeDriver: true
         })
-      ]);
+      ];
+
+      if (reduceMotion) {
+        dragY.stopAnimation();
+        dragY.setValue(0);
+      } else if (swipeDismissTarget !== null) {
+        exitAnimations.push(
+          Animated.spring(dragY, {
+            toValue: swipeDismissTarget,
+            velocity: swipeDismissVelocity,
+            damping: 18,
+            stiffness: 220,
+            useNativeDriver: true
+          })
+        );
+      } else {
+        exitAnimations.push(
+          Animated.timing(dragY, {
+            toValue: 0,
+            duration: MOTION_DURATION_MS.exit,
+            easing: SNACKBAR_EASE_OUT,
+            useNativeDriver: true
+          })
+        );
+      }
+
+      const exitAnimation = Animated.parallel(exitAnimations);
 
       exitAnimation.start(({ finished }) => {
         if (finished && !useSnackbarStore.getState().message) {
@@ -294,7 +403,6 @@ export function SnackbarHost() {
 
     progress.stopAnimation();
     entranceOffset.stopAnimation();
-    entranceScale.stopAnimation();
     setRenderedMessage(message);
     resetSnackbarDrag(dragY, reduceMotion);
 
@@ -302,16 +410,13 @@ export function SnackbarHost() {
       Animated.timing(progress, {
         toValue: 1,
         duration: MOTION_DURATION_MS.standard,
+        easing: SNACKBAR_EASE_OUT,
         useNativeDriver: true
       }),
       Animated.timing(entranceOffset, {
         toValue: 0,
         duration: MOTION_DURATION_MS.standard,
-        useNativeDriver: true
-      }),
-      Animated.timing(entranceScale, {
-        toValue: 1,
-        duration: MOTION_DURATION_MS.standard,
+        easing: SNACKBAR_EASE_OUT,
         useNativeDriver: true
       })
     ]);
@@ -319,7 +424,7 @@ export function SnackbarHost() {
     entranceAnimation.start();
 
     return () => entranceAnimation.stop();
-  }, [dragY, entranceOffset, entranceScale, message, progress, reduceMotion]);
+  }, [dragY, entranceOffset, message, progress, reduceMotion]);
 
   useEffect(() => {
     setIsActionPending(false);
@@ -410,14 +515,16 @@ export function SnackbarHost() {
         <Animated.View
           style={{
             opacity: Animated.multiply(progress, dragOpacity),
-            transform: [
-              { translateY: entranceOffset },
-              { translateY: dragY },
-              { scale: entranceScale }
-            ]
+            transform: [{ translateY: entranceOffset }, { translateY: dragY }]
           }}
         >
           <View
+            onLayout={event => {
+              const height = event.nativeEvent.layout.height;
+
+              snackbarHeightRef.current = height;
+              setSnackbarHeight(height);
+            }}
             accessibilityLiveRegion={isUrgent ? 'assertive' : 'polite'}
             accessibilityRole={isUrgent ? 'alert' : undefined}
             className="border-border bg-popover min-h-14 w-full flex-row items-center gap-2.5 rounded-md border py-1.5 pr-2 pl-3.5 shadow-xl"
