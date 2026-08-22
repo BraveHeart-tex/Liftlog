@@ -20,7 +20,8 @@ Use the shared text primitive and typography classes.
 ### Inputs
 
 Inputs are primitives. Their `className` styles the native text input directly,
-so sizing is explicit:
+so sizing is explicit. They default to 12px horizontal and 4px vertical
+padding:
 
 ```tsx
 <Input className="h-14" accessibilityLabel="Name" />

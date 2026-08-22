@@ -103,7 +103,7 @@ components:
     textColor: '{colors.chalk-white}'
     typography: '{typography.body}'
     rounded: '{rounded.md}'
-    padding: '12px 16px'
+    padding: '4px 12px'
     height: '48px'
   card:
     backgroundColor: '{colors.steel-plate}'

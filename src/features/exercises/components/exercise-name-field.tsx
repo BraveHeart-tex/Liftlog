@@ -36,7 +36,7 @@ export function ExerciseNameField({
           autoCorrect: false,
           returnKeyType: 'done',
           accessibilityLabel: 'Name',
-          className: 'h-11 px-3 py-0'
+          className: 'h-11'
         }}
         ref={onInputRef}
       />
