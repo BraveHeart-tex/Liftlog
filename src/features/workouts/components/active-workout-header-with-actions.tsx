@@ -25,6 +25,7 @@ interface ActiveWorkoutHeaderWithActionsProps {
   canSaveTemplate: boolean;
   exerciseCount: number;
   completedSetCount: number;
+  isLoadingWorkoutExercises: boolean;
   workoutExerciseRows: Pick<
     WorkoutExercise,
     'exerciseId' | 'order' | 'supersetId'
@@ -38,6 +39,7 @@ export const ActiveWorkoutHeaderWithActions = ({
   canSaveTemplate,
   exerciseCount,
   completedSetCount,
+  isLoadingWorkoutExercises,
   workoutExerciseRows
 }: ActiveWorkoutHeaderWithActionsProps) => {
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
@@ -45,6 +47,8 @@ export const ActiveWorkoutHeaderWithActions = ({
   const [isRenameSheetOpen, setIsRenameSheetOpen] = useState(false);
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
   const hasWorkoutExercises = exerciseCount > 0;
+  const shouldUsePopulatedLayout =
+    hasWorkoutExercises || isLoadingWorkoutExercises;
 
   const renameWorkout = useWorkoutRename();
   const deleteWorkout = useWorkoutDelete();
@@ -146,11 +150,13 @@ export const ActiveWorkoutHeaderWithActions = ({
       />
 
       <View
-        className={hasWorkoutExercises ? 'px-4 pt-3 pb-2' : 'px-4 pt-4 pb-3'}
+        className={
+          shouldUsePopulatedLayout ? 'px-4 pt-3 pb-2' : 'px-4 pt-4 pb-3'
+        }
       >
         <View className="flex-row items-center gap-2">
           <Text
-            variant={hasWorkoutExercises ? 'h3' : 'h2'}
+            variant={shouldUsePopulatedLayout ? 'h3' : 'h2'}
             className="min-w-0 flex-1"
             numberOfLines={1}
           >

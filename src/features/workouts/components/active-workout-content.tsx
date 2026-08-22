@@ -294,6 +294,7 @@ export function ActiveWorkoutContent({
       canSaveTemplate={hasWorkoutExercises}
       exerciseCount={workoutExerciseRows.length}
       completedSetCount={completedSetCount}
+      isLoadingWorkoutExercises={isLoadingWorkoutExercises}
       workoutExerciseRows={workoutExerciseRows.map(workoutExercise => ({
         exerciseId: workoutExercise.exerciseId,
         order: workoutExercise.order,
