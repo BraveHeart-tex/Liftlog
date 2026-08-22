@@ -45,7 +45,7 @@ export function EquipmentPickerSheet({
         <BottomSheetTitle>Equipment</BottomSheetTitle>
       </BottomSheetHeader>
 
-      <BottomSheetSafeContent className="pb-safe-offset-[14px] pt-0">
+      <BottomSheetSafeContent className="pt-0">
         <View accessibilityRole="radiogroup">
           {EQUIPMENT_OPTIONS.map(option => {
             const isSelected = option.value === selectedEquipment;

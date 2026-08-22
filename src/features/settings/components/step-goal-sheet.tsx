@@ -181,7 +181,7 @@ const StepGoalSheetContent = memo(function StepGoalSheetContent({
           })}
         </StyledGestureScrollView>
       </View>
-      <BottomSheetSafeFooter className="pb-safe-offset-4 flex-col gap-0 pt-8">
+      <BottomSheetSafeFooter className="flex-col gap-0 pt-8">
         <Button
           className="rounded-xl"
           disabled={!canSave}

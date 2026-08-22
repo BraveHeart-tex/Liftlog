@@ -188,7 +188,25 @@ function ActiveWorkoutEditExercisesContent({
   });
 
   return (
-    <Screen withPadding={false} edges={[]}>
+    <Screen
+      withPadding={false}
+      edges={[]}
+      footer={
+        isDraftInitialized &&
+        !isLoadingWorkoutExercises &&
+        draftWorkoutExercises.length > 0 ? (
+          <Button
+            variant="secondary"
+            size="md"
+            fullWidth
+            leftIcon={<Icon as={PlusIcon} size="sm" tone="foreground" />}
+            onPress={openExercisePicker}
+          >
+            Add exercise
+          </Button>
+        ) : undefined
+      }
+    >
       <ActiveWorkoutEditHeader
         workoutName={activeWorkout.name}
         exerciseCount={draftWorkoutExercises.length}
@@ -206,26 +224,13 @@ function ActiveWorkoutEditExercisesContent({
       ) : draftWorkoutExercises.length === 0 ? (
         <ScreenEmptyState onAddExercise={openExercisePicker} />
       ) : (
-        <>
-          <ActiveWorkoutExerciseList
-            workoutExercises={draftWorkoutExercises}
-            sets={setRows}
-            exerciseById={draftExerciseById}
-            isEditing
-            onChangeDraftExerciseRows={changeRows}
-          />
-          <View className="border-border pb-safe border-t px-4 pt-3">
-            <Button
-              variant="secondary"
-              size="md"
-              fullWidth
-              leftIcon={<Icon as={PlusIcon} size="sm" tone="foreground" />}
-              onPress={openExercisePicker}
-            >
-              Add exercise
-            </Button>
-          </View>
-        </>
+        <ActiveWorkoutExerciseList
+          workoutExercises={draftWorkoutExercises}
+          sets={setRows}
+          exerciseById={draftExerciseById}
+          isEditing
+          onChangeDraftExerciseRows={changeRows}
+        />
       )}
 
       {isExercisePickerOpen ? (

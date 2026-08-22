@@ -3,6 +3,7 @@ import {
   LogHeader,
   type LogView
 } from '@/src/features/workout-log/components/log-header';
+import { Screen } from '@/src/components/ui/screen';
 import { WorkoutLogContent } from '@/src/features/workout-log/components/workout-log-content';
 import { useState } from 'react';
 import { Platform, View } from 'react-native';
@@ -12,11 +13,11 @@ export default function LogScreen() {
   const selectedView = Platform.OS === 'android' ? view : 'workouts';
 
   return (
-    <View className="bg-background pt-safe flex-1">
+    <Screen withPadding={false}>
       <View className="px-4 pt-6">
         <LogHeader view={selectedView} onViewChange={setView} />
       </View>
       {selectedView === 'steps' ? <StepsContent /> : <WorkoutLogContent />}
-    </View>
+    </Screen>
   );
 }

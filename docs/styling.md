@@ -12,6 +12,7 @@ Use styled wrappers for third-party components with multiple style props. Avoid 
 
 - NativeWind is preview-versioned. Do not use `remapProps` or `cssInterop`; use `styled(...)`.
 - Use NativeWind safe-area utilities for static safe-area spacing. Reserve numeric safe-area insets for calculations and native/third-party props that need numbers.
+- Use role-specific safe-area baselines: `Screen` footers use `pb-safe-offset-3`; compact bottom-sheet content and footers use `pb-safe-offset-2`; scrollable bottom-sheet content uses `pb-safe-offset-4`. Change the safe-area offset only when bottom clearance itself needs to change; use regular `pt-*` and gap utilities for internal visual spacing.
 - Use raw theme tokens only for native/third-party props that cannot consume classes.
 - Do not add global `lineHeight` tokens; React Native treats line height as layout height.
 

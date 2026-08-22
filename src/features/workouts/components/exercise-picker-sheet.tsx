@@ -566,7 +566,7 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
       )}
 
       {filteredExercises.length > 0 ? (
-        <View className="border-border bg-card pb-safe border-t px-4 pt-3">
+        <View className="border-border bg-card pb-safe-offset-2 border-t px-4 pt-3">
           {isMultiple ? (
             <Button
               disabled={pendingExercises.length === 0}

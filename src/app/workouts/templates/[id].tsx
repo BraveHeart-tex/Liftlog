@@ -312,7 +312,23 @@ function WorkoutTemplateDetailLoaded({
 
   if (isEditingExercises) {
     return (
-      <Screen withPadding={false} edges={[]}>
+      <Screen
+        withPadding={false}
+        edges={[]}
+        footer={
+          draftTemplateExercises.length > 0 ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              fullWidth
+              leftIcon={<Icon as={PlusIcon} size="sm" tone="foreground" />}
+              onPress={openExercisePicker}
+            >
+              Add exercise
+            </Button>
+          ) : undefined
+        }
+      >
         <ActiveWorkoutEditHeader
           workoutName={template.name}
           canSave={canSaveExercises}
@@ -344,24 +360,11 @@ function WorkoutTemplateDetailLoaded({
             </EmptyState>
           </View>
         ) : (
-          <>
-            <NewTemplateExerciseList
-              rows={draftTemplateExercises}
-              onDeleteExercise={removeDraftExercise}
-              onReorderExercises={reorderDraftExercises}
-            />
-            <View className="border-border pb-safe border-t px-4 pt-3">
-              <Button
-                variant="secondary"
-                size="sm"
-                fullWidth
-                leftIcon={<Icon as={PlusIcon} size="sm" tone="foreground" />}
-                onPress={openExercisePicker}
-              >
-                Add exercise
-              </Button>
-            </View>
-          </>
+          <NewTemplateExerciseList
+            rows={draftTemplateExercises}
+            onDeleteExercise={removeDraftExercise}
+            onReorderExercises={reorderDraftExercises}
+          />
         )}
 
         {isExercisePickerOpen ? (

@@ -186,7 +186,7 @@ export function StopwatchContent({
         </PressableSurface>
       </View>
 
-      <BottomSheetSafeFooter className="pb-safe-offset-4 pt-6">
+      <BottomSheetSafeFooter className="pt-6">
         <View className="flex-1">
           <Button
             variant="secondary"

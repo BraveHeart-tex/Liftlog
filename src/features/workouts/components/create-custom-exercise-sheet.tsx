@@ -159,7 +159,7 @@ const CreateCustomExerciseSheetContent = memo(
           />
         </StyledBottomSheetScrollView>
 
-        <BottomSheetSafeFooter className="border-border pb-safe-offset-3 flex-col gap-0 border-t">
+        <BottomSheetSafeFooter className="border-border flex-col gap-0 border-t">
           <View className="flex-row gap-3">
             <View className="flex-1">
               <Button variant="secondary" onPress={handleClose}>
