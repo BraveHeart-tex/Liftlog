@@ -78,8 +78,7 @@ const BottomSheetTextInputColorBridge = forwardRef<
 
 const styles = StyleSheet.create({
   textInputAndroidReset: {
-    backgroundColor: 'transparent',
-    borderBottomWidth: 0
+    backgroundColor: 'transparent'
   }
 });
 

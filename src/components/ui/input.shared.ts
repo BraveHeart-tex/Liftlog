@@ -74,7 +74,7 @@ export function getInputClassName({
   multiline?: boolean;
 }) {
   return cn(
-    'text-body text-foreground w-full rounded-md border border-border bg-input px-4 py-3 h-12',
+    'text-body text-foreground w-full rounded-md border border-border bg-input px-4 py-0 h-12',
     multiline && 'h-20',
     focused && !invalid && 'border-ring',
     invalid && 'border-danger',

@@ -95,8 +95,8 @@ export const FloatingField = forwardRef<
 
   const labelStyle = useAnimatedStyle(() => ({
     transform: [
-      { translateX: interpolate(progress.value, [0, 1], [4, 0]) },
-      { translateY: interpolate(progress.value, [0, 1], [16, -8]) },
+      { translateX: interpolate(progress.value, [0, 1], [-4, 0]) },
+      { translateY: interpolate(progress.value, [0, 1], [12, -8]) },
       { scale: interpolate(progress.value, [0, 1], [1, 0.85]) }
     ]
   }));

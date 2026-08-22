@@ -47,6 +47,7 @@ export const Input = forwardRef<
         invalid,
         multiline
       })}
+      style={[props.style, { includeFontPadding: false }]}
       textAlignVertical={multiline ? 'top' : 'center'}
       editable={behavior.editable}
       accessibilityState={behavior.accessibilityState}
