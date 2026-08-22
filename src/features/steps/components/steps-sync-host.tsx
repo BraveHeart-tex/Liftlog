@@ -1,4 +1,4 @@
-import { useDrizzle } from '@/src/components/database-provider';
+import { useDrizzle } from '@/src/providers/database-provider';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import { syncAndSaveStepDays } from '@/src/features/steps/steps-sync.service';
 import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task.utils';

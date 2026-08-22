@@ -1,0 +1,128 @@
+import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
+import { Screen } from '@/src/components/ui/screen';
+import { Text } from '@/src/components/ui/text';
+import type { NewExercise } from '@/src/db/schema';
+import { ExerciseMetadataForm } from '@/src/features/exercises/components/exercise-metadata-form';
+import { ExerciseNameConflictError } from '@/src/features/exercises/exercise.repository';
+import { useCustomExerciseForm } from '@/src/features/exercises/hooks/use-custom-exercise-form';
+import { useExerciseActions } from '@/src/features/exercises/hooks/use-exercise-actions';
+import { triggerHapticSuccess } from '@/src/lib/haptics/haptics';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
+import { router } from 'expo-router';
+import { SaveIcon } from 'lucide-react-native';
+import { useRef, useState } from 'react';
+import { Keyboard, View, type ScrollView } from 'react-native';
+
+export function NewExerciseScreen() {
+  const reduceMotion = useReducedMotion();
+  const { createCustomExercise } = useExerciseActions();
+  const scrollRef = useRef<ScrollView>(null);
+  const [errorScrollRequestId, setErrorScrollRequestId] = useState(0);
+  const {
+    name,
+    category,
+    trackingType,
+    selectedPrimaryMuscles,
+    selectedSecondaryMuscles,
+    nameError,
+    primaryMusclesError,
+    setName,
+    setCategory,
+    setTrackingType,
+    togglePrimaryMuscle,
+    toggleSecondaryMuscle,
+    reportNameConflict,
+    submit: buildExercise
+  } = useCustomExerciseForm();
+
+  const createExercise = (newExercise: NewExercise) => {
+    const createdExercise = createCustomExercise(newExercise);
+    triggerHapticSuccess('custom exercise creation');
+
+    router.replace(
+      {
+        pathname: '/exercises/[id]',
+        params: { id: createdExercise.id }
+      },
+      { withAnchor: true }
+    );
+  };
+
+  const submit = () => {
+    const newExercise = buildExercise();
+
+    if (!newExercise) {
+      setErrorScrollRequestId(current => current + 1);
+
+      return;
+    }
+
+    Keyboard.dismiss();
+
+    try {
+      createExercise(newExercise);
+    } catch (error) {
+      if (error instanceof ExerciseNameConflictError) {
+        reportNameConflict();
+        setErrorScrollRequestId(current => current + 1);
+
+        return;
+      }
+
+      throw error;
+    }
+  };
+
+  return (
+    <Screen
+      scroll
+      edges={[]}
+      scrollRef={scrollRef}
+      footer={
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <Button variant="secondary" onPress={() => router.back()}>
+              Cancel
+            </Button>
+          </View>
+          <View className="flex-1">
+            <Button
+              leftIcon={<Icon as={SaveIcon} tone="primaryForeground" />}
+              onPress={submit}
+            >
+              Save
+            </Button>
+          </View>
+        </View>
+      }
+    >
+      <View>
+        <Text variant="small" tone="muted">
+          Add only what you need for fast logging.
+        </Text>
+
+        <View className="mt-6">
+          <ExerciseMetadataForm
+            name={name}
+            category={category}
+            trackingType={trackingType}
+            selectedPrimaryMuscles={selectedPrimaryMuscles}
+            selectedSecondaryMuscles={selectedSecondaryMuscles}
+            nameError={nameError}
+            primaryMusclesError={primaryMusclesError}
+            errorScrollRequestId={errorScrollRequestId}
+            onScrollToError={y =>
+              scrollRef.current?.scrollTo({ y, animated: !reduceMotion })
+            }
+            setName={setName}
+            setCategory={setCategory}
+            setTrackingType={setTrackingType}
+            togglePrimaryMuscle={togglePrimaryMuscle}
+            toggleSecondaryMuscle={toggleSecondaryMuscle}
+          />
+        </View>
+      </View>
+    </Screen>
+  );
+}

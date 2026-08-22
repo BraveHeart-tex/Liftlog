@@ -1,4 +1,4 @@
-import { useDrizzle } from '@/src/components/database-provider';
+import { useDrizzle } from '@/src/providers/database-provider';
 import {
   addRestTimerPreset as addRestTimerPresetRepo,
   deleteRestTimerPreset as deleteRestTimerPresetRepo,

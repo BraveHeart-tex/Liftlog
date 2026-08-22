@@ -1,4 +1,4 @@
-import { useDrizzle } from '@/src/components/database-provider';
+import { useDrizzle } from '@/src/providers/database-provider';
 import { getExerciseByIdQuery } from '@/src/features/exercises/exercise.repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { parseMuscleList } from '@/src/features/exercises/muscle.utils';

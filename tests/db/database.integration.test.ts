@@ -29,25 +29,29 @@ import {
   updateCustomExerciseDetails,
   updateCustomExerciseName
 } from '@/src/features/exercises/exercise.repository';
+import { cleanupLegacyHistoricalWorkoutEditDrafts } from '@/src/features/workouts/shared/workout.repository';
 import {
   ActiveWorkoutExerciseDraftConflictError,
-  cleanupLegacyHistoricalWorkoutEditDrafts,
   completeWorkout,
-  createCompletedSet,
-  createHistoricalWorkoutEditDraft,
-  deleteCompletedSet,
   deleteWorkout,
-  getRecentExerciseIdsQuery,
-  saveHistoricalWorkoutDraft,
-  saveHistoricalWorkoutEditDraft,
-  HistoricalWorkoutEditDraftConflictError,
-  saveActiveWorkoutExerciseDraft,
+  saveActiveWorkoutExerciseDraft
+} from '@/src/features/workouts/active/active.repository';
+import {
+  createCompletedSet,
+  deleteCompletedSet,
   updateCompletedSet
-} from '@/src/features/workouts/workout.repository';
+} from '@/src/features/workouts/set-entry/set-entry.repository';
+import {
+  createHistoricalWorkoutEditDraft,
+  HistoricalWorkoutEditDraftConflictError,
+  saveHistoricalWorkoutDraft,
+  saveHistoricalWorkoutEditDraft
+} from '@/src/features/workouts/history/history.repository';
+import { getRecentExerciseIdsQuery } from '@/src/features/workouts/exercise-selection/exercise-selection.repository';
 import {
   saveWorkoutTemplateExerciseDraft,
   WorkoutTemplateExerciseDraftConflictError
-} from '@/src/features/workouts/workout-template.repository';
+} from '@/src/features/workouts/templates/workout-template.repository';
 import {
   getExerciseHistoryQuery,
   mapExerciseHistoryRows,

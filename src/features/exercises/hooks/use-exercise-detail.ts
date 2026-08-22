@@ -1,4 +1,4 @@
-import { useDrizzle } from '@/src/components/database-provider';
+import { useDrizzle } from '@/src/providers/database-provider';
 import type { Set } from '@/src/db/schema';
 import type {
   ExercisePersonalRecordSummaryItem,
@@ -26,7 +26,7 @@ import {
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { parseMuscleList } from '@/src/features/exercises/muscle.utils';
-import { formatCompletedSets } from '@/src/features/workouts/set-display.utils';
+import { formatCompletedSets } from '@/src/features/workouts/shared/set-display.utils';
 import { useMemo } from 'react';
 
 const EXERCISE_HISTORY_LIMIT = 20;

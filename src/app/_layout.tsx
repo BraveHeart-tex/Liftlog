@@ -1,6 +1,6 @@
 import '@/global.css';
-import { CommonProviders } from '@/src/components/common-providers';
-import { DrizzleStudio } from '@/src/components/drizzle-studio';
+import { CommonProviders } from '@/src/providers/common-providers';
+import { DrizzleStudio } from '@/src/providers/drizzle-studio';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { bootstrapThemeColorScheme } from '@/src/theme/bootstrap-theme';
 import { appFontAssets, appFonts } from '@/src/theme/fonts';

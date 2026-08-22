@@ -128,6 +128,73 @@ export default defineConfig([
     }
   },
   {
+    files: ['src/features/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'react-native-safe-area-context',
+              importNames: ['SafeAreaView'],
+              message:
+                'Use NativeWind safe-area utilities for static safe-area spacing. Use useSafeAreaInsets only for numeric calculations.'
+            },
+            {
+              name: 'react-native',
+              importNames: ['InteractionManager'],
+              message:
+                'InteractionManager is deprecated. Use scheduleIdleTask instead.'
+            }
+          ],
+          patterns: [
+            {
+              regex: '^@/src/app(?:/|$)',
+              message:
+                'Features must not import Expo Router route files. Keep route concerns in src/app.'
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    files: [
+      'src/components/ui/**/*.{ts,tsx}',
+      'src/components/styled/**/*.{ts,tsx}',
+      'src/lib/**/*.{ts,tsx}',
+      'src/theme/**/*.{ts,tsx}'
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'react-native-safe-area-context',
+              importNames: ['SafeAreaView'],
+              message:
+                'Use NativeWind safe-area utilities for static safe-area spacing. Use useSafeAreaInsets only for numeric calculations.'
+            },
+            {
+              name: 'react-native',
+              importNames: ['InteractionManager'],
+              message:
+                'InteractionManager is deprecated. Use scheduleIdleTask instead.'
+            }
+          ],
+          patterns: [
+            {
+              regex: '^@/src/features(?:/|$)',
+              message:
+                'Generic shared code must not import feature modules. Move domain composition into the owning feature.'
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
     files: ['**/*.{js,jsx,mjs,cjs,ts,tsx}'],
     ignores: [
       '*.config.{js,mjs,ts}',

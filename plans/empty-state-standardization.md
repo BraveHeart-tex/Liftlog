@@ -69,7 +69,7 @@ consistent recovery actions:
 - `src/app/(tabs)/workout/active/edit-exercises.tsx` — missing active workout.
 - `src/app/workouts/backfill/[id].tsx` — missing backfill workout.
 - `src/app/workouts/edit/[id].tsx` — missing workout edit draft.
-- `src/components/database-error-boundary.tsx` — database failure.
+- `src/providers/database-error-boundary.tsx` — database failure.
 - `src/app/exercises/[id].tsx` — missing exercise detail.
 - `src/app/exercises/edit/[id].tsx` — missing exercise and non-custom exercise.
 - `src/app/workouts/[id].tsx` — missing workout detail.
@@ -82,7 +82,7 @@ consistent recovery actions:
   backfill exercise.
 - `src/app/workouts/edit/exercise/[workoutExerciseId].tsx` — missing edit
   exercise.
-- `src/components/screen-error-boundary.tsx` — unexpected screen error.
+- `src/providers/screen-error-boundary.tsx` — unexpected screen error.
 
 ### Section and list states
 
@@ -111,7 +111,7 @@ Retain domain behavior while composing from the shared shell:
   with Health Connect visual, connect action, and privacy footer.
 - `src/features/steps/components/steps-unavailable-state.tsx` — use the
   shared `unavailable` shell with platform-specific copy.
-- `src/features/workouts/components/set-form/set-form-empty-state.tsx` — use
+- `src/features/workouts/set-entry/components/set-form/set-form-empty-state.tsx` — use
   section density, dashed surface, and Add set action.
 - `src/features/exercises/components/exercise-progress-chart.tsx` — use
   `insufficient-data` in a compact chart-local layout.
@@ -121,11 +121,11 @@ Retain domain behavior while composing from the shared shell:
 Use the new `inline` treatment where a full empty-state block would be too
 heavy:
 
-- `src/features/workouts/components/active-workout-exercise-card.tsx` —
+- `src/features/workouts/active/components/active-workout-exercise-card.tsx` —
   `Tap to log sets`.
-- `src/features/workouts/components/exercise-history-list.tsx` — `No PR yet`
+- `src/features/workouts/active/components/exercise-history-list.tsx` — `No PR yet`
   and `No prior 30-day data`.
-- `src/features/workouts/components/active-workout-exercise-edit-row.tsx` —
+- `src/features/workouts/active/components/active-workout-exercise-edit-row.tsx` —
   `No sets logged yet` in confirmation context.
 - `src/features/steps/components/steps-summary-cards.tsx` — `Not enough data`.
 

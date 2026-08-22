@@ -1,4 +1,4 @@
-import { useDrizzle } from '@/src/components/database-provider';
+import { useDrizzle } from '@/src/providers/database-provider';
 import { showSnackbar } from '@/src/components/ui/snackbar';
 import type { HealthStepDay } from '@/src/db/schema';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';

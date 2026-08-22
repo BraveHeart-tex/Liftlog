@@ -1,4 +1,4 @@
-import { useDrizzle } from '@/src/components/database-provider';
+import { useDrizzle } from '@/src/providers/database-provider';
 import { showSnackbar } from '@/src/components/ui/snackbar';
 import { completeOnboardingWithPreferences } from '@/src/features/settings/onboarding.repository';
 import type { WeightUnit } from '@/src/features/settings/settings.repository';

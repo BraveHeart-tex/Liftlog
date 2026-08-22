@@ -8,7 +8,7 @@ import { isValidStepGoal } from '@/src/features/steps/steps.validation';
 import {
   MAX_REST_TIMER_SECONDS,
   MIN_REST_TIMER_SECONDS
-} from '@/src/features/workouts/rest-timer.constants';
+} from '@/src/features/rest-timer/rest-timer.constants';
 import { generateUuid } from '@/src/lib/utils/uuid.utils';
 import { withDatabaseSpan } from '@/src/lib/db/database-observability';
 import type { WeightUnit } from '@/src/lib/utils/weight.utils';

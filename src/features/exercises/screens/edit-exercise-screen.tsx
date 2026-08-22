@@ -1,0 +1,245 @@
+import { Button } from '@/src/components/ui/button';
+import { Icon } from '@/src/components/ui/icon';
+import { LoadingState } from '@/src/components/ui/loading-state';
+import { Screen } from '@/src/components/ui/screen';
+import { Text } from '@/src/components/ui/text';
+import { ExerciseMetadataForm } from '@/src/features/exercises/components/exercise-metadata-form';
+import type { ExerciseCategory } from '@/src/features/exercises/exercise.constants';
+import { useCustomExerciseEdit } from '@/src/features/exercises/hooks/use-custom-exercise-edit';
+import { useExerciseActions } from '@/src/features/exercises/hooks/use-exercise-actions';
+import {
+  resolveTrackingType,
+  type TrackingType
+} from '@/src/features/progress/tracking.domain';
+import { triggerHapticSuccess } from '@/src/lib/haptics/haptics';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
+import { router } from 'expo-router';
+import { SaveIcon } from 'lucide-react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Keyboard, View, type ScrollView } from 'react-native';
+
+export function EditExerciseScreen({ exerciseId }: { exerciseId?: string }) {
+  const reduceMotion = useReducedMotion();
+  const { exercise, primaryMuscles, secondaryMuscles, isLoading } =
+    useCustomExerciseEdit(exerciseId);
+  const { updateCustomExerciseDetails } = useExerciseActions();
+  const scrollRef = useRef<ScrollView>(null);
+  const [category, setCategory] = useState<ExerciseCategory>('barbell');
+  const [trackingType, setTrackingType] = useState<TrackingType>('weight_reps');
+  const [selectedPrimaryMuscles, setSelectedPrimaryMuscles] = useState<
+    string[]
+  >([]);
+  const [selectedSecondaryMuscles, setSelectedSecondaryMuscles] = useState<
+    string[]
+  >([]);
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  const [errorScrollRequestId, setErrorScrollRequestId] = useState(0);
+  const [saveError, setSaveError] = useState<string | undefined>();
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!exercise || exercise.isCustom !== 1) {
+      return;
+    }
+
+    setCategory(exercise.category as ExerciseCategory);
+    setTrackingType(resolveTrackingType(exercise.trackingType));
+    setSelectedPrimaryMuscles(primaryMuscles);
+    setSelectedSecondaryMuscles(secondaryMuscles);
+    setAttemptedSubmit(false);
+    setSaveError(undefined);
+  }, [exercise, primaryMuscles, secondaryMuscles]);
+
+  const primaryMusclesError =
+    attemptedSubmit && selectedPrimaryMuscles.length === 0
+      ? 'Select at least one primary muscle'
+      : undefined;
+
+  const handleCategoryChange = (nextCategory: ExerciseCategory) => {
+    setCategory(nextCategory);
+    setSaveError(undefined);
+  };
+
+  const handleTrackingTypeChange = (nextTrackingType: TrackingType) => {
+    setTrackingType(nextTrackingType);
+    setSaveError(undefined);
+  };
+
+  const togglePrimaryMuscle = (muscle: string) => {
+    setSelectedPrimaryMuscles(current => {
+      if (current.includes(muscle)) {
+        return current.filter(selectedMuscle => selectedMuscle !== muscle);
+      }
+
+      setSelectedSecondaryMuscles(existing =>
+        existing.filter(selectedMuscle => selectedMuscle !== muscle)
+      );
+
+      return [...current, muscle];
+    });
+    setSaveError(undefined);
+  };
+
+  const toggleSecondaryMuscle = (muscle: string) => {
+    setSelectedSecondaryMuscles(current => {
+      if (current.includes(muscle)) {
+        return current.filter(selectedMuscle => selectedMuscle !== muscle);
+      }
+
+      setSelectedPrimaryMuscles(existing =>
+        existing.filter(selectedMuscle => selectedMuscle !== muscle)
+      );
+
+      return [...current, muscle];
+    });
+    setSaveError(undefined);
+  };
+
+  const submit = () => {
+    setAttemptedSubmit(true);
+
+    if (
+      !exercise ||
+      exercise.isCustom !== 1 ||
+      selectedPrimaryMuscles.length === 0
+    ) {
+      setErrorScrollRequestId(current => current + 1);
+
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError(undefined);
+    Keyboard.dismiss();
+
+    try {
+      const updatedExercise = updateCustomExerciseDetails(exercise.id, {
+        category,
+        trackingType,
+        primaryMuscles: selectedPrimaryMuscles,
+        secondaryMuscles: selectedSecondaryMuscles
+      });
+
+      if (!updatedExercise) {
+        setSaveError('Only custom exercises can be edited.');
+        setIsSaving(false);
+
+        return;
+      }
+
+      triggerHapticSuccess('custom exercise edit');
+
+      if (router.canGoBack()) {
+        router.back();
+
+        return;
+      }
+
+      router.replace({
+        pathname: '/exercises/[id]',
+        params: { id: updatedExercise.id }
+      });
+    } catch (error) {
+      console.error('Failed to update custom exercise details', error);
+      setSaveError('Could not update exercise details. Try again.');
+      setIsSaving(false);
+    }
+  };
+
+  if (exerciseId && isLoading) {
+    return (
+      <Screen withPadding={false}>
+        <LoadingState label="Loading exercise..." />
+      </Screen>
+    );
+  }
+
+  if (!exercise) {
+    return (
+      <Screen
+        withPadding={false}
+        contentClassName="items-center justify-center px-6"
+      >
+        <Text variant="h3" className="text-center">
+          Exercise not found
+        </Text>
+        <Text variant="small" tone="muted" className="mt-2 text-center">
+          The exercise you&apos;re looking for doesn&apos;t exist.
+        </Text>
+      </Screen>
+    );
+  }
+
+  if (exercise.isCustom !== 1) {
+    return (
+      <Screen
+        withPadding={false}
+        contentClassName="items-center justify-center px-6"
+      >
+        <Text variant="h3" className="text-center">
+          Exercise can&apos;t be edited
+        </Text>
+        <Text variant="small" tone="muted" className="mt-2 text-center">
+          Only custom exercises support detail editing.
+        </Text>
+      </Screen>
+    );
+  }
+
+  return (
+    <Screen
+      scroll
+      edges={[]}
+      scrollRef={scrollRef}
+      footer={
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <Button variant="secondary" onPress={() => router.back()}>
+              Cancel
+            </Button>
+          </View>
+          <View className="flex-1">
+            <Button
+              loading={isSaving}
+              disabled={isSaving}
+              leftIcon={<Icon as={SaveIcon} tone="primaryForeground" />}
+              onPress={submit}
+            >
+              Save
+            </Button>
+          </View>
+        </View>
+      }
+    >
+      <View>
+        <Text variant="h2">{exercise.name}</Text>
+        <Text variant="small" tone="muted" className="mt-1">
+          Update category and muscle groups for this custom exercise.
+        </Text>
+
+        <View className="mt-6">
+          <ExerciseMetadataForm
+            category={category}
+            trackingType={trackingType}
+            selectedPrimaryMuscles={selectedPrimaryMuscles}
+            selectedSecondaryMuscles={selectedSecondaryMuscles}
+            primaryMusclesError={primaryMusclesError}
+            errorScrollRequestId={errorScrollRequestId}
+            onScrollToError={y =>
+              scrollRef.current?.scrollTo({ y, animated: !reduceMotion })
+            }
+            setCategory={handleCategoryChange}
+            setTrackingType={handleTrackingTypeChange}
+            togglePrimaryMuscle={togglePrimaryMuscle}
+            toggleSecondaryMuscle={toggleSecondaryMuscle}
+          />
+          {saveError ? (
+            <Text variant="caption" tone="danger" className="mt-4">
+              {saveError}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+    </Screen>
+  );
+}

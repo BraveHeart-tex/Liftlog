@@ -1,4 +1,4 @@
-import { useDrizzle } from '@/src/components/database-provider';
+import { useDrizzle } from '@/src/providers/database-provider';
 import { isOnboardingCompleted } from '@/src/features/settings/onboarding.repository';
 import type { Href } from 'expo-router';
 

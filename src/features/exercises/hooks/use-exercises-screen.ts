@@ -1,4 +1,4 @@
-import { useDrizzle } from '@/src/components/database-provider';
+import { useDrizzle } from '@/src/providers/database-provider';
 import {
   buildAlphabetizedExerciseListItems,
   matchesExerciseSearch
@@ -7,9 +7,9 @@ import {
   getExercisesQuery,
   type ExerciseListItem
 } from '@/src/features/exercises/exercise.repository';
-import type { ExercisePickerFilter } from '@/src/features/workouts/components/exercise-picker-filters';
-import { getRecentExerciseIdsQuery } from '@/src/features/workouts/workout.repository';
-import { RECENT_EXERCISES_LIMIT } from '@/src/features/workouts/workout.constants';
+import type { ExercisePickerFilter } from '@/src/features/workouts/exercise-selection/components/exercise-picker-filters';
+import { getRecentExerciseIdsQuery } from '@/src/features/workouts/exercise-selection/exercise-selection.repository';
+import { RECENT_EXERCISES_LIMIT } from '@/src/features/workouts/shared/workout.constants';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useMemo, useState } from 'react';
 

@@ -1,4 +1,4 @@
-import { useDrizzle } from '@/src/components/database-provider';
+import { useDrizzle } from '@/src/providers/database-provider';
 import type { Exercise, NewExercise } from '@/src/db/schema';
 import {
   createExercise,
