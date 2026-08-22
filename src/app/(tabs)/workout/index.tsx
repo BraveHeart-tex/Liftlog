@@ -6,8 +6,8 @@ import { ActiveWorkoutSummaryCard } from '@/src/features/workouts/components/act
 import { RecentWorkoutsSection } from '@/src/features/workouts/components/recent-workouts-section';
 import { WorkoutTemplatesSection } from '@/src/features/workouts/components/workout-templates-section';
 import { useWorkoutStart } from '@/src/features/workouts/hooks/use-workout-start';
-import { router, useFocusEffect } from 'expo-router';
-import { DumbbellIcon, SettingsIcon } from 'lucide-react-native';
+import { useFocusEffect } from 'expo-router';
+import { DumbbellIcon } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 
@@ -34,17 +34,7 @@ export default function WorkoutStartScreen() {
 
   return (
     <Screen scroll keyboardShouldPersistTaps="handled">
-      <View className="flex-row items-center justify-between gap-4">
-        <Text variant="h1">Workout</Text>
-        <Button
-          variant="secondary"
-          size="icon"
-          accessibilityLabel="Open settings"
-          onPress={() => router.navigate('/settings')}
-        >
-          <Icon as={SettingsIcon} size="md" tone="secondaryForeground" />
-        </Button>
-      </View>
+      <Text variant="h1">Workout</Text>
 
       {activeWorkout && !isStartingWorkout ? (
         <View>

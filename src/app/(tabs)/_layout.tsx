@@ -4,8 +4,13 @@ import { appFonts } from '@/src/theme/fonts';
 import { iconSizes, nativeFontSizes } from '@/src/theme/sizes';
 
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Tabs, usePathname } from 'expo-router';
-import { ClockIcon, DumbbellIcon, ListIcon } from 'lucide-react-native';
+import { router, Tabs, usePathname } from 'expo-router';
+import {
+  ClockIcon,
+  DumbbellIcon,
+  ListIcon,
+  SettingsIcon
+} from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
   Text as NativeText,
@@ -51,9 +56,10 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     visibleRoutes.findIndex(route => route.key === activeRouteKey)
   );
 
+  const barItemCount = visibleRoutes.length + 1;
   const tabWidth =
-    visibleRoutes.length > 0
-      ? (barWidth - TAB_BAR_HORIZONTAL_PADDING * 2) / visibleRoutes.length
+    barItemCount > 0
+      ? (barWidth - TAB_BAR_HORIZONTAL_PADDING * 2) / barItemCount
       : 0;
 
   const indicatorIndex = useSharedValue(activeIndex);
@@ -171,6 +177,35 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           </Pressable>
         );
       })}
+
+      <Pressable
+        accessibilityLabel="Open settings"
+        accessibilityRole="button"
+        onPress={() => {
+          triggerBottomTabNavigationHaptics();
+          router.navigate('/settings');
+        }}
+        style={styles.tabItem}
+      >
+        <View style={styles.iconSlot}>
+          <SettingsIcon
+            color={tabBarTheme.inactiveTintColor}
+            size={TAB_ICON_SIZE}
+          />
+        </View>
+
+        <NativeText
+          numberOfLines={1}
+          style={[
+            styles.tabLabel,
+            {
+              color: tabBarTheme.inactiveTintColor
+            }
+          ]}
+        >
+          Settings
+        </NativeText>
+      </Pressable>
     </View>
   );
 }
