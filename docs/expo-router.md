@@ -1,25 +1,20 @@
-# Expo Router Nav Rules
+# Expo Router navigation
 
-Pick API by intended stack shape, not click timing.
+Read this when changing route transitions, links, stack history, or duplicate-screen behavior. Choose the API from the desired stack shape, not from tap timing.
 
-**Default:** `router.navigate()`. Only deviate for a specific history need.
+## API selection
 
-- **Rapid taps / dupe screens:** `push` adds a new entry every call → repeated presses stack dupes. Use `navigate` instead. Don't debounce globally — fix the API choice. Keep `push` only when duplicates are intentional.
+| Desired result                                                 | API                   |
+| -------------------------------------------------------------- | --------------------- |
+| Normal navigation                                              | `navigate`            |
+| Always create a new instance                                   | `push`                |
+| Remove the current screen from history                         | `replace`             |
+| Go back exactly one screen                                     | `back`                |
+| Return to an existing earlier screen and drop screens after it | `dismissTo`           |
+| Keep only one instance of a route                              | `dangerouslySingular` |
 
-- **Edit→save nested flows** (`Log → Details → Edit`): don't `replace()` (only swaps top screen, leaving stale `Details` beneath). Use `dismissTo({pathname, params})` to return to the existing screen and drop everything after it. Prefer `dismissTo` over `back` whenever intermediate screens might exist — intent is "reach X," not "go back N times."
+Use `router.navigate()` by default. `push` adds an entry on every call, so rapid taps or duplicate-screen flows should use `navigate`; keep `push` only when duplicates are intentional. Do not solve this with a global debounce.
 
-- **`<Link>`:** same rules. Skip `push` prop unless dupes are wanted; use `replace`/`dismissTo` for those specific histories.
+For nested edit flows such as `Log → Details → Edit`, use `dismissTo({ pathname, params })` to reach the existing screen and remove everything after it. `replace()` only swaps the top screen and leaves stale `Details` underneath. Prefer `dismissTo` over `back` when intermediate screens may exist.
 
-- **`dangerouslySingular`:** only for routes with a real uniqueness invariant (e.g., dynamic routes unique by `id`, or `workoutId+exerciseId`).
-
-**Cheat sheet:**
-| Need | API |
-|---|---|
-| Normal navigation | `navigate` |
-| Always new instance | `push` |
-| Remove current from history | `replace` |
-| Exactly one screen back | `back` |
-| Return to existing earlier screen | `dismissTo` |
-| Only one instance ever | `dangerouslySingular` |
-
-**Principle:** design the stack, then pick the API that produces it.
+`<Link>` follows the same rules: omit its `push` prop unless a duplicate is intentional, and use `replace` or `dismissTo` for the required history. Use `dangerouslySingular` only when the route has a real uniqueness invariant, such as `id` or `workoutId + exerciseId`.

@@ -1,11 +1,17 @@
-## Database
+# Database
 
-`DatabaseProvider` is the only DB lifecycle entry point. Do not duplicate SQLite, migration, seed, or Drizzle setup.
+Read this when changing SQLite lifecycle, Drizzle setup, schema, seeds, or migrations.
 
-App code must not call `useSQLiteContext`, `createDrizzleDb`, `migrate`, or `runSeedIfNeeded` directly. Dev tooling is the exception.
+## Lifecycle ownership
 
-## Migrations
+`DatabaseProvider` is the single application entry point for SQLite setup, migrations, seeds, and Drizzle wiring. App code uses the provider instead of creating a second lifecycle.
 
-- Change schema in the source schema, then generate migrations with Drizzle tooling.
-- Never edit migration SQL, snapshots, `_journal.json`, `migrations.js`, or generated SQL.
-- Never patch SQLite directly or hand-write migration state.
+Application code does not call `useSQLiteContext`, `createDrizzleDb`, `migrate`, or `runSeedIfNeeded` directly. Development tooling is the exception.
+
+## Schema and migrations
+
+1. Change the source schema.
+2. Generate the migration with Drizzle tooling.
+3. Run the applicable database checks from [`AGENTS.md`](../AGENTS.md).
+
+Migration SQL, snapshots, `_journal.json`, `migrations.js`, generated SQL, and SQLite migration state are generated artifacts. Keep them tool-owned: never edit, patch, or hand-write them.

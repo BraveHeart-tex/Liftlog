@@ -1,42 +1,29 @@
 # Reduced motion
 
-LiftLog follows the device's operating-system Reduce Motion accessibility
-preference. It does not expose a separate in-app override.
+Read this when adding or changing animation, transitions, loading indicators, gestures, programmatic scrolling, or native-stack navigation animation.
 
-The shared policy lives in
-[`use-reduced-motion.hook.ts`](../src/lib/animations/use-reduced-motion.hook.ts).
-It wraps Reanimated's live `useReducedMotion()` value, so changes made while
-the app is running must take effect immediately.
+LiftLog follows the device operating system's Reduce Motion preference and has no separate in-app override. The policy is centralized in [`use-reduced-motion.hook.ts`](../src/lib/animations/use-reduced-motion.hook.ts), which wraps Reanimated's live `useReducedMotion()` value so runtime preference changes apply immediately.
 
 ## Policy
 
 When reduced motion is enabled:
 
 - Disable non-essential enter, exit, layout, press, spring, and timing motion.
-- Set animated values directly to their latest state instead of interpolating.
-- Stop decorative or infinite loops such as shimmer and pulse effects; render a
-  static status treatment instead.
-- Use immediate native-stack navigation transitions (`animation: 'none'`).
-- Pass `ReduceMotion.Always` to the shared bottom-sheet wrapper. Preserve direct
-  sheet gestures and dragging.
+- Assign animated values directly to their latest state instead of interpolating.
+- Render shimmer, pulse, and other decorative or infinite loops as static status treatments.
+- Use immediate native-stack transitions with `animation: 'none'`.
+- Pass `ReduceMotion.Always` to the shared bottom-sheet wrapper while preserving sheet gestures and dragging.
 - Use `animated: false` for programmatic scrolling.
 - Set reorderable-list animation duration to `0` and remove active-item motion.
-- Keep functional updates running. Timers, data refreshes, and progress values
-  continue, but their visual values snap to the current state.
-- Keep loading and accessibility status visible without an animated spinner.
+- Keep timers, data refreshes, progress values, loading status, and accessibility status working and visible; their visual values snap to the current state.
 
 When reduced motion is disabled, preserve the existing motion and durations.
 
-## Implementation rules
+## Implementation
 
-1. Import `useReducedMotion` from the shared local hook for custom motion and
-   React Native `Animated` code. Do not read `AccessibilityInfo` separately at
-   a call site.
-2. For Reanimated entering/exiting transitions, either conditionally omit the
-   transition or use `.reduceMotion(ReduceMotion.System)` when the system policy
-   is sufficient.
-3. For timing or spring assignments, use a direct assignment in the reduced
-   branch:
+1. Import `useReducedMotion` from the shared local hook for custom motion and React Native `Animated` code. Call sites do not read `AccessibilityInfo` separately.
+2. For Reanimated entering, exiting, or layout transitions, omit the transition conditionally or use `.reduceMotion(ReduceMotion.System)` when the system policy is sufficient.
+3. For timing or spring assignments, make the reduced branch direct:
 
    ```ts
    value.value = reduceMotion
@@ -44,33 +31,23 @@ When reduced motion is disabled, preserve the existing motion and durations.
      : withTiming(nextValue, { duration: MOTION_DURATION_MS.standard });
    ```
 
-4. Include the preference in effects and callbacks that start motion. If the
-   preference changes during an animation, stop/cancel the animation and snap
-   to the current value.
-5. Preserve the interaction and information conveyed by the motion. Reduced
-   motion changes presentation, not navigation, gestures, timers, loading
-   state, or data behavior.
+4. Include the preference in effects and callbacks that start motion. If it changes during an animation, stop or cancel the animation and snap to the current value.
+5. Preserve what the motion communicates. Reduced motion changes presentation, not navigation, gestures, timers, loading state, or data behavior.
 
-## Audit checklist
+## Merge checklist
 
-Before merging a new animated or transitioning surface, check:
+- [ ] Shared `useReducedMotion` or `ReduceMotion.System` is used.
+- [ ] Enter, exit, layout, and press transitions are omitted or immediate.
+- [ ] Loops and spinners have static feedback.
+- [ ] Programmatic scrolling is immediate.
+- [ ] A runtime preference change stops active motion cleanly.
+- [ ] Gestures and functional updates remain intact.
 
-- [ ] Does it use the shared reduced-motion hook or `ReduceMotion.System`?
-- [ ] Are enter/exit/layout and press transitions omitted or made immediate?
-- [ ] Are loops and spinners replaced by static feedback?
-- [ ] Are programmatic scrolls immediate?
-- [ ] Does a runtime preference change stop active motion cleanly?
-- [ ] Are user gestures and functional updates preserved?
-
-Useful audit searches:
+Useful searches:
 
 ```sh
 rg -n "Animated\\.|withTiming|withSpring|withRepeat|entering=|exiting=|layout=|animation:|animated: true|animationDuration" src
 rg -n "useReducedMotion|ReduceMotion.System|ReduceMotion.Always" src
 ```
 
-The shared implementations to inspect first are
-[`bottom-sheet.tsx`](../src/components/ui/bottom-sheet.tsx),
-[`snackbar.tsx`](../src/components/ui/snackbar.tsx),
-[`reorderable-list.tsx`](../src/components/ui/reorderable-list.tsx), and
-[`activity-indicator.tsx`](../src/components/styled/activity-indicator.tsx).
+Inspect these shared implementations first: [`bottom-sheet.tsx`](../src/components/ui/bottom-sheet.tsx), [`snackbar.tsx`](../src/components/ui/snackbar.tsx), [`reorderable-list.tsx`](../src/components/ui/reorderable-list.tsx), and [`activity-indicator.tsx`](../src/components/styled/activity-indicator.tsx).

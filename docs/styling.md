@@ -1,35 +1,27 @@
-## Styling
+# Styling
 
-Use NativeWind `className` with semantic tokens from `global.css`. Use shared `cn`; do not add local merge helpers.
+Read this when changing NativeWind classes, theme tokens, typography, inputs, or third-party component styling.
 
-No hardcoded colors, font sizes, radius, or theme values. Inline styles are only for animation, native-only props, or layout edge cases.
+## Tokens and components
 
-## Third-Party Components
+- Use NativeWind `className` with semantic tokens from `global.css` and the shared `cn` helper. Keep merge behavior centralized; do not add local merge helpers.
+- Use the shared text primitive and typography classes.
+- Keep colors, font sizes, radii, and theme values in tokens. Inline styles are for animation, native-only props, or layout edge cases.
+- Wrap third-party components with multiple style props in styled project wrappers. Do not bypass project styling with direct imports.
+- NativeWind is preview-versioned: use `styled(...)`; do not use `remapProps` or `cssInterop`.
+- Use NativeWind safe-area utilities for static padding. Use numeric insets only for calculations or native/third-party props that require numbers. Screen and bottom-sheet offsets are defined in [`layout.md`](layout.md) and [`bottom-sheet.md`](bottom-sheet.md).
+- Use raw theme tokens only for native or third-party props that cannot consume classes.
+- Keep line-height local to typography classes; React Native treats line height as layout height, so do not add global `lineHeight` tokens.
 
-Use styled wrappers for third-party components with multiple style props. Avoid direct imports that bypass project styling.
+## Inputs
 
-## NativeWind
-
-- NativeWind is preview-versioned. Do not use `remapProps` or `cssInterop`; use `styled(...)`.
-- Use NativeWind safe-area utilities for static safe-area spacing. Reserve numeric safe-area insets for calculations and native/third-party props that need numbers.
-- Use role-specific safe-area baselines: `Screen` footers use `pb-safe-offset-3`; compact bottom-sheet content and footers use `pb-safe-offset-2`; scrollable bottom-sheet content uses `pb-safe-offset-4`. Change the safe-area offset only when bottom clearance itself needs to change; use regular `pt-*` and gap utilities for internal visual spacing.
-- Use raw theme tokens only for native/third-party props that cannot consume classes.
-- Do not add global `lineHeight` tokens; React Native treats line height as layout height.
-
-Use the shared text primitive and typography classes.
-
-### Inputs
-
-Inputs are primitives. Their `className` styles the native text input directly,
-so sizing is explicit. They default to 12px horizontal and 4px vertical
-padding:
+`Input` is a primitive. Its `className` styles the native text input directly, so give its size explicitly. Defaults are 12px horizontal and 4px vertical padding:
 
 ```tsx
 <Input className="h-14" accessibilityLabel="Name" />
 ```
 
-Compose labels and supporting text with `Field`, `FieldLabel`,
-`FieldDescription`, and `FieldError`. Use `invalid` for the input state:
+Compose conventional fields with `Field`, `FieldLabel`, `FieldDescription`, and `FieldError`. Use `invalid` for the input state:
 
 ```tsx
 <Field>
@@ -39,9 +31,7 @@ Compose labels and supporting text with `Field`, `FieldLabel`,
 </Field>
 ```
 
-Use `Field`, `FieldLabel`, and the appropriate input primitive for conventional
-text fields. Keep search, set-entry, multiline, and selector controls on their
-existing layouts:
+Use the existing layout for search, set-entry, multiline, and selector controls. For a conventional text field:
 
 ```tsx
 <Field>
@@ -55,9 +45,4 @@ existing layouts:
 </Field>
 ```
 
-Use `BottomSheetInput` in the same composition when the field is inside a
-bottom sheet. Keep placeholders only when they provide useful examples or
-additional guidance; do not repeat the visible label.
-
-Use `InputGroup` and `InputSlot` for icons or controls around an input. The
-group owns the shell; the input removes its own shell with direct classes.
+Use `BottomSheetInput` for the same composition inside a bottom sheet. Keep placeholders when they provide an example or extra guidance; visible labels already provide the field name. Use `InputGroup` and `InputSlot` for icons or controls around an input; the group owns the shell, so remove the input's shell with direct classes.

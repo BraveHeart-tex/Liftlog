@@ -1,43 +1,46 @@
-# AGENTS.md
+# Agent instructions
 
-- Honor `.codexignore` before broad discovery.
-- Keep changes small; no unapproved production dependencies, unrelated refactors, or needless abstractions.
-- Mobile React Native only; no DOM, browser, or web-only assumptions.
-- After logic changes, run relevant checks and report failures.
-- Never hand-edit generated files, Drizzle migrations/snapshots, or generated SQL.
-- Read `/docs` only for touched subsystems: `bottom-sheet`, `data-access`, `database`, `layout`, `styling`, `ux-display`, `expo-router`.
-- Expo audio: configure app audio mode once at app level; no leaf `setAudioModeAsync`/`setIsAudioActiveAsync`.
+## Scope and working rules
+
+- Treat this as a mobile Expo/React Native app. Keep changes compatible with native platforms; use no DOM or browser-only APIs.
+- Honor `.codexignore` before broad discovery. Keep the smallest working change: preserve existing patterns and avoid unrelated refactors, new abstractions, or production dependencies unless explicitly approved.
+- Generated artifacts are outputs, not edit targets. Change source schema and tooling inputs; never hand-edit Drizzle migrations, snapshots, generated SQL, or other generated files.
+- Configure Expo audio mode once at the app/provider boundary. Leaf components only control their own players; they do not call `setAudioModeAsync` or `setIsAudioActiveAsync`.
+
+## Documentation routing
+
+Read the applicable document before changing its subsystem. These documents are reference rules; this file owns the shared workflow and validation.
+
+| Change                                                                                  | Read                                               |
+| --------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Gorhom sheets, sheet keyboard behavior, sheet state, or sheet-safe content              | [`docs/bottom-sheet.md`](docs/bottom-sheet.md)     |
+| Queries, repositories, live reads, database observability, or data ownership            | [`docs/data-access.md`](docs/data-access.md)       |
+| SQLite lifecycle, Drizzle setup, schema, or migrations                                  | [`docs/database.md`](docs/database.md)             |
+| `Screen`, safe areas, scrolling, keyboard handling, or fixed footers                    | [`docs/layout.md`](docs/layout.md)                 |
+| NativeWind, theme tokens, typography, inputs, or styled third-party controls            | [`docs/styling.md`](docs/styling.md)               |
+| Workout logging UX, audio feedback, or compact data display                             | [`docs/ux-display.md`](docs/ux-display.md)         |
+| Expo Router navigation or route history                                                 | [`docs/expo-router.md`](docs/expo-router.md)       |
+| Any animation, transition, loading indicator, gesture animation, or programmatic scroll | [`docs/reduced-motion.md`](docs/reduced-motion.md) |
 
 ## Validation
 
-After modifying code, run the smallest relevant validation set before finishing.
+After a code change, run every applicable check below; choose the narrowest relevant test command and report exact failures.
 
-- TypeScript changes: run `rtk tsc --noEmit --project ./tsconfig.json`.
-- JS/TS/TSX changes: run `rtk lint`.
-- Formatting-sensitive changes: run `rtk prettier --check .`.
-- Logic or behavior changes: run the relevant tests with `rtk test <command>`. Use `rtk test pnpm run test` when the change is broad or no narrower test command is appropriate.
-- Database/schema changes: run the applicable existing database checks, but never generate, edit, or rewrite migrations/snapshots unless explicitly requested.
-- After code changes, run `graphify update .`.
+- TypeScript: `rtk tsc --noEmit --project ./tsconfig.json`
+- JavaScript/TypeScript/TSX: `rtk lint`
+- Formatting-sensitive changes: `rtk prettier --check .`
+- Logic or behavior: `rtk test <command>`; use `rtk test pnpm run test` for broad changes or when no narrower command exists.
+- Database/schema changes: run the existing database checks; never generate or rewrite migrations or snapshots unless explicitly requested.
+- Any source change: `graphify update .`
 
-Do not use `rtk timeout` or invent validation commands. Prefer RTK's native wrappers (`rtk tsc`, `rtk lint`, `rtk prettier`, `rtk test`) for compact output.
+`rtk` is the project wrapper. Use its native commands; do not invent validation commands or use `rtk timeout`. Fix failures caused by the change. Report unrelated or unavailable checks without claiming they passed.
 
-Validation failures:
+## Graphify
 
-- Fix failures caused by your changes.
-- Do not fix unrelated pre-existing failures.
-- If a check cannot run or fails for an unrelated reason, report the exact command and concise reason.
-- Do not claim validation passed unless the command completed successfully.
+When the user invokes `/graphify`, follow the installed graphify skill first. For codebase questions, query the existing `graphify-out/graph.json` before browsing broadly:
 
-## graphify
+- `graphify query "<question>"` for scoped context
+- `graphify path "<A>" "<B>"` for relationships
+- `graphify explain "<concept>"` for one concept
 
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
-
-When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
-
-Rules:
-
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+Dirty `graphify-out/` files are expected during updates. Use `graphify-out/wiki/index.md` for broad navigation when present; read `GRAPH_REPORT.md` only when the query does not provide enough context. After source changes, keep the graph current with `graphify update .`.
