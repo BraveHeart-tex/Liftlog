@@ -24,6 +24,12 @@ export function formatStepWeekday(timestamp: number): string {
   );
 }
 
+export function formatStepWeekdayShort(timestamp: number): string {
+  return new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(
+    new Date(timestamp)
+  );
+}
+
 export function formatStepMonthDay(timestamp: number): string {
   return new Intl.DateTimeFormat(undefined, {
     month: 'short',

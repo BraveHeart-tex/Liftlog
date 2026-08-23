@@ -1,46 +1,54 @@
-import { Card, CardContent } from '@/src/components/ui/card';
 import { Text } from '@/src/components/ui/text';
 import {
-  formatSteps,
-  type StepRecentActivityStatus
+  formatStepWeekday,
+  formatSteps
 } from '@/src/features/steps/steps-display.utils';
+import type { HealthStepDay } from '@/src/db/schema';
 import { View } from 'react-native';
 
 interface StepsSummaryCardsProps {
-  recentActivityStatus: StepRecentActivityStatus;
-  stepGoal: number;
+  averageSteps: number | null;
+  bestDay: Pick<HealthStepDay, 'steps' | 'startAt'> | null;
+  syncedDayCount: number;
+  requiredDayCount: number;
 }
 
 export function StepsSummaryCards({
-  recentActivityStatus,
-  stepGoal
+  averageSteps,
+  bestDay,
+  syncedDayCount,
+  requiredDayCount
 }: StepsSummaryCardsProps) {
-  const averageSteps = recentActivityStatus.averageSteps;
-  const goalPercent = recentActivityStatus.goalPercent;
-  const hasRecentStatus = averageSteps !== null && goalPercent !== null;
+  const hasFullWeek = averageSteps !== null && bestDay !== null;
+  const incompleteWeekLabel = `${syncedDayCount}/${requiredDayCount} days synced`;
 
   return (
-    <View className="mt-6">
-      <Card>
-        <CardContent>
-          <Text variant="small" tone="muted">
-            Recent activity
-          </Text>
-          <Text variant="h2" className="mt-2">
-            {hasRecentStatus
-              ? `${formatSteps(averageSteps)} / day`
-              : 'Not enough data'}
-          </Text>
-          <Text variant="caption" tone="muted" className="mt-1">
-            {hasRecentStatus
-              ? `${goalPercent}% of ${formatSteps(stepGoal)} goal`
-              : `${recentActivityStatus.syncedDayCount}/${recentActivityStatus.requiredDayCount} recent days synced`}
-          </Text>
-          <Text variant="caption" tone="muted" className="mt-1">
-            {recentActivityStatus.interpretation}
-          </Text>
-        </CardContent>
-      </Card>
+    <View className="border-border mt-6 flex-row border-y py-4">
+      <View className="flex-1 pr-4">
+        <Text variant="caption" tone="muted">
+          7-day average
+        </Text>
+        <Text variant="h3" className="mt-1">
+          {hasFullWeek ? formatSteps(averageSteps) : 'Not enough data'}
+        </Text>
+        <Text variant="caption" tone="muted" className="mt-1">
+          {hasFullWeek ? 'steps / day' : incompleteWeekLabel}
+        </Text>
+      </View>
+
+      <View className="border-border flex-1 border-l pl-4">
+        <Text variant="caption" tone="muted">
+          Best this week
+        </Text>
+        <Text variant="h3" className="mt-1">
+          {hasFullWeek ? formatSteps(bestDay.steps) : 'Not enough data'}
+        </Text>
+        <Text variant="caption" tone="muted" className="mt-1">
+          {hasFullWeek
+            ? formatStepWeekday(bestDay.startAt)
+            : incompleteWeekLabel}
+        </Text>
+      </View>
     </View>
   );
 }

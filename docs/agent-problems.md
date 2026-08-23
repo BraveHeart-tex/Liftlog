@@ -48,6 +48,46 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-08-23 — Graph refresh sandbox restriction during header action move
+
+- Context: Refreshing Graphify after moving Steps actions into the native header.
+- Tool/command: `rtk graphify update .`
+- Symptom: The in-sandbox refresh failed with `Operation not permitted` during AST rebuild.
+- Cause: Graphify required filesystem access restricted by the sandbox.
+- Workaround: Re-ran the same update with approved elevated filesystem access; it rebuilt the code graph successfully.
+- Status: workaround
+- Validation impact: Graphify completed with existing warnings for source files producing zero nodes and a changed community set.
+
+## 2026-08-23 — Graph refresh sandbox restriction during Steps redesign
+
+- Context: Refreshing Graphify after the Steps dashboard source changes.
+- Tool/command: `rtk graphify update .`
+- Symptom: The in-sandbox refresh failed with `Operation not permitted` during AST rebuild.
+- Cause: Graphify required filesystem access restricted by the sandbox.
+- Workaround: Re-ran the same update with approved elevated filesystem access; it rebuilt the code graph successfully.
+- Status: workaround
+- Validation impact: Graphify completed with existing warnings for source files producing zero nodes and a changed community set.
+
+## 2026-08-23 — Broad test wrapper stalled during Steps redesign validation
+
+- Context: Running the required behavior check after the connected Steps dashboard redesign.
+- Tool/command: `rtk test pnpm run test`
+- Symptom: The wrapper produced no output after about 90 seconds and was interrupted.
+- Cause: The wrapper execution path did not expose a diagnostic or completion.
+- Workaround: None; targeted TypeScript, ESLint, and Prettier checks passed.
+- Status: workaround
+- Validation impact: Broad tests remain unverified.
+
+## 2026-08-23 — Lint wrapper stalled during Steps redesign validation
+
+- Context: Validating the connected Steps dashboard redesign.
+- Tool/command: `rtk lint`
+- Symptom: The wrapper produced no output after about 60 seconds and was interrupted.
+- Cause: The wrapper execution path did not expose a diagnostic or completion.
+- Workaround: Ran repository-local ESLint against the changed Steps files.
+- Status: workaround
+- Validation impact: Full `rtk lint` remains unavailable; targeted local lint passed.
+
 ## 2026-08-23 — Graph refresh sandbox restriction
 
 - Context: Refreshing Graphify after the Log route and calendar source changes.

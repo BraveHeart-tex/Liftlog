@@ -8,34 +8,25 @@ import {
 import { View } from 'react-native';
 
 interface StepDayRowProps {
-  day: HealthStepDay;
-  goal: number;
+  day: Pick<HealthStepDay, 'steps' | 'startAt'>;
+  isToday?: boolean;
 }
 
-export function StepDayRow({ day, goal }: StepDayRowProps) {
-  const progress = goal > 0 ? Math.min(100, (day.steps / goal) * 100) : 0;
-
+export function StepDayRow({ day, isToday = false }: StepDayRowProps) {
   return (
-    <View className="border-border border-b py-3">
+    <View className="border-border min-h-13 border-b py-2">
       <View className="flex-row items-center justify-between gap-4">
         <View className="flex-1">
-          <Text variant="bodyMedium">{formatStepWeekday(day.startAt)}</Text>
+          <Text variant="bodyMedium">
+            {isToday ? 'Today' : formatStepWeekday(day.startAt)}
+          </Text>
           <Text variant="caption" tone="muted" className="mt-1">
             {formatStepMonthDay(day.startAt)}
           </Text>
         </View>
 
-        <View className="w-28 items-end">
+        <View className="items-end">
           <Text variant="bodyMedium">{formatSteps(day.steps)}</Text>
-          <View className="bg-muted mt-2 h-1.5 w-full overflow-hidden rounded-sm">
-            <View
-              className="bg-primary h-full"
-              style={{ width: `${progress}%` }}
-            />
-          </View>
-          <Text variant="caption" tone="muted" className="mt-1">
-            {Math.round(progress)}%
-          </Text>
         </View>
       </View>
     </View>
