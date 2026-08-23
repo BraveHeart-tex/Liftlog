@@ -48,6 +48,46 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-08-23 — Database integration suite blocked by existing migration mismatch
+
+- Context: Running the focused database integration file after removing onboarding tests.
+- Tool/command: Elevated `rtk ./node_modules/.bin/tsx --experimental-test-module-mocks --tsconfig tests/tsconfig.json --import ./tests/setup.ts --test tests/db/database.integration.test.ts`
+- Symptom: 44 of 45 tests failed during database setup before exercising their logic.
+- Cause: Existing generated migration SQL selects `exercises.equipment` while the legacy table has `category`.
+- Workaround: None applied; generated migrations are not edit targets under repository rules.
+- Status: workaround
+- Validation impact: The focused database suite remains blocked by the pre-existing migration mismatch; the onboarding-specific tests were removed successfully from collection.
+
+## 2026-08-23 — Focused test runner sandbox IPC restriction
+
+- Context: Running the focused database integration test after removing onboarding tests.
+- Tool/command: `rtk ./node_modules/.bin/tsx --experimental-test-module-mocks --tsconfig tests/tsconfig.json --import ./tests/setup.ts --test tests/db/database.integration.test.ts`
+- Symptom: The runner failed before test execution with `listen EPERM` while creating its temporary IPC pipe.
+- Cause: The sandbox restricts the temporary IPC operation used by `tsx`.
+- Workaround: Retry the same focused test with approved elevated process/filesystem access.
+- Status: workaround
+- Validation impact: The focused test has not executed yet; targeted ESLint and Prettier checks passed.
+
+## 2026-08-23 — Validation wrapper issues during onboarding removal
+
+- Context: Running the required validation after removing onboarding.
+- Tool/command: `rtk lint`, `rtk prettier --check .`, and `rtk test tests/db/database.integration.test.ts`
+- Symptom: Full lint produced no output for about 60 seconds and was interrupted; full Prettier exited without diagnostics; the focused test invocation was treated as a non-executable path and returned permission denied.
+- Cause: The wrapper’s full-check execution path did not complete, and `rtk test` expects a test command rather than a file path.
+- Workaround: Run targeted ESLint/Prettier checks directly through `rtk`, and use the documented `rtk test pnpm run test` command for tests.
+- Status: workaround
+- Validation impact: TypeScript passed; lint, formatting, and test validation are being retried with corrected commands.
+
+## 2026-08-23 — Graph refresh sandbox restriction during onboarding removal
+
+- Context: Refreshing Graphify after removing the onboarding route and related code.
+- Tool/command: `rtk graphify update .`
+- Symptom: The in-sandbox rebuild failed with `Operation not permitted` during AST cache rebuilding.
+- Cause: Graphify requires filesystem operations restricted by the sandbox.
+- Workaround: Retry the same update with approved elevated filesystem access.
+- Status: workaround
+- Validation impact: The graph refresh is pending the elevated retry; source validation is otherwise still pending.
+
 ## 2026-08-23 — Graph refresh sandbox restriction during equipment icon mapping
 
 - Context: Refreshing Graphify after assigning distinct equipment icons.

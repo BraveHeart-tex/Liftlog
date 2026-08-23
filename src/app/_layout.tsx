@@ -65,7 +65,6 @@ function RootNavigator() {
       }}
     >
       <Stack.Screen name="index" />
-      <Stack.Screen name="onboarding" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen
         name="settings"

@@ -57,15 +57,7 @@ import {
   mapExerciseHistoryRows,
   rebuildPersonalRecordsForExercises
 } from '@/src/features/progress/progress.repository';
-import {
-  completeOnboardingWithPreferences,
-  isOnboardingCompleted
-} from '@/src/features/settings/onboarding.repository';
-import {
-  getWeightUnit,
-  SETTINGS_KEYS,
-  setWeightUnit
-} from '@/src/features/settings/settings.repository';
+import { SETTINGS_KEYS } from '@/src/features/settings/settings.repository';
 import { saveStepSyncResult } from '@/src/features/steps/steps.repository';
 import { eq, inArray } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
@@ -247,77 +239,6 @@ async function createMigratedTestDatabase() {
 
   return { db, nodeClient };
 }
-
-test('completes onboarding with weight-unit preferences', async () => {
-  const { db, nodeClient } = await createMigratedTestDatabase();
-
-  try {
-    assert.deepEqual(
-      completeOnboardingWithPreferences(db, { weightUnit: 'lb' }),
-      { status: 'success' }
-    );
-    assert.equal(getWeightUnit(db), 'lb');
-    assert.equal(isOnboardingCompleted(db), true);
-  } finally {
-    nodeClient.closeSync();
-  }
-});
-
-test('weight-unit failure leaves onboarding incomplete', async () => {
-  const { db, nodeClient } = await createMigratedTestDatabase();
-
-  try {
-    nodeClient.execSync(`
-      CREATE TRIGGER reject_onboarding_weight_unit
-      BEFORE INSERT ON app_meta
-      WHEN NEW.key = '${SETTINGS_KEYS.weightUnit}'
-      BEGIN
-        SELECT RAISE(ABORT, 'weight unit persistence failed');
-      END;
-    `);
-
-    assert.throws(
-      () => completeOnboardingWithPreferences(db, { weightUnit: 'lb' }),
-      /weight unit persistence failed/
-    );
-    assert.equal(
-      db
-        .select({ value: appMeta.value })
-        .from(appMeta)
-        .where(eq(appMeta.key, SETTINGS_KEYS.weightUnit))
-        .get(),
-      undefined
-    );
-    assert.equal(isOnboardingCompleted(db), false);
-  } finally {
-    nodeClient.closeSync();
-  }
-});
-
-test('onboarding-completion failure rolls back weight-unit preference', async () => {
-  const { db, nodeClient } = await createMigratedTestDatabase();
-
-  try {
-    setWeightUnit(db, 'kg');
-    nodeClient.execSync(`
-      CREATE TRIGGER reject_onboarding_completion
-      BEFORE INSERT ON app_meta
-      WHEN NEW.key = 'onboarding.completed'
-      BEGIN
-        SELECT RAISE(ABORT, 'onboarding completion persistence failed');
-      END;
-    `);
-
-    assert.throws(
-      () => completeOnboardingWithPreferences(db, { weightUnit: 'lb' }),
-      /onboarding completion persistence failed/
-    );
-    assert.equal(getWeightUnit(db), 'kg');
-    assert.equal(isOnboardingCompleted(db), false);
-  } finally {
-    nodeClient.closeSync();
-  }
-});
 
 function seedTrackedExercise(db: DrizzleDb) {
   db.insert(exercises)
