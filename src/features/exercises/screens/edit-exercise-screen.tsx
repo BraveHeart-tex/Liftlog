@@ -42,7 +42,7 @@ export function EditExerciseScreen({ exerciseId }: { exerciseId?: string }) {
       return;
     }
 
-    setCategory(exercise.category as ExerciseCategory);
+    setCategory((exercise.equipment ?? 'barbell') as ExerciseCategory);
     setTrackingType(resolveTrackingType(exercise.trackingType));
     setSelectedPrimaryMuscles(primaryMuscles);
     setSelectedSecondaryMuscles(secondaryMuscles);
@@ -114,7 +114,7 @@ export function EditExerciseScreen({ exerciseId }: { exerciseId?: string }) {
 
     try {
       const updatedExercise = updateCustomExerciseDetails(exercise.id, {
-        category,
+        equipment: category,
         trackingType,
         primaryMuscles: selectedPrimaryMuscles,
         secondaryMuscles: selectedSecondaryMuscles

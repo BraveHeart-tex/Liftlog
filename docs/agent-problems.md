@@ -48,6 +48,36 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-08-23 — Generated equipment migration cannot copy legacy exercises
+
+- Context: Running database integration tests after propagating the schema property rename.
+- Tool/command: `rtk proxy pnpm run test`
+- Symptom: 47 tests failed during migration setup; migration `0014` attempted to select `exercises.equipment` from the pre-rename table, which only has `category`.
+- Cause: Drizzle generated a table-rebuild copy using the new column name instead of an explicit legacy-column-to-new-column mapping.
+- Workaround: None applied because repository rules designate migrations as generated artifacts and prohibit hand-editing them; source/type propagation is complete.
+- Status: `workaround`
+- Validation impact: TypeScript, lint, and non-database tests passed; database integration coverage remains blocked by the pre-existing generated migration.
+
+## 2026-08-23 — Direct Node test-loader workaround was incompatible
+
+- Context: Attempting to validate the exercise rename after `tsx` could not create its IPC pipe.
+- Tool/command: `rtk node --import tsx/esm --experimental-test-module-mocks --test <test-file>`
+- Symptom: Both the focused picker test and database integration test failed before execution with `ERR_REQUIRE_CYCLE_MODULE`.
+- Cause: The project’s TSX/ESM test-loader combination is not compatible with direct Node test loading.
+- Workaround: Returned to the documented `pnpm run test` command and prepared an elevated retry.
+- Status: `workaround`
+- Validation impact: The alternate runner did not provide test coverage; the documented runner retry remains authoritative.
+
+## 2026-08-23 — Validation tools hit sandbox restrictions during equipment rename
+
+- Context: Running the required full tests and Graphify refresh after propagating the exercises field rename.
+- Tool/command: `rtk test pnpm run test` and `rtk graphify update .`
+- Symptom: The first test attempt could not start its temporary IPC pipe; the in-sandbox Graphify refresh failed with `Operation not permitted` during AST rebuild.
+- Cause: The sandbox restricted temporary-process IPC/filesystem operations; no source-level cause was indicated.
+- Workaround: Retried the test through `rtk proxy pnpm run test`; reran Graphify with approved elevated filesystem access.
+- Status: `workaround`
+- Validation impact: Graphify rebuilt successfully; the elevated test run reached the suite but was blocked by the generated migration’s legacy-column mismatch.
+
 ## 2026-08-23 — Graph refresh sandbox restriction during header action move
 
 - Context: Refreshing Graphify after moving Steps actions into the native header.

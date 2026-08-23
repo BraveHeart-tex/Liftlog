@@ -120,7 +120,7 @@ export function useCustomExerciseForm({
 
     return {
       name: trimmedName,
-      category,
+      equipment: category,
       trackingType,
       primaryMuscles: JSON.stringify(selectedPrimaryMuscles),
       secondaryMuscles: JSON.stringify(selectedSecondaryMuscles),

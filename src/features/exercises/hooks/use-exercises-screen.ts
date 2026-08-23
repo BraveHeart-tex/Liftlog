@@ -26,7 +26,7 @@ function matchesExerciseFilter(
     case 'custom':
       return exercise.isCustom === 1;
     default:
-      return exercise.category.toLocaleLowerCase() === selectedFilter;
+      return exercise.equipment?.toLocaleLowerCase() === selectedFilter;
   }
 }
 

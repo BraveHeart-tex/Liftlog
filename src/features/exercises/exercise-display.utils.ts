@@ -20,8 +20,10 @@ const categoryLabelByValue = new Map<string, string>(
   CATEGORY_FILTERS.map(category => [category.value, category.label])
 );
 
-function getExerciseCategoryLabel(category: ExerciseListItem['category']) {
-  return categoryLabelByValue.get(category) ?? category;
+function getExerciseCategoryLabel(equipment: ExerciseListItem['equipment']) {
+  return equipment === null
+    ? ''
+    : (categoryLabelByValue.get(equipment) ?? equipment);
 }
 
 export function buildAlphabetizedExerciseListItems(
@@ -58,8 +60,8 @@ export function matchesExerciseSearch(
 
   const searchableValues = [
     exercise.name,
-    exercise.category,
-    getExerciseCategoryLabel(exercise.category),
+    exercise.equipment ?? '',
+    getExerciseCategoryLabel(exercise.equipment),
     ...(exercise.isCustom === 1 ? ['custom'] : [])
   ];
 

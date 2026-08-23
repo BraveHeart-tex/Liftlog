@@ -19,7 +19,9 @@ export const ExercisePickerRow = memo(function ExercisePickerRow({
   onPress
 }: ExercisePickerRowProps) {
   const metadataLabel =
-    exercise.isCustom === 1 ? 'Custom' : getCategoryLabel(exercise.category);
+    exercise.isCustom === 1
+      ? 'Custom'
+      : getCategoryLabel(exercise.equipment ?? '');
 
   return (
     <ExerciseRow

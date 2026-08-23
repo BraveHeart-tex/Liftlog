@@ -1,7 +1,7 @@
 import type { DrizzleDb } from '@/src/db';
 import { appMeta, exercises, type NewExercise } from '@/src/db/schema';
-import { MUSCLE_GROUP } from '@/src/features/exercises/exercise.constants';
 import { normalizeExerciseName } from '@/src/features/exercises/exercise-name.utils';
+import { MUSCLE_GROUP } from '@/src/features/exercises/exercise.constants';
 import { rebuildPersonalRecordsForExercise } from '@/src/features/progress/progress.repository';
 import { and, eq } from 'drizzle-orm';
 
@@ -13,7 +13,7 @@ const PLANK_DURATION_TRACKING_SEED_VERSION = '1';
 const createSeedExercises = (): NewExercise[] => [
   {
     name: 'Bench Press',
-    category: 'barbell',
+    equipment: 'barbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.chest]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.frontDelts,
@@ -24,7 +24,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Incline Bench Press',
-    category: 'barbell',
+    equipment: 'barbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.upperChest]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.frontDelts,
@@ -35,7 +35,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Overhead Press',
-    category: 'barbell',
+    equipment: 'barbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.shoulders]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.triceps,
@@ -46,7 +46,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Dumbbell Shoulder Press',
-    category: 'dumbbell',
+    equipment: 'dumbbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.shoulders]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.triceps]),
     isCustom: 0,
@@ -54,7 +54,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Lateral Raise',
-    category: 'dumbbell',
+    equipment: 'dumbbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.sideDelts]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.upperTraps]),
     isCustom: 0,
@@ -62,7 +62,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Tricep Pushdown',
-    category: 'cable',
+    equipment: 'cable',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.triceps]),
     secondaryMuscles: JSON.stringify([]),
     isCustom: 0,
@@ -70,7 +70,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Skull Crushers',
-    category: 'barbell',
+    equipment: 'barbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.triceps]),
     secondaryMuscles: JSON.stringify([]),
     isCustom: 0,
@@ -78,7 +78,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Barbell Row',
-    category: 'barbell',
+    equipment: 'barbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.upperBack, MUSCLE_GROUP.lats]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.biceps,
@@ -89,7 +89,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Dumbbell Row',
-    category: 'dumbbell',
+    equipment: 'dumbbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.lats]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.biceps,
@@ -100,7 +100,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Pull Up',
-    category: 'bodyweight',
+    equipment: 'bodyweight',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.lats]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.biceps,
@@ -111,7 +111,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Lat Pulldown',
-    category: 'machine',
+    equipment: 'machine',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.lats]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.biceps,
@@ -122,7 +122,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Face Pull',
-    category: 'cable',
+    equipment: 'cable',
     primaryMuscles: JSON.stringify([
       MUSCLE_GROUP.rearDelts,
       MUSCLE_GROUP.upperBack
@@ -133,7 +133,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Bicep Curl',
-    category: 'barbell',
+    equipment: 'barbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.biceps]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.forearms]),
     isCustom: 0,
@@ -141,7 +141,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Hammer Curl',
-    category: 'dumbbell',
+    equipment: 'dumbbell',
     primaryMuscles: JSON.stringify([
       MUSCLE_GROUP.biceps,
       MUSCLE_GROUP.brachialis
@@ -152,7 +152,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Chest-Supported Row',
-    category: 'machine',
+    equipment: 'machine',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.upperBack, MUSCLE_GROUP.lats]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.biceps,
@@ -163,7 +163,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Seated Cable Row',
-    category: 'cable',
+    equipment: 'cable',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.upperBack, MUSCLE_GROUP.lats]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.biceps]),
     isCustom: 0,
@@ -171,7 +171,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Dips',
-    category: 'bodyweight',
+    equipment: 'bodyweight',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.chest, MUSCLE_GROUP.triceps]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.frontDelts]),
     isCustom: 0,
@@ -179,7 +179,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Back Squat',
-    category: 'barbell',
+    equipment: 'barbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.quads, MUSCLE_GROUP.glutes]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.adductors,
@@ -190,7 +190,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Front Squat',
-    category: 'barbell',
+    equipment: 'barbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.quads]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.glutes,
@@ -201,7 +201,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Deadlift',
-    category: 'barbell',
+    equipment: 'barbell',
     primaryMuscles: JSON.stringify([
       MUSCLE_GROUP.glutes,
       MUSCLE_GROUP.hamstrings
@@ -215,7 +215,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Romanian Deadlift',
-    category: 'barbell',
+    equipment: 'barbell',
     primaryMuscles: JSON.stringify([
       MUSCLE_GROUP.hamstrings,
       MUSCLE_GROUP.glutes
@@ -226,7 +226,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Hip Thrust',
-    category: 'barbell',
+    equipment: 'barbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.glutes]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.hamstrings]),
     isCustom: 0,
@@ -234,7 +234,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Leg Press',
-    category: 'machine',
+    equipment: 'machine',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.quads]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.glutes,
@@ -245,7 +245,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Leg Extension',
-    category: 'machine',
+    equipment: 'machine',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.quads]),
     secondaryMuscles: JSON.stringify([]),
     isCustom: 0,
@@ -253,7 +253,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Leg Curl',
-    category: 'machine',
+    equipment: 'machine',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.hamstrings]),
     secondaryMuscles: JSON.stringify([]),
     isCustom: 0,
@@ -261,7 +261,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Walking Lunges',
-    category: 'dumbbell',
+    equipment: 'dumbbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.quads, MUSCLE_GROUP.glutes]),
     secondaryMuscles: JSON.stringify([
       MUSCLE_GROUP.hamstrings,
@@ -272,7 +272,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Calf Raise',
-    category: 'machine',
+    equipment: 'machine',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.calves]),
     secondaryMuscles: JSON.stringify([]),
     isCustom: 0,
@@ -280,7 +280,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Bulgarian Split Squat',
-    category: 'dumbbell',
+    equipment: 'dumbbell',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.quads, MUSCLE_GROUP.glutes]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.adductors]),
     isCustom: 0,
@@ -288,7 +288,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Plank',
-    category: 'bodyweight',
+    equipment: 'bodyweight',
     trackingType: 'duration',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.abs]),
     secondaryMuscles: JSON.stringify([
@@ -300,7 +300,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Hanging Leg Raise',
-    category: 'bodyweight',
+    equipment: 'bodyweight',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.abs, MUSCLE_GROUP.hipFlexors]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.grip]),
     isCustom: 0,
@@ -308,7 +308,7 @@ const createSeedExercises = (): NewExercise[] => [
   },
   {
     name: 'Cable Crunch',
-    category: 'cable',
+    equipment: 'cable',
     primaryMuscles: JSON.stringify([MUSCLE_GROUP.abs]),
     secondaryMuscles: JSON.stringify([MUSCLE_GROUP.obliques]),
     isCustom: 0,

@@ -10,14 +10,14 @@ import {
   type WorkoutTemplate,
   type WorkoutTemplateExercise
 } from '@/src/db/schema';
-import { toLocalDateKey } from '@/src/lib/utils/date.utils';
 import {
   isExerciseNameUniqueConstraintError,
   validateStagedCustomExerciseNames
 } from '@/src/features/exercises/exercise.repository';
-import { resolveTemplateName } from '@/src/features/workouts/shared/workout-display.utils';
 import { normalizeSupersetRows } from '@/src/features/workouts/shared/superset.utils';
+import { resolveTemplateName } from '@/src/features/workouts/shared/workout-display.utils';
 import { withDatabaseSpan } from '@/src/lib/db/database-observability';
+import { toLocalDateKey } from '@/src/lib/utils/date.utils';
 import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
 
 export interface WorkoutStartTemplateItem {
@@ -56,7 +56,7 @@ interface WorkoutTemplateDetailRow {
   exerciseId: Exercise['id'] | null;
   exerciseName: Exercise['name'] | null;
   exerciseNormalizedName: Exercise['normalizedName'] | null;
-  exerciseCategory: Exercise['category'] | null;
+  exerciseEquipment: Exercise['equipment'] | null;
   exerciseTrackingType: Exercise['trackingType'] | null;
   exercisePrimaryMuscles: Exercise['primaryMuscles'] | null;
   exerciseSecondaryMuscles: Exercise['secondaryMuscles'] | null;
@@ -170,7 +170,7 @@ export function getWorkoutTemplateDetailRowsQuery(
       exerciseId: exercises.id,
       exerciseName: exercises.name,
       exerciseNormalizedName: exercises.normalizedName,
-      exerciseCategory: exercises.category,
+      exerciseEquipment: exercises.equipment,
       exerciseTrackingType: exercises.trackingType,
       exercisePrimaryMuscles: exercises.primaryMuscles,
       exerciseSecondaryMuscles: exercises.secondaryMuscles,
@@ -301,7 +301,7 @@ export function mapWorkoutTemplateDetailRows(
       id: row.exerciseId,
       name: row.exerciseName!,
       normalizedName: row.exerciseNormalizedName!,
-      category: row.exerciseCategory!,
+      equipment: row.exerciseEquipment!,
       trackingType: row.exerciseTrackingType!,
       primaryMuscles: row.exercisePrimaryMuscles,
       secondaryMuscles: row.exerciseSecondaryMuscles,

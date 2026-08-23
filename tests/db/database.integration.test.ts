@@ -325,7 +325,7 @@ function seedTrackedExercise(db: DrizzleDb) {
       id: 'exercise-1',
       name: 'Push-up',
       normalizedName: 'push-up',
-      category: 'chest',
+      equipment: 'chest',
       trackingType: 'reps'
     })
     .run();
@@ -390,14 +390,14 @@ function seedHistoricalExercises(db: DrizzleDb) {
         id: 'exercise-a',
         name: 'Exercise A',
         normalizedName: 'exercise a',
-        category: 'other',
+        equipment: 'other',
         trackingType: 'reps'
       },
       {
         id: 'exercise-b',
         name: 'Exercise B',
         normalizedName: 'exercise b',
-        category: 'other',
+        equipment: 'other',
         trackingType: 'reps'
       }
     ])
@@ -681,7 +681,7 @@ test('exercise usage query checks workout and template references together', asy
             id: 'usage-exercise',
             name: 'Usage exercise',
             normalizedName: 'usage exercise',
-            category: 'other'
+            equipment: 'other'
           })
           .run();
         db.insert(workouts)
@@ -772,7 +772,7 @@ test('custom exercise updates use reduced statement paths', async () => {
           id: 'custom-exercise',
           name: 'Custom exercise',
           normalizedName: 'custom exercise',
-          category: 'other',
+          equipment: 'other',
           trackingType: 'reps',
           isCustom: 1
         },
@@ -780,7 +780,7 @@ test('custom exercise updates use reduced statement paths', async () => {
           id: 'built-in-exercise',
           name: 'Built-in exercise',
           normalizedName: 'built-in exercise',
-          category: 'other',
+          equipment: 'other',
           trackingType: 'reps'
         }
       ])
@@ -809,11 +809,11 @@ test('custom exercise updates use reduced statement paths', async () => {
     nodeClient.resetPreparedStatementCount();
     assert.equal(
       updateCustomExerciseDetails(db, 'custom-exercise', {
-        category: 'arms',
+        equipment: 'arms',
         trackingType: 'reps',
         primaryMuscles: ['biceps'],
         secondaryMuscles: []
-      })?.category,
+      })?.equipment,
       'arms'
     );
     assert.equal(nodeClient.getPreparedStatementCount(), 2);
@@ -821,7 +821,7 @@ test('custom exercise updates use reduced statement paths', async () => {
     nodeClient.resetPreparedStatementCount();
     assert.equal(
       updateCustomExerciseDetails(db, 'custom-exercise', {
-        category: 'cardio',
+        equipment: 'cardio',
         trackingType: 'duration',
         primaryMuscles: [],
         secondaryMuscles: []
@@ -929,7 +929,7 @@ test('exercise name writes enforce and translate active normalized conflicts', a
     const created = createExercise(db, {
       id: 'unicode-name',
       name: ' ÜBUNG ',
-      category: 'other'
+      equipment: 'other'
     });
 
     assert.equal(created.normalizedName, 'übung');
@@ -940,14 +940,14 @@ test('exercise name writes enforce and translate active normalized conflicts', a
         createExercise(db, {
           id: 'duplicate-name',
           name: 'übung',
-          category: 'other'
+          equipment: 'other'
         }),
       ExerciseNameConflictError
     );
     assert.throws(
       () =>
         nodeClient.execSync(`
-          INSERT INTO exercises (id, name, category, created_at)
+          INSERT INTO exercises (id, name, equipment, created_at)
           VALUES ('missing-normalized-name', 'Missing', 'other', 1);
         `),
       /NOT NULL constraint failed: exercises.normalized_name/
@@ -956,7 +956,7 @@ test('exercise name writes enforce and translate active normalized conflicts', a
     createExercise(db, {
       id: 'rename-target',
       name: 'Different',
-      category: 'other'
+      equipment: 'other'
     });
     assert.throws(
       () =>
@@ -973,7 +973,7 @@ test('exercise name writes enforce and translate active normalized conflicts', a
           id: 'archived-name',
           name: 'übung',
           normalizedName: 'übung',
-          category: 'other',
+          equipment: 'other',
           isArchived: 1
         })
         .run()
@@ -993,7 +993,7 @@ test('staged exercise saves scope name checks to staged names', async () => {
           id: `catalog-exercise-${index}`,
           name: `Catalog exercise ${index}`,
           normalizedName: `catalog exercise ${index}`,
-          category: 'other'
+          equipment: 'other'
         }))
       )
       .run();
@@ -1035,7 +1035,7 @@ test('staged exercise saves scope name checks to staged names', async () => {
       id,
       name,
       normalizedName: 'stale',
-      category: 'other',
+      equipment: 'other',
       trackingType: 'weight_reps' as const,
       primaryMuscles: '[]',
       secondaryMuscles: '[]',
@@ -1216,7 +1216,7 @@ test('tracking-type update rolls back when personal-record rebuild fails', async
     assert.throws(
       () =>
         updateCustomExerciseDetails(db, 'exercise-1', {
-          category: 'cardio',
+          equipment: 'cardio',
           trackingType: 'duration',
           primaryMuscles: [],
           secondaryMuscles: []
@@ -1227,13 +1227,13 @@ test('tracking-type update rolls back when personal-record rebuild fails', async
     assert.deepEqual(
       db
         .select({
-          category: exercises.category,
+          equipment: exercises.equipment,
           trackingType: exercises.trackingType
         })
         .from(exercises)
         .where(eq(exercises.id, 'exercise-1'))
         .get(),
-      { category: 'chest', trackingType: 'reps' }
+      { equipment: 'chest', trackingType: 'reps' }
     );
   } finally {
     nodeClient.closeSync();
@@ -1250,21 +1250,21 @@ test('custom exercise removal preserves results with three-statement paths', asy
           id: 'unused-custom',
           name: 'Unused custom',
           normalizedName: 'unused custom',
-          category: 'other',
+          equipment: 'other',
           isCustom: 1
         },
         {
           id: 'referenced-custom',
           name: 'Referenced custom',
           normalizedName: 'referenced custom',
-          category: 'other',
+          equipment: 'other',
           isCustom: 1
         },
         {
           id: 'built-in',
           name: 'Built-in',
           normalizedName: 'built-in',
-          category: 'other'
+          equipment: 'other'
         }
       ])
       .run();
@@ -1315,7 +1315,7 @@ test('custom exercise removal archives after a defensive delete fallback', async
         id: 'fallback-custom',
         name: 'Fallback custom',
         normalizedName: 'fallback custom',
-        category: 'other',
+        equipment: 'other',
         isCustom: 1
       })
       .run();
@@ -1643,37 +1643,37 @@ test('recent exercises are deduplicated before the limit', async () => {
           id: 'exercise-a',
           name: 'A',
           normalizedName: 'a',
-          category: 'other'
+          equipment: 'other'
         },
         {
           id: 'exercise-b',
           name: 'B',
           normalizedName: 'b',
-          category: 'other'
+          equipment: 'other'
         },
         {
           id: 'exercise-c',
           name: 'C',
           normalizedName: 'c',
-          category: 'other'
+          equipment: 'other'
         },
         {
           id: 'exercise-d',
           name: 'D',
           normalizedName: 'd',
-          category: 'other'
+          equipment: 'other'
         },
         {
           id: 'exercise-archived',
           name: 'Archived',
           normalizedName: 'archived',
-          category: 'other'
+          equipment: 'other'
         },
         {
           id: 'exercise-in-progress',
           name: 'In Progress',
           normalizedName: 'in progress',
-          category: 'other'
+          equipment: 'other'
         }
       ])
       .run();
@@ -1817,7 +1817,7 @@ test('exercise history selects workouts and sets by completed sets', async () =>
         id: 'exercise-history',
         name: 'History exercise',
         normalizedName: 'history exercise',
-        category: 'other'
+        equipment: 'other'
       })
       .run();
     db.insert(workouts)
@@ -2397,7 +2397,7 @@ test('historical saves rebuild records for all affected exercises', async t => {
           id: 'exercise-c',
           name: 'Exercise C',
           normalizedName: 'exercise c',
-          category: 'other',
+          equipment: 'other',
           trackingType: 'reps'
         })
         .run();
@@ -2481,21 +2481,21 @@ test('historical saves rebuild records for all affected exercises', async t => {
             id: `remove-exercise-${index}`,
             name: `Remove Exercise ${index}`,
             normalizedName: `remove exercise ${index}`,
-            category: 'other',
+            equipment: 'other',
             trackingType: 'reps'
           },
           {
             id: `update-exercise-${index}`,
             name: `Update Exercise ${index}`,
             normalizedName: `update exercise ${index}`,
-            category: 'other',
+            equipment: 'other',
             trackingType: 'reps'
           },
           {
             id: `add-exercise-${index}`,
             name: `Add Exercise ${index}`,
             normalizedName: `add exercise ${index}`,
-            category: 'other',
+            equipment: 'other',
             trackingType: 'reps'
           }
         ]).flat();

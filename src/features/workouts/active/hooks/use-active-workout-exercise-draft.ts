@@ -250,7 +250,7 @@ export function useActiveWorkoutExerciseDraft({
         id: generateUuid(),
         name: exercise.name,
         normalizedName: normalizeExerciseName(exercise.name),
-        category: exercise.category,
+        equipment: exercise.equipment ?? null,
         trackingType: exercise.trackingType ?? 'weight_reps',
         primaryMuscles: exercise.primaryMuscles ?? '[]',
         secondaryMuscles: exercise.secondaryMuscles ?? '[]',

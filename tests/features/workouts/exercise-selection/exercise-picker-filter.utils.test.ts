@@ -5,10 +5,10 @@ import { matchesExercisePickerFilters } from '@/src/features/workouts/exercise-s
 
 function createExercise(
   id: string,
-  category: ExerciseListItem['category'],
+  equipment: ExerciseListItem['equipment'],
   isCustom = 0
 ): ExerciseListItem {
-  return { id, category, isCustom } as ExerciseListItem;
+  return { id, equipment, isCustom } as ExerciseListItem;
 }
 
 test('combines primary and equipment filters', () => {

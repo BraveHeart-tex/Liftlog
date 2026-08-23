@@ -504,7 +504,7 @@ function WorkoutTemplateDetailLoaded({
                             {exercise?.name ?? 'Unknown exercise'}
                           </Text>
                           <Text variant="caption" tone="muted" className="mt-1">
-                            {exercise?.category ?? 'Exercise'}
+                            {exercise?.equipment ?? 'Exercise'}
                           </Text>
                         </View>
                       </CardContent>

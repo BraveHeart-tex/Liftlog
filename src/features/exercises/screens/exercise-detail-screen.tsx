@@ -252,7 +252,7 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId?: string }) {
       <View>
         <Text variant="h2">{exercise.name}</Text>
         <Text variant="small" tone="muted" className="mt-1">
-          {toTitleCase(exercise.category)}
+          {toTitleCase(exercise.equipment ?? '')}
         </Text>
       </View>
 

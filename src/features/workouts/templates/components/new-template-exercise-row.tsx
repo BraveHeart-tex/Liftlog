@@ -29,7 +29,7 @@ export function NewTemplateExerciseRow({
       ? 'Exercise'
       : exercise.isCustom === 1
         ? 'Custom'
-        : getCategoryLabel(exercise.category);
+        : getCategoryLabel(exercise.equipment ?? '');
 
   return (
     <View

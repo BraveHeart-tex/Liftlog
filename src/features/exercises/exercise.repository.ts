@@ -6,8 +6,8 @@ import {
   type Exercise,
   type NewExercise
 } from '@/src/db/schema';
-import { rebuildPersonalRecordsForExerciseInTransaction } from '@/src/features/progress/progress.repository';
 import { normalizeExerciseName } from '@/src/features/exercises/exercise-name.utils';
+import { rebuildPersonalRecordsForExerciseInTransaction } from '@/src/features/progress/progress.repository';
 import { withDatabaseSpan } from '@/src/lib/db/database-observability';
 import { and, count, eq, exists, inArray, ne, or, sql } from 'drizzle-orm';
 import type { InferColumnsDataTypes } from 'drizzle-orm/column';
@@ -15,7 +15,7 @@ import type { InferColumnsDataTypes } from 'drizzle-orm/column';
 const exerciseListFields = {
   id: exercises.id,
   name: exercises.name,
-  category: exercises.category,
+  equipment: exercises.equipment,
   trackingType: exercises.trackingType,
   primaryMuscles: exercises.primaryMuscles,
   secondaryMuscles: exercises.secondaryMuscles,
@@ -27,7 +27,7 @@ const exerciseListFields = {
 export type ExerciseListItem = InferColumnsDataTypes<typeof exerciseListFields>;
 
 interface CustomExerciseDetailsUpdate {
-  category: Exercise['category'];
+  equipment: Exercise['equipment'];
   trackingType: Exercise['trackingType'];
   primaryMuscles: string[];
   secondaryMuscles: string[];
@@ -230,7 +230,7 @@ export function updateCustomExerciseDetails(
         const updatedExercise = tx
           .update(exercises)
           .set({
-            category: details.category,
+            equipment: details.equipment,
             trackingType: details.trackingType,
             primaryMuscles: JSON.stringify(details.primaryMuscles),
             secondaryMuscles: JSON.stringify(details.secondaryMuscles)

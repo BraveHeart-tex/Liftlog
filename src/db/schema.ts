@@ -1,5 +1,6 @@
 import { toLocalDateKey } from '@/src/lib/utils/date.utils';
 import { generateUuid } from '@/src/lib/utils/uuid.utils';
+import { sql } from 'drizzle-orm';
 import {
   type AnySQLiteColumn,
   foreignKey,
@@ -10,7 +11,6 @@ import {
   text,
   uniqueIndex
 } from 'drizzle-orm/sqlite-core';
-import { sql } from 'drizzle-orm';
 
 export const appMeta = sqliteTable('app_meta', {
   key: text('key').primaryKey(),
@@ -25,7 +25,7 @@ export const exercises = sqliteTable(
       .$defaultFn(() => generateUuid()),
     name: text('name').notNull(),
     normalizedName: text('normalized_name').notNull(),
-    category: text('category').notNull(),
+    equipment: text('equipment'),
     trackingType: text('tracking_type').notNull().default('weight_reps'),
     primaryMuscles: text('primary_muscles'),
     secondaryMuscles: text('secondary_muscles'),
