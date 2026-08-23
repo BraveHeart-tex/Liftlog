@@ -12,19 +12,17 @@ import {
   type TrackingType
 } from '@/src/features/progress/tracking.domain';
 import { triggerHapticSuccess } from '@/src/lib/haptics/haptics';
-import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { router } from 'expo-router';
 import { SaveIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Keyboard, View, type ScrollView } from 'react-native';
 
 export function EditExerciseScreen({ exerciseId }: { exerciseId?: string }) {
-  const reduceMotion = useReducedMotion();
   const { exercise, primaryMuscles, secondaryMuscles, isLoading } =
     useCustomExerciseEdit(exerciseId);
   const { updateCustomExerciseDetails } = useExerciseActions();
   const scrollRef = useRef<ScrollView>(null);
-  const [category, setCategory] = useState<ExerciseCategory>('barbell');
+  const [equipment, setEquipment] = useState<ExerciseCategory | null>(null);
   const [trackingType, setTrackingType] = useState<TrackingType>('weight_reps');
   const [selectedPrimaryMuscles, setSelectedPrimaryMuscles] = useState<
     string[]
@@ -32,8 +30,6 @@ export function EditExerciseScreen({ exerciseId }: { exerciseId?: string }) {
   const [selectedSecondaryMuscles, setSelectedSecondaryMuscles] = useState<
     string[]
   >([]);
-  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
-  const [errorScrollRequestId, setErrorScrollRequestId] = useState(0);
   const [saveError, setSaveError] = useState<string | undefined>();
   const [isSaving, setIsSaving] = useState(false);
 
@@ -42,21 +38,15 @@ export function EditExerciseScreen({ exerciseId }: { exerciseId?: string }) {
       return;
     }
 
-    setCategory((exercise.equipment ?? 'barbell') as ExerciseCategory);
+    setEquipment((exercise.equipment ?? null) as ExerciseCategory | null);
     setTrackingType(resolveTrackingType(exercise.trackingType));
     setSelectedPrimaryMuscles(primaryMuscles);
     setSelectedSecondaryMuscles(secondaryMuscles);
-    setAttemptedSubmit(false);
     setSaveError(undefined);
   }, [exercise, primaryMuscles, secondaryMuscles]);
 
-  const primaryMusclesError =
-    attemptedSubmit && selectedPrimaryMuscles.length === 0
-      ? 'Select at least one primary muscle'
-      : undefined;
-
-  const handleCategoryChange = (nextCategory: ExerciseCategory) => {
-    setCategory(nextCategory);
+  const handleEquipmentChange = (nextEquipment: ExerciseCategory | null) => {
+    setEquipment(nextEquipment);
     setSaveError(undefined);
   };
 
@@ -96,15 +86,7 @@ export function EditExerciseScreen({ exerciseId }: { exerciseId?: string }) {
   };
 
   const submit = () => {
-    setAttemptedSubmit(true);
-
-    if (
-      !exercise ||
-      exercise.isCustom !== 1 ||
-      selectedPrimaryMuscles.length === 0
-    ) {
-      setErrorScrollRequestId(current => current + 1);
-
+    if (!exercise || exercise.isCustom !== 1) {
       return;
     }
 
@@ -114,7 +96,7 @@ export function EditExerciseScreen({ exerciseId }: { exerciseId?: string }) {
 
     try {
       const updatedExercise = updateCustomExerciseDetails(exercise.id, {
-        equipment: category,
+        equipment,
         trackingType,
         primaryMuscles: selectedPrimaryMuscles,
         secondaryMuscles: selectedSecondaryMuscles
@@ -214,21 +196,16 @@ export function EditExerciseScreen({ exerciseId }: { exerciseId?: string }) {
       <View>
         <Text variant="h2">{exercise.name}</Text>
         <Text variant="small" tone="muted" className="mt-1">
-          Update category and muscle groups for this custom exercise.
+          Update setup details for this custom exercise.
         </Text>
 
         <View className="mt-6">
           <ExerciseMetadataForm
-            category={category}
+            equipment={equipment}
             trackingType={trackingType}
             selectedPrimaryMuscles={selectedPrimaryMuscles}
             selectedSecondaryMuscles={selectedSecondaryMuscles}
-            primaryMusclesError={primaryMusclesError}
-            errorScrollRequestId={errorScrollRequestId}
-            onScrollToError={y =>
-              scrollRef.current?.scrollTo({ y, animated: !reduceMotion })
-            }
-            setCategory={handleCategoryChange}
+            setEquipment={handleEquipmentChange}
             setTrackingType={handleTrackingTypeChange}
             togglePrimaryMuscle={togglePrimaryMuscle}
             toggleSecondaryMuscle={toggleSecondaryMuscle}

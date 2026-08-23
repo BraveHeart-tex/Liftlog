@@ -48,6 +48,76 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-08-23 — Graph refresh sandbox restriction during equipment icon mapping
+
+- Context: Refreshing Graphify after assigning distinct equipment icons.
+- Tool/command: `rtk graphify update .`
+- Symptom: The in-sandbox rebuild failed with `Operation not permitted`.
+- Cause: Graphify's AST cache rebuild requires filesystem access restricted by the sandbox.
+- Workaround: Re-ran with approved elevated filesystem access; the graph rebuilt successfully.
+- Status: workaround
+- Validation impact: Graphify completed with the existing zero-node source warnings.
+
+## 2026-08-23 — Graph refresh sandbox restriction during muscle selector styling
+
+- Context: Refreshing Graphify after adopting the shared segmented control and subtle chip colors.
+- Tool/command: `rtk graphify update .`
+- Symptom: The in-sandbox rebuild failed with `Operation not permitted`.
+- Cause: Graphify's AST cache rebuild requires filesystem access restricted by the sandbox.
+- Workaround: Re-ran with approved elevated filesystem access; the graph rebuilt successfully.
+- Status: workaround
+- Validation impact: Graphify completed with the existing zero-node source warnings.
+
+## 2026-08-23 — Graph refresh sandbox restriction during separator adjustment
+
+- Context: Refreshing Graphify after moving the setup divider to the helper text.
+- Tool/command: `rtk graphify update .`
+- Symptom: The in-sandbox rebuild failed with `Operation not permitted`.
+- Cause: Graphify's AST cache rebuild requires filesystem access restricted by the sandbox.
+- Workaround: Re-ran with approved elevated filesystem access; the graph rebuilt successfully.
+- Status: workaround
+- Validation impact: Graphify completed with the existing zero-node source warnings.
+
+## 2026-08-23 — Graph refresh sandbox restriction during spacing polish
+
+- Context: Refreshing Graphify after the exercise setup spacing adjustment.
+- Tool/command: `rtk graphify update .`
+- Symptom: The in-sandbox rebuild failed with `Operation not permitted`.
+- Cause: Graphify's AST cache rebuild requires filesystem access restricted by the sandbox.
+- Workaround: Re-ran with approved elevated filesystem access; the graph rebuilt successfully.
+- Status: workaround
+- Validation impact: Graphify completed with the existing zero-node source warnings.
+
+## 2026-08-23 — Graph refresh required elevated filesystem access for exercise form
+
+- Context: Refreshing Graphify after the exercise metadata form source changes.
+- Tool/command: `rtk graphify update .`
+- Symptom: The in-sandbox AST rebuild failed with `Operation not permitted`.
+- Cause: Graphify's cache rebuild needs filesystem operations restricted by the sandbox.
+- Workaround: Re-ran the update with approved elevated filesystem access; the graph rebuilt successfully.
+- Status: workaround
+- Validation impact: Graphify completed with warnings for source files producing zero nodes and a changed community set.
+
+## 2026-08-23 — Exercise form test suite blocked by generated migration
+
+- Context: Running the required test suite after the exercise metadata form refactor.
+- Tool/command: `rtk test pnpm run test`, then `rtk proxy pnpm run test` with approved temporary-process access.
+- Symptom: The sandboxed runner could not create the TSX IPC pipe; the elevated retry ran 80 tests but 47 database integration tests failed during migration setup.
+- Cause: Generated migration SQL copies from the legacy `category` column while the current schema expects `equipment`.
+- Workaround: None applied; migrations are generated artifacts and were not edited.
+- Status: workaround
+- Validation impact: 33 tests passed; 47 database integration tests remain blocked by the pre-existing migration mismatch.
+
+## 2026-08-23 — Impeccable helper path required installed skill location
+
+- Context: Loading frontend redesign guidance before refactoring the exercise metadata form.
+- Tool/command: `rtk node .agents/skills/impeccable/scripts/context.mjs --target src/features/exercises/components/exercise-metadata-form.tsx`
+- Symptom: Node reported that the project-relative helper script did not exist.
+- Cause: The skill is installed outside the repository at the absolute path provided by the session skill catalog.
+- Workaround: Retry with `/Users/bora/.agents/skills/impeccable/scripts/context.mjs`.
+- Status: resolved
+- Validation impact: No source files changed; guidance loading required one retry.
+
 ## 2026-08-23 — Generated equipment migration cannot copy legacy exercises
 
 - Context: Running database integration tests after propagating the schema property rename.

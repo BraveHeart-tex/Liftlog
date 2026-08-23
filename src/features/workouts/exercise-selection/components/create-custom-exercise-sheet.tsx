@@ -19,7 +19,7 @@ import {
   useState,
   type ComponentRef
 } from 'react';
-import { SaveIcon } from 'lucide-react-native';
+import { PlusIcon } from 'lucide-react-native';
 import { Keyboard, View } from 'react-native';
 import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 
@@ -89,14 +89,13 @@ const CreateCustomExerciseSheetContent = memo(
     const [errorScrollRequestId, setErrorScrollRequestId] = useState(0);
     const {
       name,
-      category,
+      equipment,
       trackingType,
       selectedPrimaryMuscles,
       selectedSecondaryMuscles,
       nameError,
-      primaryMusclesError,
       setName,
-      setCategory,
+      setEquipment,
       setTrackingType,
       togglePrimaryMuscle,
       toggleSecondaryMuscle,
@@ -127,6 +126,8 @@ const CreateCustomExerciseSheetContent = memo(
       reset();
     };
 
+    const canCreateExercise = Boolean(name.trim()) && Boolean(trackingType);
+
     return (
       <>
         <BottomSheetHeader>
@@ -143,18 +144,17 @@ const CreateCustomExerciseSheetContent = memo(
           <ExerciseMetadataForm
             inputVariant="bottom-sheet"
             name={name}
-            category={category}
+            equipment={equipment}
             trackingType={trackingType}
             selectedPrimaryMuscles={selectedPrimaryMuscles}
             selectedSecondaryMuscles={selectedSecondaryMuscles}
             nameError={nameError}
-            primaryMusclesError={primaryMusclesError}
             errorScrollRequestId={errorScrollRequestId}
             onScrollToError={y =>
               scrollRef.current?.scrollTo({ y, animated: !reduceMotion })
             }
             setName={setName}
-            setCategory={setCategory}
+            setEquipment={setEquipment}
             setTrackingType={setTrackingType}
             togglePrimaryMuscle={togglePrimaryMuscle}
             toggleSecondaryMuscle={toggleSecondaryMuscle}
@@ -170,7 +170,8 @@ const CreateCustomExerciseSheetContent = memo(
             </View>
             <View className="flex-1">
               <Button
-                leftIcon={<Icon as={SaveIcon} tone="primaryForeground" />}
+                disabled={!canCreateExercise}
+                leftIcon={<Icon as={PlusIcon} tone="primaryForeground" />}
                 onPress={handleSave}
               >
                 {saveLabel}

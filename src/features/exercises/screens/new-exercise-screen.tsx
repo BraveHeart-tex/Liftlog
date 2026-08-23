@@ -1,7 +1,6 @@
 import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { Screen } from '@/src/components/ui/screen';
-import { Text } from '@/src/components/ui/text';
 import type { NewExercise } from '@/src/db/schema';
 import { ExerciseMetadataForm } from '@/src/features/exercises/components/exercise-metadata-form';
 import { ExerciseNameConflictError } from '@/src/features/exercises/exercise.repository';
@@ -10,7 +9,7 @@ import { useExerciseActions } from '@/src/features/exercises/hooks/use-exercise-
 import { triggerHapticSuccess } from '@/src/lib/haptics/haptics';
 import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { router } from 'expo-router';
-import { SaveIcon } from 'lucide-react-native';
+import { PlusIcon } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { Keyboard, View, type ScrollView } from 'react-native';
 
@@ -21,14 +20,13 @@ export function NewExerciseScreen() {
   const [errorScrollRequestId, setErrorScrollRequestId] = useState(0);
   const {
     name,
-    category,
+    equipment,
     trackingType,
     selectedPrimaryMuscles,
     selectedSecondaryMuscles,
     nameError,
-    primaryMusclesError,
     setName,
-    setCategory,
+    setEquipment,
     setTrackingType,
     togglePrimaryMuscle,
     toggleSecondaryMuscle,
@@ -74,6 +72,8 @@ export function NewExerciseScreen() {
     }
   };
 
+  const canCreateExercise = Boolean(name.trim()) && Boolean(trackingType);
+
   return (
     <Screen
       scroll
@@ -88,35 +88,31 @@ export function NewExerciseScreen() {
           </View>
           <View className="flex-1">
             <Button
-              leftIcon={<Icon as={SaveIcon} tone="primaryForeground" />}
+              disabled={!canCreateExercise}
+              leftIcon={<Icon as={PlusIcon} tone="primaryForeground" />}
               onPress={submit}
             >
-              Save
+              Create exercise
             </Button>
           </View>
         </View>
       }
     >
       <View>
-        <Text variant="small" tone="muted">
-          Add only what you need for fast logging.
-        </Text>
-
-        <View className="mt-6">
+        <View>
           <ExerciseMetadataForm
             name={name}
-            category={category}
+            equipment={equipment}
             trackingType={trackingType}
             selectedPrimaryMuscles={selectedPrimaryMuscles}
             selectedSecondaryMuscles={selectedSecondaryMuscles}
             nameError={nameError}
-            primaryMusclesError={primaryMusclesError}
             errorScrollRequestId={errorScrollRequestId}
             onScrollToError={y =>
               scrollRef.current?.scrollTo({ y, animated: !reduceMotion })
             }
             setName={setName}
-            setCategory={setCategory}
+            setEquipment={setEquipment}
             setTrackingType={setTrackingType}
             togglePrimaryMuscle={togglePrimaryMuscle}
             toggleSecondaryMuscle={toggleSecondaryMuscle}
