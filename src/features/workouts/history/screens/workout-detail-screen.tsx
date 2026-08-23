@@ -9,23 +9,23 @@ import { Screen } from '@/src/components/ui/screen';
 import { showSnackbar } from '@/src/components/ui/snackbar';
 import { Text } from '@/src/components/ui/text';
 import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
-import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/templates/components/save-workout-template-sheet';
-import { SupersetExerciseGroup } from '@/src/features/workouts/shared/components/superset-exercise-group';
+import { useWorkoutDelete } from '@/src/features/workouts/active/hooks/use-workout-delete';
+import { useWorkoutRename } from '@/src/features/workouts/active/hooks/use-workout-rename';
 import { WorkoutDetailActionsSheet } from '@/src/features/workouts/history/components/workout-detail-actions-sheet';
 import { WorkoutHistoryExerciseCard } from '@/src/features/workouts/history/components/workout-history-exercise-card';
 import { WorkoutMetrics } from '@/src/features/workouts/history/components/workout-metrics';
 import { useHistoricalWorkoutEditStart } from '@/src/features/workouts/history/hooks/use-historical-workout-edit-start';
 import { useRepeatWorkout } from '@/src/features/workouts/history/hooks/use-repeat-workout';
-import { useWorkoutDelete } from '@/src/features/workouts/active/hooks/use-workout-delete';
 import { useWorkoutHistoryDetail } from '@/src/features/workouts/history/hooks/use-workout-history-detail';
-import { useWorkoutRename } from '@/src/features/workouts/active/hooks/use-workout-rename';
+import { SupersetExerciseGroup } from '@/src/features/workouts/shared/components/superset-exercise-group';
 import {
   formatSupersetLabel,
   groupSupersetBlocks
 } from '@/src/features/workouts/shared/superset.utils';
+import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/templates/components/save-workout-template-sheet';
+import { triggerHapticWarning } from '@/src/lib/haptics/haptics';
 import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date.utils';
 import { formatWeightForUnit } from '@/src/lib/utils/weight.utils';
-import { triggerHapticWarning } from '@/src/lib/haptics/haptics';
 import { Stack, router } from 'expo-router';
 import {
   BookmarkIcon,

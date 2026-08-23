@@ -37,7 +37,7 @@ export const WorkoutHistoryExerciseCard = ({
   );
 
   if (isGrouped) {
-    return <View className={cn('flex-1', className)}>{summary}</View>;
+    return <View className={cn('flex-1 py-3', className)}>{summary}</View>;
   }
 
   return (

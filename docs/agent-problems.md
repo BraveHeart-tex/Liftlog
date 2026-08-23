@@ -48,6 +48,16 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-08-23 — Project validation wrappers stalled
+
+- Context: Validating a small NativeWind styling change.
+- Tool/command: `rtk lint`, `rtk prettier --check <changed-file>`, and `rtk pnpm exec prettier --check <changed-file>`.
+- Symptom: Lint and both wrapper/package-manager checks produced no completion after about 90/30 seconds and had to be interrupted.
+- Cause: The wrapper/package-manager execution path did not complete; no diagnostic output identified the root cause.
+- Workaround: Ran the repository-local `./node_modules/.bin/eslint <changed-file>` and `./node_modules/.bin/prettier --check <changed-file>` directly through `rtk`.
+- Status: workaround
+- Validation impact: Changed-file lint and formatting checks passed; the full `rtk lint` check remains unavailable.
+
 ## 2026-08-22 — Graph refresh required elevated filesystem access
 
 - Context: Refreshing the repository knowledge graph after documentation changes.
