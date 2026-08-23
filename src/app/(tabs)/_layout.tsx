@@ -219,7 +219,8 @@ export default function TabLayout() {
   const pathname = usePathname();
   const shouldHideTabBar =
     pathname.startsWith('/workout/active') ||
-    pathname.startsWith('/workout/exercise/');
+    pathname.startsWith('/workout/exercise/') ||
+    pathname.startsWith('/log/steps');
 
   return (
     <Tabs

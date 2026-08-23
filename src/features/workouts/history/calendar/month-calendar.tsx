@@ -1,6 +1,6 @@
 import { Text } from '@/src/components/ui/text';
 import {
-  DEFAULT_CALENDAR_HEIGHT,
+  CALENDAR_GRID_HEIGHT,
   WEEKDAY_LABELS
 } from '@/src/features/workouts/history/calendar/workout-log-calendar.constants';
 import {
@@ -32,7 +32,6 @@ interface MonthCalendarProps {
   primaryColor: string;
   primaryForegroundColor: string;
   selectedDateKey: string;
-  title: string;
   todayKey: string;
   width: number;
   workoutMarks: CalendarDateMark[];
@@ -195,7 +194,6 @@ export const MonthCalendar = memo(
     primaryColor,
     primaryForegroundColor,
     selectedDateKey,
-    title,
     todayKey,
     width,
     workoutMarks
@@ -213,14 +211,10 @@ export const MonthCalendar = memo(
 
     return (
       <View
-        className="px-3 py-4"
-        style={{ height: DEFAULT_CALENDAR_HEIGHT, width }}
+        className="pt-4 pb-3"
+        style={{ height: CALENDAR_GRID_HEIGHT, width }}
         testID={`workout-log-calendar-${monthKey}`}
       >
-        <Text variant="h3" className="mb-5 text-center">
-          {title}
-        </Text>
-
         <View className="mb-2 flex-row">
           {WEEKDAY_LABELS.map(weekday => (
             <View
@@ -277,7 +271,6 @@ export const MonthCalendar = memo(
       prevProps.foregroundColor !== nextProps.foregroundColor ||
       prevProps.primaryColor !== nextProps.primaryColor ||
       prevProps.primaryForegroundColor !== nextProps.primaryForegroundColor ||
-      prevProps.title !== nextProps.title ||
       prevProps.todayKey !== nextProps.todayKey ||
       prevProps.width !== nextProps.width ||
       prevProps.workoutMarks !== nextProps.workoutMarks

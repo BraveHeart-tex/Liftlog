@@ -1,23 +1,16 @@
-import { StepsContent } from '@/src/features/steps/components/steps-content';
-import {
-  LogHeader,
-  type LogView
-} from '@/src/features/workouts/history/components/log-header';
+import { LogHeader } from '@/src/features/workouts/history/components/log-header';
 import { Screen } from '@/src/components/ui/screen';
 import { WorkoutLogContent } from '@/src/features/workouts/history/components/workout-log-content';
-import { useState } from 'react';
-import { Platform, View } from 'react-native';
+import { router } from 'expo-router';
+import { View } from 'react-native';
 
 export function LogScreen() {
-  const [view, setView] = useState<LogView>('workouts');
-  const selectedView = Platform.OS === 'android' ? view : 'workouts';
-
   return (
     <Screen withPadding={false}>
       <View className="px-4 pt-6">
-        <LogHeader view={selectedView} onViewChange={setView} />
+        <LogHeader onOpenSteps={() => router.push('/log/steps')} />
       </View>
-      {selectedView === 'steps' ? <StepsContent /> : <WorkoutLogContent />}
+      <WorkoutLogContent />
     </Screen>
   );
 }

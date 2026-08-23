@@ -6,11 +6,11 @@ import { Text } from '@/src/components/ui/text';
 import { WorkoutLogCalendar } from '@/src/features/workouts/history/components/workout-log-calendar';
 import { WorkoutLogRow } from '@/src/features/workouts/history/components/workout-log-row';
 import { WorkoutLogStartSheet } from '@/src/features/workouts/history/components/workout-log-start-sheet';
+import type { CompletedWorkoutLogRow } from '@/src/features/workouts/history/history.repository';
 import {
   useWorkoutCalendarMarks,
   useWorkoutRowsForDate
 } from '@/src/features/workouts/history/hooks/use-workout-log';
-import type { CompletedWorkoutLogRow } from '@/src/features/workouts/history/history.repository';
 import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { toLocalDateKey } from '@/src/lib/utils/date.utils';
 import { router } from 'expo-router';
@@ -90,12 +90,8 @@ export function WorkoutLogContent() {
 
   const listHeader = useMemo(
     () => (
-      <View className="mb-6">
-        <Text variant="small" tone="muted">
-          Browse completed sessions by day.
-        </Text>
-
-        <View className="mt-6">
+      <View className="mb-1">
+        <View className="mt-4">
           <WorkoutLogCalendar
             pastMonthRange={WORKOUT_LOG_PAST_MONTH_RANGE}
             selectedDateKey={selectedDateKey}
@@ -106,7 +102,7 @@ export function WorkoutLogContent() {
 
         <Animated.View
           key={selectedDateKey}
-          className="mt-6 flex-row items-end justify-between gap-4"
+          className="mt-4 flex-row items-end justify-between gap-4"
           entering={selectedDayEntering}
         >
           <View>
@@ -121,24 +117,33 @@ export function WorkoutLogContent() {
             {workoutCountLabel}
           </Text>
         </Animated.View>
+
+        <View className="mt-4 min-h-11 flex-row items-center justify-between gap-4">
+          <Text variant="overline" tone="muted">
+            Workouts
+          </Text>
+          {hasWorkoutRows ? (
+            <Button
+              className="min-h-11 px-2"
+              leftIcon={<Icon as={PlusIcon} tone="primary" size="sm" />}
+              onPress={openStartSheet}
+              size="sm"
+              textClassName="text-small text-primary"
+              variant="ghost"
+            >
+              Log workout
+            </Button>
+          ) : null}
+        </View>
       </View>
     ),
-    [selectedDateKey, workoutCountByDateKey, workoutCountLabel]
-  );
-
-  const listFooter = useMemo(
-    () =>
-      hasWorkoutRows ? (
-        <Button
-          className="mt-4"
-          leftIcon={<Icon as={PlusIcon} tone="primaryForeground" />}
-          fullWidth
-          onPress={openStartSheet}
-        >
-          Log workout
-        </Button>
-      ) : null,
-    [hasWorkoutRows, openStartSheet]
+    [
+      hasWorkoutRows,
+      openStartSheet,
+      selectedDateKey,
+      workoutCountByDateKey,
+      workoutCountLabel
+    ]
   );
 
   return (
@@ -151,7 +156,6 @@ export function WorkoutLogContent() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={listHeader}
-        ListFooterComponent={listFooter}
         ListEmptyComponent={
           areWorkoutRowsLive ? (
             <EmptyState className="border-border bg-card rounded-lg border border-dashed px-6 py-10">

@@ -48,6 +48,56 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-08-23 — Graph refresh sandbox restriction
+
+- Context: Refreshing Graphify after the Log route and calendar source changes.
+- Tool/command: `rtk graphify update .`
+- Symptom: The in-sandbox refresh failed with `Operation not permitted` during AST rebuild.
+- Cause: Graphify required filesystem access restricted by the sandbox.
+- Workaround: Re-ran the same update with approved elevated filesystem access; it rebuilt the code graph successfully.
+- Status: workaround
+- Validation impact: Graphify completed with existing warnings for source files producing zero nodes and a changed community set.
+
+## 2026-08-23 — Test wrapper stalled during Log redesign validation
+
+- Context: Running the required broad test command after route and calendar behavior changes.
+- Tool/command: `rtk test pnpm run test`
+- Symptom: The wrapper produced no output and did not complete after four 30-second waits; it was interrupted.
+- Cause: The test wrapper exposed no diagnostic or completion.
+- Workaround: None; no focused tests cover the changed screen/calendar surface.
+- Status: workaround
+- Validation impact: Broad tests remain unverified; TypeScript and targeted local lint/format checks passed.
+
+## 2026-08-23 — Lint wrapper stalled during Log redesign validation
+
+- Context: Validating the new Log route and calendar controls.
+- Tool/command: `rtk lint`
+- Symptom: The wrapper produced no output and did not complete after two 30-second waits; it was interrupted.
+- Cause: The wrapper execution path did not expose a diagnostic or completion.
+- Workaround: Run repository-local ESLint against the changed TypeScript/TSX files.
+- Status: workaround
+- Validation impact: Full `rtk lint` remains unavailable; targeted local lint is used below.
+
+## 2026-08-23 — Impeccable skill path lookup
+
+- Context: Loading frontend redesign guidance before planning the Log surface.
+- Tool/command: `node .agents/skills/impeccable/scripts/context.mjs ...`
+- Symptom: Node reported that the project-relative skill script did not exist.
+- Cause: The installed skill is hosted at `/Users/bora/.agents/skills/impeccable`, not inside the repository.
+- Workaround: Retried using the absolute installed skill path from the session skill catalog.
+- Status: resolved
+- Validation impact: No source files changed; design guidance loading was delayed until the corrected invocation.
+
+## 2026-08-23 — Router path inspection shell quoting
+
+- Context: Inspecting Expo Router tab files during Log screen redesign discovery.
+- Tool/command: `rg --files src/app/(tabs) | xargs ... sh -c '... path ...'`
+- Symptom: The inspection command failed before reading files because paths containing parentheses were parsed by the shell.
+- Cause: The generated `sh -c` invocation did not quote Expo Router path arguments safely.
+- Workaround: Switched to direct, explicitly quoted file reads and targeted `rg` queries.
+- Status: resolved
+- Validation impact: No source files changed; route inspection continued with targeted commands.
+
 ## 2026-08-23 — Project validation wrappers stalled
 
 - Context: Validating a small NativeWind styling change.

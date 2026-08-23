@@ -1,32 +1,29 @@
-import { SegmentedControl } from '@/src/components/ui/segmented-control';
+import { Icon } from '@/src/components/ui/icon';
+import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
-import { Platform, View } from 'react-native';
-
-export type LogView = 'workouts' | 'steps';
+import { ChevronRightIcon } from 'lucide-react-native';
+import { View } from 'react-native';
 
 interface LogHeaderProps {
-  view: LogView;
-  onViewChange: (view: LogView) => void;
+  onOpenSteps: () => void;
 }
 
-const LOG_VIEW_OPTIONS = [
-  { label: 'Workouts', value: 'workouts' },
-  { label: 'Steps', value: 'steps' }
-] satisfies { label: string; value: LogView }[];
-
-export function LogHeader({ view, onViewChange }: LogHeaderProps) {
+export function LogHeader({ onOpenSteps }: LogHeaderProps) {
   return (
-    <View>
+    <View className="min-h-11 flex-row items-center justify-between gap-4">
       <Text variant="h1">Log</Text>
-      {Platform.OS === 'android' ? (
-        <SegmentedControl
-          value={view}
-          options={LOG_VIEW_OPTIONS}
-          onChange={onViewChange}
-          accessibilityMode="tabs"
-          className="mt-4"
-        />
-      ) : null}
+      <PressableSurface
+        accessibilityLabel="Open steps"
+        accessibilityRole="button"
+        className="min-h-11 -translate-y-0.5 flex-row items-center gap-1 rounded-md pl-3"
+        onPress={onOpenSteps}
+        pressedClassName="opacity-70"
+      >
+        <Text variant="bodyMedium" tone="muted">
+          Steps
+        </Text>
+        <Icon as={ChevronRightIcon} size="sm" tone="mutedForeground" />
+      </PressableSurface>
     </View>
   );
 }
