@@ -39,19 +39,59 @@ Use one of these status values:
 ## 2026-08-22 — Full formatting check timed out
 
 - Context: Documentation-only change validation.
-- Tool/command: `rtk prettier --check .`
+- Tool/command: `./node_modules/.bin/prettier --check .`
 - Symptom: The full-repository check exceeded the available command wait and produced no completion result.
 - Cause: The root cause was not confirmed.
-- Workaround: Ran `rtk prettier --check AGENTS.md docs/index.md docs/agent-problems.md` to validate the changed Markdown files.
+- Workaround: Ran `./node_modules/.bin/prettier --check AGENTS.md docs/index.md docs/agent-problems.md` to validate the changed Markdown files.
 - Status: `workaround`
 - Validation impact: Targeted Markdown validation completed; the full-repository check remained incomplete.
 
 ## Entries
 
+## 2026-08-23 — Graphify refresh required elevated filesystem access after command-wrapper removal
+
+- Context: Refreshing Graphify after removing the former command-wrapper references from agent documentation.
+- Tool/command: `graphify update .`
+- Symptom: The restricted refresh failed with `Operation not permitted` during AST/cache rebuilding.
+- Cause: Graphify's rebuild requires filesystem operations unavailable in the sandbox.
+- Workaround: Re-ran the same command with approved elevated filesystem access.
+- Status: workaround
+- Validation impact: The first refresh failed; the elevated refresh is required to complete the documentation update.
+
+## 2026-08-23 — Graphify refresh required elevated filesystem access during documentation update
+
+- Context: Refreshing Graphify after adding agent documentation.
+- Tool/command: `graphify update .`
+- Symptom: The restricted refresh failed with `Operation not permitted` during AST/cache rebuilding.
+- Cause: Graphify's rebuild requires filesystem operations unavailable in the sandbox.
+- Workaround: Re-ran the same command with approved elevated filesystem access; the graph rebuilt successfully.
+- Status: workaround
+- Validation impact: Graphify completed with its existing zero-node source warnings and updated the graph outputs.
+
+## 2026-08-23 — Package-manager formatter invocation stalled during documentation validation
+
+- Context: Formatting updated agent instructions and problem-log documentation.
+- Tool/command: `pnpm exec prettier --check AGENTS.md docs/agent-problems.md`
+- Symptom: The command emitted only a pnpm configuration warning and produced no completion after about two minutes; it was interrupted.
+- Cause: The package-manager invocation path did not expose a diagnostic; the cause was not confirmed.
+- Workaround: Ran the repository-local `./node_modules/.bin/prettier --check ...`, which completed successfully.
+- Status: workaround
+- Validation impact: Targeted formatting passed; the `pnpm exec` wrapper path remains unreliable.
+
+## 2026-08-23 — Homebrew metadata lookup blocked by sandbox
+
+- Context: Checking installed command metadata while analyzing agent command stalls.
+- Tool/command: `brew info`
+- Symptom: Homebrew could not update its cached API metadata and returned `Operation not permitted`.
+- Cause: The restricted execution context denied writes to Homebrew's cache directory.
+- Workaround: Used the installed binary path, local configuration, and the public upstream repository instead.
+- Status: workaround
+- Validation impact: None; wrapper behavior analysis continued with local and upstream evidence.
+
 ## 2026-08-23 — Database integration suite blocked by existing migration mismatch
 
 - Context: Running the focused database integration file after removing onboarding tests.
-- Tool/command: Elevated `rtk ./node_modules/.bin/tsx --experimental-test-module-mocks --tsconfig tests/tsconfig.json --import ./tests/setup.ts --test tests/db/database.integration.test.ts`
+- Tool/command: Elevated `./node_modules/.bin/tsx --experimental-test-module-mocks --tsconfig tests/tsconfig.json --import ./tests/setup.ts --test tests/db/database.integration.test.ts`
 - Symptom: 44 of 45 tests failed during database setup before exercising their logic.
 - Cause: Existing generated migration SQL selects `exercises.equipment` while the legacy table has `category`.
 - Workaround: None applied; generated migrations are not edit targets under repository rules.
@@ -61,7 +101,7 @@ Use one of these status values:
 ## 2026-08-23 — Focused test runner sandbox IPC restriction
 
 - Context: Running the focused database integration test after removing onboarding tests.
-- Tool/command: `rtk ./node_modules/.bin/tsx --experimental-test-module-mocks --tsconfig tests/tsconfig.json --import ./tests/setup.ts --test tests/db/database.integration.test.ts`
+- Tool/command: `./node_modules/.bin/tsx --experimental-test-module-mocks --tsconfig tests/tsconfig.json --import ./tests/setup.ts --test tests/db/database.integration.test.ts`
 - Symptom: The runner failed before test execution with `listen EPERM` while creating its temporary IPC pipe.
 - Cause: The sandbox restricts the temporary IPC operation used by `tsx`.
 - Workaround: Retry the same focused test with approved elevated process/filesystem access.
@@ -71,17 +111,17 @@ Use one of these status values:
 ## 2026-08-23 — Validation wrapper issues during onboarding removal
 
 - Context: Running the required validation after removing onboarding.
-- Tool/command: `rtk lint`, `rtk prettier --check .`, and `rtk test tests/db/database.integration.test.ts`
+- Tool/command: `./node_modules/.bin/eslint .`, `./node_modules/.bin/prettier --check .`, and `pnpm run test tests/db/database.integration.test.ts`
 - Symptom: Full lint produced no output for about 60 seconds and was interrupted; full Prettier exited without diagnostics; the focused test invocation was treated as a non-executable path and returned permission denied.
-- Cause: The wrapper’s full-check execution path did not complete, and `rtk test` expects a test command rather than a file path.
-- Workaround: Run targeted ESLint/Prettier checks directly through `rtk`, and use the documented `rtk test pnpm run test` command for tests.
+- Cause: The wrapper’s full-check execution path did not complete, and the test script expects a test command rather than a file path.
+- Workaround: Run targeted ESLint/Prettier checks through the repository-local binaries, and use the documented `pnpm run test` command for tests.
 - Status: workaround
 - Validation impact: TypeScript passed; lint, formatting, and test validation are being retried with corrected commands.
 
 ## 2026-08-23 — Graph refresh sandbox restriction during onboarding removal
 
 - Context: Refreshing Graphify after removing the onboarding route and related code.
-- Tool/command: `rtk graphify update .`
+- Tool/command: `graphify update .`
 - Symptom: The in-sandbox rebuild failed with `Operation not permitted` during AST cache rebuilding.
 - Cause: Graphify requires filesystem operations restricted by the sandbox.
 - Workaround: Retry the same update with approved elevated filesystem access.
@@ -91,7 +131,7 @@ Use one of these status values:
 ## 2026-08-23 — Graph refresh sandbox restriction during equipment icon mapping
 
 - Context: Refreshing Graphify after assigning distinct equipment icons.
-- Tool/command: `rtk graphify update .`
+- Tool/command: `graphify update .`
 - Symptom: The in-sandbox rebuild failed with `Operation not permitted`.
 - Cause: Graphify's AST cache rebuild requires filesystem access restricted by the sandbox.
 - Workaround: Re-ran with approved elevated filesystem access; the graph rebuilt successfully.
@@ -101,7 +141,7 @@ Use one of these status values:
 ## 2026-08-23 — Graph refresh sandbox restriction during muscle selector styling
 
 - Context: Refreshing Graphify after adopting the shared segmented control and subtle chip colors.
-- Tool/command: `rtk graphify update .`
+- Tool/command: `graphify update .`
 - Symptom: The in-sandbox rebuild failed with `Operation not permitted`.
 - Cause: Graphify's AST cache rebuild requires filesystem access restricted by the sandbox.
 - Workaround: Re-ran with approved elevated filesystem access; the graph rebuilt successfully.
@@ -111,7 +151,7 @@ Use one of these status values:
 ## 2026-08-23 — Graph refresh sandbox restriction during separator adjustment
 
 - Context: Refreshing Graphify after moving the setup divider to the helper text.
-- Tool/command: `rtk graphify update .`
+- Tool/command: `graphify update .`
 - Symptom: The in-sandbox rebuild failed with `Operation not permitted`.
 - Cause: Graphify's AST cache rebuild requires filesystem access restricted by the sandbox.
 - Workaround: Re-ran with approved elevated filesystem access; the graph rebuilt successfully.
@@ -121,7 +161,7 @@ Use one of these status values:
 ## 2026-08-23 — Graph refresh sandbox restriction during spacing polish
 
 - Context: Refreshing Graphify after the exercise setup spacing adjustment.
-- Tool/command: `rtk graphify update .`
+- Tool/command: `graphify update .`
 - Symptom: The in-sandbox rebuild failed with `Operation not permitted`.
 - Cause: Graphify's AST cache rebuild requires filesystem access restricted by the sandbox.
 - Workaround: Re-ran with approved elevated filesystem access; the graph rebuilt successfully.
@@ -131,7 +171,7 @@ Use one of these status values:
 ## 2026-08-23 — Graph refresh required elevated filesystem access for exercise form
 
 - Context: Refreshing Graphify after the exercise metadata form source changes.
-- Tool/command: `rtk graphify update .`
+- Tool/command: `graphify update .`
 - Symptom: The in-sandbox AST rebuild failed with `Operation not permitted`.
 - Cause: Graphify's cache rebuild needs filesystem operations restricted by the sandbox.
 - Workaround: Re-ran the update with approved elevated filesystem access; the graph rebuilt successfully.
@@ -141,7 +181,7 @@ Use one of these status values:
 ## 2026-08-23 — Exercise form test suite blocked by generated migration
 
 - Context: Running the required test suite after the exercise metadata form refactor.
-- Tool/command: `rtk test pnpm run test`, then `rtk proxy pnpm run test` with approved temporary-process access.
+- Tool/command: `pnpm run test`, then a direct test-script retry with approved temporary-process access.
 - Symptom: The sandboxed runner could not create the TSX IPC pipe; the elevated retry ran 80 tests but 47 database integration tests failed during migration setup.
 - Cause: Generated migration SQL copies from the legacy `category` column while the current schema expects `equipment`.
 - Workaround: None applied; migrations are generated artifacts and were not edited.
@@ -151,7 +191,7 @@ Use one of these status values:
 ## 2026-08-23 — Impeccable helper path required installed skill location
 
 - Context: Loading frontend redesign guidance before refactoring the exercise metadata form.
-- Tool/command: `rtk node .agents/skills/impeccable/scripts/context.mjs --target src/features/exercises/components/exercise-metadata-form.tsx`
+- Tool/command: `node .agents/skills/impeccable/scripts/context.mjs --target src/features/exercises/components/exercise-metadata-form.tsx`
 - Symptom: Node reported that the project-relative helper script did not exist.
 - Cause: The skill is installed outside the repository at the absolute path provided by the session skill catalog.
 - Workaround: Retry with `/Users/bora/.agents/skills/impeccable/scripts/context.mjs`.
@@ -161,7 +201,7 @@ Use one of these status values:
 ## 2026-08-23 — Generated equipment migration cannot copy legacy exercises
 
 - Context: Running database integration tests after propagating the schema property rename.
-- Tool/command: `rtk proxy pnpm run test`
+- Tool/command: `pnpm run test` through the direct process path
 - Symptom: 47 tests failed during migration setup; migration `0014` attempted to select `exercises.equipment` from the pre-rename table, which only has `category`.
 - Cause: Drizzle generated a table-rebuild copy using the new column name instead of an explicit legacy-column-to-new-column mapping.
 - Workaround: None applied because repository rules designate migrations as generated artifacts and prohibit hand-editing them; source/type propagation is complete.
@@ -171,7 +211,7 @@ Use one of these status values:
 ## 2026-08-23 — Direct Node test-loader workaround was incompatible
 
 - Context: Attempting to validate the exercise rename after `tsx` could not create its IPC pipe.
-- Tool/command: `rtk node --import tsx/esm --experimental-test-module-mocks --test <test-file>`
+- Tool/command: `node --import tsx/esm --experimental-test-module-mocks --test <test-file>`
 - Symptom: Both the focused picker test and database integration test failed before execution with `ERR_REQUIRE_CYCLE_MODULE`.
 - Cause: The project’s TSX/ESM test-loader combination is not compatible with direct Node test loading.
 - Workaround: Returned to the documented `pnpm run test` command and prepared an elevated retry.
@@ -181,17 +221,17 @@ Use one of these status values:
 ## 2026-08-23 — Validation tools hit sandbox restrictions during equipment rename
 
 - Context: Running the required full tests and Graphify refresh after propagating the exercises field rename.
-- Tool/command: `rtk test pnpm run test` and `rtk graphify update .`
+- Tool/command: `pnpm run test` and `graphify update .`
 - Symptom: The first test attempt could not start its temporary IPC pipe; the in-sandbox Graphify refresh failed with `Operation not permitted` during AST rebuild.
 - Cause: The sandbox restricted temporary-process IPC/filesystem operations; no source-level cause was indicated.
-- Workaround: Retried the test through `rtk proxy pnpm run test`; reran Graphify with approved elevated filesystem access.
+- Workaround: Retried the test through the direct process path; reran Graphify with approved elevated filesystem access.
 - Status: `workaround`
 - Validation impact: Graphify rebuilt successfully; the elevated test run reached the suite but was blocked by the generated migration’s legacy-column mismatch.
 
 ## 2026-08-23 — Graph refresh sandbox restriction during header action move
 
 - Context: Refreshing Graphify after moving Steps actions into the native header.
-- Tool/command: `rtk graphify update .`
+- Tool/command: `graphify update .`
 - Symptom: The in-sandbox refresh failed with `Operation not permitted` during AST rebuild.
 - Cause: Graphify required filesystem access restricted by the sandbox.
 - Workaround: Re-ran the same update with approved elevated filesystem access; it rebuilt the code graph successfully.
@@ -201,7 +241,7 @@ Use one of these status values:
 ## 2026-08-23 — Graph refresh sandbox restriction during Steps redesign
 
 - Context: Refreshing Graphify after the Steps dashboard source changes.
-- Tool/command: `rtk graphify update .`
+- Tool/command: `graphify update .`
 - Symptom: The in-sandbox refresh failed with `Operation not permitted` during AST rebuild.
 - Cause: Graphify required filesystem access restricted by the sandbox.
 - Workaround: Re-ran the same update with approved elevated filesystem access; it rebuilt the code graph successfully.
@@ -211,7 +251,7 @@ Use one of these status values:
 ## 2026-08-23 — Broad test wrapper stalled during Steps redesign validation
 
 - Context: Running the required behavior check after the connected Steps dashboard redesign.
-- Tool/command: `rtk test pnpm run test`
+- Tool/command: `pnpm run test`
 - Symptom: The wrapper produced no output after about 90 seconds and was interrupted.
 - Cause: The wrapper execution path did not expose a diagnostic or completion.
 - Workaround: None; targeted TypeScript, ESLint, and Prettier checks passed.
@@ -221,17 +261,17 @@ Use one of these status values:
 ## 2026-08-23 — Lint wrapper stalled during Steps redesign validation
 
 - Context: Validating the connected Steps dashboard redesign.
-- Tool/command: `rtk lint`
+- Tool/command: `./node_modules/.bin/eslint .`
 - Symptom: The wrapper produced no output after about 60 seconds and was interrupted.
 - Cause: The wrapper execution path did not expose a diagnostic or completion.
 - Workaround: Ran repository-local ESLint against the changed Steps files.
 - Status: workaround
-- Validation impact: Full `rtk lint` remains unavailable; targeted local lint passed.
+- Validation impact: Full lint remains unavailable; targeted local lint passed.
 
 ## 2026-08-23 — Graph refresh sandbox restriction
 
 - Context: Refreshing Graphify after the Log route and calendar source changes.
-- Tool/command: `rtk graphify update .`
+- Tool/command: `graphify update .`
 - Symptom: The in-sandbox refresh failed with `Operation not permitted` during AST rebuild.
 - Cause: Graphify required filesystem access restricted by the sandbox.
 - Workaround: Re-ran the same update with approved elevated filesystem access; it rebuilt the code graph successfully.
@@ -241,7 +281,7 @@ Use one of these status values:
 ## 2026-08-23 — Test wrapper stalled during Log redesign validation
 
 - Context: Running the required broad test command after route and calendar behavior changes.
-- Tool/command: `rtk test pnpm run test`
+- Tool/command: `pnpm run test`
 - Symptom: The wrapper produced no output and did not complete after four 30-second waits; it was interrupted.
 - Cause: The test wrapper exposed no diagnostic or completion.
 - Workaround: None; no focused tests cover the changed screen/calendar surface.
@@ -251,12 +291,12 @@ Use one of these status values:
 ## 2026-08-23 — Lint wrapper stalled during Log redesign validation
 
 - Context: Validating the new Log route and calendar controls.
-- Tool/command: `rtk lint`
+- Tool/command: `./node_modules/.bin/eslint .`
 - Symptom: The wrapper produced no output and did not complete after two 30-second waits; it was interrupted.
 - Cause: The wrapper execution path did not expose a diagnostic or completion.
 - Workaround: Run repository-local ESLint against the changed TypeScript/TSX files.
 - Status: workaround
-- Validation impact: Full `rtk lint` remains unavailable; targeted local lint is used below.
+- Validation impact: Full lint remains unavailable; targeted local lint is used below.
 
 ## 2026-08-23 — Impeccable skill path lookup
 
@@ -281,17 +321,17 @@ Use one of these status values:
 ## 2026-08-23 — Project validation wrappers stalled
 
 - Context: Validating a small NativeWind styling change.
-- Tool/command: `rtk lint`, `rtk prettier --check <changed-file>`, and `rtk pnpm exec prettier --check <changed-file>`.
+- Tool/command: `./node_modules/.bin/eslint <changed-file>`, `./node_modules/.bin/prettier --check <changed-file>`, and `pnpm exec prettier --check <changed-file>`.
 - Symptom: Lint and both wrapper/package-manager checks produced no completion after about 90/30 seconds and had to be interrupted.
 - Cause: The wrapper/package-manager execution path did not complete; no diagnostic output identified the root cause.
-- Workaround: Ran the repository-local `./node_modules/.bin/eslint <changed-file>` and `./node_modules/.bin/prettier --check <changed-file>` directly through `rtk`.
+- Workaround: Ran the repository-local `./node_modules/.bin/eslint <changed-file>` and `./node_modules/.bin/prettier --check <changed-file>` directly.
 - Status: workaround
-- Validation impact: Changed-file lint and formatting checks passed; the full `rtk lint` check remains unavailable.
+- Validation impact: Changed-file lint and formatting checks passed; the full lint check remains unavailable.
 
 ## 2026-08-22 — Graph refresh required elevated filesystem access
 
 - Context: Refreshing the repository knowledge graph after documentation changes.
-- Tool/command: `rtk graphify update .`
+- Tool/command: `graphify update .`
 - Symptom: The rebuild failed with `Operation not permitted`.
 - Cause: The sandbox prevented a graphify filesystem operation; the exact operation was not exposed.
 - Workaround: Re-ran the same update with approved elevated filesystem access; the graph rebuilt successfully.
@@ -301,10 +341,10 @@ Use one of these status values:
 ## 2026-08-22 — Global Prettier wrapper referenced a missing installation
 
 - Context: Targeted Markdown formatting validation.
-- Tool/command: `rtk prettier --check AGENTS.md docs/index.md docs/agent-problems.md`
+- Tool/command: `./node_modules/.bin/prettier --check AGENTS.md docs/index.md docs/agent-problems.md`
 - Symptom: The command exited with failure and the wrapper reported a missing global Prettier module.
 - Cause: The global wrapper pointed to a missing `<global-prettier-path>` installation.
-- Workaround: Ran the repository-local `rtk pnpm exec prettier --check AGENTS.md docs/index.md docs/agent-problems.md`.
+- Workaround: Ran the repository-local `pnpm exec prettier --check AGENTS.md docs/index.md docs/agent-problems.md`.
 - Status: `workaround`
 - Validation impact: The repository-local formatting check passed; the global wrapper remained unusable.
 
