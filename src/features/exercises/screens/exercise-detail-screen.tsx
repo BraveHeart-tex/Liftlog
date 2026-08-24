@@ -13,7 +13,7 @@ import { ExerciseNameConflictError } from '@/src/features/exercises/exercise.rep
 import { useExerciseActions } from '@/src/features/exercises/hooks/use-exercise-actions';
 import { useExerciseDetail } from '@/src/features/exercises/hooks/use-exercise-detail';
 import { formatMuscleList } from '@/src/features/exercises/muscle.utils';
-import { cn } from '@/src/lib/utils/cn.utils';
+import { formatScoreMetricLabel } from '@/src/features/progress/tracking.domain';
 import { formatWorkoutDate } from '@/src/lib/utils/date.utils';
 import { triggerHapticWarning } from '@/src/lib/haptics/haptics';
 import { toTitleCase } from '@/src/lib/utils/string.utils';
@@ -117,10 +117,6 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId?: string }) {
   });
   const removeActionLabel = exerciseUsageCount > 0 ? 'Archive' : 'Delete';
   const strongestSet = topSetPerformances[0];
-  const remainingTopPerformances = topSetPerformances.slice(1);
-  const bestSetRecord = personalRecordsSummary.find(
-    record => record.id === 'best-set'
-  );
   const mostSetsRecord = personalRecordsSummary.find(
     record => record.id === 'most-sets'
   );
@@ -262,7 +258,63 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId?: string }) {
       />
 
       <View className="border-border mt-6 border-t pt-6">
-        <Text variant="bodyMedium">Records</Text>
+        <View className="mb-3 flex-row items-baseline justify-between gap-3">
+          <Text variant="h3">Top performances</Text>
+          <Text variant="caption" tone="muted" className="shrink-0">
+            By {formatScoreMetricLabel(trackingType)}
+          </Text>
+        </View>
+
+        {isStatsLoading ? (
+          <LoadingState
+            label="Loading performances..."
+            size="small"
+            className="min-h-24 py-4"
+          />
+        ) : !strongestSet ? (
+          <EmptyState className="mt-4 py-0">
+            <EmptyState.Title variant="bodyMedium">
+              No performances yet
+            </EmptyState.Title>
+            <EmptyState.Description>
+              Complete sets for this exercise to build your top performances.
+            </EmptyState.Description>
+          </EmptyState>
+        ) : (
+          <View className="border-border border-t">
+            {topSetPerformances.map((performance, index) => (
+              <View
+                key={performance.id}
+                className="border-border min-h-16 flex-row items-center gap-3 border-b py-3"
+              >
+                <Text
+                  variant="caption"
+                  tone={index === 0 ? undefined : 'muted'}
+                  className={index === 0 ? 'text-foreground w-5' : 'w-5'}
+                >
+                  {index + 1}
+                </Text>
+
+                <View className="min-w-0 flex-1">
+                  <Text variant="bodyMedium">{performance.value}</Text>
+                  <Text variant="caption" tone="muted" className="mt-1">
+                    {performance.scoreLabel}
+                  </Text>
+                </View>
+
+                <Text variant="small" tone="muted" className="shrink-0">
+                  {formatWorkoutDate(performance.achievedAt, 'compact')}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+
+      <View className="border-border mt-6 border-t pt-6">
+        <View className="mb-3">
+          <Text variant="h3">Records</Text>
+        </View>
 
         {isStatsLoading ? (
           <LoadingState
@@ -270,7 +322,7 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId?: string }) {
             size="small"
             className="min-h-24 py-4"
           />
-        ) : !strongestSet || !mostSetsRecord ? (
+        ) : !mostSetsRecord ? (
           <EmptyState className="mt-4 py-0">
             <EmptyState.Title variant="bodyMedium">
               No records yet
@@ -280,112 +332,63 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId?: string }) {
             </EmptyState.Description>
           </EmptyState>
         ) : (
-          <View className="mt-3">
-            <View className="border-border border-b py-3">
-              <View className="flex-row items-center justify-between gap-3">
-                <Text variant="caption" tone="muted">
-                  Strongest set
-                </Text>
-                {bestSetRecord?.isNewRecord ? (
-                  <View className="bg-success/15 rounded-md px-2 py-1">
-                    <Text variant="caption" className="text-success">
-                      PR
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-              <Text variant="bodyMedium" className="mt-1">
-                {strongestSet.value}
+          <View className="border-border border-t border-b py-3">
+            <View className="flex-row items-center gap-1.5">
+              <Text variant="caption" tone="muted">
+                Most sets
               </Text>
-              <Text variant="caption" tone="muted" className="mt-1">
-                {strongestSet.scoreLabel} ·{' '}
-                {formatWorkoutDate(strongestSet.achievedAt)}
-              </Text>
-            </View>
-
-            <View className="border-border border-b py-3">
-              <View className="flex-row items-center justify-between gap-3">
-                <Text variant="caption" tone="muted">
-                  Most sets
-                </Text>
-                {mostSetsRecord.isNewRecord ? (
-                  <View className="bg-success/15 rounded-md px-2 py-1">
-                    <Text variant="caption" className="text-success">
-                      PR
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-              <View className="mt-1 flex-row items-center justify-between gap-4">
-                <Text variant="bodyMedium">{mostSetsRecord.value}</Text>
-                <Text variant="caption" tone="muted">
-                  {formatWorkoutDate(mostSetsRecord.achievedAt)}
-                </Text>
-              </View>
-            </View>
-
-            {remainingTopPerformances.length > 0 ? (
-              <View className="pt-4">
-                <Text variant="caption" tone="muted">
-                  Other top performances
-                </Text>
-
-                <View className="mt-1">
-                  {remainingTopPerformances.map((performance, index) => (
-                    <View
-                      key={performance.id}
-                      className={cn(
-                        'flex-row gap-3 py-3',
-                        index < remainingTopPerformances.length - 1 &&
-                          'border-border border-b'
-                      )}
-                    >
-                      <Text
-                        variant="caption"
-                        tone="muted"
-                        className="w-5 pt-0.5"
-                      >
-                        {index + 2}
-                      </Text>
-
-                      <View className="flex-1">
-                        <Text variant="bodyMedium">{performance.value}</Text>
-                        <Text variant="caption" tone="muted" className="mt-1">
-                          {performance.scoreLabel} ·{' '}
-                          {formatWorkoutDate(performance.achievedAt)}
-                        </Text>
-                      </View>
-                    </View>
-                  ))}
+              {mostSetsRecord.isNewRecord ? (
+                <View className="bg-success/15 h-5 items-center justify-center rounded-full px-2">
+                  <Text
+                    variant="caption"
+                    weight="bold"
+                    className="text-success text-[11px] tracking-[0.02em]"
+                  >
+                    PR
+                  </Text>
                 </View>
-              </View>
-            ) : null}
+              ) : null}
+            </View>
+            <Text
+              variant="body"
+              weight="semiBold"
+              className="mt-1 text-[17px] leading-[22px]"
+            >
+              {mostSetsRecord.value}
+            </Text>
+            <Text variant="caption" tone="muted" className="mt-0.5">
+              {formatWorkoutDate(mostSetsRecord.achievedAt)}
+            </Text>
           </View>
         )}
       </View>
 
-      <View className="border-border mt-6 border-t pt-6">
-        <Text variant="bodyMedium">Muscle groups</Text>
-
-        <View className="mt-3">
-          <Text variant="small" tone="muted">
-            Primary
-          </Text>
-          <Text variant="body" className="mt-1">
-            {formatMuscleList(primaryMuscles)}
-          </Text>
+      <View className="mt-6 pt-6">
+        <View className="mb-3">
+          <Text variant="h3">Muscle groups</Text>
         </View>
 
-        {secondaryMuscles.length > 0 ? (
-          <View className="mt-4">
-            <Text variant="small" tone="muted">
-              Secondary
+        <View className="border-border border-t">
+          <View className="border-border min-h-[52px] flex-row items-center gap-3 border-b">
+            <Text variant="small" tone="muted" className="w-[88px]">
+              Primary
             </Text>
-            <Text variant="body" className="mt-1">
-              {formatMuscleList(secondaryMuscles)}
+            <Text variant="body" className="min-w-0 flex-1 leading-5">
+              {formatMuscleList(primaryMuscles)}
             </Text>
           </View>
-        ) : null}
+
+          {secondaryMuscles.length > 0 ? (
+            <View className="border-border min-h-[52px] flex-row items-center gap-3 border-b">
+              <Text variant="small" tone="muted" className="w-[88px]">
+                Secondary
+              </Text>
+              <Text variant="body" className="min-w-0 flex-1 leading-5">
+                {formatMuscleList(secondaryMuscles)}
+              </Text>
+            </View>
+          ) : null}
+        </View>
       </View>
 
       {isActionsOpen ? (

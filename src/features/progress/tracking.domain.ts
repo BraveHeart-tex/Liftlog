@@ -191,6 +191,12 @@ export const TRACKING_TYPE_DEFINITIONS: Record<
   }
 };
 
+export function formatScoreMetricLabel(trackingType: TrackingType) {
+  const label = TRACKING_TYPE_DEFINITIONS[trackingType].scoreLabel;
+
+  return label === 'Est. 1RM' ? 'estimated 1RM' : label.toLowerCase();
+}
+
 export function resolveTrackingType(
   value: string | null | undefined
 ): TrackingType {

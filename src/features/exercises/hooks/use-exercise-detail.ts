@@ -15,8 +15,8 @@ import {
   mapExerciseHistoryRows
 } from '@/src/features/progress/progress.repository';
 import {
-  TRACKING_TYPE_DEFINITIONS,
   formatScore,
+  formatScoreMetricLabel,
   formatTrackingValue,
   getSetScore,
   getSetValues,
@@ -121,13 +121,13 @@ function buildTopSetPerformances(
             trackingType,
             getSetValues(set),
             weightUnit
-          ),
+          ).replace(' x ', ' × '),
           score,
-          scoreLabel: `${TRACKING_TYPE_DEFINITIONS[trackingType].scoreLabel} ${formatScore(
+          scoreLabel: `${formatScore(
             trackingType,
             score,
             weightUnit
-          )}`,
+          )} ${formatScoreMetricLabel(trackingType)}`,
           achievedAt: getSetAchievedAt(set, entry.workout.startedAt)
         };
       })

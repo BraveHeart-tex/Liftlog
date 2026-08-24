@@ -1,4 +1,4 @@
-type WorkoutDateFormat = 'short' | 'full';
+type WorkoutDateFormat = 'short' | 'compact' | 'full';
 
 export function toLocalDateKey(timestamp: number): string {
   const date = new Date(timestamp);
@@ -18,6 +18,10 @@ export function formatWorkoutDate(
       month: 'short',
       day: 'numeric',
       year: 'numeric'
+    },
+    compact: {
+      month: 'short',
+      day: 'numeric'
     },
     full: {
       weekday: 'long',
