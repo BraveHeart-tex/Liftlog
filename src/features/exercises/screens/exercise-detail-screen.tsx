@@ -117,6 +117,9 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId?: string }) {
   });
   const removeActionLabel = exerciseUsageCount > 0 ? 'Archive' : 'Delete';
   const strongestSet = topSetPerformances[0];
+  const bestSetRecord = personalRecordsSummary.find(
+    record => record.id === 'best-set'
+  );
   const mostSetsRecord = personalRecordsSummary.find(
     record => record.id === 'most-sets'
   );
@@ -259,6 +262,90 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId?: string }) {
 
       <View className="border-border mt-6 border-t pt-6">
         <View className="mb-3 flex-row items-baseline justify-between gap-3">
+          <Text variant="h3">Records</Text>
+        </View>
+
+        {isStatsLoading ? (
+          <LoadingState
+            label="Loading records..."
+            size="small"
+            className="min-h-24 py-4"
+          />
+        ) : !strongestSet || !bestSetRecord || !mostSetsRecord ? (
+          <EmptyState className="mt-4 py-0">
+            <EmptyState.Title variant="bodyMedium">
+              No records yet
+            </EmptyState.Title>
+            <EmptyState.Description>
+              Complete sets for this exercise to build your records.
+            </EmptyState.Description>
+          </EmptyState>
+        ) : (
+          <View className="border-border flex-row border-t border-b">
+            <View className="min-w-0 flex-1 py-3">
+              <View className="flex-row items-center gap-1.5">
+                <Text variant="caption" tone="muted">
+                  Best set
+                </Text>
+                {bestSetRecord.isNewRecord ? (
+                  <View className="bg-success/15 h-5 items-center justify-center rounded-full px-2">
+                    <Text
+                      variant="caption"
+                      weight="bold"
+                      className="text-success text-[11px] tracking-[0.02em]"
+                    >
+                      PR
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+              <Text
+                variant="body"
+                weight="semiBold"
+                className="mt-1 text-[17px] leading-[22px]"
+              >
+                {strongestSet.value}
+              </Text>
+              <Text variant="caption" tone="muted" className="mt-0.5">
+                {strongestSet.scoreLabel} ·{' '}
+                {formatWorkoutDate(strongestSet.achievedAt, 'compact')}
+              </Text>
+            </View>
+
+            <View className="border-border ml-4 min-w-0 flex-1 border-l py-3 pl-4">
+              <View className="flex-row items-center gap-1.5">
+                <Text variant="caption" tone="muted">
+                  Most sets
+                </Text>
+                {mostSetsRecord.isNewRecord ? (
+                  <View className="bg-success/15 h-5 items-center justify-center rounded-full px-2">
+                    <Text
+                      variant="caption"
+                      weight="bold"
+                      className="text-success text-[11px] tracking-[0.02em]"
+                    >
+                      PR
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+              <Text
+                variant="body"
+                weight="semiBold"
+                className="mt-1 text-[17px] leading-[22px]"
+              >
+                {mostSetsRecord.value}
+              </Text>
+              <Text variant="caption" tone="muted" className="mt-0.5">
+                {formatWorkoutDate(mostSetsRecord.achievedAt, 'compact')}
+              </Text>
+            </View>
+          </View>
+        )}
+      </View>
+
+      <View className="mt-6">
+        <View className="mb-3 flex-row items-baseline justify-between gap-3">
           <Text variant="h3">Top performances</Text>
           <Text variant="caption" tone="muted" className="shrink-0">
             By {formatScoreMetricLabel(trackingType)}
@@ -307,58 +394,6 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId?: string }) {
                 </Text>
               </View>
             ))}
-          </View>
-        )}
-      </View>
-
-      <View className="border-border mt-6 border-t pt-6">
-        <View className="mb-3">
-          <Text variant="h3">Records</Text>
-        </View>
-
-        {isStatsLoading ? (
-          <LoadingState
-            label="Loading records..."
-            size="small"
-            className="min-h-24 py-4"
-          />
-        ) : !mostSetsRecord ? (
-          <EmptyState className="mt-4 py-0">
-            <EmptyState.Title variant="bodyMedium">
-              No records yet
-            </EmptyState.Title>
-            <EmptyState.Description>
-              Complete sets for this exercise to build your records.
-            </EmptyState.Description>
-          </EmptyState>
-        ) : (
-          <View className="border-border border-t border-b py-3">
-            <View className="flex-row items-center gap-1.5">
-              <Text variant="caption" tone="muted">
-                Most sets
-              </Text>
-              {mostSetsRecord.isNewRecord ? (
-                <View className="bg-success/15 h-5 items-center justify-center rounded-full px-2">
-                  <Text
-                    variant="caption"
-                    weight="bold"
-                    className="text-success text-[11px] tracking-[0.02em]"
-                  >
-                    PR
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-            <Text
-              variant="body"
-              weight="semiBold"
-              className="mt-1 text-[17px] leading-[22px]"
-            >
-              {mostSetsRecord.value}
-            </Text>
-            <Text variant="caption" tone="muted" className="mt-0.5">
-              {formatWorkoutDate(mostSetsRecord.achievedAt)}
-            </Text>
           </View>
         )}
       </View>

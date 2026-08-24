@@ -48,6 +48,16 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-08-24 — Impeccable context script path unavailable
+
+- Context: Loading the UI guidance before updating the exercise detail records and top performances sections.
+- Tool/command: `node .agents/skills/impeccable/scripts/context.mjs --target src/features/exercises/screens/exercise-detail-screen.tsx`
+- Symptom: Node reported that the context script did not exist at the repository-relative path.
+- Cause: The installed Impeccable skill lives outside the repository at `/Users/bora/.agents/skills/impeccable`.
+- Workaround: Retried with `/Users/bora/.agents/skills/impeccable/scripts/context.mjs`.
+- Status: workaround
+- Validation impact: Context loaded successfully after the path correction.
+
 ## 2026-08-24 — Formatter amend targeted the wrong commit
 
 - Context: Applying formatter-only cleanup to the exercise-detail HTML artifact.
