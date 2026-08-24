@@ -195,7 +195,6 @@ heavy:
 - [ ] Run `pnpm run lint`.
 - [ ] Run `pnpm run prettier:check`.
 - [ ] Run `pnpm test`.
-- [ ] Run `graphify update .` after code changes.
 - [ ] Complete the manual state matrix for every migrated route and list:
       initial empty, filtered no-results, missing entity, error, unavailable
       capability, insufficient data, action press, and Back/Retry behavior.

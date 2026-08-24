@@ -35,25 +35,14 @@ After a code change, run every applicable check below; choose the narrowest rele
 - Formatting-sensitive changes: `./node_modules/.bin/prettier --check <changed-files>`; use `./node_modules/.bin/prettier --check .` for broad changes.
 - Logic or behavior: `pnpm run test`; use the repository's documented test script and its supported test selection options.
 - Database/schema changes: run the existing database checks; never generate or rewrite migrations or snapshots unless explicitly requested.
-- Any source change: `graphify update .`
 
 Use direct project-local commands for validation. Commands that can run longer than a normal tool wait, need live progress, use a TTY, create IPC, or spawn child/daemon processes should run with inherited stdout/stderr and their original exit code. Fix failures caused by the change. Report unrelated or unavailable checks without claiming they passed.
 
 ## Agent-safe command execution
 
 - Use direct project-local binaries for short, bounded checks and package scripts for project workflows.
-- Run long-running builds/tests, Graphify, Expo/native commands, quiet commands, and anything that starts workers or daemons with inherited stdout/stderr and the original exit code.
+- Run long-running builds/tests, Expo/native commands, quiet commands, and anything that starts workers or daemons with inherited stdout/stderr and the original exit code.
 - If a command produces no result after a reasonable wait, do not repeat the same invocation. Retry the equivalent direct command with live output, then inspect the raw failure.
-- `EPERM` from TSX IPC or Graphify AST/cache work is a sandbox capability issue, not a JavaScript diagnosis. Retry with the approved elevated execution path and record the workaround in `docs/agent-problems.md`.
+- `EPERM` from TSX IPC work is a sandbox capability issue, not a JavaScript diagnosis. Retry with the approved elevated execution path and record the workaround in `docs/agent-problems.md`.
 - Quote Expo Router paths and other shell paths containing parentheses, spaces, or glob characters.
 - For any programmatic agent hook, configure the host hook timeout and keep the hook fail-open. A hook must never be allowed to block the underlying tool indefinitely.
-
-## Graphify
-
-When the user invokes `/graphify`, follow the installed graphify skill first. For codebase questions, query the existing `graphify-out/graph.json` before browsing broadly:
-
-- `graphify query "<question>"` for scoped context
-- `graphify path "<A>" "<B>"` for relationships
-- `graphify explain "<concept>"` for one concept
-
-Dirty `graphify-out/` files are expected during updates. Use `graphify-out/wiki/index.md` for broad navigation when present; read `GRAPH_REPORT.md` only when the query does not provide enough context. After source changes, keep the graph current with `graphify update .`.
