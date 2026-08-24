@@ -5,6 +5,7 @@ import { Text } from '@/src/components/ui/text';
 import { ExerciseProgressChartBody } from '@/src/features/exercises/components/exercise-progress-chart-body';
 import type { ExerciseProgressPoint } from '@/src/features/exercises/exercise.types';
 import type { TrackingType } from '@/src/features/progress/tracking.domain';
+import { formatWorkoutDate } from '@/src/lib/utils/date.utils';
 import type { WeightUnit } from '@/src/lib/utils/weight.utils';
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
@@ -54,13 +55,19 @@ export function ExerciseProgressChart({
   isLoading = false
 }: ExerciseProgressChartProps) {
   const [range, setRange] = useState<ProgressRange>('3m');
+  const [selectedPoint, setSelectedPoint] =
+    useState<ExerciseProgressPoint | null>(null);
   const displayedPoints = useMemo(() => {
     const rangeStart = getProgressRangeStart(range);
 
     return points.filter(point => point.date >= rangeStart);
   }, [points, range]);
-  const handleRangeChange = useCallback(
-    (nextRange: ProgressRange) => setRange(nextRange),
+  const handleRangeChange = useCallback((nextRange: ProgressRange) => {
+    setSelectedPoint(null);
+    setRange(nextRange);
+  }, []);
+  const handleSelectedPointChange = useCallback(
+    (point: ExerciseProgressPoint | null) => setSelectedPoint(point),
     []
   );
 
@@ -85,9 +92,29 @@ export function ExerciseProgressChart({
 
             <View>
               <Text variant="bodyMedium">Progress over time</Text>
-              <Text variant="small" tone="muted" className="mt-1">
-                Best completed set score per workout.
-              </Text>
+              {selectedPoint ? (
+                <View className="mt-2 flex-row items-end justify-between gap-4">
+                  <View className="min-w-0 flex-1">
+                    <Text variant="caption" tone="muted">
+                      Selected workout
+                    </Text>
+                    <Text
+                      variant="bodyMedium"
+                      className="mt-1"
+                      numberOfLines={1}
+                    >
+                      {selectedPoint.valueLabel}
+                    </Text>
+                  </View>
+                  <Text variant="caption" tone="muted">
+                    {formatWorkoutDate(selectedPoint.date)}
+                  </Text>
+                </View>
+              ) : (
+                <Text variant="small" tone="muted" className="mt-1">
+                  Best completed set score per workout.
+                </Text>
+              )}
             </View>
 
             {displayedPoints.length < 2 ? (
@@ -105,6 +132,7 @@ export function ExerciseProgressChart({
                 points={displayedPoints}
                 weightUnit={weightUnit}
                 trackingType={trackingType}
+                onSelectedPointChange={handleSelectedPointChange}
               />
             )}
           </>

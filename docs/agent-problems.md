@@ -48,6 +48,16 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-08-24 — Full test suite blocked by existing migration mismatch during chart interaction work
+
+- Context: Running the required repository tests after adding long-press chart selection and haptics.
+- Tool/command: `pnpm run test`
+- Symptom: 44 database integration tests failed during setup before exercising their logic.
+- Cause: Existing generated migration SQL selects `exercises.equipment` while the legacy test table has `category`.
+- Workaround: None applied; generated migrations are not edit targets under repository rules.
+- Status: workaround
+- Validation impact: 33 tests passed; database integration coverage remains blocked by the pre-existing migration mismatch.
+
 ## 2026-08-24 — Graphify refresh restricted by sandbox
 
 - Context: Refreshing Graphify after anchoring exercise progress chart date ticks.

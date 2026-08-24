@@ -10,7 +10,7 @@ import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { appFontAssets, appFonts } from '@/src/theme/fonts';
 import { nativeFontSizes } from '@/src/theme/sizes';
 import { Circle, Line as SkiaLine, useFont } from '@shopify/react-native-skia';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useAnimatedReaction } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -25,6 +25,7 @@ interface ExerciseProgressChartBodyProps {
   points: ExerciseProgressPoint[];
   weightUnit: WeightUnit;
   trackingType: TrackingType;
+  onSelectedPointChange: (point: ExerciseProgressPoint | null) => void;
 }
 
 type ChartPoint = Record<string, number> & {
@@ -68,11 +69,13 @@ function getChartDomain(points: ExerciseProgressPoint[]) {
 export function ExerciseProgressChartBody({
   points,
   weightUnit,
-  trackingType
+  trackingType,
+  onSelectedPointChange
 }: ExerciseProgressChartBodyProps) {
   const { colors } = useAppTheme();
   const reduceMotion = useReducedMotion();
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const lastHapticIndexRef = useRef(-1);
   const { state: pressState, isActive: isPressActive } = useChartPressState({
     x: points[0]?.date ?? 0,
     y: { value: points[0]?.value ?? 0 }
@@ -94,14 +97,23 @@ export function ExerciseProgressChartBody({
   );
 
   useEffect(() => {
-    if (!isPressActive || selectedIndex < 0) {
+    if (!isPressActive) {
+      lastHapticIndexRef.current = -1;
+      onSelectedPointChange(null);
+
       return;
     }
 
-    if (points[selectedIndex]) {
-      triggerHapticSelection('exercise progress point selection');
+    const selectedPoint = points[selectedIndex];
+
+    if (!selectedPoint || lastHapticIndexRef.current === selectedIndex) {
+      return;
     }
-  }, [isPressActive, points, selectedIndex]);
+
+    lastHapticIndexRef.current = selectedIndex;
+    onSelectedPointChange(selectedPoint);
+    triggerHapticSelection('exercise progress point selection');
+  }, [isPressActive, onSelectedPointChange, points, selectedIndex]);
 
   return (
     <View className="mt-4 h-56 w-full">
@@ -110,6 +122,7 @@ export function ExerciseProgressChartBody({
         xKey="date"
         yKeys={['value']}
         chartPressState={pressState}
+        gestureLongPressDelay={250}
         domain={{ y: getChartDomain(points) }}
         domainPadding={{ left: 12, right: 12, top: 8, bottom: 4 }}
         padding={{ left: 0, right: 0, top: 8, bottom: 28 }}
