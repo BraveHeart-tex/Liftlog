@@ -29,6 +29,7 @@ const textVariantConfig = cva('', {
     tone: {
       default: 'text-foreground',
       primary: 'text-primary',
+      secondaryForeground: 'text-secondary-foreground',
       muted: 'text-muted-foreground',
       success: 'text-success',
       warning: 'text-warning',

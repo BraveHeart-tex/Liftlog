@@ -19,10 +19,10 @@ export function LogHeader({ onOpenSteps }: LogHeaderProps) {
         onPress={onOpenSteps}
         pressedClassName="opacity-70"
       >
-        <Text variant="bodyMedium" tone="muted">
+        <Text variant="bodyMedium" tone="secondaryForeground">
           Steps
         </Text>
-        <Icon as={ChevronRightIcon} size="sm" tone="mutedForeground" />
+        <Icon as={ChevronRightIcon} size="sm" tone="secondaryForeground" />
       </PressableSurface>
     </View>
   );

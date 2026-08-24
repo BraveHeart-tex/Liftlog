@@ -203,13 +203,13 @@ export function WorkoutLogCalendar({
 
   return (
     <View
-      className="overflow-hidden"
+      className="border-border bg-card overflow-hidden rounded-lg border"
       onLayout={handleLayout}
       style={{ height: DEFAULT_CALENDAR_HEIGHT }}
     >
       {calendarWidth !== null ? (
         <>
-          <View className="h-12 flex-row items-center gap-1">
+          <View className="h-12 flex-row items-center gap-1 px-4">
             <Text className="flex-1" numberOfLines={1} variant="h3">
               {visibleMonth?.title}
             </Text>

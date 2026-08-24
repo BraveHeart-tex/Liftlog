@@ -48,6 +48,66 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-08-24 — Graphify refresh blocked again after calendar spacing update
+
+- Context: Refreshing Graphify after adding month-header padding to the log calendar.
+- Tool/command: `/Users/bora/.local/bin/graphify update .`
+- Symptom: The restricted rebuild failed with `Operation not permitted` during code extraction.
+- Cause: Graphify's AST/cache rebuild requires filesystem operations restricted by the sandbox.
+- Workaround: Retry the same update with approved elevated filesystem access.
+- Status: workaround
+- Validation impact: TypeScript, ESLint, Prettier, and the layout detector passed; Graphify refresh required the elevated retry.
+
+## 2026-08-24 — Graphify refresh blocked by sandbox filesystem access
+
+- Context: Refreshing Graphify after the log calendar and Steps contrast update.
+- Tool/command: `/Users/bora/.local/bin/graphify update .`
+- Symptom: The rebuild failed with `Operation not permitted` during code extraction.
+- Cause: Graphify's AST/cache rebuild requires filesystem operations restricted by the sandbox.
+- Workaround: Retry the same update with approved elevated filesystem access.
+- Status: workaround
+- Validation impact: TypeScript, ESLint, and Prettier passed; Graphify refresh is pending the elevated retry.
+
+## 2026-08-24 — Full test suite blocked by pre-existing generated migration mismatch
+
+- Context: Running the repository tests after the exercises equipment-filter change.
+- Tool/command: `pnpm run test` with approved elevated process/filesystem access.
+- Symptom: Database integration tests failed during setup because migration SQL selected `exercises.equipment` from a legacy table without that column.
+- Cause: Existing generated migration SQL does not map the legacy `category` column to the current `equipment` column.
+- Workaround: None applied; generated migrations are not edit targets under repository rules.
+- Status: workaround
+- Validation impact: The suite reached execution but database integration coverage remains blocked by the pre-existing migration mismatch.
+
+## 2026-08-24 — Test runner and Graphify required elevated IPC/filesystem access
+
+- Context: Validating the exercises equipment-filter consistency change.
+- Tool/command: `pnpm run test` and `graphify update .`
+- Symptom: The test runner failed with `listen EPERM` while creating its temporary TSX IPC pipe; Graphify failed with `Operation not permitted` during AST/cache rebuilding.
+- Cause: The restricted sandbox denies the temporary IPC and filesystem operations used by these tools.
+- Workaround: Retry both commands with approved elevated process/filesystem access.
+- Status: workaround
+- Validation impact: The restricted attempts did not execute tests or refresh Graphify; elevated retries are required.
+
+## 2026-08-24 — Graphify CLI unavailable during log contrast update
+
+- Context: Querying the existing code graph before updating the log screen.
+- Tool/command: `./node_modules/.bin/graphify query "..."`
+- Symptom: The project-local Graphify executable was not found.
+- Cause: Graphify is not installed in the project-local `node_modules/.bin` directory; the global executable was also unavailable in this environment.
+- Workaround: Inspected the target route and shared theme sources directly; Graphify refresh remains part of post-change validation.
+- Status: workaround
+- Validation impact: The initial graph query was unavailable; source inspection continued with the repository’s existing files.
+
+## 2026-08-24 — Graphify refresh required elevated filesystem access during empty-state icon styling
+
+- Context: Refreshing Graphify after the exercise empty-state icon styling change.
+- Tool/command: `graphify update .`
+- Symptom: The restricted refresh failed with `Operation not permitted` during AST/cache rebuilding.
+- Cause: Graphify's rebuild requires filesystem operations unavailable in the sandbox.
+- Workaround: Retry the same command with approved elevated filesystem access.
+- Status: workaround
+- Validation impact: TypeScript, ESLint, and Prettier passed; Graphify refresh required the elevated retry.
+
 ## 2026-08-23 — Graphify refresh required elevated filesystem access after command-wrapper removal
 
 - Context: Refreshing Graphify after removing the former command-wrapper references from agent documentation.

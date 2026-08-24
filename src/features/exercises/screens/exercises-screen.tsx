@@ -8,21 +8,26 @@ import { Screen } from '@/src/components/ui/screen';
 import { SearchInputIcon } from '@/src/components/ui/search-input-icon';
 import { Text } from '@/src/components/ui/text';
 import { ExerciseListRow } from '@/src/features/exercises/components/exercise-list-row';
+import { CATEGORY_FILTERS } from '@/src/features/exercises/exercise.constants';
 import type { ExerciseListDataItem } from '@/src/features/exercises/exercise-display.utils';
 import { useExercisesScreen } from '@/src/features/exercises/hooks/use-exercises-screen';
+import { EquipmentPickerSheet } from '@/src/features/workouts/exercise-selection/components/equipment-picker-sheet';
 import { ExercisePickerFilters } from '@/src/features/workouts/exercise-selection/components/exercise-picker-filters';
 import { iconSizes } from '@/src/theme/sizes';
 import { router } from 'expo-router';
 import { PlusIcon, SearchXIcon } from 'lucide-react-native';
-import { useCallback } from 'react';
-import { Platform, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { Keyboard, Platform, View } from 'react-native';
 
 export function ExercisesScreen() {
+  const [isEquipmentSheetOpen, setIsEquipmentSheetOpen] = useState(false);
   const {
     query,
     setQuery,
     selectedFilter,
     setSelectedFilter,
+    selectedEquipment,
+    setSelectedEquipment,
     filteredExercises,
     exerciseListItems,
     exerciseLoadError,
@@ -33,7 +38,12 @@ export function ExercisesScreen() {
   const isLoadingList = isLoadingExercises || isLoadingRecentExercises;
   const trimmedQuery = query.trim();
   const hasActiveSearchOrFilter =
-    trimmedQuery.length > 0 || selectedFilter !== 'all';
+    trimmedQuery.length > 0 ||
+    selectedFilter !== 'all' ||
+    selectedEquipment !== null;
+  const selectedEquipmentLabel = CATEGORY_FILTERS.find(
+    category => category.value === selectedEquipment
+  )?.label;
   const emptyTitle = exerciseLoadError
     ? 'Could not load exercises'
     : 'No exercises found';
@@ -41,9 +51,11 @@ export function ExercisesScreen() {
     ? 'Something went wrong while loading your exercise library. Try again in a moment.'
     : trimmedQuery.length > 0
       ? `We couldn't find anything matching "${trimmedQuery}". Try adjusting your search or add it yourself.`
-      : selectedFilter !== 'all'
-        ? "We couldn't find anything in this category. Try a different filter or add it yourself."
-        : 'Your exercise library is empty. Create a custom exercise to get started.';
+      : selectedEquipmentLabel
+        ? `We couldn't find anything using ${selectedEquipmentLabel.toLocaleLowerCase()} equipment. Try adjusting your filters or add it yourself.`
+        : selectedFilter !== 'all'
+          ? "We couldn't find anything in this category. Try a different filter or add it yourself."
+          : 'Your exercise library is empty. Create a custom exercise to get started.';
 
   const keyExtractor = useCallback(
     (item: ExerciseListDataItem) =>
@@ -132,7 +144,23 @@ export function ExercisesScreen() {
           <View>
             <ExercisePickerFilters
               selectedFilter={selectedFilter}
-              setSelectedFilter={setSelectedFilter}
+              setSelectedFilter={filter => {
+                if (
+                  filter !== 'all' &&
+                  filter !== 'recent' &&
+                  filter !== 'custom'
+                ) {
+                  return;
+                }
+
+                Keyboard.dismiss();
+                setSelectedFilter(filter);
+              }}
+              selectedEquipment={selectedEquipment}
+              onOpenEquipmentSheet={() => {
+                Keyboard.dismiss();
+                setIsEquipmentSheetOpen(true);
+              }}
             />
 
             <View className="mt-4">
@@ -150,13 +178,11 @@ export function ExercisesScreen() {
             <LoadingState label="Loading exercises..." className="min-h-80" />
           ) : (
             <View className="items-center px-2 pt-16 pb-10">
-              <View className="border-border/60 bg-card h-28 w-28 items-center justify-center rounded-full border">
-                <View className="bg-muted h-20 w-20 items-center justify-center rounded-full">
-                  <Icon as={SearchXIcon} size={28} tone="mutedForeground" />
-                </View>
+              <View className="bg-secondary h-16 w-16 items-center justify-center rounded-full">
+                <Icon as={SearchXIcon} size={32} tone="secondaryForeground" />
               </View>
 
-              <Text variant="h2" className="mt-8 text-center">
+              <Text variant="h2" className="mt-6 text-center">
                 {emptyTitle}
               </Text>
               <Text
@@ -175,6 +201,7 @@ export function ExercisesScreen() {
                     router.navigate('/exercises/new');
                     setQuery('');
                     setSelectedFilter('all');
+                    setSelectedEquipment(null);
                   }}
                   leftIcon={
                     <Icon
@@ -195,6 +222,7 @@ export function ExercisesScreen() {
                     onPress={() => {
                       setQuery('');
                       setSelectedFilter('all');
+                      setSelectedEquipment(null);
                     }}
                   >
                     Clear Search
@@ -204,6 +232,13 @@ export function ExercisesScreen() {
             </View>
           )
         }
+      />
+
+      <EquipmentPickerSheet
+        isOpen={isEquipmentSheetOpen}
+        selectedEquipment={selectedEquipment}
+        onClose={() => setIsEquipmentSheetOpen(false)}
+        onSelectEquipment={setSelectedEquipment}
       />
     </Screen>
   );

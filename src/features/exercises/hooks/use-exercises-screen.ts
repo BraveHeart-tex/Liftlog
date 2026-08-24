@@ -7,34 +7,37 @@ import {
   getExercisesQuery,
   type ExerciseListItem
 } from '@/src/features/exercises/exercise.repository';
-import type { ExercisePickerFilter } from '@/src/features/workouts/exercise-selection/components/exercise-picker-filters';
+import type {
+  ExercisePickerEquipmentFilter,
+  ExercisePickerPrimaryFilter
+} from '@/src/features/workouts/exercise-selection/components/exercise-picker-filter.types';
 import { getRecentExerciseIdsQuery } from '@/src/features/workouts/exercise-selection/exercise-selection.repository';
+import { matchesExercisePickerFilters } from '@/src/features/workouts/exercise-selection/exercise-picker-filter.utils';
 import { RECENT_EXERCISES_LIMIT } from '@/src/features/workouts/shared/workout.constants';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useMemo, useState } from 'react';
 
 function matchesExerciseFilter(
   exercise: ExerciseListItem,
-  selectedFilter: ExercisePickerFilter,
+  selectedFilter: ExercisePickerPrimaryFilter,
+  selectedEquipment: ExercisePickerEquipmentFilter,
   recentExerciseIdSet: Set<ExerciseListItem['id']>
 ) {
-  switch (selectedFilter) {
-    case 'all':
-      return true;
-    case 'recent':
-      return recentExerciseIdSet.has(exercise.id);
-    case 'custom':
-      return exercise.isCustom === 1;
-    default:
-      return exercise.equipment?.toLocaleLowerCase() === selectedFilter;
-  }
+  return matchesExercisePickerFilters(
+    exercise,
+    selectedFilter,
+    selectedEquipment,
+    recentExerciseIdSet
+  );
 }
 
 export function useExercisesScreen() {
   const db = useDrizzle();
   const [query, setQuery] = useState('');
   const [selectedFilter, setSelectedFilter] =
-    useState<ExercisePickerFilter>('all');
+    useState<ExercisePickerPrimaryFilter>('all');
+  const [selectedEquipment, setSelectedEquipment] =
+    useState<ExercisePickerEquipmentFilter>(null);
 
   const exercisesResult = useLiveWithFallback(getExercisesQuery(db), [db], {
     initialData: [],
@@ -71,12 +74,19 @@ export function useExercisesScreen() {
       const matchesFilter = matchesExerciseFilter(
         exercise,
         selectedFilter,
+        selectedEquipment,
         recentExerciseIdSet
       );
 
       return matchesExerciseSearch(exercise, normalizedQuery) && matchesFilter;
     });
-  }, [exercises, query, recentExerciseIdSet, selectedFilter]);
+  }, [
+    exercises,
+    query,
+    recentExerciseIdSet,
+    selectedEquipment,
+    selectedFilter
+  ]);
 
   const exerciseListItems = useMemo(
     () => buildAlphabetizedExerciseListItems(filteredExercises),
@@ -94,6 +104,8 @@ export function useExercisesScreen() {
     setQuery,
     selectedFilter,
     setSelectedFilter,
+    selectedEquipment,
+    setSelectedEquipment,
     exercises,
     filteredExercises,
     exerciseListItems,
