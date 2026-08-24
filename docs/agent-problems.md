@@ -48,6 +48,26 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-08-24 — Drizzle SQLite rename migration copied the new column name
+
+- Context: Regenerating the exercise `category` to `equipment` migration after database integration setup failed.
+- Tool/command: `drizzle-kit generate` for the SQLite schema rename.
+- Symptom: The generated table-rebuild SQL selected `exercises.equipment` from the pre-rename table instead of copying `category`.
+- Cause: The rename and nullability change were generated together, and Drizzle Kit did not preserve the source column in the rebuild copy.
+- Workaround: Generated two migrations: rename `category` to `equipment` while required, then make `equipment` nullable.
+- Status: resolved
+- Validation impact: All 49 focused database integration tests pass.
+
+## 2026-08-24 — Focused database test runner sandbox IPC restriction
+
+- Context: Running the requested database integration test file.
+- Tool/command: `./node_modules/.bin/tsx --experimental-test-module-mocks --tsconfig tests/tsconfig.json --import ./tests/setup.ts --test tests/db/database.integration.test.ts`
+- Symptom: The runner failed before test collection with `listen EPERM` while creating its temporary TSX IPC pipe.
+- Cause: The restricted sandbox denies the temporary IPC operation used by `tsx`.
+- Workaround: Retry the same focused test with approved elevated process/filesystem access.
+- Status: workaround
+- Validation impact: The restricted attempt ran zero tests; elevated validation is required.
+
 ## 2026-08-24 — Impeccable context script path unavailable
 
 - Context: Loading the UI guidance before updating the exercise detail records and top performances sections.

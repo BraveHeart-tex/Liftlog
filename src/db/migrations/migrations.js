@@ -15,7 +15,8 @@ import m0010 from './0010_fix_workout_template_source_fk.sql';
 import m0011 from './0011_indexed_normalized_exercise_names.sql';
 import m0012 from './0012_enforce_normalized_exercise_names.sql';
 import m0013 from './0013_careless_norman_osborn.sql';
-import m0014 from './0014_mighty_silver_samurai.sql';
+import m0014 from './0014_rename_category_to_equipment.sql';
+import m0015 from './0015_make_equipment_optional.sql';
 
 export default {
   journal,
@@ -34,6 +35,7 @@ export default {
     m0011,
     m0012,
     m0013,
-    m0014
+    m0014,
+    m0015
   }
 };

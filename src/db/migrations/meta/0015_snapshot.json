@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "4ee6b50f-0f8f-4287-8aee-5795bfa2fe69",
-  "prevId": "5cb6e137-dc9e-45d6-9e55-4e213d8b40f7",
+  "id": "4d8be4f9-f674-4e44-9b5e-ece48575a2b9",
+  "prevId": "4ee6b50f-0f8f-4287-8aee-5795bfa2fe69",
   "tables": {
     "app_meta": {
       "name": "app_meta",
@@ -56,7 +56,7 @@
           "name": "equipment",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "tracking_type": {
@@ -767,9 +767,7 @@
   "_meta": {
     "schemas": {},
     "tables": {},
-    "columns": {
-      "\"exercises\".\"category\"": "\"exercises\".\"equipment\""
-    }
+    "columns": {}
   },
   "internal": {
     "indexes": {}
