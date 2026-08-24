@@ -48,6 +48,56 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-08-24 — Formatter amend targeted the wrong commit
+
+- Context: Applying formatter-only cleanup to the exercise-detail HTML artifact.
+- Tool/command: `git commit --amend --no-edit`
+- Symptom: The latest documentation commit was amended instead of the earlier feature commit.
+- Cause: The feature commit was not checked out as `HEAD` before amending.
+- Workaround: Restore the previous commit boundary, amend the feature commit, then replay the tooling and documentation commits.
+- Status: resolved
+- Validation impact: Commit history verification was repeated after the repair.
+
+## 2026-08-24 — Git index operation required elevated access
+
+- Context: Splitting staged changes into separate commits.
+- Tool/command: `git reset`
+- Symptom: Git could not create `.git/index.lock` and returned `Operation not permitted`.
+- Cause: The restricted sandbox denied the repository index lock operation.
+- Workaround: Retry Git index operations with approved elevated access.
+- Status: workaround
+- Validation impact: Grouping was paused until the elevated retry.
+
+## 2026-08-24 — Test suite blocked by existing migration schema mismatch
+
+- Context: Elevated test run after the exercise detail performance restructure.
+- Tool/command: `pnpm run test`
+- Symptom: The suite started, but database integration cases failed during migration setup because `exercises.equipment` was missing from the legacy test table.
+- Cause: Existing generated migration SQL expects `equipment` while the test fixture schema still exposes the older column shape.
+- Workaround: None applied; generated migrations are not edit targets for this UI change.
+- Status: workaround
+- Validation impact: Non-database tests reached execution; database integration coverage remains blocked by the pre-existing migration mismatch.
+
+## 2026-08-24 — Test runner blocked by sandbox IPC permissions
+
+- Context: Running the required test suite after the exercise detail performance restructure.
+- Tool/command: `pnpm run test`
+- Symptom: `tsx` failed before test collection with `listen EPERM` for its temporary IPC pipe.
+- Cause: The restricted sandbox denies the temporary IPC operation used by the test runner.
+- Workaround: Retry the same test command with approved elevated process/filesystem access.
+- Status: workaround
+- Validation impact: The restricted attempt ran zero tests; elevated validation is pending.
+
+## 2026-08-24 — Broad screen patch anchor mismatch
+
+- Context: Applying the exercise detail Top performances restructuring.
+- Tool/command: `apply_patch` against `exercise-detail-screen.tsx`, the tracking domain, and date utility.
+- Symptom: Patch verification failed because one expected screen anchor was not present; no changes were applied.
+- Cause: The current screen already lacked the `remainingTopPerformances` line assumed by the broad patch.
+- Workaround: Re-read exact local regions and split the change into smaller patches.
+- Status: resolved
+- Validation impact: None; implementation continued after the retry.
+
 ## 2026-08-24 — Full test suite blocked by existing migration mismatch during chart interaction work
 
 - Context: Running the required repository tests after adding long-press chart selection and haptics.
@@ -57,16 +107,6 @@ Use one of these status values:
 - Workaround: None applied; generated migrations are not edit targets under repository rules.
 - Status: workaround
 - Validation impact: 33 tests passed; database integration coverage remains blocked by the pre-existing migration mismatch.
-
-## 2026-08-24 — Graphify refresh restricted by sandbox
-
-- Context: Refreshing Graphify after anchoring exercise progress chart date ticks.
-- Tool/command: `/Users/bora/.local/bin/graphify update .`
-- Symptom: The rebuild failed with `Operation not permitted` during code extraction.
-- Cause: Graphify's AST/cache rebuild requires filesystem operations restricted by the sandbox.
-- Workaround: Retry the same update with approved elevated filesystem access.
-- Status: workaround
-- Validation impact: The restricted refresh did not complete; elevated Graphify validation is required.
 
 ## 2026-08-24 — Impeccable context script path unavailable
 
@@ -78,16 +118,6 @@ Use one of these status values:
 - Status: workaround
 - Validation impact: Context auto-discovery was unavailable; manual theme and target inspection is being used.
 
-## 2026-08-24 — Project-local Graphify query unavailable
-
-- Context: Querying the existing code graph before updating the exercise progress chart.
-- Tool/command: `./node_modules/.bin/graphify query "Where is the workout progress chart implemented, and how are its data points and axes rendered?"`
-- Symptom: The project-local Graphify executable was not found.
-- Cause: Graphify is not installed in the project-local `node_modules/.bin` directory.
-- Workaround: Inspected the target chart and its related sources directly; the required post-change Graphify update remains part of validation.
-- Status: workaround
-- Validation impact: The initial graph query was unavailable; source inspection continued with repository files.
-
 ## 2026-08-24 — Focused test wrapper stalled during progress-range validation
 
 - Context: Validating the exercise progress-range change.
@@ -97,26 +127,6 @@ Use one of these status values:
 - Workaround: Retried with the repository-local test runner and elevated temporary-process access.
 - Status: resolved
 - Validation impact: The focused progress repository test passed all 3 cases.
-
-## 2026-08-24 — Graphify refresh blocked again after calendar spacing update
-
-- Context: Refreshing Graphify after adding month-header padding to the log calendar.
-- Tool/command: `/Users/bora/.local/bin/graphify update .`
-- Symptom: The restricted rebuild failed with `Operation not permitted` during code extraction.
-- Cause: Graphify's AST/cache rebuild requires filesystem operations restricted by the sandbox.
-- Workaround: Retry the same update with approved elevated filesystem access.
-- Status: workaround
-- Validation impact: TypeScript, ESLint, Prettier, and the layout detector passed; Graphify refresh required the elevated retry.
-
-## 2026-08-24 — Graphify refresh blocked by sandbox filesystem access
-
-- Context: Refreshing Graphify after the log calendar and Steps contrast update.
-- Tool/command: `/Users/bora/.local/bin/graphify update .`
-- Symptom: The rebuild failed with `Operation not permitted` during code extraction.
-- Cause: Graphify's AST/cache rebuild requires filesystem operations restricted by the sandbox.
-- Workaround: Retry the same update with approved elevated filesystem access.
-- Status: workaround
-- Validation impact: TypeScript, ESLint, and Prettier passed; Graphify refresh is pending the elevated retry.
 
 ## 2026-08-24 — Full test suite blocked by pre-existing generated migration mismatch
 
@@ -128,55 +138,15 @@ Use one of these status values:
 - Status: workaround
 - Validation impact: The suite reached execution but database integration coverage remains blocked by the pre-existing migration mismatch.
 
-## 2026-08-24 — Test runner and Graphify required elevated IPC/filesystem access
+## 2026-08-24 — Test runner required elevated IPC/filesystem access
 
 - Context: Validating the exercises equipment-filter consistency change.
-- Tool/command: `pnpm run test` and `graphify update .`
-- Symptom: The test runner failed with `listen EPERM` while creating its temporary TSX IPC pipe; Graphify failed with `Operation not permitted` during AST/cache rebuilding.
-- Cause: The restricted sandbox denies the temporary IPC and filesystem operations used by these tools.
-- Workaround: Retry both commands with approved elevated process/filesystem access.
+- Tool/command: `pnpm run test`
+- Symptom: The test runner failed with `listen EPERM` while creating its temporary TSX IPC pipe.
+- Cause: The restricted sandbox denies the temporary IPC operation used by the test runner.
+- Workaround: Retry the test command with approved elevated process/filesystem access.
 - Status: workaround
-- Validation impact: The restricted attempts did not execute tests or refresh Graphify; elevated retries are required.
-
-## 2026-08-24 — Graphify CLI unavailable during log contrast update
-
-- Context: Querying the existing code graph before updating the log screen.
-- Tool/command: `./node_modules/.bin/graphify query "..."`
-- Symptom: The project-local Graphify executable was not found.
-- Cause: Graphify is not installed in the project-local `node_modules/.bin` directory; the global executable was also unavailable in this environment.
-- Workaround: Inspected the target route and shared theme sources directly; Graphify refresh remains part of post-change validation.
-- Status: workaround
-- Validation impact: The initial graph query was unavailable; source inspection continued with the repository’s existing files.
-
-## 2026-08-24 — Graphify refresh required elevated filesystem access during empty-state icon styling
-
-- Context: Refreshing Graphify after the exercise empty-state icon styling change.
-- Tool/command: `graphify update .`
-- Symptom: The restricted refresh failed with `Operation not permitted` during AST/cache rebuilding.
-- Cause: Graphify's rebuild requires filesystem operations unavailable in the sandbox.
-- Workaround: Retry the same command with approved elevated filesystem access.
-- Status: workaround
-- Validation impact: TypeScript, ESLint, and Prettier passed; Graphify refresh required the elevated retry.
-
-## 2026-08-23 — Graphify refresh required elevated filesystem access after command-wrapper removal
-
-- Context: Refreshing Graphify after removing the former command-wrapper references from agent documentation.
-- Tool/command: `graphify update .`
-- Symptom: The restricted refresh failed with `Operation not permitted` during AST/cache rebuilding.
-- Cause: Graphify's rebuild requires filesystem operations unavailable in the sandbox.
-- Workaround: Re-ran the same command with approved elevated filesystem access.
-- Status: workaround
-- Validation impact: The first refresh failed; the elevated refresh is required to complete the documentation update.
-
-## 2026-08-23 — Graphify refresh required elevated filesystem access during documentation update
-
-- Context: Refreshing Graphify after adding agent documentation.
-- Tool/command: `graphify update .`
-- Symptom: The restricted refresh failed with `Operation not permitted` during AST/cache rebuilding.
-- Cause: Graphify's rebuild requires filesystem operations unavailable in the sandbox.
-- Workaround: Re-ran the same command with approved elevated filesystem access; the graph rebuilt successfully.
-- Status: workaround
-- Validation impact: Graphify completed with its existing zero-node source warnings and updated the graph outputs.
+- Validation impact: The restricted attempt did not execute tests; the elevated retry is required.
 
 ## 2026-08-23 — Package-manager formatter invocation stalled during documentation validation
 
@@ -228,66 +198,6 @@ Use one of these status values:
 - Status: workaround
 - Validation impact: TypeScript passed; lint, formatting, and test validation are being retried with corrected commands.
 
-## 2026-08-23 — Graph refresh sandbox restriction during onboarding removal
-
-- Context: Refreshing Graphify after removing the onboarding route and related code.
-- Tool/command: `graphify update .`
-- Symptom: The in-sandbox rebuild failed with `Operation not permitted` during AST cache rebuilding.
-- Cause: Graphify requires filesystem operations restricted by the sandbox.
-- Workaround: Retry the same update with approved elevated filesystem access.
-- Status: workaround
-- Validation impact: The graph refresh is pending the elevated retry; source validation is otherwise still pending.
-
-## 2026-08-23 — Graph refresh sandbox restriction during equipment icon mapping
-
-- Context: Refreshing Graphify after assigning distinct equipment icons.
-- Tool/command: `graphify update .`
-- Symptom: The in-sandbox rebuild failed with `Operation not permitted`.
-- Cause: Graphify's AST cache rebuild requires filesystem access restricted by the sandbox.
-- Workaround: Re-ran with approved elevated filesystem access; the graph rebuilt successfully.
-- Status: workaround
-- Validation impact: Graphify completed with the existing zero-node source warnings.
-
-## 2026-08-23 — Graph refresh sandbox restriction during muscle selector styling
-
-- Context: Refreshing Graphify after adopting the shared segmented control and subtle chip colors.
-- Tool/command: `graphify update .`
-- Symptom: The in-sandbox rebuild failed with `Operation not permitted`.
-- Cause: Graphify's AST cache rebuild requires filesystem access restricted by the sandbox.
-- Workaround: Re-ran with approved elevated filesystem access; the graph rebuilt successfully.
-- Status: workaround
-- Validation impact: Graphify completed with the existing zero-node source warnings.
-
-## 2026-08-23 — Graph refresh sandbox restriction during separator adjustment
-
-- Context: Refreshing Graphify after moving the setup divider to the helper text.
-- Tool/command: `graphify update .`
-- Symptom: The in-sandbox rebuild failed with `Operation not permitted`.
-- Cause: Graphify's AST cache rebuild requires filesystem access restricted by the sandbox.
-- Workaround: Re-ran with approved elevated filesystem access; the graph rebuilt successfully.
-- Status: workaround
-- Validation impact: Graphify completed with the existing zero-node source warnings.
-
-## 2026-08-23 — Graph refresh sandbox restriction during spacing polish
-
-- Context: Refreshing Graphify after the exercise setup spacing adjustment.
-- Tool/command: `graphify update .`
-- Symptom: The in-sandbox rebuild failed with `Operation not permitted`.
-- Cause: Graphify's AST cache rebuild requires filesystem access restricted by the sandbox.
-- Workaround: Re-ran with approved elevated filesystem access; the graph rebuilt successfully.
-- Status: workaround
-- Validation impact: Graphify completed with the existing zero-node source warnings.
-
-## 2026-08-23 — Graph refresh required elevated filesystem access for exercise form
-
-- Context: Refreshing Graphify after the exercise metadata form source changes.
-- Tool/command: `graphify update .`
-- Symptom: The in-sandbox AST rebuild failed with `Operation not permitted`.
-- Cause: Graphify's cache rebuild needs filesystem operations restricted by the sandbox.
-- Workaround: Re-ran the update with approved elevated filesystem access; the graph rebuilt successfully.
-- Status: workaround
-- Validation impact: Graphify completed with warnings for source files producing zero nodes and a changed community set.
-
 ## 2026-08-23 — Exercise form test suite blocked by generated migration
 
 - Context: Running the required test suite after the exercise metadata form refactor.
@@ -328,35 +238,15 @@ Use one of these status values:
 - Status: `workaround`
 - Validation impact: The alternate runner did not provide test coverage; the documented runner retry remains authoritative.
 
-## 2026-08-23 — Validation tools hit sandbox restrictions during equipment rename
+## 2026-08-23 — Test validation hit sandbox restrictions during equipment rename
 
-- Context: Running the required full tests and Graphify refresh after propagating the exercises field rename.
-- Tool/command: `pnpm run test` and `graphify update .`
-- Symptom: The first test attempt could not start its temporary IPC pipe; the in-sandbox Graphify refresh failed with `Operation not permitted` during AST rebuild.
+- Context: Running the required full tests after propagating the exercises field rename.
+- Tool/command: `pnpm run test`
+- Symptom: The first test attempt could not start its temporary IPC pipe.
 - Cause: The sandbox restricted temporary-process IPC/filesystem operations; no source-level cause was indicated.
-- Workaround: Retried the test through the direct process path; reran Graphify with approved elevated filesystem access.
+- Workaround: Retried the test through the direct process path with approved elevated process access.
 - Status: `workaround`
-- Validation impact: Graphify rebuilt successfully; the elevated test run reached the suite but was blocked by the generated migration’s legacy-column mismatch.
-
-## 2026-08-23 — Graph refresh sandbox restriction during header action move
-
-- Context: Refreshing Graphify after moving Steps actions into the native header.
-- Tool/command: `graphify update .`
-- Symptom: The in-sandbox refresh failed with `Operation not permitted` during AST rebuild.
-- Cause: Graphify required filesystem access restricted by the sandbox.
-- Workaround: Re-ran the same update with approved elevated filesystem access; it rebuilt the code graph successfully.
-- Status: workaround
-- Validation impact: Graphify completed with existing warnings for source files producing zero nodes and a changed community set.
-
-## 2026-08-23 — Graph refresh sandbox restriction during Steps redesign
-
-- Context: Refreshing Graphify after the Steps dashboard source changes.
-- Tool/command: `graphify update .`
-- Symptom: The in-sandbox refresh failed with `Operation not permitted` during AST rebuild.
-- Cause: Graphify required filesystem access restricted by the sandbox.
-- Workaround: Re-ran the same update with approved elevated filesystem access; it rebuilt the code graph successfully.
-- Status: workaround
-- Validation impact: Graphify completed with existing warnings for source files producing zero nodes and a changed community set.
+- Validation impact: The elevated test run reached the suite but was blocked by the generated migration’s legacy-column mismatch.
 
 ## 2026-08-23 — Broad test wrapper stalled during Steps redesign validation
 
@@ -377,16 +267,6 @@ Use one of these status values:
 - Workaround: Ran repository-local ESLint against the changed Steps files.
 - Status: workaround
 - Validation impact: Full lint remains unavailable; targeted local lint passed.
-
-## 2026-08-23 — Graph refresh sandbox restriction
-
-- Context: Refreshing Graphify after the Log route and calendar source changes.
-- Tool/command: `graphify update .`
-- Symptom: The in-sandbox refresh failed with `Operation not permitted` during AST rebuild.
-- Cause: Graphify required filesystem access restricted by the sandbox.
-- Workaround: Re-ran the same update with approved elevated filesystem access; it rebuilt the code graph successfully.
-- Status: workaround
-- Validation impact: Graphify completed with existing warnings for source files producing zero nodes and a changed community set.
 
 ## 2026-08-23 — Test wrapper stalled during Log redesign validation
 
@@ -437,16 +317,6 @@ Use one of these status values:
 - Workaround: Ran the repository-local `./node_modules/.bin/eslint <changed-file>` and `./node_modules/.bin/prettier --check <changed-file>` directly.
 - Status: workaround
 - Validation impact: Changed-file lint and formatting checks passed; the full lint check remains unavailable.
-
-## 2026-08-22 — Graph refresh required elevated filesystem access
-
-- Context: Refreshing the repository knowledge graph after documentation changes.
-- Tool/command: `graphify update .`
-- Symptom: The rebuild failed with `Operation not permitted`.
-- Cause: The sandbox prevented a graphify filesystem operation; the exact operation was not exposed.
-- Workaround: Re-ran the same update with approved elevated filesystem access; the graph rebuilt successfully.
-- Status: `workaround`
-- Validation impact: The initial graph refresh failed; the elevated rerun completed with warnings about source files producing zero graph nodes.
 
 ## 2026-08-22 — Global Prettier wrapper referenced a missing installation
 
