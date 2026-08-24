@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "b1c65360-35d9-42d5-b7fa-e302e7e7b862",
-  "prevId": "5cb6e137-dc9e-45d6-9e55-4e213d8b40f7",
+  "id": "659b4755-aed3-4c14-a720-f1ba13a035c3",
+  "prevId": "ddb255e8-21f4-4c3f-b324-55c4f88059c5",
   "tables": {
     "app_meta": {
       "name": "app_meta",
@@ -47,13 +47,6 @@
         },
         "normalized_name": {
           "name": "normalized_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "category": {
-          "name": "category",
           "type": "text",
           "primaryKey": false,
           "notNull": true,

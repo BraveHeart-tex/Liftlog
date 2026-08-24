@@ -14,6 +14,26 @@ interface ExerciseNameMigrationConflict {
   exercises: ExerciseNameMigrationRow[];
 }
 
+interface ExerciseColumnRow {
+  name: string;
+}
+
+async function getExerciseColumns(
+  client: SQLiteDatabase
+): Promise<ExerciseColumnRow[]> {
+  return client.getAllAsync<ExerciseColumnRow>(
+    "PRAGMA table_info('exercises')"
+  );
+}
+
+export async function hasExerciseEquipmentColumn(
+  client: SQLiteDatabase
+): Promise<boolean> {
+  return (await getExerciseColumns(client)).some(
+    column => column.name === 'equipment'
+  );
+}
+
 export class ExerciseNameMigrationConflictError extends Error {
   constructor(readonly conflicts: ExerciseNameMigrationConflict[]) {
     super(
@@ -58,6 +78,23 @@ export async function assertNoExerciseNameMigrationConflicts(
   if (conflicts.length > 0) {
     throw new ExerciseNameMigrationConflictError(conflicts);
   }
+}
+
+export async function backfillExerciseEquipment(
+  client: SQLiteDatabase
+): Promise<void> {
+  const columns = await getExerciseColumns(client);
+
+  if (
+    !columns.some(column => column.name === 'category') ||
+    !columns.some(column => column.name === 'equipment')
+  ) {
+    return;
+  }
+
+  await client.execAsync(
+    'UPDATE exercises SET equipment = category WHERE equipment IS NULL'
+  );
 }
 
 export function backfillNormalizedExerciseNames(db: DrizzleDb): void {

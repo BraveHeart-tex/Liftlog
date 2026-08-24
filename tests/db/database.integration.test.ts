@@ -12,8 +12,10 @@ import {
 } from '@/src/db/schema';
 import {
   assertNoExerciseNameMigrationConflicts,
+  backfillExerciseEquipment,
   backfillNormalizedExerciseNames,
-  ExerciseNameMigrationConflictError
+  ExerciseNameMigrationConflictError,
+  hasExerciseEquipmentColumn
 } from '@/src/db/exercise-name-migration';
 import {
   createDrizzleDb,
@@ -233,6 +235,10 @@ async function createMigratedTestDatabase() {
     migrate(db, loadMigrations(11))
   );
   backfillNormalizedExerciseNames(db);
+  await runDatabaseMigrations(sqliteClient, () =>
+    migrate(db, loadMigrations(14))
+  );
+  await backfillExerciseEquipment(sqliteClient);
   await runDatabaseMigrations(sqliteClient, () =>
     migrate(db, loadMigrations())
   );
@@ -822,6 +828,10 @@ test('exercise name migration backfills Unicode normalized names', async () => {
     );
     backfillNormalizedExerciseNames(db);
     await runDatabaseMigrations(sqliteClient, () =>
+      migrate(db, loadMigrations(14))
+    );
+    await backfillExerciseEquipment(sqliteClient);
+    await runDatabaseMigrations(sqliteClient, () =>
       migrate(db, loadMigrations())
     );
 
@@ -829,14 +839,74 @@ test('exercise name migration backfills Unicode normalized names', async () => {
       db
         .select({
           id: exercises.id,
-          normalizedName: exercises.normalizedName
+          normalizedName: exercises.normalizedName,
+          equipment: exercises.equipment
         })
         .from(exercises)
         .all(),
       [
-        { id: 'active', normalizedName: 'übung' },
-        { id: 'archived', normalizedName: 'übung' }
+        { id: 'active', normalizedName: 'übung', equipment: 'other' },
+        { id: 'archived', normalizedName: 'übung', equipment: 'other' }
       ]
+    );
+  } finally {
+    nodeClient.closeSync();
+  }
+});
+
+test('database migration resumes when equipment already exists', async () => {
+  const nodeClient = new NodeSQLiteDatabase();
+  const sqliteClient = nodeClient as unknown as SQLiteDatabase;
+  const db = createDrizzleDb(sqliteClient);
+
+  try {
+    await runDatabaseMigrations(sqliteClient, () =>
+      migrate(db, loadMigrations(13))
+    );
+    nodeClient.execSync(`
+      ALTER TABLE exercises ADD equipment text;
+      INSERT INTO exercises (
+        id, name, normalized_name, category, equipment, created_at
+      ) VALUES ('legacy-equipment', 'Squat', 'squat', 'legs', NULL, 1);
+    `);
+
+    assert.equal(await hasExerciseEquipmentColumn(sqliteClient), true);
+
+    const allMigrations = loadMigrations();
+    const migrationsThroughExistingEquipmentColumn = {
+      ...allMigrations,
+      journal: {
+        entries: allMigrations.journal.entries.filter(entry => entry.idx <= 13)
+      }
+    };
+    const migrationsAfterExistingEquipmentColumn = {
+      ...allMigrations,
+      journal: {
+        entries: allMigrations.journal.entries.filter(entry => entry.idx !== 14)
+      }
+    };
+
+    await runDatabaseMigrations(sqliteClient, () =>
+      migrate(db, migrationsThroughExistingEquipmentColumn)
+    );
+    await backfillExerciseEquipment(sqliteClient);
+    await runDatabaseMigrations(sqliteClient, () =>
+      migrate(db, migrationsAfterExistingEquipmentColumn)
+    );
+
+    assert.equal(
+      db
+        .select({ equipment: exercises.equipment })
+        .from(exercises)
+        .where(eq(exercises.id, 'legacy-equipment'))
+        .get()?.equipment,
+      'legs'
+    );
+    assert.equal(
+      nodeClient
+        .getAllSync<{ name: string }>("PRAGMA table_info('exercises')")
+        .some(column => column.name === 'category'),
+      false
     );
   } finally {
     nodeClient.closeSync();
@@ -1305,6 +1375,10 @@ test('production initialization enables workout delete foreign-key actions', asy
     );
     backfillNormalizedExerciseNames(db);
     await runDatabaseMigrations(sqliteClient, () =>
+      migrate(db, loadMigrations(14))
+    );
+    await backfillExerciseEquipment(sqliteClient);
+    await runDatabaseMigrations(sqliteClient, () =>
       migrate(db, loadMigrations())
     );
 
@@ -1400,6 +1474,10 @@ test('production initialization removes incompatible historical edit drafts', as
       VALUES ('legacy-draft-set', 'legacy-draft-exercise', 0);
     `);
 
+    await runDatabaseMigrations(sqliteClient, () =>
+      migrate(db, loadMigrations(14))
+    );
+    await backfillExerciseEquipment(sqliteClient);
     await runDatabaseMigrations(sqliteClient, () =>
       migrate(db, loadMigrations())
     );

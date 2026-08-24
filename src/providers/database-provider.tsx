@@ -8,7 +8,9 @@ import {
 } from '@/src/db/client';
 import {
   assertNoExerciseNameMigrationConflicts,
-  backfillNormalizedExerciseNames
+  backfillExerciseEquipment,
+  backfillNormalizedExerciseNames,
+  hasExerciseEquipmentColumn
 } from '@/src/db/exercise-name-migration';
 import migrations from '@/src/db/migrations/migrations';
 import { runSeedIfNeeded } from '@/src/db/seed';
@@ -31,12 +33,38 @@ import {
 const DrizzleContext = createContext<DrizzleDb | null>(null);
 
 const NORMALIZED_EXERCISE_NAME_BACKFILL_MIGRATION_INDEX = 11;
+const EQUIPMENT_COLUMN_BACKFILL_MIGRATION_INDEX = 14;
 
 const migrationsThroughExerciseNameBackfill = {
   ...migrations,
   journal: {
     entries: migrations.journal.entries.filter(
       entry => entry.idx <= NORMALIZED_EXERCISE_NAME_BACKFILL_MIGRATION_INDEX
+    )
+  }
+};
+
+const migrationsThroughEquipmentColumnBackfill = {
+  ...migrations,
+  journal: {
+    entries: migrations.journal.entries.filter(
+      entry => entry.idx <= EQUIPMENT_COLUMN_BACKFILL_MIGRATION_INDEX
+    )
+  }
+};
+
+const migrationsAfterEquipmentColumnBackfill = {
+  ...migrations,
+  journal: {
+    entries: migrations.journal.entries.filter(entry => entry.idx !== 14)
+  }
+};
+
+const migrationsThroughExistingEquipmentColumnBackfill = {
+  ...migrationsAfterEquipmentColumnBackfill,
+  journal: {
+    entries: migrationsAfterEquipmentColumnBackfill.journal.entries.filter(
+      entry => entry.idx <= EQUIPMENT_COLUMN_BACKFILL_MIGRATION_INDEX
     )
   }
 };
@@ -89,6 +117,11 @@ async function migrateAsync(sqliteDb: SQLiteDatabase) {
   const drizzleDb = createDrizzleDb(sqliteDb);
 
   try {
+    const equipmentColumnExists = await hasExerciseEquipmentColumn(sqliteDb);
+    const equipmentMigrations = equipmentColumnExists
+      ? migrationsAfterEquipmentColumnBackfill
+      : migrations;
+
     await withStartupDatabaseSpan(
       'database.migration.validateExerciseNames',
       'migration',
@@ -108,10 +141,31 @@ async function migrateAsync(sqliteDb: SQLiteDatabase) {
       () => backfillNormalizedExerciseNames(drizzleDb)
     );
     await withStartupDatabaseSpan(
+      'database.migration.beforeEquipmentColumnBackfill',
+      'migration',
+      async () => {
+        return runDatabaseMigrations(sqliteDb, () =>
+          migrate(
+            drizzleDb,
+            equipmentColumnExists
+              ? migrationsThroughExistingEquipmentColumnBackfill
+              : migrationsThroughEquipmentColumnBackfill
+          )
+        );
+      }
+    );
+    await withStartupDatabaseSpan(
+      'database.backfill.exerciseEquipment',
+      'backfill',
+      () => backfillExerciseEquipment(sqliteDb)
+    );
+    await withStartupDatabaseSpan(
       'database.migration.afterExerciseNameBackfill',
       'migration',
       () =>
-        runDatabaseMigrations(sqliteDb, () => migrate(drizzleDb, migrations))
+        runDatabaseMigrations(sqliteDb, () =>
+          migrate(drizzleDb, equipmentMigrations)
+        )
     );
     withStartupDatabaseSpan(
       'database.backfill.legacyHistoricalEditDrafts',

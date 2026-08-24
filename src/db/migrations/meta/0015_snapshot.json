@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "4d8be4f9-f674-4e44-9b5e-ece48575a2b9",
-  "prevId": "4ee6b50f-0f8f-4287-8aee-5795bfa2fe69",
+  "id": "ddb255e8-21f4-4c3f-b324-55c4f88059c5",
+  "prevId": "b1c65360-35d9-42d5-b7fa-e302e7e7b862",
   "tables": {
     "app_meta": {
       "name": "app_meta",
@@ -56,7 +56,7 @@
           "name": "equipment",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "tracking_type": {
