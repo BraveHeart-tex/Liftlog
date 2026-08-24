@@ -7,13 +7,9 @@ import type { WeightUnit } from '@/src/lib/utils/weight.utils';
 import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { triggerHapticSelection } from '@/src/lib/haptics/haptics';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
-import { appFonts } from '@/src/theme/fonts';
+import { appFontAssets, appFonts } from '@/src/theme/fonts';
 import { nativeFontSizes } from '@/src/theme/sizes';
-import {
-  Circle,
-  Line as SkiaLine,
-  matchFont
-} from '@shopify/react-native-skia';
+import { Circle, Line as SkiaLine, useFont } from '@shopify/react-native-skia';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useAnimatedReaction } from 'react-native-reanimated';
@@ -29,7 +25,6 @@ interface ExerciseProgressChartBodyProps {
   points: ExerciseProgressPoint[];
   weightUnit: WeightUnit;
   trackingType: TrackingType;
-  onSelectedPointChange: (point: ExerciseProgressPoint | null) => void;
 }
 
 type ChartPoint = Record<string, number> & {
@@ -44,6 +39,16 @@ const axisDateFormatter = new Intl.DateTimeFormat(undefined, {
 
 function formatAxisDate(timestamp: number) {
   return axisDateFormatter.format(new Date(timestamp));
+}
+
+function getChartDateTicks(points: ExerciseProgressPoint[]) {
+  if (points.length < 3) {
+    return points.map(point => point.date);
+  }
+
+  const middlePoint = points[Math.floor((points.length - 1) / 2)];
+
+  return [points[0].date, middlePoint.date, points.at(-1)!.date];
 }
 
 function getChartDomain(points: ExerciseProgressPoint[]) {
@@ -63,8 +68,7 @@ function getChartDomain(points: ExerciseProgressPoint[]) {
 export function ExerciseProgressChartBody({
   points,
   weightUnit,
-  trackingType,
-  onSelectedPointChange
+  trackingType
 }: ExerciseProgressChartBodyProps) {
   const { colors } = useAppTheme();
   const reduceMotion = useReducedMotion();
@@ -73,10 +77,10 @@ export function ExerciseProgressChartBody({
     x: points[0]?.date ?? 0,
     y: { value: points[0]?.value ?? 0 }
   });
-  const axisFont = matchFont({
-    fontFamily: appFonts.faces.regular,
-    fontSize: nativeFontSizes.chartAxis
-  });
+  const axisFont = useFont(
+    appFontAssets[appFonts.faces.regular],
+    nativeFontSizes.chartAxis
+  );
   const chartData: ChartPoint[] = points.map(point => ({
     date: point.date,
     value: point.value
@@ -91,17 +95,16 @@ export function ExerciseProgressChartBody({
 
   useEffect(() => {
     if (!isPressActive || selectedIndex < 0) {
-      onSelectedPointChange(null);
-
       return;
     }
 
-    onSelectedPointChange(points[selectedIndex] ?? null);
-    triggerHapticSelection('exercise progress point selection');
-  }, [isPressActive, onSelectedPointChange, points, selectedIndex]);
+    if (points[selectedIndex]) {
+      triggerHapticSelection('exercise progress point selection');
+    }
+  }, [isPressActive, points, selectedIndex]);
 
   return (
-    <View className="mt-4 h-48">
+    <View className="mt-4 h-56 w-full">
       <CartesianChart<ChartPoint, 'date', 'value'>
         data={chartData}
         xKey="date"
@@ -109,25 +112,32 @@ export function ExerciseProgressChartBody({
         chartPressState={pressState}
         domain={{ y: getChartDomain(points) }}
         domainPadding={{ left: 12, right: 12, top: 8, bottom: 4 }}
-        padding={{ left: 2, right: 6, top: 8, bottom: 2 }}
+        padding={{ left: 0, right: 0, top: 8, bottom: 28 }}
         frame={{ lineColor: colors.border, lineWidth: 0 }}
         xAxis={{
+          axisSide: 'bottom',
           font: axisFont,
           formatXLabel: formatAxisDate,
           labelColor: colors.mutedForeground,
+          labelOffset: 8,
           lineColor: colors.border,
           lineWidth: 1,
-          tickCount: 4
+          tickCount: 3,
+          tickValues: getChartDateTicks(points),
+          yAxisSide: 'left'
         }}
         yAxis={[
           {
+            axisSide: 'left',
             font: axisFont,
             formatYLabel: value =>
               formatScore(trackingType, Number(value), weightUnit),
             labelColor: colors.mutedForeground,
+            labelOffset: 8,
+            labelPosition: 'outset',
             lineColor: colors.border,
             lineWidth: 1,
-            tickCount: 4,
+            tickCount: 5,
             yKeys: ['value']
           }
         ]}
@@ -153,6 +163,9 @@ export function ExerciseProgressChartBody({
                 points={chartPoints.value}
                 color={colors.primary}
                 radius={4.5}
+                animate={
+                  reduceMotion ? undefined : { type: 'timing', duration: 350 }
+                }
               />
               {selectedChartPoint?.y ? (
                 <>

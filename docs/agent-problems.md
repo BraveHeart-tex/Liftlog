@@ -48,6 +48,46 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-08-24 — Graphify refresh restricted by sandbox
+
+- Context: Refreshing Graphify after anchoring exercise progress chart date ticks.
+- Tool/command: `/Users/bora/.local/bin/graphify update .`
+- Symptom: The rebuild failed with `Operation not permitted` during code extraction.
+- Cause: Graphify's AST/cache rebuild requires filesystem operations restricted by the sandbox.
+- Workaround: Retry the same update with approved elevated filesystem access.
+- Status: workaround
+- Validation impact: The restricted refresh did not complete; elevated Graphify validation is required.
+
+## 2026-08-24 — Impeccable context script path unavailable
+
+- Context: Loading the UI guidance before updating the exercise progress chart.
+- Tool/command: `node .agents/skills/impeccable/scripts/context.mjs --target src/features/exercises/components/exercise-progress-chart-body.tsx`
+- Symptom: Node reported that the context script did not exist at the repository-relative path.
+- Cause: The installed Impeccable skill lives outside the repository at `/Users/bora/.agents/skills/impeccable`.
+- Workaround: Read the installed playbook directly and continue with repository source inspection.
+- Status: workaround
+- Validation impact: Context auto-discovery was unavailable; manual theme and target inspection is being used.
+
+## 2026-08-24 — Project-local Graphify query unavailable
+
+- Context: Querying the existing code graph before updating the exercise progress chart.
+- Tool/command: `./node_modules/.bin/graphify query "Where is the workout progress chart implemented, and how are its data points and axes rendered?"`
+- Symptom: The project-local Graphify executable was not found.
+- Cause: Graphify is not installed in the project-local `node_modules/.bin` directory.
+- Workaround: Inspected the target chart and its related sources directly; the required post-change Graphify update remains part of validation.
+- Status: workaround
+- Validation impact: The initial graph query was unavailable; source inspection continued with repository files.
+
+## 2026-08-24 — Focused test wrapper stalled during progress-range validation
+
+- Context: Validating the exercise progress-range change.
+- Tool/command: `pnpm run test -- tests/features/progress/progress.repository.test.ts`
+- Symptom: Lint and formatting completed, but the package-manager test wrapper produced no test output for over a minute and was interrupted.
+- Cause: The wrapper invocation did not expose a diagnostic; the cause was not confirmed.
+- Workaround: Retried with the repository-local test runner and elevated temporary-process access.
+- Status: resolved
+- Validation impact: The focused progress repository test passed all 3 cases.
+
 ## 2026-08-24 — Graphify refresh blocked again after calendar spacing update
 
 - Context: Refreshing Graphify after adding month-header padding to the log calendar.

@@ -69,8 +69,6 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId?: string }) {
     topSetPerformances,
     primaryMuscles,
     secondaryMuscles,
-    mostRecentHistory,
-    completedSetSummary,
     weightUnit,
     trackingType,
     isLoading,
@@ -258,8 +256,6 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId?: string }) {
 
       <ExerciseProgressChart
         points={progressPoints}
-        currentPerformance={completedSetSummary}
-        currentPerformanceDate={mostRecentHistory?.workout.startedAt}
         weightUnit={weightUnit}
         trackingType={trackingType}
         isLoading={isStatsLoading}

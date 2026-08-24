@@ -26,10 +26,7 @@ import {
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { parseMuscleList } from '@/src/features/exercises/muscle.utils';
-import { formatCompletedSets } from '@/src/features/workouts/shared/set-display.utils';
 import { useMemo } from 'react';
-
-const EXERCISE_HISTORY_LIMIT = 20;
 
 function getBestSetId(sets: Set[], trackingType: TrackingType) {
   if (sets.length === 0) {
@@ -221,7 +218,7 @@ export function useExerciseDetail(exerciseId: string | undefined) {
   );
 
   const historyResult = useLiveWithFallback(
-    getExerciseHistoryQuery(db, resolvedExerciseId, EXERCISE_HISTORY_LIMIT, {
+    getExerciseHistoryQuery(db, resolvedExerciseId, undefined, {
       includeLimitProbe: false
     }),
     [db, resolvedExerciseId, hasExercise],
@@ -275,16 +272,6 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     [exercise?.secondaryMuscles]
   );
 
-  const mostRecentHistory = fullHistory[0];
-
-  const completedSets = mostRecentHistory?.sets ?? [];
-
-  const completedSetSummary = formatCompletedSets(
-    completedSets,
-    weightUnit,
-    trackingType
-  );
-
   return {
     exercise,
     exerciseUsageCount: exerciseUsageResult.data[0]?.totalUsageCount ?? 0,
@@ -296,8 +283,6 @@ export function useExerciseDetail(exerciseId: string | undefined) {
     topSetPerformances,
     primaryMuscles,
     secondaryMuscles,
-    mostRecentHistory,
-    completedSetSummary,
     weightUnit,
     trackingType,
     isLoading: Boolean(exerciseId) && !exercise && !exerciseResult.isLive,

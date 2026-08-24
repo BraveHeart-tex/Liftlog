@@ -55,7 +55,7 @@ interface ExerciseHistoryQueryOptions {
 export function getExerciseHistoryQuery(
   db: DrizzleDb,
   exerciseId: Exercise['id'],
-  visibleWorkoutLimit: number,
+  visibleWorkoutLimit?: number,
   options: ExerciseHistoryQueryOptions = {}
 ) {
   const {
@@ -63,34 +63,40 @@ export function getExerciseHistoryQuery(
     includeProgression = false,
     includeLimitProbe = false
   } = options;
-  const visibleWorkoutIds = db.$with('visible_exercise_history_workouts').as(
-    db
-      .selectDistinct({
-        id: workouts.id,
-        startedAt: workouts.startedAt
-      })
-      .from(workouts)
-      .innerJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
-      .innerJoin(
-        sets,
-        and(
-          eq(sets.workoutExerciseId, workoutExercises.id),
-          eq(sets.status, 'completed')
-        )
+  const visibleWorkoutIdsQuery = db
+    .selectDistinct({
+      id: workouts.id,
+      startedAt: workouts.startedAt
+    })
+    .from(workouts)
+    .innerJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
+    .innerJoin(
+      sets,
+      and(
+        eq(sets.workoutExerciseId, workoutExercises.id),
+        eq(sets.status, 'completed')
       )
-      .where(
-        and(
-          eq(workouts.status, 'completed'),
-          eq(workoutExercises.exerciseId, exerciseId),
-          beforeStartedAt !== undefined
-            ? sql`${workouts.startedAt} < ${beforeStartedAt}`
-            : undefined
-        )
+    )
+    .where(
+      and(
+        eq(workouts.status, 'completed'),
+        eq(workoutExercises.exerciseId, exerciseId),
+        beforeStartedAt !== undefined
+          ? sql`${workouts.startedAt} < ${beforeStartedAt}`
+          : undefined
       )
-      .orderBy(desc(workouts.startedAt), desc(workouts.id))
-      .limit(visibleWorkoutLimit + (includeLimitProbe ? 1 : 0))
-  );
-  const visiblePageWorkoutIds = db
+    )
+    .orderBy(desc(workouts.startedAt), desc(workouts.id));
+  const visibleWorkoutIds = db
+    .$with('visible_exercise_history_workouts')
+    .as(
+      visibleWorkoutLimit === undefined
+        ? visibleWorkoutIdsQuery
+        : visibleWorkoutIdsQuery.limit(
+            visibleWorkoutLimit + (includeLimitProbe ? 1 : 0)
+          )
+    );
+  const visiblePageWorkoutIdsQuery = db
     .$with('visible_exercise_history_page_workouts')
     .as(
       db
@@ -100,8 +106,23 @@ export function getExerciseHistoryQuery(
         })
         .from(visibleWorkoutIds)
         .orderBy(desc(visibleWorkoutIds.startedAt), desc(visibleWorkoutIds.id))
-        .limit(visibleWorkoutLimit)
     );
+  const visiblePageWorkoutIds =
+    visibleWorkoutLimit === undefined
+      ? visiblePageWorkoutIdsQuery
+      : db.$with('visible_exercise_history_page_workouts').as(
+          db
+            .select({
+              id: visibleWorkoutIds.id,
+              startedAt: visibleWorkoutIds.startedAt
+            })
+            .from(visibleWorkoutIds)
+            .orderBy(
+              desc(visibleWorkoutIds.startedAt),
+              desc(visibleWorkoutIds.id)
+            )
+            .limit(visibleWorkoutLimit)
+        );
   const latestVisibleStartedAt = db
     .select({ startedAt: visibleWorkoutIds.startedAt })
     .from(visibleWorkoutIds)
