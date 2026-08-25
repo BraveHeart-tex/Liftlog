@@ -29,6 +29,8 @@ export function HistoricalWorkoutHeader({
           headerShown: true,
           title,
           headerBackVisible: true,
+          headerLeft: undefined,
+          headerTitleAlign: undefined,
           headerRight: () => (
             <Button
               size="sm"

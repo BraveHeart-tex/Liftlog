@@ -318,7 +318,7 @@ export function ActiveWorkoutContent({
       >
         {!isEditingExercises ? (
           <View className="flex-row items-center gap-2">
-            <View className="w-[70%]">
+            <View className={mode === 'active' ? 'w-[70%]' : 'flex-1'}>
               <Button
                 variant="secondary"
                 size="sm"
