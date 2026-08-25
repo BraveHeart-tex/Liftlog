@@ -13,13 +13,10 @@ import {
   type TrackingType
 } from '@/src/features/progress/tracking.domain';
 import { cn } from '@/src/lib/utils/cn.utils';
-import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import type { WeightUnit } from '@/src/lib/utils/weight.utils';
-import type { FlashListRef } from '@shopify/flash-list';
 import { ChevronDownIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, View, type TextStyle } from 'react-native';
-import Animated, { LinearTransition } from 'react-native-reanimated';
 
 function formatWorkoutDate(timestamp: number) {
   return new Intl.DateTimeFormat(undefined, {
@@ -142,18 +139,10 @@ export function ExerciseHistoryList({
   loadMoreError,
   retryLoadMore
 }: ExerciseHistoryListProps) {
-  const reduceMotion = useReducedMotion();
   const [expandedWorkoutIds, setExpandedWorkoutIds] = useState<Set<string>>(
-    new Set()
+    () => new Set(history.slice(0, 2).map(entry => entry.workout.id))
   );
   const initializedExerciseIdRef = useRef<string | undefined>(undefined);
-  const listRef = useRef<FlashListRef<ExerciseHistoryEntry> | null>(null);
-
-  const prepareForExpansionLayout = useCallback(() => {
-    if (!reduceMotion) {
-      listRef.current?.prepareForLayoutAnimationRender();
-    }
-  }, [reduceMotion]);
 
   useEffect(() => {
     if (initializedExerciseIdRef.current === exerciseId) {
@@ -170,14 +159,12 @@ export function ExerciseHistoryList({
     }
 
     initializedExerciseIdRef.current = exerciseId;
-    prepareForExpansionLayout();
     setExpandedWorkoutIds(
       new Set(history.slice(0, 2).map(entry => entry.workout.id))
     );
-  }, [exerciseId, history, prepareForExpansionLayout]);
+  }, [exerciseId, history]);
 
-  const toggleExpanded = (workoutId: string) => {
-    prepareForExpansionLayout();
+  const toggleExpanded = useCallback((workoutId: string) => {
     setExpandedWorkoutIds(current => {
       const next = new Set(current);
 
@@ -189,7 +176,7 @@ export function ExerciseHistoryList({
 
       return next;
     });
-  };
+  }, []);
 
   const renderHistoryEntry = ({ item }: { item: ExerciseHistoryEntry }) => {
     const isExpanded = expandedWorkoutIds.has(item.workout.id);
@@ -197,10 +184,7 @@ export function ExerciseHistoryList({
     const isBestSetPr = bestSet ? prSetIds.has(bestSet.id) : false;
 
     return (
-      <Animated.View
-        layout={reduceMotion ? undefined : LinearTransition.duration(180)}
-        className="border-border border-t"
-      >
+      <View className="border-border border-t">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`${formatWorkoutDate(item.workout.startedAt)} session`}
@@ -258,7 +242,7 @@ export function ExerciseHistoryList({
             weightUnit={weightUnit}
           />
         ) : null}
-      </Animated.View>
+      </View>
     );
   };
 
@@ -266,8 +250,8 @@ export function ExerciseHistoryList({
 
   return (
     <StyledFlashList
-      ref={listRef}
       data={history}
+      extraData={expandedWorkoutIds}
       renderItem={renderHistoryEntry}
       keyExtractor={item => item.workout.id}
       className="flex-1"

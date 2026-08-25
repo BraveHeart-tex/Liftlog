@@ -48,6 +48,16 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-08-25 — Test runner sandbox IPC restriction during history-list fix
+
+- Context: Running the required test suite after removing the exercise-history row layout animation.
+- Tool/command: `pnpm run test`
+- Symptom: `tsx` failed before test collection with `listen EPERM` while creating its temporary IPC pipe.
+- Cause: The restricted sandbox denies the temporary IPC operation used by the test runner.
+- Workaround: Retry the same test command with approved elevated process/filesystem access.
+- Status: workaround
+- Validation impact: The restricted attempt ran zero tests; the elevated retry is required.
+
 ## 2026-08-25 — Full test runner sandbox IPC restriction
 
 - Context: Running the required test suite after the workout exercise history redesign.
