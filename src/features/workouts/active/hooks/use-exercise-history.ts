@@ -1,8 +1,10 @@
 import { useDrizzle } from '@/src/providers/database-provider';
 import type { Exercise, Set } from '@/src/db/schema';
+import { buildExerciseProgressPoints } from '@/src/features/exercises/exercise-progress.utils';
 import { getExerciseByIdQuery } from '@/src/features/exercises/exercise.repository';
 import {
   buildExerciseHistory,
+  getExerciseHistoryCountQuery,
   getExerciseHistoryQuery,
   getPersonalRecordsByExerciseQuery,
   mapExerciseHistoryRows
@@ -13,6 +15,7 @@ import {
   type TrackingType
 } from '@/src/features/progress/tracking.domain';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import {
   canLoadExerciseHistoryPage,
   didExerciseHistoryPageFinish,
@@ -33,6 +36,7 @@ function getBestScore(sets: Set[], trackingType: TrackingType) {
 
 export function useExerciseHistory(exerciseId: Exercise['id']) {
   const db = useDrizzle();
+  const { weightUnit } = useSettings();
   const [visibleWorkoutLimit, setVisibleWorkoutLimit] =
     useState(HISTORY_PAGE_SIZE);
   const [paginationRetryKey, setPaginationRetryKey] = useState(0);
@@ -61,6 +65,7 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
   const trackingType = resolveTrackingType(
     exerciseResult.data[0]?.trackingType
   );
+  const hasExercise = Boolean(exerciseResult.data[0]);
   const prResult = useLiveWithFallback(
     getPersonalRecordsByExerciseQuery(db, exerciseId),
     [db, exerciseId],
@@ -78,9 +83,38 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
     [db, exerciseId, paginationRetryKey, visibleWorkoutLimit],
     { operation: 'progress.getExerciseHistory' }
   );
+  const fullHistoryResult = useLiveWithFallback(
+    getExerciseHistoryQuery(db, exerciseId, undefined, {
+      includeLimitProbe: false
+    }),
+    [db, exerciseId, hasExercise],
+    {
+      deferInitialRead: true,
+      enabled: hasExercise,
+      waitForInteractions: true,
+      operation: 'progress.getExerciseHistoryForProgression'
+    }
+  );
+  const historyCountResult = useLiveWithFallback(
+    getExerciseHistoryCountQuery(db, exerciseId),
+    [db, exerciseId, hasExercise],
+    {
+      enabled: hasExercise,
+      operation: 'progress.getExerciseHistoryCount'
+    }
+  );
   const historyRows = useMemo(
     () => mapExerciseHistoryRows(historyResult.data),
     [historyResult.data]
+  );
+  const fullHistory = useMemo(() => {
+    const rows = mapExerciseHistoryRows(fullHistoryResult.data);
+
+    return buildExerciseHistory(rows.visibleWorkoutRows, rows.setRows);
+  }, [fullHistoryResult.data]);
+  const progressPoints = useMemo(
+    () => buildExerciseProgressPoints(fullHistory, trackingType, weightUnit),
+    [fullHistory, trackingType, weightUnit]
   );
   const hasMoreHistory =
     historyRows.visibleWorkoutRows.length > visibleWorkoutLimit;
@@ -214,6 +248,9 @@ export function useExerciseHistory(exerciseId: Exercise['id']) {
 
   return {
     history,
+    progressPoints,
+    totalSessions: historyCountResult.data[0]?.count ?? 0,
+    isProgressLoading: hasExercise && !fullHistoryResult.isLive,
     latestPersonalRecord: prResult.data[0],
     monthlyProgression,
     prSetIds,

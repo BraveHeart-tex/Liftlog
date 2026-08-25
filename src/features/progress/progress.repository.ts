@@ -10,7 +10,16 @@ import {
   type Set,
   type Workout
 } from '@/src/db/schema';
-import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  countDistinct,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  sql
+} from 'drizzle-orm';
 import { unionAll } from 'drizzle-orm/sqlite-core';
 import {
   computeEstimated1RM,
@@ -29,6 +38,29 @@ export function getPersonalRecordsByExerciseQuery(
     .from(personalRecords)
     .where(eq(personalRecords.exerciseId, exerciseId))
     .orderBy(desc(personalRecords.achievedAt));
+}
+
+export function getExerciseHistoryCountQuery(
+  db: DrizzleDb,
+  exerciseId: Exercise['id']
+) {
+  return db
+    .select({ count: countDistinct(workouts.id) })
+    .from(workouts)
+    .innerJoin(workoutExercises, eq(workouts.id, workoutExercises.workoutId))
+    .innerJoin(
+      sets,
+      and(
+        eq(sets.workoutExerciseId, workoutExercises.id),
+        eq(sets.status, 'completed')
+      )
+    )
+    .where(
+      and(
+        eq(workouts.status, 'completed'),
+        eq(workoutExercises.exerciseId, exerciseId)
+      )
+    );
 }
 
 const TWO_MONTHS_MS = 2 * 30 * 24 * 60 * 60 * 1000;

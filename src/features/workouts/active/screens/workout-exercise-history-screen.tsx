@@ -17,12 +17,15 @@ export function WorkoutExerciseHistoryScreen({
     hasMoreHistory,
     isLoading,
     isLoadingMore,
+    isProgressLoading,
     latestPersonalRecord,
     loadMore,
     loadMoreError,
     monthlyProgression,
+    progressPoints,
     prSetIds,
     retryLoadMore,
+    totalSessions,
     trackingType,
     weightUnit
   } = useWorkoutExerciseHistoryScreen(workoutExerciseId);
@@ -60,15 +63,19 @@ export function WorkoutExerciseHistoryScreen({
         </View>
 
         <ExerciseHistoryList
+          exerciseId={exercise.id}
           history={history}
+          isProgressLoading={isProgressLoading}
           hasMoreHistory={hasMoreHistory}
           isLoadingMore={isLoadingMore}
           latestPersonalRecord={latestPersonalRecord}
           loadMore={loadMore}
           loadMoreError={loadMoreError}
           monthlyProgression={monthlyProgression}
+          points={progressPoints}
           prSetIds={prSetIds}
           retryLoadMore={retryLoadMore}
+          totalSessions={totalSessions}
           trackingType={trackingType}
           weightUnit={weightUnit}
         />
