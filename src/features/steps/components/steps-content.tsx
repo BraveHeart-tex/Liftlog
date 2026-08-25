@@ -244,7 +244,7 @@ export function StepsContent() {
                       className={
                         isToday
                           ? 'bg-primary w-4 rounded-t-md'
-                          : 'bg-secondary w-4 rounded-t-md'
+                          : 'bg-border dark:bg-secondary w-4 rounded-t-md'
                       }
                       style={{ height: `${barHeight}%` }}
                     />

@@ -1,7 +1,6 @@
 import { confirmDialog } from '@/src/components/ui/alert-dialog';
 import { BackButton } from '@/src/components/ui/back-button';
 import { Button } from '@/src/components/ui/button';
-import { Card, CardContent } from '@/src/components/ui/card';
 import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
 import { LoadingState } from '@/src/components/ui/loading-state';
@@ -142,6 +141,36 @@ function WorkoutTemplateDetailLoaded({
     () => groupSupersetBlocks(templateExerciseRows),
     [templateExerciseRows]
   );
+  const exerciseSegments = useMemo(() => {
+    const segments: (
+      | {
+          type: 'singles';
+          rows: (typeof templateExerciseRows)[number][];
+        }
+      | {
+          type: 'superset';
+          block: (typeof supersetBlocks)[number];
+        }
+    )[] = [];
+
+    supersetBlocks.forEach(block => {
+      if (block.supersetId) {
+        segments.push({ type: 'superset', block });
+
+        return;
+      }
+
+      const previousSegment = segments[segments.length - 1];
+
+      if (previousSegment?.type === 'singles') {
+        previousSegment.rows.push(block.rows[0]);
+      } else {
+        segments.push({ type: 'singles', rows: [block.rows[0]] });
+      }
+    });
+
+    return segments;
+  }, [supersetBlocks]);
   const templateExerciseIndexById = useMemo(
     () =>
       new Map(
@@ -479,40 +508,7 @@ function WorkoutTemplateDetailLoaded({
           </EmptyState>
         ) : (
           <View className="mt-3">
-            {supersetBlocks.map((block, blockIndex) => {
-              const renderExerciseCard = (
-                templateExercise: (typeof templateExerciseRows)[number]
-              ) => {
-                const exercise = exerciseById.get(templateExercise.exerciseId);
-                const exerciseIndex =
-                  templateExerciseIndexById.get(templateExercise.id) ?? 0;
-
-                return (
-                  <Pressable
-                    key={templateExercise.id}
-                    onLongPress={enterExerciseEditModeFromLongPress}
-                  >
-                    <Card>
-                      <CardContent className="flex-row items-center gap-3">
-                        <View className="bg-muted h-9 w-9 items-center justify-center rounded-lg">
-                          <Text variant="caption" tone="muted">
-                            {exerciseIndex + 1}
-                          </Text>
-                        </View>
-                        <View className="flex-1">
-                          <Text variant="bodyMedium">
-                            {exercise?.name ?? 'Unknown exercise'}
-                          </Text>
-                          <Text variant="caption" tone="muted" className="mt-1">
-                            {exercise?.equipment ?? 'Exercise'}
-                          </Text>
-                        </View>
-                      </CardContent>
-                    </Card>
-                  </Pressable>
-                );
-              };
-
+            {exerciseSegments.map((segment, segmentIndex) => {
               const renderGroupedExerciseRow = (
                 templateExercise: (typeof templateExerciseRows)[number]
               ) => (
@@ -529,9 +525,14 @@ function WorkoutTemplateDetailLoaded({
                 </Pressable>
               );
 
-              return (
-                <View key={block.id} className={cn(blockIndex > 0 && 'mt-3')}>
-                  {block.supersetId ? (
+              if (segment.type === 'superset') {
+                const { block } = segment;
+
+                return (
+                  <View
+                    key={block.id}
+                    className={cn(segmentIndex > 0 && 'mt-3')}
+                  >
                     <SupersetExerciseGroup
                       rows={block.rows}
                       supersetLabel={
@@ -541,9 +542,64 @@ function WorkoutTemplateDetailLoaded({
                       }
                       renderRow={({ row }) => renderGroupedExerciseRow(row)}
                     />
-                  ) : (
-                    renderExerciseCard(block.rows[0])
+                  </View>
+                );
+              }
+
+              return (
+                <View
+                  key={segment.rows[0].id}
+                  className={cn(
+                    'border-border border-t',
+                    segmentIndex > 0 && 'mt-3'
                   )}
+                >
+                  {segment.rows.map(templateExercise => {
+                    const exercise = exerciseById.get(
+                      templateExercise.exerciseId
+                    );
+                    const exerciseIndex =
+                      templateExerciseIndexById.get(templateExercise.id) ?? 0;
+
+                    return (
+                      <Pressable
+                        key={templateExercise.id}
+                        className="w-full"
+                        onLongPress={enterExerciseEditModeFromLongPress}
+                      >
+                        {({ pressed }) => (
+                          <View
+                            className={cn(
+                              'border-border min-h-[72px] flex-row items-center gap-3 border-b py-2',
+                              pressed && 'bg-secondary'
+                            )}
+                          >
+                            <View className="w-9 shrink-0 items-center">
+                              <Text
+                                variant="small"
+                                tone="muted"
+                                weight="medium"
+                              >
+                                {exerciseIndex + 1}
+                              </Text>
+                            </View>
+                            <View className="min-w-0 flex-1">
+                              <Text variant="bodyMedium" numberOfLines={1}>
+                                {exercise?.name ?? 'Unknown exercise'}
+                              </Text>
+                              <Text
+                                variant="caption"
+                                tone="muted"
+                                className="mt-1"
+                              >
+                                {exercise?.equipment ?? 'Exercise'}
+                              </Text>
+                            </View>
+                          </View>
+                        )}
+                      </Pressable>
+                    );
+                  })}
                 </View>
               );
             })}
