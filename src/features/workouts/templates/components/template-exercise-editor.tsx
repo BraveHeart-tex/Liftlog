@@ -132,8 +132,8 @@ export function TemplateExerciseEditor({
       </View>
 
       {rows.length === 0 ? (
-        <View className="px-4">
-          <EmptyState className="py-8">
+        <View className="flex-1 px-4">
+          <EmptyState className="flex-1 px-8">
             <EmptyState.Icon as={ClipboardListIcon} size="md" />
             <EmptyState.Title variant="bodyMedium">
               No exercises added
@@ -144,9 +144,8 @@ export function TemplateExerciseEditor({
             <EmptyState.Action>
               <Button
                 variant="secondary"
-                size="sm"
-                textClassName="text-primary text-sm"
-                leftIcon={<Icon as={PlusIcon} size="sm" tone="primary" />}
+                size="md"
+                leftIcon={<Icon as={PlusIcon} size="sm" tone="foreground" />}
                 onPress={openExercisePicker}
               >
                 Add exercise
