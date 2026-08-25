@@ -48,6 +48,26 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-08-25 — Temporary-index patch application blocked by sandbox
+
+- Context: Building the first temporary index while splitting approved staged changes.
+- Tool/command: `git diff --cached --binary -- <paths> | GIT_INDEX_FILE=<temporary index> git apply --cached`
+- Symptom: Git returned `unable to create temporary file: Operation not permitted` while creating a backing store for a changed source file.
+- Cause: The restricted sandbox denied Git's temporary backing-store operation during cached patch application.
+- Workaround: Use approved elevated process/filesystem access for temporary-index operations.
+- Status: workaround
+- Validation impact: No commit was created; the real index and worktree remained unchanged.
+
+## 2026-08-25 — Test runner sandbox IPC restriction during header fix
+
+- Context: Running the required test suite after resetting historical workout header options.
+- Tool/command: `pnpm run test`, then the repository-local `tsx` test command.
+- Symptom: The package-manager invocation produced no completion output; the direct retry failed before test collection with `listen EPERM` while creating the temporary TSX IPC pipe.
+- Cause: The restricted sandbox denies the temporary IPC operation used by `tsx`.
+- Workaround: Stopped the stalled wrapper and retried the repository-local test command with approved elevated process/filesystem access.
+- Status: workaround
+- Validation impact: The elevated retry completed all 82 tests successfully; the restricted attempt ran zero tests.
+
 ## 2026-08-25 — Template detail test runner sandbox IPC restriction
 
 - Context: Running the required test suite after changing template detail exercise rows.
