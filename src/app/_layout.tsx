@@ -134,6 +134,14 @@ function RootNavigator() {
         }}
       />
       <Stack.Screen
+        name="workouts/templates/index"
+        options={{
+          animation: reduceMotion ? 'none' : 'slide_from_right',
+          headerShown: true,
+          title: 'Templates'
+        }}
+      />
+      <Stack.Screen
         name="workouts/templates/[id]"
         singular
         options={{

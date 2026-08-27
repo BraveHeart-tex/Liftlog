@@ -29,6 +29,7 @@ export function useWorkoutTemplates(options?: UseWorkoutTemplatesOptions) {
 
   return {
     templates,
-    isLoading: enabled && !result.isLive
+    error: result.error,
+    isLoading: enabled && !result.isLive && !result.error
   };
 }

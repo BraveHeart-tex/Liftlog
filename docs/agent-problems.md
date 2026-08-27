@@ -48,6 +48,26 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-08-27 — Degraded UI review path moved under reference
+
+- Context: Running the required in-thread Impeccable finish review after adding the templates listing screen.
+- Tool/command: `sed -n '1,280p' /Users/bora/.codex/skills/impeccable/degraded/finish-reviewer.md`
+- Symptom: The documented path did not exist.
+- Cause: The installed skill stores the fallback at `reference/degraded/finish-reviewer.md`.
+- Workaround: Located and read the installed fallback from its actual reference path.
+- Status: resolved
+- Validation impact: The degraded finish review proceeded from the installed instructions; no source validation was affected.
+
+## 2026-08-27 — Test runner produced no output in restricted shell
+
+- Context: Running the required test suite after adding the templates listing screen.
+- Tool/command: `pnpm run test`
+- Symptom: The wrapper started without test output and did not complete after approximately 25 seconds.
+- Cause: The restricted invocation did not expose enough progress to determine whether the TSX runner was blocked by its temporary IPC setup.
+- Workaround: Stopped the silent wrapper; retry the repository-local TSX command with inherited output and approved elevated process/filesystem access if needed.
+- Status: workaround
+- Validation impact: The initial wrapper attempt was inconclusive; test results require the direct/elevated retry.
+
 ## 2026-08-25 — Temporary-index patch application blocked by sandbox
 
 - Context: Building the first temporary index while splitting approved staged changes.
