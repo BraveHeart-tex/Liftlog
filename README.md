@@ -1,6 +1,6 @@
-# Liftlog
+# LiftLog
 
-A fast, minimal strength tracking app for Android and iOS. Log workouts, track progressive overload, and review your history — all stored locally on device.
+LiftLog is a local-first workout tracker for lifters focused on strength and hypertrophy. Log workouts with minimal interruption, track progress over time, and keep your training data on your device without an account or internet connection.
 
 Built with Expo, React Native, TypeScript, NativeWind, Expo SQLite, and Drizzle ORM.
 
@@ -8,71 +8,87 @@ Built with Expo, React Native, TypeScript, NativeWind, Expo SQLite, and Drizzle 
 
 ## Features
 
-- Start, resume, and complete workout sessions
-- Log sets with weight and reps per exercise
-- Exercise library with search, category filters, custom exercises, and archive/delete
-- Calendar view of completed workouts
-- Progressive overload feedback per exercise
-- Android: Health Connect step sync
-- Settings: theme, weight unit, rest timer duration, step preferences
-- Fully local — no account or internet required
+- Start, resume, and complete workouts
+- Log exercises using weight, reps, distance, and time tracking
+- Organize exercises into supersets and reorder them during a workout
+- Use rest timers with custom presets, haptics, sounds, and notifications
+- Save workouts as reusable templates
+- Review completed workouts in the calendar and exercise history
+- Track progressive overload, personal records, and exercise progress
+- Browse the exercise library with search and filters
+- Create, edit, archive, and delete custom exercises
+- Android: track steps and sync history with Health Connect
+- Configure theme, weight unit, rest timer, and step preferences
+- Store all workout data locally in SQLite
 
 ---
 
 ## Screenshots
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/d6f9219d-0f2b-41d8-bf5f-d68e330a1286" width="180" />
-  <img src="https://github.com/user-attachments/assets/b2d9b2e1-8fab-4904-8096-7f5a97dbecb4" width="180" />
-  <img src="https://github.com/user-attachments/assets/aae0f623-3ddb-465c-91ef-1d95bf8c8c54" width="180" />
-  <img src="https://github.com/user-attachments/assets/ccdc8350-13ff-44a6-a980-268c0fabc71e" width="180" />
-  <img src="https://github.com/user-attachments/assets/7870f951-e156-4952-8e40-15941cce4899" width="180" />
+  <img src="https://github.com/user-attachments/assets/80c7d4f6-b3f5-4dc0-ae04-f090b59b3db6" width="180" />
+  <img src="https://github.com/user-attachments/assets/e77d24d9-63ea-42a4-8e06-580c45fa0219" width="180" />
+  <img src="https://github.com/user-attachments/assets/df5e5da0-6a4d-41f1-9a4b-289feab4f8fb" width="180" />
+  <img src="https://github.com/user-attachments/assets/3b50cb9b-866f-4199-8bc1-25040d7fe4fe" width="180" />
+  <img src="https://github.com/user-attachments/assets/c52f65fa-0213-45e2-9809-f0f73e088f80" width="180" />
 </p>
 
 ---
 
 ## Requirements
 
-- Node `>=22.12.0 <23`
-- pnpm `>=10.33.0 <11`
+- Node.js `>=22.13.0`
+- pnpm `9.1.1`
+- iOS or Android development tooling for the target platform
 
 ---
 
 ## Getting Started
 
+Install dependencies and start the Expo development server:
+
 ```bash
 pnpm install
-pnpm ios        # or pnpm android
+pnpm start
 ```
+
+Run the app on a simulator or connected device:
+
+```bash
+pnpm ios
+pnpm android
+```
+
+Health Connect integration is available on Android. Workout logging remains available without step tracking.
 
 ---
 
 ## Scripts
 
 ```bash
-pnpm start              # Expo dev server
-pnpm ios                # Run on iOS simulator
-pnpm android            # Run on Android device/emulator
-pnpm test               # Run TypeScript tests
-pnpm run ts-check       # Type check
-pnpm run lint           # Lint
-pnpm run format         # Prettier + lint fix
-pnpm run knip           # Unused exports check
+pnpm start           # Start the Expo development server
+pnpm ios             # Run on an iOS simulator or device
+pnpm android         # Run on an Android emulator or device
+pnpm test            # Run the test suite
+pnpm run ts-check    # Type-check the project
+pnpm run lint        # Lint the project
+pnpm run format      # Format the project
+pnpm run knip        # Check for unused exports
 ```
 
 ---
 
-## Stack
+## Tech Stack
 
-| Layer      | Technology                                   |
-| ---------- | -------------------------------------------- |
-| Framework  | Expo 54 · React Native 0.81 · React 19       |
-| Navigation | Expo Router                                  |
-| Language   | TypeScript                                   |
-| Styling    | NativeWind 5 · Tailwind CSS v4               |
-| Database   | Expo SQLite · Drizzle ORM                    |
-| UI         | Gorhom Bottom Sheet · Lucide React Native    |
-| Platform   | `expo-audio` · `react-native-health-connect` |
+| Layer      | Technology                                |
+| ---------- | ----------------------------------------- |
+| Framework  | Expo 54 · React Native 0.81 · React 19    |
+| Navigation | Expo Router                               |
+| Language   | TypeScript                                |
+| Styling    | NativeWind 5 · Tailwind CSS v4            |
+| Database   | Expo SQLite · Drizzle ORM                 |
+| UI         | Gorhom Bottom Sheet · Lucide React Native |
+| Platform   | `expo-audio` · Health Connect             |
 
 ---
 
@@ -82,25 +98,25 @@ pnpm run knip           # Unused exports check
 src/
   app/                  # Routes and screens (Expo Router)
   components/
-    ui/                 # Shared primitives (Screen, Button, Card, …)
-    styled/             # NativeWind wrappers for third-party components
-  db/                   # Schema, migrations, seed data
-  features/             # Feature modules (exercises, workouts, steps, …)
-  lib/                  # Shared DB utilities and cross-feature helpers
-  theme/                # Token values for native props
-tests/                  # Node test suites and test-only runtime mocks
+    ui/                 # Shared UI primitives
+    styled/             # NativeWind wrappers for third-party controls
+  db/                   # Schema, migrations, and seed data
+  features/             # Exercises, workouts, progress, steps, and settings
+  lib/                  # Shared utilities and cross-feature helpers
+  theme/                # Design tokens for native props
+tests/                  # Test suites and test-only runtime mocks
 ```
 
 ---
 
 ## Database
 
-All data is stored locally via Expo SQLite. Drizzle ORM manages the schema and migrations.
+LiftLog stores workout data locally with Expo SQLite. Drizzle ORM manages the schema and migrations.
 
-After changing `src/db/schema.ts`, generate a migration:
+After changing `src/db/schema.ts`, generate a migration with:
 
 ```bash
 pnpm exec drizzle-kit generate
 ```
 
-Migrations run automatically on app start via `DatabaseProvider`.
+Migrations run automatically when the app starts through `DatabaseProvider`.
