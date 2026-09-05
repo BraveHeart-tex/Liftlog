@@ -38,7 +38,6 @@ export function SegmentedControl<T extends string>({
   const [width, setWidth] = useState(0);
   const [pressedValue, setPressedValue] = useState<T | null>(null);
   const reduceMotion = useReducedMotion();
-  const translateX = useSharedValue(0);
 
   const activeIndex = useMemo(
     () =>
@@ -48,23 +47,25 @@ export function SegmentedControl<T extends string>({
       ),
     [options, value]
   );
+  const indicatorIndex = useSharedValue(activeIndex);
 
-  const trackWidth = width - PADDING * 2;
+  const trackWidth = Math.max(0, width - PADDING * 2);
   const itemWidth = options.length > 0 ? trackWidth / options.length : 0;
+  const hasLayout = itemWidth > 0;
 
   useEffect(() => {
-    const nextTranslateX = activeIndex * itemWidth;
+    indicatorIndex.value =
+      reduceMotion || !hasLayout
+        ? activeIndex
+        : withTiming(activeIndex, {
+            duration: MOTION_DURATION_MS.standard
+          });
+  }, [activeIndex, hasLayout, indicatorIndex, reduceMotion]);
 
-    translateX.value = reduceMotion
-      ? nextTranslateX
-      : withTiming(nextTranslateX, {
-          duration: MOTION_DURATION_MS.standard
-        });
-  }, [activeIndex, itemWidth, reduceMotion, translateX]);
-
+  // Start at the selected segment; measurement only supplies its pixel geometry.
   const indicatorStyle = useAnimatedStyle(() => ({
     width: itemWidth,
-    transform: [{ translateX: translateX.value }]
+    transform: [{ translateX: indicatorIndex.value * itemWidth }]
   }));
 
   function handleLayout(event: LayoutChangeEvent) {
@@ -98,7 +99,7 @@ export function SegmentedControl<T extends string>({
       }
       className={cn('bg-input relative flex-row rounded-md p-1', className)}
     >
-      {width > 0 ? (
+      {hasLayout ? (
         <Animated.View
           pointerEvents="none"
           className={cn(
