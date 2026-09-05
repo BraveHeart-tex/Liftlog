@@ -4,6 +4,7 @@ import type { Workout, WorkoutExercise } from '@/src/db/schema';
 import { repeatWorkout } from '@/src/features/workouts/history/history.repository';
 import { triggerHapticMedium } from '@/src/lib/haptics/haptics';
 import { router } from 'expo-router';
+import { canCreateWorkout } from '@/src/features/app-updates/workout-update-exclusion';
 import { useCallback } from 'react';
 
 interface UseRepeatWorkoutParams {
@@ -26,7 +27,14 @@ export function useRepeatWorkout({
       return;
     }
 
-    if (activeWorkout) {
+    if (activeWorkout || !canCreateWorkout(db)) {
+      if (!activeWorkout) {
+        showSnackbar({
+          message: 'Finish the active workout before updating.',
+          variant: 'warning'
+        });
+      }
+
       router.navigate('/(tabs)/workout/active');
 
       return;

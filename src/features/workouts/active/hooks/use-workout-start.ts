@@ -15,6 +15,10 @@ import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { triggerHapticMedium } from '@/src/lib/haptics/haptics';
 import { withDomainFlowSpan } from '@/src/lib/observability/observability-span';
 import { formatWorkoutName } from '@/src/features/workouts/shared/workout-display.utils';
+import {
+  canStartWorkout,
+  canCreateWorkout
+} from '@/src/features/app-updates/workout-update-exclusion';
 import { router, type Href } from 'expo-router';
 import { useCallback, useEffect } from 'react';
 
@@ -43,6 +47,15 @@ export function useWorkoutStart() {
   }, []);
 
   const startWorkout = useCallback(() => {
+    if (!canStartWorkout(db)) {
+      showSnackbar({
+        message: 'Finish the active workout before updating.',
+        variant: 'warning'
+      });
+
+      return false;
+    }
+
     try {
       withDomainFlowSpan(
         { operation: 'workout.start', feature: 'workout' },
@@ -56,12 +69,16 @@ export function useWorkoutStart() {
           router.navigate(activeWorkoutRoute);
         }
       );
+
+      return true;
     } catch (error) {
       console.error('Failed to start workout', error);
       showSnackbar({
         message: 'Could not start workout. Please try again.',
         variant: 'danger'
       });
+
+      return false;
     }
   }, [db]);
 
@@ -71,6 +88,15 @@ export function useWorkoutStart() {
 
   const startWorkoutFromTemplate = useCallback(
     (templateId: WorkoutTemplate['id']) => {
+      if (!canStartWorkout(db)) {
+        showSnackbar({
+          message: 'Finish the active workout before updating.',
+          variant: 'warning'
+        });
+
+        return;
+      }
+
       try {
         withDomainFlowSpan(
           { operation: 'workout.start', feature: 'workout' },
@@ -105,6 +131,15 @@ export function useWorkoutStart() {
 
   const discardActiveWorkoutAndStartTemplate = useCallback(
     (templateId: WorkoutTemplate['id']) => {
+      if (!canCreateWorkout(db)) {
+        showSnackbar({
+          message: 'Finish the active workout before updating.',
+          variant: 'warning'
+        });
+
+        return;
+      }
+
       try {
         withDomainFlowSpan(
           { operation: 'workout.start', feature: 'workout' },

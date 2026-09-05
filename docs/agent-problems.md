@@ -48,6 +48,16 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-09-05 — OTA step 4 test runner IPC denied by restricted sandbox
+
+- Context: Running the required TypeScript/ESLint/Prettier/test validation after adding the OTA update UI and workout exclusion.
+- Tool/command: `pnpm run test`
+- Symptom: `tsx` failed before test collection with `listen EPERM` for its temporary IPC pipe.
+- Cause: Restricted execution denied the temporary IPC operation used by the TSX runner.
+- Workaround: Retry the same test command with approved elevated process/filesystem access.
+- Status: workaround
+- Validation impact: TypeScript, ESLint, and Prettier passed; the restricted test attempt ran zero tests.
+
 ## 2026-09-05 — Focused updater test hit React Native Node transform
 
 - Context: Running the focused app-update test after moving its import into the test lifecycle.

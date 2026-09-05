@@ -24,7 +24,12 @@ import type {
   GitHubReleaseAsset,
   UpdateManifest
 } from '@/src/features/app-updates/app-update.types';
-import { useAppUpdateStore } from '@/src/features/app-updates/app-update.store';
+import {
+  acquireUpdateExclusion,
+  releaseUpdateExclusion,
+  useAppUpdateStore
+} from '@/src/features/app-updates/app-update.store';
+import { getActiveWorkoutQuery } from '@/src/features/workouts/active/active.repository';
 
 export const GITHUB_RELEASE_URL =
   'https://api.github.com/repos/BraveHeart-tex/Liftlog/releases/latest';
@@ -203,6 +208,11 @@ export async function checkForUpdate(
       return null;
     }
 
+    useAppUpdateStore.getState().setState('checking', {
+      availableUpdate: null,
+      bytesDownloaded: 0,
+      totalBytes: null
+    });
     const installed = await native.getInstalledBuildInfoAsync();
     // Record attempts as well as successes so foreground checks cannot hammer
     // GitHub after a network or rate-limit failure.
@@ -214,7 +224,8 @@ export async function checkForUpdate(
 
     if (
       update &&
-      getDismissedUpdateVersion(db) !== update.manifest.versionCode
+      (options.manual ||
+        getDismissedUpdateVersion(db) !== update.manifest.versionCode)
     ) {
       useAppUpdateStore.getState().setAvailableUpdate(update);
       useAppUpdateStore.getState().setState('available');
@@ -222,10 +233,25 @@ export async function checkForUpdate(
       return update;
     }
 
+    useAppUpdateStore.getState().setState('idle', { availableUpdate: null });
+
     return null;
-  })().finally(() => {
-    checkPromise = null;
-  });
+  })()
+    .catch(error => {
+      useAppUpdateStore.getState().setState('failed', {
+        errorCode:
+          error instanceof AppUpdateError ? error.code : 'network_error',
+        errorMessage:
+          error instanceof Error
+            ? error.message
+            : 'Could not check for updates.'
+      });
+
+      throw error;
+    })
+    .finally(() => {
+      checkPromise = null;
+    });
 
   return checkPromise;
 }
@@ -263,6 +289,7 @@ export async function cancelUpdate(): Promise<void> {
 }
 
 export async function downloadAndInstallUpdate(
+  db: DrizzleDb,
   update: AvailableUpdate,
   onSnapshot?: (snapshot: AppUpdateSnapshot) => void
 ): Promise<void> {
@@ -274,6 +301,27 @@ export async function downloadAndInstallUpdate(
   }
 
   const native = requireUpdater();
+
+  if (!acquireUpdateExclusion()) {
+    throw new AppUpdateError(
+      'update_in_progress',
+      'Another update is already in progress.'
+    );
+  }
+
+  try {
+    if (getActiveWorkoutQuery(db).all().length > 0) {
+      throw new AppUpdateError(
+        'workout_in_progress',
+        'Finish the active workout before updating.'
+      );
+    }
+  } catch (error) {
+    releaseUpdateExclusion();
+
+    throw error;
+  }
+
   const token = ++operationToken;
   const setState = (state: AppUpdateSnapshot['state'], extra = {}) => {
     if (token !== operationToken) {
@@ -284,44 +332,44 @@ export async function downloadAndInstallUpdate(
     onSnapshot?.(useAppUpdateStore.getState());
   };
 
-  const permission = await native.getInstallPermissionStatusAsync();
-
-  if (!permission.canRequestPackageInstalls) {
-    setState('permission_required');
-
-    return;
-  }
-
-  const fileUri = `${UPDATE_CACHE_DIRECTORY}${update.manifest.apkFilename}`;
-  await makeDirectoryAsync(UPDATE_CACHE_DIRECTORY, { intermediates: true });
-  await deleteAsync(fileUri, { idempotent: true });
-  setState('downloading', {
-    bytesDownloaded: 0,
-    totalBytes: update.apkSizeBytes
-  });
-  downloadTask = createDownloadResumable(
-    update.apkUrl,
-    fileUri,
-    {},
-    (progress: DownloadProgress) => {
-      if (token !== operationToken) {
-        return;
-      }
-
-      useAppUpdateStore
-        .getState()
-        .setProgress(
-          progress.totalBytesWritten,
-          progress.totalBytesExpectedToWrite > 0
-            ? progress.totalBytesExpectedToWrite
-            : update.apkSizeBytes
-        );
-      onSnapshot?.(useAppUpdateStore.getState());
-    }
-  ) as DownloadTask;
   let installerStarted = false;
+  const fileUri = `${UPDATE_CACHE_DIRECTORY}${update.manifest.apkFilename}`;
 
   try {
+    const permission = await native.getInstallPermissionStatusAsync();
+
+    if (!permission.canRequestPackageInstalls) {
+      setState('permission_required');
+
+      return;
+    }
+
+    await makeDirectoryAsync(UPDATE_CACHE_DIRECTORY, { intermediates: true });
+    await deleteAsync(fileUri, { idempotent: true });
+    setState('downloading', {
+      bytesDownloaded: 0,
+      totalBytes: update.apkSizeBytes
+    });
+    downloadTask = createDownloadResumable(
+      update.apkUrl,
+      fileUri,
+      {},
+      (progress: DownloadProgress) => {
+        if (token !== operationToken) {
+          return;
+        }
+
+        useAppUpdateStore
+          .getState()
+          .setProgress(
+            progress.totalBytesWritten,
+            progress.totalBytesExpectedToWrite > 0
+              ? progress.totalBytesExpectedToWrite
+              : update.apkSizeBytes
+          );
+        onSnapshot?.(useAppUpdateStore.getState());
+      }
+    ) as DownloadTask;
     await downloadTask.downloadAsync();
     downloadTask = null;
     const info = await getInfoAsync(fileUri);
@@ -340,6 +388,14 @@ export async function downloadAndInstallUpdate(
       expectedPackageName: UPDATE_PACKAGE_NAME,
       expectedVersionCode: update.manifest.versionCode
     });
+
+    if (getActiveWorkoutQuery(db).all().length > 0) {
+      throw new AppUpdateError(
+        'workout_in_progress',
+        'Finish the active workout before updating.'
+      );
+    }
+
     setState('installing');
     installerStarted = true;
     const status = await native.installVerifiedApkAsync();
@@ -370,6 +426,8 @@ export async function downloadAndInstallUpdate(
     });
 
     throw error;
+  } finally {
+    releaseUpdateExclusion();
   }
 }
 
