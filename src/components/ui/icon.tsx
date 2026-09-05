@@ -1,5 +1,5 @@
-import { iconSizes, type IconSize } from '@/src/theme/sizes';
 import { cn } from '@/src/lib/utils/cn.utils';
+import { iconSizes, type IconSize } from '@/src/theme/sizes';
 import type { LucideIcon, LucideProps } from 'lucide-react-native';
 import { styled } from 'nativewind';
 import type { ComponentType } from 'react';
