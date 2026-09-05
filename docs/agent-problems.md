@@ -48,6 +48,34 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-09-06 - Patch engine rejected same-file replacement
+
+- Context: Condensing the untracked Android full APK update plan to match the
+  repository's concise-plan rule.
+- Tool/command: `apply_patch` with delete and add operations for the same path.
+- Symptom: Patch verification rejected multiple operations targeting one file.
+- Cause: The patch engine does not support deleting and recreating one path within
+  a single patch.
+- Workaround: Delete the untracked draft and add its condensed replacement in two
+  separate patch operations.
+- Status: resolved
+- Validation impact: The original draft remained intact after rejection; the
+  replacement is revalidated separately.
+
+## 2026-09-06 - ADB daemon blocked by restricted sandbox
+
+- Context: Verifying the connected Android device architecture during full APK
+  update planning.
+- Tool/command: `adb devices -l`.
+- Symptom: ADB could not install its local smart-socket listener and the daemon
+  exited with `Operation not permitted`.
+- Cause: The restricted sandbox does not permit the local listener required by the
+  ADB daemon.
+- Workaround: Retried ADB through the approved elevated execution path.
+- Status: workaround
+- Validation impact: The elevated query succeeded and reported `arm64-v8a` for the
+  connected emulator.
+
 ## 2026-09-05 - Full test suite blocked by TSX IPC sandbox
 
 - Context: Running the required full suite after backup replace-all implementation.
