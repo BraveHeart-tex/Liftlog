@@ -48,6 +48,46 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-09-05 — Release APK packaging rejected local keystore password
+
+- Context: Full `android:release:single-arch` validation after the updater Kotlin compile passed.
+- Tool/command: `pnpm run android:release:single-arch`
+- Symptom: `:app:packageRelease` failed with `KeytoolException: ... keystore password was incorrect` for the configured release keystore and alias.
+- Cause: The signing environment loaded from the local build configuration does not unlock the configured keystore.
+- Workaround: None applied; do not weaken release signing guards or alter signing setup.
+- Status: blocked
+- Validation impact: Clean prebuild, arm64-v8a native build, Metro bundle, Sentry upload, R8, and signing validation completed; final signed APK packaging was not produced.
+
+## 2026-09-05 — Gradle wrapper cache lock denied during updater compile
+
+- Context: Fast feedback compilation for the Android updater Kotlin module.
+- Tool/command: `./gradlew :liftlog-updater:compileReleaseKotlin -PandroidVersionCode=2 -PreactNativeArchitectures=arm64-v8a`
+- Symptom: Gradle could not open its wrapper distribution lock under the user Gradle cache (`Operation not permitted`).
+- Cause: Restricted execution does not allow the wrapper to access its existing external cache lock.
+- Workaround: Retry the same project-local Gradle command with approved elevated execution.
+- Status: workaround
+- Validation impact: Restricted Kotlin validation did not start; elevated Gradle validation is required.
+
+## 2026-09-05 — Gradle wrapper cache lock denied by sandbox
+
+- Context: Discovering Android Gradle projects before compiling the local updater module.
+- Tool/command: `./gradlew projects`
+- Symptom: Gradle could not open its wrapper distribution lock under the user Gradle cache (`Operation not permitted`).
+- Cause: Restricted execution does not allow the wrapper to access its existing external cache lock.
+- Workaround: Retry the same project-local Gradle command with approved elevated execution.
+- Status: workaround
+- Validation impact: Restricted native validation did not start; elevated Gradle validation is required.
+
+## 2026-09-05 — Local updater lockfile resolution blocked offline
+
+- Context: Adding the local Kotlin Expo updater module and refreshing package metadata.
+- Tool/command: `pnpm install --offline --lockfile-only`
+- Symptom: pnpm could not resolve the local module's `expo@*` peer from offline registry metadata.
+- Cause: The offline pnpm metadata cache does not contain the wildcard peer resolution needed for the second workspace project.
+- Workaround: Keep the existing installed Expo dependency tree for local validation; native autolinking already resolves the module. A network-enabled lockfile refresh remains available.
+- Status: workaround
+- Validation impact: The lockfile was not refreshed by this command; TypeScript/native checks use the installed dependencies.
+
 ## 2026-09-05 — OTA signing plugin matched the wrong release block
 
 - Context: Verifying the new Android release-signing Expo config plugin with a clean prebuild.

@@ -102,6 +102,7 @@ echo "Architecture: $ARCHITECTURE"
 echo "Version code: $LIFTLOG_ANDROID_VERSION_CODE"
 
 export LIFTLOG_ANDROID_RELEASE_BUILD=1
+export NODE_ENV=production
 
 cd "$PROJECT_ROOT"
 
