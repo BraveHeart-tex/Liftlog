@@ -19,6 +19,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.borakaraca94.liftlog",
+      "versionCode": 1,
       "permissions": [
         "android.permission.health.READ_STEPS",
         "android.permission.health.READ_HEALTH_DATA_HISTORY",
@@ -27,6 +28,7 @@
     },
     "plugins": [
       "expo-router",
+      "./plugins/with-android-release-signing",
       [
         "expo-splash-screen",
         {
