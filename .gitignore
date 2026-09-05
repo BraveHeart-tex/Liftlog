@@ -66,3 +66,6 @@ app-example
 .pnpm-store/
 # Graphify generated output
 graphify-out/
+
+# Native module build outputs
+/modules/liftlog-updater/android/build/
