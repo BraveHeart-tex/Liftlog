@@ -27,8 +27,7 @@
     "**/.next": true,
     "**/ios": true,
     "**/android": true,
-    "**/*.code-search": true,
-    "**/graphify-out": true
+    "**/*.code-search": true
   },
   "files.watcherExclude": {
     "**/node_modules/**": true,
@@ -39,8 +38,7 @@
     "**/.turbo/**": true,
     "**/.next/**": true,
     "**/ios/**": true,
-    "**/android/**": true,
-    "**/graphify-out": true
+    "**/android/**": true
   },
   "[kotlin]": {
     "editor.defaultFormatter": "fwcd.kotlin"

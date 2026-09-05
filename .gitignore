@@ -60,8 +60,4 @@ app-example
 *.iml
 .env.local
 
-.design-reviews
-
 .pnpm-store/
-# Graphify generated output
-graphify-out/
