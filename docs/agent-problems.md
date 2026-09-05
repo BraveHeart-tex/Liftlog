@@ -48,6 +48,36 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-09-05 - Git index write requires elevated access
+
+- Context: Committing the completed backup import preview implementation.
+- Tool/command: `git add ... && git commit -m "feat(backup): validate and preview imports"`.
+- Symptom: Git could not create `.git/index.lock` because the repository metadata is read-only in the default sandbox.
+- Cause: The managed filesystem permits source edits but restricts writes under `.git`.
+- Workaround: Retry the same commit through the approved elevated execution path.
+- Status: workaround
+- Validation impact: Source validation passed; commit completion required elevated Git access.
+
+## 2026-09-05 - Native picker module incompatible with Node test transform
+
+- Context: Running focused preview tests for the new backup import flow.
+- Tool/command: Repository-local `tsx` test command importing the picker service.
+- Symptom: Test collection failed while transforming React Native syntax from the native Expo file-system module.
+- Cause: The Node test transform does not load the native picker dependency without a platform mock.
+- Workaround: Move pure preview/error mapping into a platform-independent module and test that module; keep picker I/O in the native adapter.
+- Status: workaround
+- Validation impact: Native picker I/O remains covered by TypeScript and platform manual coverage; pure preview behavior is unit-tested.
+
+## 2026-09-05 - Focused backup test runner IPC restriction
+
+- Context: Running the focused backup codec tests after implementing import validation.
+- Tool/command: Repository-local `tsx` test command for `tests/features/backup/backup.codec.test.ts`.
+- Symptom: Test collection failed with `listen EPERM` while creating the temporary TSX IPC pipe.
+- Cause: The restricted sandbox denies the temporary IPC operation used by `tsx`.
+- Workaround: Retry the same focused test with the approved elevated execution path.
+- Status: workaround
+- Validation impact: The restricted attempt ran zero tests; elevated retry is required.
+
 ## 2026-09-05 - Focused backup test runner sandbox IPC restriction
 
 - Context: Running the new backup codec tests.
