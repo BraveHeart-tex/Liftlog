@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/src/components/ui/card';
 import { Icon } from '@/src/components/ui/icon';
 import { showSnackbar } from '@/src/components/ui/snackbar';
 import { Text } from '@/src/components/ui/text';
+import { StyledActivityIndicator } from '@/src/components/styled/activity-indicator';
 import {
   cancelUpdate,
   checkForUpdate,
@@ -12,12 +13,12 @@ import {
 import { useAppUpdateStore } from '@/src/features/app-updates/app-update.store';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { useDrizzle } from '@/src/providers/database-provider';
+import { iconSizes } from '@/src/theme/sizes';
 import Constants from 'expo-constants';
 import {
   AlertTriangle,
   CheckCircle2,
   ChevronRight,
-  Loader2,
   XCircle
 } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
@@ -63,12 +64,13 @@ const PILL_STYLES: Record<
 function StatusPill({
   tone,
   label,
-  icon: PillIcon
+  icon: PillIcon,
+  loading = false
 }: {
   tone: PillTone;
   label: string;
-
   icon: typeof CheckCircle2;
+  loading?: boolean;
 }) {
   const styles = PILL_STYLES[tone];
 
@@ -79,7 +81,14 @@ function StatusPill({
         styles.bg
       )}
     >
-      <Icon as={PillIcon} size="sm" tone={styles.iconTone} />
+      {loading ? (
+        <StyledActivityIndicator
+          className="text-muted-foreground"
+          size={iconSizes.sm}
+        />
+      ) : (
+        <Icon as={PillIcon} size="sm" tone={styles.iconTone} />
+      )}
 
       <Text variant="small" tone={styles.textTone}>
         {label}
@@ -178,7 +187,7 @@ export function AppUpdateSettingsSection() {
           : snapshot.state === 'checking'
             ? 'Checking…'
             : 'Working…',
-      icon: Loader2
+      icon: CheckCircle2
     };
   } else if (availableUpdate) {
     pill = { tone: 'primary', label: 'Update available', icon: CheckCircle2 };
@@ -201,6 +210,7 @@ export function AppUpdateSettingsSection() {
                 tone={pill.tone}
                 label={pill.label}
                 icon={pill.icon}
+                loading={isBusy}
               />
             </View>
             <Text variant="small" tone="muted">
