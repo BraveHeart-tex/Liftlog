@@ -3,7 +3,16 @@
 ## Architecture
 
 - [Architecture contract and migration inventory](architecture.md)
+- [Data export format and import semantics](decisions/0001-data-export-format-and-import-semantics.md)
 - [Folder structure migration plan](../plans/folder-structure-migration.md)
+
+## Domain
+
+- [Glossary](glossary.md)
+
+## Plans
+
+- [Data export and import](../plans/data-export-import.md)
 
 ## Engineering rules
 

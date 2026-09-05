@@ -46,3 +46,13 @@ Use direct project-local commands for validation. Commands that can run longer t
 - `EPERM` from TSX IPC work is a sandbox capability issue, not a JavaScript diagnosis. Retry with the approved elevated execution path and record the workaround in `docs/agent-problems.md`.
 - Quote Expo Router paths and other shell paths containing parentheses, spaces, or glob characters.
 - For any programmatic agent hook, configure the host hook timeout and keep the hook fail-open. A hook must never be allowed to block the underlying tool indefinitely.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs are tracked in GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+This repo uses a single-context domain-doc layout. See `docs/agents/domain.md`.

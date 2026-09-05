@@ -48,6 +48,54 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-09-05 - Focused backup test runner sandbox IPC restriction
+
+- Context: Running the new backup codec tests.
+- Tool/command: Repository-local `tsx` test command for `tests/features/backup/backup.codec.test.ts`.
+- Symptom: Test collection failed with `listen EPERM` while creating the temporary TSX IPC pipe.
+- Cause: The restricted sandbox denies the temporary IPC operation used by `tsx`.
+- Workaround: Retry the same focused test with approved elevated process/filesystem access.
+- Status: workaround
+- Validation impact: The restricted attempt ran zero tests; the elevated retry is required.
+
+## 2026-09-05 - GitHub issue read used incompatible output flags
+
+- Context: Fetching issue #56 before implementation.
+- Tool/command: `gh issue view 56 --comments --json number,title,body,labels,comments`
+- Symptom: GitHub CLI rejected the invocation because `--comments` and `--json` cannot be combined.
+- Cause: The issue-view flags are mutually exclusive.
+- Workaround: Retry with JSON output alone, which includes the comments field.
+- Status: resolved
+- Validation impact: None.
+
+## 2026-09-05 - GitHub CLI required network escalation for spec publication
+
+- Context: Checking for duplicate issues and required labels before publishing the
+  data export and import specification.
+- Tool/command: `gh issue list` and `gh label list`
+- Symptom: Authenticated GitHub CLI calls failed with an `api.github.com`
+  connection error in the restricted shell.
+- Cause: The default sandbox blocks the outbound network access required by
+  GitHub CLI.
+- Workaround: Retried the read-only GitHub checks through the approved elevated
+  network path before making tracker changes.
+- Status: workaround
+- Validation impact: Duplicate and label checks completed successfully after the
+  retry; issue publication still uses the approved GitHub CLI path.
+
+## 2026-09-05 - Prettier changed a Markdown task on every pass
+
+- Context: Formatting the new data export and import implementation plan.
+- Tool/command: `./node_modules/.bin/prettier --check plans/data-export-import.md`
+- Symptom: A write reported success, but the next check still failed; `--debug-check`
+  showed that Prettier alternated indentation on a task-list continuation.
+- Cause: The task text wrapped an inline code span across lines, triggering
+  non-idempotent Markdown list formatting in the installed Prettier version.
+- Workaround: Rephrased the task so the inline code span no longer crosses a line
+  boundary, then reran the targeted formatter checks.
+- Status: resolved
+- Validation impact: Documentation checks were rerun after the wording-only fix.
+
 ## 2026-08-27 — Degraded UI review path moved under reference
 
 - Context: Running the required in-thread Impeccable finish review after adding the templates listing screen.
