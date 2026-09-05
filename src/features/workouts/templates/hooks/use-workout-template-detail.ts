@@ -12,6 +12,11 @@ import { getActiveWorkoutQuery } from '@/src/features/workouts/active/active.rep
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { triggerHapticMedium } from '@/src/lib/haptics/haptics';
 import { router, type Href } from 'expo-router';
+import {
+  canStartWorkout,
+  canCreateWorkout
+} from '@/src/features/app-updates/workout-update-exclusion';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import { useCallback, useMemo } from 'react';
 
 const activeWorkoutRoute = '/(tabs)/workout/active' as Href;
@@ -46,7 +51,14 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
   const activeWorkout = activeWorkoutResult.data[0];
 
   const startWorkoutFromTemplate = useCallback(() => {
-    if (!template) {
+    if (!template || !canStartWorkout(db)) {
+      if (template) {
+        showSnackbar({
+          message: 'Finish the active workout before updating.',
+          variant: 'warning'
+        });
+      }
+
       return;
     }
 
@@ -61,7 +73,14 @@ export function useWorkoutTemplateDetail(templateId: string | undefined) {
   }, [db, template]);
 
   const discardActiveWorkoutAndStartTemplate = useCallback(() => {
-    if (!activeWorkout || !template) {
+    if (!activeWorkout || !template || !canCreateWorkout(db)) {
+      if (activeWorkout && template) {
+        showSnackbar({
+          message: 'Finish the active workout before updating.',
+          variant: 'warning'
+        });
+      }
+
       return;
     }
 

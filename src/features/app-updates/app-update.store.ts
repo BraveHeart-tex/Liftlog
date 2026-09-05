@@ -27,6 +27,27 @@ const initialState: AppUpdateSnapshot = {
   installationStatus: null
 };
 
+let updateExclusionHeld = false;
+
+/** Synchronous process-wide guard shared by update and workout creation flows. */
+export function acquireUpdateExclusion(): boolean {
+  if (updateExclusionHeld) {
+    return false;
+  }
+
+  updateExclusionHeld = true;
+
+  return true;
+}
+
+export function releaseUpdateExclusion(): void {
+  updateExclusionHeld = false;
+}
+
+export function isUpdateInProgress(): boolean {
+  return updateExclusionHeld;
+}
+
 export const useAppUpdateStore = create<AppUpdateStore>(set => ({
   ...initialState,
   setState: (state, update = {}) => set({ ...update, state }),

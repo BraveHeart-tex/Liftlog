@@ -29,7 +29,10 @@ export function WorkoutStartScreen() {
     // Keep the CTA mounted while the live query reflects the newly-created
     // workout. The active route is still transitioning in above this screen.
     setIsStartingWorkout(true);
-    startWorkout();
+
+    if (!startWorkout()) {
+      setIsStartingWorkout(false);
+    }
   }, [isStartingWorkout, startWorkout]);
 
   return (

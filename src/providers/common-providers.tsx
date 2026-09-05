@@ -4,6 +4,7 @@ import { AlertDialogHost } from '@/src/components/ui/alert-dialog';
 import { SnackbarHost } from '@/src/components/ui/snackbar';
 import { SettingsProvider } from '@/src/features/settings/settings-provider';
 import { StepsSyncHost } from '@/src/features/steps/components/steps-sync-host';
+import { AppUpdateHost } from '@/src/features/app-updates/components/app-update-host';
 import { RestTimerHost } from '@/src/features/rest-timer/components/rest-timer-host';
 import { AppThemeProvider } from '@/src/theme/app-theme-provider';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
@@ -39,6 +40,7 @@ export function CommonProviders({
             <SettingsProvider>
               <BottomSheetModalProvider>
                 {children}
+                <AppUpdateHost />
                 <StepsSyncHost />
                 <RestTimerHost />
                 <SnackbarHost />
