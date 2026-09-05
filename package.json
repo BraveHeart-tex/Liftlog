@@ -11,6 +11,7 @@
   },
   "scripts": {
     "android:clean": "pnpm run prebuild:clean && pnpm run android:device",
+    "android:release:prepare": "node scripts/prepare-android-release.mjs",
     "android:release:single-arch": "dotenvx run -f .env.local -- scripts/build-android-release-single-arch.sh",
     "android:device": "EXPO_UNSTABLE_ATLAS=true expo run:android --device",
     "android": "expo run:android",

@@ -656,6 +656,16 @@ Use one of these status values:
 - Status: `workaround`
 - Validation impact: The repository-local formatting check passed; the global wrapper remained unusable.
 
+## 2026-09-05 — Test runner IPC blocked by sandbox permissions
+
+- Context: Running the required repository test command after adding Android release asset preparation tooling and documentation.
+- Tool/command: `pnpm run test`
+- Symptom: `tsx` failed with `listen EPERM` while creating its temporary IPC pipe under `/var/folders/.../tsx-501/`.
+- Cause: The sandbox denied the IPC socket operation before tests started.
+- Workaround: Retry the unchanged repository test command with the approved elevated execution path.
+- Status: workaround
+- Validation impact: The initial sandboxed test attempt did not execute test files.
+
 ## Maintenance
 
 Normal work appends entries and preserves historical facts. A deliberate maintenance task may consolidate recurring entries while preserving the original facts and recording what was consolidated.
