@@ -8,6 +8,7 @@
 ## Engineering rules
 
 - [Agent problem log](agent-problems.md)
+- [Android APK updates](android-updates.md)
 - [Bottom sheets](bottom-sheet.md)
 - [Data access](data-access.md)
 - [Database](database.md)
