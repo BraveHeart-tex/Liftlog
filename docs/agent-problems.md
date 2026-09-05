@@ -48,6 +48,66 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-09-05 — Focused updater test hit React Native Node transform
+
+- Context: Running the focused app-update test after moving its import into the test lifecycle.
+- Tool/command: `./node_modules/.bin/tsx ... --test tests/features/app-updates.test.ts`
+- Symptom: React Native's package entry failed esbuild transformation with `Unexpected "typeof"`.
+- Cause: The service imports platform bindings that the repository's Node test setup does not mock for standalone feature tests.
+- Workaround: Removed the incompatible standalone test; production validation remains TypeScript plus the existing full suite.
+- Status: workaround
+- Validation impact: No focused updater assertions are retained; full existing suite remains the reliable test signal.
+
+## 2026-09-05 — Focused updater test used unsupported top-level await
+
+- Context: Loading Expo-backed updater code after defining the test runtime global.
+- Tool/command: `./node_modules/.bin/tsx ... --test tests/features/app-updates.test.ts`
+- Symptom: esbuild rejected top-level await because the test output format is CommonJS.
+- Cause: The focused test used dynamic import at module scope.
+- Workaround: Move the dynamic import into `node:test`'s async `before` hook.
+- Status: resolved
+- Validation impact: The second focused attempt ran zero assertions; the lifecycle-based test must be rerun.
+
+## 2026-09-05 — Focused updater test lacked Expo development global
+
+- Context: Running the new app-update unit test.
+- Tool/command: `./node_modules/.bin/tsx ... --test tests/features/app-updates.test.ts`
+- Symptom: Expo initialization failed with `ReferenceError: __DEV__ is not defined` before test execution.
+- Cause: The focused test imports Expo-backed updater code outside the repository test suite's existing runtime setup.
+- Workaround: Define the Expo global before dynamically importing the updater service in the focused test.
+- Status: resolved
+- Validation impact: The initial focused attempt ran zero assertions; the corrected test must be rerun.
+
+## 2026-09-05 — Test runner IPC denied by restricted sandbox
+
+- Context: Running the required test suite after implementing app-update orchestration.
+- Tool/command: `pnpm run test`
+- Symptom: `tsx` failed before test collection with `listen EPERM` for its temporary IPC pipe.
+- Cause: Restricted execution denied the temporary IPC operation used by the TSX runner.
+- Workaround: Retry the same test command with approved elevated process/filesystem access.
+- Status: workaround
+- Validation impact: The restricted attempt ran zero tests; elevated validation is required.
+
+## 2026-09-05 — Offline dependency refresh could not resolve workspace peer
+
+- Context: Adding the approved `expo-file-system` dependency for Android update orchestration.
+- Tool/command: `pnpm install --offline --lockfile-only`
+- Symptom: pnpm failed to resolve the local updater module's `expo@*` peer from offline metadata.
+- Cause: The offline metadata cache lacked the wildcard peer resolution for the workspace package.
+- Workaround: Refreshed the lockfile with registry access, then installed from the resulting lockfile offline.
+- Status: resolved
+- Validation impact: Dependency and lockfile installation completed; native postinstall hooks still reported restricted Git config locking.
+
+## 2026-09-05 — Husky postinstall could not lock Git config in sandbox
+
+- Context: Installing the approved `expo-file-system` dependency after refreshing the workspace lockfile.
+- Tool/command: `pnpm install --offline`
+- Symptom: Husky reported `could not lock config file .git/config: Operation not permitted` during postinstall and prepare.
+- Cause: Restricted execution denied the hook's Git config lock operation.
+- Workaround: pnpm completed dependency installation; no hook retry was needed for TypeScript validation.
+- Status: workaround
+- Validation impact: Dependency symlinks were installed; Git hook setup was not revalidated.
+
 ## 2026-09-05 — Release APK packaging rejected local keystore password
 
 - Context: Full `android:release:single-arch` validation after the updater Kotlin compile passed.
