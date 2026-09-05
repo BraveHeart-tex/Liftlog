@@ -48,6 +48,16 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-09-05 — OTA signing plugin matched the wrong release block
+
+- Context: Verifying the new Android release-signing Expo config plugin with a clean prebuild.
+- Tool/command: `expo prebuild --clean --platform android --no-install`
+- Symptom: Generated Gradle assigned the dedicated signing config outside `signingConfigs` and swapped debug/release signing assignments.
+- Cause: The plugin used broad text anchors that matched the first generated `release` block.
+- Workaround: Scoped the replacement to the `buildTypes` release block and inserted the dedicated config before the signing-configs closing brace; regenerated and inspected Gradle output.
+- Status: resolved
+- Validation impact: Clean prebuild now produces separate debug and dedicated release signing assignments.
+
 ## 2026-09-05 - Full test suite blocked by TSX IPC sandbox
 
 - Context: Running the required full suite after backup replace-all implementation.
