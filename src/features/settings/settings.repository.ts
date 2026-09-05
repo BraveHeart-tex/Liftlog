@@ -82,7 +82,7 @@ export function getSettingsQuery(db: DrizzleDb) {
     .where(inArray(appMeta.key, SETTINGS_QUERY_KEYS));
 }
 
-function setSetting(db: DrizzleDb, key: string, value: string): void {
+export function setSetting(db: DrizzleDb, key: string, value: string): void {
   db.insert(appMeta)
     .values({ key, value })
     .onConflictDoUpdate({ target: appMeta.key, set: { value } })
