@@ -48,6 +48,36 @@ Use one of these status values:
 
 ## Entries
 
+## 2026-09-05 - Full test suite blocked by TSX IPC sandbox
+
+- Context: Running the required full suite after backup replace-all implementation.
+- Tool/command: `pnpm run test`.
+- Symptom: The runner failed before collection with `listen EPERM` creating its temporary TSX IPC pipe.
+- Cause: The restricted sandbox denies the temporary IPC operation used by `tsx`.
+- Workaround: Retry the package test script with approved elevated process access.
+- Status: workaround
+- Validation impact: The restricted attempt ran zero tests; elevated full-suite results are required.
+
+## 2026-09-05 - Focused backup tests blocked by TSX IPC sandbox
+
+- Context: Running focused backup tests after implementing replace-all import.
+- Tool/command: Repository-local `tsx` test command for backup import and codec tests.
+- Symptom: Test collection failed with `listen EPERM` while creating the temporary TSX IPC pipe.
+- Cause: The restricted sandbox denies the temporary IPC operation used by `tsx`.
+- Workaround: Retry the same focused test command with approved elevated process access.
+- Status: workaround
+- Validation impact: The restricted attempt ran zero tests; elevated retry is required.
+
+## 2026-09-05 - Backup import lint caught initial implementation issues
+
+- Context: Validating the replace-all backup implementation.
+- Tool/command: Repository-local Prettier, ESLint, and TypeScript checks on changed files.
+- Symptom: ESLint rejected shorthand conditional statements, missing padding, and import-type annotations.
+- Cause: The first implementation did not match the repository's strict lint conventions.
+- Workaround: Added explicit braces and spacing, and converted dynamic type imports to a type-only import.
+- Status: resolved
+- Validation impact: Targeted lint and typecheck were rerun after the fixes.
+
 ## 2026-09-05 - Git index write requires elevated access
 
 - Context: Committing the completed backup import preview implementation.

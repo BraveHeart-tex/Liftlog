@@ -3,8 +3,12 @@ import { Card, CardContent } from '@/src/components/ui/card';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { showSnackbar } from '@/src/components/ui/snackbar';
-import { exportBackup } from '@/src/features/backup/backup.service';
+import {
+  exportBackup,
+  replaceAllWithBackup
+} from '@/src/features/backup/backup.service';
 import { pickBackupPreview } from '@/src/features/backup/backup-import.service';
+import type { LiftLogBackupV1 } from '@/src/features/backup/backup.types';
 import {
   getBackupErrorCategory,
   type BackupPreview
@@ -48,25 +52,74 @@ export function DataBackupSection() {
     );
   }, [runExport]);
 
-  const showPreview = useCallback((preview: BackupPreview) => {
-    const { counts } = preview;
-    const activeWorkoutMessage = preview.replacesActiveWorkout
-      ? '\n\nThis will replace your active workout.'
-      : '';
-    Alert.alert(
-      'Backup preview',
-      [
-        `Created ${new Date(preview.createdAt).toLocaleString()}`,
-        `Source app: ${preview.appVersion}`,
-        '',
-        `${counts.exercises} exercises, ${counts.workouts} workouts`,
-        `${counts.sets} sets, ${counts.workoutTemplates} templates`,
-        activeWorkoutMessage,
-        '\nNo data has been changed.'
-      ].join('\n'),
-      [{ text: 'Done', style: 'cancel' }]
-    );
-  }, []);
+  const runReplace = useCallback(
+    async (backup: LiftLogBackupV1) => {
+      setIsImporting(true);
+
+      try {
+        await replaceAllWithBackup(db, backup);
+        Alert.alert(
+          'Import complete',
+          'Restart LiftLog to load the restored data.',
+          [{ text: 'OK' }]
+        );
+      } catch {
+        showSnackbar({
+          message: 'Could not replace data. Your existing data was kept.',
+          variant: 'danger'
+        });
+      } finally {
+        setIsImporting(false);
+      }
+    },
+    [db]
+  );
+
+  const showPreview = useCallback(
+    (preview: BackupPreview, backup: LiftLogBackupV1) => {
+      const { counts } = preview;
+      const activeWorkoutMessage = preview.replacesActiveWorkout
+        ? '\n\nThis will replace your active workout.'
+        : '';
+      Alert.alert(
+        'Backup preview',
+        [
+          `Created ${new Date(preview.createdAt).toLocaleString()}`,
+          `Source app: ${preview.appVersion}`,
+          '',
+          `${counts.exercises} exercises, ${counts.workouts} workouts`,
+          `${counts.sets} sets, ${counts.workoutTemplates} templates`,
+          activeWorkoutMessage,
+          '\nNo data has been changed.'
+        ].join('\n'),
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Continue',
+            onPress: () => {
+              Alert.alert(
+                'Replace all data?',
+                `Your current workout data will be replaced by this backup.${
+                  preview.replacesActiveWorkout
+                    ? ' Any active workout and rest timer will be cancelled.'
+                    : ' Any active rest timer will be cancelled.'
+                } A private safety backup will be created first. The app must restart after a successful import.`,
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Replace all data',
+                    style: 'destructive',
+                    onPress: () => void runReplace(backup)
+                  }
+                ]
+              );
+            }
+          }
+        ]
+      );
+    },
+    [runReplace]
+  );
 
   const runImport = useCallback(async () => {
     setIsImporting(true);
@@ -78,7 +131,7 @@ export function DataBackupSection() {
         return;
       }
 
-      showPreview(result.preview);
+      showPreview(result.preview, result.backup);
     } catch (error) {
       const category = getBackupErrorCategory(error);
       const message =

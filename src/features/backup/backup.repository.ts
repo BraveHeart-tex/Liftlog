@@ -1,14 +1,21 @@
 import type { DrizzleDb } from '@/src/db/client';
 import {
+  appMeta,
   exercises,
+  healthStepDays,
+  personalRecords,
   sets,
   workoutExercises,
   workoutTemplateExercises,
   workoutTemplates,
   workouts
 } from '@/src/db/schema';
-import { getSettingsSnapshot } from '@/src/features/settings/settings.repository';
-import { asc } from 'drizzle-orm';
+import {
+  getSettingsSnapshot,
+  SETTINGS_KEYS
+} from '@/src/features/settings/settings.repository';
+import { rebuildPersonalRecordsForExercisesInTransaction } from '@/src/features/progress/progress.repository';
+import { asc, sql } from 'drizzle-orm';
 import type { LiftLogBackupV1 } from '@/src/features/backup/backup.types';
 import type { ThemePreference } from '@/src/theme/theme-preference';
 
@@ -78,5 +85,81 @@ export function createBackupSnapshot(
         themePreference
       }
     };
+  });
+}
+
+/** Replaces only user-owned data. Operational metadata and imported-device cache stay out. */
+export function replaceBackupData(
+  db: DrizzleDb,
+  backup: LiftLogBackupV1
+): void {
+  db.transaction(tx => {
+    tx.delete(personalRecords).run();
+    tx.delete(sets).run();
+    tx.delete(workoutExercises).run();
+    tx.delete(workoutTemplateExercises).run();
+    tx.delete(workoutTemplates).run();
+    tx.delete(workouts).run();
+    tx.delete(exercises).run();
+    tx.delete(healthStepDays).run();
+
+    if (backup.data.exercises.length) {
+      tx.insert(exercises).values(backup.data.exercises).run();
+    }
+
+    if (backup.data.workouts.length) {
+      tx.insert(workouts).values(backup.data.workouts).run();
+    }
+
+    if (backup.data.workoutTemplates.length) {
+      tx.insert(workoutTemplates).values(backup.data.workoutTemplates).run();
+    }
+
+    if (backup.data.workoutExercises.length) {
+      tx.insert(workoutExercises).values(backup.data.workoutExercises).run();
+    }
+
+    if (backup.data.workoutTemplateExercises.length) {
+      tx.insert(workoutTemplateExercises)
+        .values(backup.data.workoutTemplateExercises)
+        .run();
+    }
+
+    if (backup.data.sets.length) {
+      tx.insert(sets).values(backup.data.sets).run();
+    }
+
+    const settings = backup.data.settings;
+    const values = [
+      [SETTINGS_KEYS.weightUnit, settings.weightUnit],
+      [SETTINGS_KEYS.restTimerDuration, String(settings.restTimerDuration)],
+      [
+        SETTINGS_KEYS.restTimerPresets,
+        JSON.stringify(settings.restTimerPresets)
+      ],
+      [
+        SETTINGS_KEYS.healthConnectStepsEnabled,
+        String(settings.healthConnectStepsEnabled)
+      ],
+      [SETTINGS_KEYS.stepGoal, String(settings.stepGoal)]
+    ].map(([key, value]) => ({ key, value }));
+    tx.insert(appMeta)
+      .values(values)
+      .onConflictDoUpdate({
+        target: appMeta.key,
+        set: { value: sql`excluded.value` }
+      })
+      .run();
+
+    rebuildPersonalRecordsForExercisesInTransaction(
+      tx,
+      backup.data.exercises.map(exercise => exercise.id)
+    );
+
+    const violations = tx.all<{ table: string }>(sql`PRAGMA foreign_key_check`);
+
+    if (violations.length > 0) {
+      throw new Error('Backup replacement failed foreign-key validation.');
+    }
   });
 }

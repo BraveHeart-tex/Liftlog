@@ -1,10 +1,12 @@
 import type { DrizzleDb } from '@/src/db/client';
-import { createBackupSnapshot } from '@/src/features/backup/backup.repository';
-import { serializeBackup } from '@/src/features/backup/backup.codec';
 import {
-  getThemePreference,
-  type ThemePreference
-} from '@/src/theme/theme-preference';
+  createBackupSnapshot,
+  replaceBackupData
+} from '@/src/features/backup/backup.repository';
+import {
+  parseBackupJson,
+  serializeBackup
+} from '@/src/features/backup/backup.codec';
 import Constants from 'expo-constants';
 import { Paths } from 'expo-file-system';
 import {
@@ -13,6 +15,15 @@ import {
   writeAsStringAsync
 } from 'expo-file-system/legacy';
 import { isAvailableAsync, shareAsync } from 'expo-sharing';
+import { cancelRestTimerNotification } from '@/src/features/rest-timer/rest-timer-notifications.service';
+import { useRestTimerStore } from '@/src/features/rest-timer/rest-timer.store';
+import { withDomainFlowSpan } from '@/src/lib/observability/observability-span';
+import type { LiftLogBackupV1 } from '@/src/features/backup/backup.types';
+import {
+  getThemePreference,
+  setThemePreference,
+  type ThemePreference
+} from '@/src/theme/theme-preference';
 
 export interface BackupFilePort {
   write(uri: string, contents: string): Promise<void>;
@@ -37,6 +48,97 @@ export const nativeBackupFilePort: BackupFilePort = {
     });
   }
 };
+
+export const SAFETY_BACKUP_FILENAME = 'liftlog-safety-backup.json';
+
+export interface ReplaceBackupOptions {
+  filePort?: BackupFilePort;
+  now?: Date;
+  themePreference?: ThemePreference;
+  cancelTimer?: () => void;
+  cancelNotification?: () => Promise<void>;
+  setTheme?: (preference: ThemePreference) => void;
+}
+
+export type ReplaceBackupResult = { status: 'restart-required' };
+
+function safetyBackupUris(now: Date) {
+  const uri = `${Paths.document.uri}/${SAFETY_BACKUP_FILENAME}`;
+
+  return { uri, temporaryUri: `${uri}.${now.getTime()}.tmp` };
+}
+
+async function replaceAllWithBackupUnsafe(
+  db: DrizzleDb,
+  backup: LiftLogBackupV1,
+  options: ReplaceBackupOptions = {}
+): Promise<ReplaceBackupResult> {
+  const now = options.now ?? new Date();
+  const port = options.filePort ?? nativeBackupFilePort;
+  const previousTheme = options.themePreference ?? getThemePreference();
+  const { uri, temporaryUri } = safetyBackupUris(now);
+  const safetyBackup = createBackupSnapshot(
+    db,
+    Constants.expoConfig?.version ?? 'unknown',
+    previousTheme,
+    now.toISOString()
+  );
+  const safetyContents = serializeBackup(safetyBackup);
+
+  // Parsing the exact bytes that will be promoted makes the safety copy the undo source.
+  const validatedSafetyBackup = parseBackupJson(safetyContents);
+  await port.write(temporaryUri, safetyContents);
+
+  try {
+    await port.promote(temporaryUri, uri);
+  } catch (error) {
+    await port.remove(temporaryUri);
+
+    throw error;
+  }
+
+  const cancelTimer =
+    options.cancelTimer ?? (() => useRestTimerStore.getState().cancel());
+  const cancelNotification =
+    options.cancelNotification ?? cancelRestTimerNotification;
+  const setTheme = options.setTheme ?? setThemePreference;
+
+  try {
+    cancelTimer();
+    await cancelNotification();
+    replaceBackupData(db, backup);
+
+    setTheme(backup.data.themePreference);
+  } catch (error) {
+    // SQLite is transactional; this also repairs a theme failure after commit.
+    try {
+      replaceBackupData(db, validatedSafetyBackup);
+      setTheme(previousTheme);
+    } catch (rollbackError) {
+      throw new AggregateError(
+        [error, rollbackError],
+        'Backup replacement rollback failed.'
+      );
+    }
+
+    throw error;
+  } finally {
+    await port.remove(temporaryUri);
+  }
+
+  return { status: 'restart-required' };
+}
+
+export function replaceAllWithBackup(
+  db: DrizzleDb,
+  backup: LiftLogBackupV1,
+  options: ReplaceBackupOptions = {}
+): Promise<ReplaceBackupResult> {
+  return withDomainFlowSpan(
+    { operation: 'backup.replaceAll', feature: 'backup' },
+    () => replaceAllWithBackupUnsafe(db, backup, options)
+  );
+}
 
 export function backupFilename(date = new Date()): string {
   return `liftlog-backup-${date.toISOString().slice(0, 10)}.json`;
