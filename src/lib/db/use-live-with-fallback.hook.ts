@@ -1,8 +1,18 @@
 import type { AnySQLiteSelect } from 'drizzle-orm/sqlite-core';
 import { addDatabaseChangeListener } from 'expo-sqlite';
-import { useEffect, useMemo, useState, type DependencyList } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type DependencyList
+} from 'react';
 
 import { withDatabaseSpan } from '@/src/lib/db/database-observability';
+import {
+  getLiveQueryRefreshVersion,
+  subscribeToLiveQueryRefresh
+} from '@/src/lib/db/live-query-refresh';
 import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task.utils';
 
 type LiveRowsQuery = Pick<AnySQLiteSelect, '_' | 'then'> &
@@ -44,6 +54,11 @@ export function useLiveWithFallback<Query extends LiveRowsQuery>(
   deps: DependencyList,
   options?: UseLiveWithFallbackOptions<QueryRows<Query>>
 ): UseLiveWithFallbackResult<QueryRows<Query>> {
+  const refreshVersion = useSyncExternalStore(
+    subscribeToLiveQueryRefresh,
+    getLiveQueryRefreshVersion,
+    getLiveQueryRefreshVersion
+  );
   const {
     enabled = true,
     operation,
@@ -75,12 +90,18 @@ export function useLiveWithFallback<Query extends LiveRowsQuery>(
       () => query.all() as QueryRows<Query>
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [...deps, refreshVersion]);
   const [liveRows, setLiveRows] = useState<QueryRows<Query>>(initialRows);
+  const [liveRowsVersion, setLiveRowsVersion] = useState<number>();
   const [updatedAt, setUpdatedAt] = useState<Date>();
   const [error, setError] = useState<Error>();
 
   useEffect(() => {
+    setUpdatedAt(undefined);
+    setError(undefined);
+    setLiveRows(initialRows);
+    setLiveRowsVersion(undefined);
+
     if (!enabled) {
       setLiveRows(fallbackRows);
       setUpdatedAt(undefined);
@@ -156,6 +177,7 @@ export function useLiveWithFallback<Query extends LiveRowsQuery>(
           }
 
           setLiveRows(rows as QueryRows<Query>);
+          setLiveRowsVersion(refreshVersion);
           setError(undefined);
           setUpdatedAt(new Date());
         },
@@ -204,9 +226,10 @@ export function useLiveWithFallback<Query extends LiveRowsQuery>(
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [...deps, refreshVersion]);
 
-  const isLive = enabled && Boolean(updatedAt);
+  const isLive =
+    enabled && Boolean(updatedAt) && liveRowsVersion === refreshVersion;
   const isLoading = enabled && deferInitialRead && !isLive && !error;
 
   return {

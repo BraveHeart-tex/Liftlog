@@ -539,3 +539,17 @@ Use one of these status values:
 ## Maintenance
 
 Normal work appends entries and preserves historical facts. A deliberate maintenance task may consolidate recurring entries while preserving the original facts and recording what was consolidated.
+
+## 2026-09-05 - Live refresh focused tests blocked by TSX IPC sandbox
+
+- Context: Running focused tests for the post-import live state refresh.
+- Tool/command: Repository-local `tsx` test command for live-query refresh and backup tests.
+- Symptom: Node could not create the temporary TSX IPC pipe and exited with `listen EPERM`.
+- Workaround: Retry the identical repository-local test command with the approved elevated execution path.
+
+## 2026-09-05 - Commit blocked by sandbox git lock permissions
+
+- Context: Committing the completed restored-state refresh implementation.
+- Tool/command: `git add` and `git commit` on the current branch.
+- Symptom: Git could not create `.git/index.lock` under the sandbox.
+- Workaround: Retry the same commit workflow with the approved elevated execution path.

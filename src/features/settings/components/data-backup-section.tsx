@@ -15,13 +15,16 @@ import {
 } from '@/src/features/backup/backup-preview';
 import { useDrizzle } from '@/src/providers/database-provider';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
+import { refreshLiveQueries } from '@/src/lib/db/live-query-refresh';
 import { FileJson } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, View } from 'react-native';
 
 export function DataBackupSection() {
   const db = useDrizzle();
-  const { themePreference } = useAppTheme();
+  const { themePreference, setThemePreference } = useAppTheme();
+  const router = useRouter();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -57,12 +60,15 @@ export function DataBackupSection() {
       setIsImporting(true);
 
       try {
-        await replaceAllWithBackup(db, backup);
-        Alert.alert(
-          'Import complete',
-          'Restart LiftLog to load the restored data.',
-          [{ text: 'OK' }]
-        );
+        await replaceAllWithBackup(db, backup, {
+          setTheme: setThemePreference,
+          refreshLiveQueries
+        });
+        router.dismissAll();
+        router.replace('/(tabs)/workout');
+        Alert.alert('Import complete', 'Your restored data is now loaded.', [
+          { text: 'OK' }
+        ]);
       } catch {
         showSnackbar({
           message: 'Could not replace data. Your existing data was kept.',
@@ -72,7 +78,7 @@ export function DataBackupSection() {
         setIsImporting(false);
       }
     },
-    [db]
+    [db, router, setThemePreference]
   );
 
   const showPreview = useCallback(

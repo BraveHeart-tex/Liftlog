@@ -18,6 +18,7 @@ import { isAvailableAsync, shareAsync } from 'expo-sharing';
 import { cancelRestTimerNotification } from '@/src/features/rest-timer/rest-timer-notifications.service';
 import { useRestTimerStore } from '@/src/features/rest-timer/rest-timer.store';
 import { withDomainFlowSpan } from '@/src/lib/observability/observability-span';
+import { refreshLiveQueries as refreshLiveQueryConsumers } from '@/src/lib/db/live-query-refresh';
 import type { LiftLogBackupV1 } from '@/src/features/backup/backup.types';
 import {
   getThemePreference,
@@ -58,6 +59,7 @@ export interface ReplaceBackupOptions {
   cancelTimer?: () => void;
   cancelNotification?: () => Promise<void>;
   setTheme?: (preference: ThemePreference) => void;
+  refreshLiveQueries?: () => void;
 }
 
 export type ReplaceBackupResult = { status: 'restart-required' };
@@ -102,6 +104,7 @@ async function replaceAllWithBackupUnsafe(
   const cancelNotification =
     options.cancelNotification ?? cancelRestTimerNotification;
   const setTheme = options.setTheme ?? setThemePreference;
+  const refresh = options.refreshLiveQueries ?? refreshLiveQueryConsumers;
 
   try {
     cancelTimer();
@@ -109,6 +112,7 @@ async function replaceAllWithBackupUnsafe(
     replaceBackupData(db, backup);
 
     setTheme(backup.data.themePreference);
+    refresh();
   } catch (error) {
     // SQLite is transactional; this also repairs a theme failure after commit.
     try {
