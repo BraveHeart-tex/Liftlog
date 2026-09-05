@@ -7,8 +7,13 @@ import {
   parseBackupJson,
   serializeBackup
 } from '@/src/features/backup/backup.codec';
+import {
+  loadSafetyBackupPreviewFromFile,
+  readSafetyBackupFile,
+  type SafetyBackupPreviewResult
+} from '@/src/features/backup/backup-safety';
 import Constants from 'expo-constants';
-import { Paths } from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
 import {
   deleteAsync,
   moveAsync,
@@ -26,8 +31,11 @@ import {
   type ThemePreference
 } from '@/src/theme/theme-preference';
 
+export type { SafetyBackupPreviewResult } from '@/src/features/backup/backup-safety';
+
 export interface BackupFilePort {
   write(uri: string, contents: string): Promise<void>;
+  read(uri: string): Promise<string>;
   promote(fromUri: string, toUri: string): Promise<void>;
   remove(uri: string): Promise<void>;
   share(uri: string, filename: string): Promise<void>;
@@ -35,6 +43,7 @@ export interface BackupFilePort {
 
 export const nativeBackupFilePort: BackupFilePort = {
   write: (uri, contents) => writeAsStringAsync(uri, contents),
+  read: uri => new File(uri).text(),
   promote: (fromUri, toUri) => moveAsync({ from: fromUri, to: toUri }),
   remove: uri => deleteAsync(uri, { idempotent: true }),
   share: async (uri, filename) => {
@@ -70,6 +79,58 @@ function safetyBackupUris(now: Date) {
   return { uri, temporaryUri: `${uri}.${now.getTime()}.tmp` };
 }
 
+export async function readSafetyBackup(
+  filePort: BackupFilePort = nativeBackupFilePort
+): Promise<LiftLogBackupV1> {
+  const { uri } = safetyBackupUris(new Date());
+
+  return readSafetyBackupFile(filePort, uri);
+}
+
+export async function loadSafetyBackupPreview(
+  filePort: BackupFilePort = nativeBackupFilePort
+): Promise<SafetyBackupPreviewResult | null> {
+  const { uri } = safetyBackupUris(new Date());
+
+  return loadSafetyBackupPreviewFromFile(filePort, uri);
+}
+
+async function applyBackupWithRollback(
+  db: DrizzleDb,
+  backup: LiftLogBackupV1,
+  rollbackBackup: LiftLogBackupV1,
+  options: ReplaceBackupOptions
+): Promise<void> {
+  const previousTheme = options.themePreference ?? getThemePreference();
+  const cancelTimer =
+    options.cancelTimer ?? (() => useRestTimerStore.getState().cancel());
+  const cancelNotification =
+    options.cancelNotification ?? cancelRestTimerNotification;
+  const setTheme = options.setTheme ?? setThemePreference;
+  const refresh = options.refreshLiveQueries ?? refreshLiveQueryConsumers;
+
+  try {
+    cancelTimer();
+    await cancelNotification();
+    replaceBackupData(db, backup);
+
+    setTheme(backup.data.themePreference);
+    refresh();
+  } catch (error) {
+    try {
+      replaceBackupData(db, rollbackBackup);
+      setTheme(previousTheme);
+    } catch (rollbackError) {
+      throw new AggregateError(
+        [error, rollbackError],
+        'Backup replacement rollback failed.'
+      );
+    }
+
+    throw error;
+  }
+}
+
 async function replaceAllWithBackupUnsafe(
   db: DrizzleDb,
   backup: LiftLogBackupV1,
@@ -99,38 +160,39 @@ async function replaceAllWithBackupUnsafe(
     throw error;
   }
 
-  const cancelTimer =
-    options.cancelTimer ?? (() => useRestTimerStore.getState().cancel());
-  const cancelNotification =
-    options.cancelNotification ?? cancelRestTimerNotification;
-  const setTheme = options.setTheme ?? setThemePreference;
-  const refresh = options.refreshLiveQueries ?? refreshLiveQueryConsumers;
-
   try {
-    cancelTimer();
-    await cancelNotification();
-    replaceBackupData(db, backup);
-
-    setTheme(backup.data.themePreference);
-    refresh();
-  } catch (error) {
-    // SQLite is transactional; this also repairs a theme failure after commit.
-    try {
-      replaceBackupData(db, validatedSafetyBackup);
-      setTheme(previousTheme);
-    } catch (rollbackError) {
-      throw new AggregateError(
-        [error, rollbackError],
-        'Backup replacement rollback failed.'
-      );
-    }
-
-    throw error;
+    await applyBackupWithRollback(db, backup, validatedSafetyBackup, options);
   } finally {
     await port.remove(temporaryUri);
   }
 
   return { status: 'restart-required' };
+}
+
+export async function undoLastImport(
+  db: DrizzleDb,
+  options: ReplaceBackupOptions = {}
+): Promise<ReplaceBackupResult> {
+  return withDomainFlowSpan(
+    { operation: 'backup.undoImport', feature: 'backup' },
+    async () => {
+      const now = options.now ?? new Date();
+      const port = options.filePort ?? nativeBackupFilePort;
+      const { uri } = safetyBackupUris(now);
+      const backup = parseBackupJson(await port.read(uri));
+      const rollbackBackup = createBackupSnapshot(
+        db,
+        Constants.expoConfig?.version ?? 'unknown',
+        options.themePreference ?? getThemePreference(),
+        now.toISOString()
+      );
+
+      await applyBackupWithRollback(db, backup, rollbackBackup, options);
+      await port.remove(uri);
+
+      return { status: 'restart-required' };
+    }
+  );
 }
 
 export function replaceAllWithBackup(

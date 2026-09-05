@@ -143,6 +143,16 @@ Use one of these status values:
 - Validation impact: Duplicate and label checks completed successfully after the
   retry; issue publication still uses the approved GitHub CLI path.
 
+## 2026-09-05 - GitHub issue read blocked by API connectivity
+
+- Context: Fetching issue #60 before implementation.
+- Tool/command: `gh issue view 60 --json number,title,body,labels,comments`
+- Symptom: GitHub CLI reported that it could not connect to `api.github.com`.
+- Cause: The restricted sandbox network path could not reach the GitHub API.
+- Workaround: Retry the same read with the approved elevated execution path.
+- Status: workaround
+- Validation impact: Implementation scope remains unconfirmed until issue #60 is retrieved.
+
 ## 2026-09-05 - Prettier changed a Markdown task on every pass
 
 - Context: Formatting the new data export and import implementation plan.
@@ -547,9 +557,27 @@ Normal work appends entries and preserves historical facts. A deliberate mainten
 - Symptom: Node could not create the temporary TSX IPC pipe and exited with `listen EPERM`.
 - Workaround: Retry the identical repository-local test command with the approved elevated execution path.
 
+## 2026-09-05 - Undo backup focused tests blocked by TSX IPC sandbox
+
+- Context: Running focused tests for persistent undo availability.
+- Tool/command: Repository-local `tsx` test command for the backup service tests.
+- Symptom: Node could not create the temporary TSX IPC pipe and exited with `listen EPERM`.
+- Workaround: Retry the identical repository-local test command with the approved elevated execution path.
+- Status: workaround
+- Validation impact: The restricted attempt ran zero tests; the elevated retry is required.
+
 ## 2026-09-05 - Commit blocked by sandbox git lock permissions
 
 - Context: Committing the completed restored-state refresh implementation.
 - Tool/command: `git add` and `git commit` on the current branch.
 - Symptom: Git could not create `.git/index.lock` under the sandbox.
 - Workaround: Retry the same commit workflow with the approved elevated execution path.
+
+## 2026-09-05 - Staging blocked by sandbox git lock permissions
+
+- Context: Staging the completed one-way undo implementation for final review.
+- Tool/command: `git add` on the changed source, test, and problem-log files.
+- Symptom: Git could not create `.git/index.lock` under the sandbox.
+- Workaround: Retry staging and commit with the approved elevated execution path.
+- Status: workaround
+- Validation impact: No source validation impact; final staging was delayed.

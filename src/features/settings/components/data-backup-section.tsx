@@ -5,7 +5,10 @@ import { Text } from '@/src/components/ui/text';
 import { showSnackbar } from '@/src/components/ui/snackbar';
 import {
   exportBackup,
-  replaceAllWithBackup
+  loadSafetyBackupPreview,
+  replaceAllWithBackup,
+  undoLastImport,
+  type SafetyBackupPreviewResult
 } from '@/src/features/backup/backup.service';
 import { pickBackupPreview } from '@/src/features/backup/backup-import.service';
 import type { LiftLogBackupV1 } from '@/src/features/backup/backup.types';
@@ -18,7 +21,7 @@ import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { refreshLiveQueries } from '@/src/lib/db/live-query-refresh';
 import { FileJson } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, View } from 'react-native';
 
 export function DataBackupSection() {
@@ -27,6 +30,16 @@ export function DataBackupSection() {
   const router = useRouter();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [undoSafetyBackup, setUndoSafetyBackup] =
+    useState<SafetyBackupPreviewResult | null>(null);
+
+  const refreshUndoSafetyBackup = useCallback(async () => {
+    setUndoSafetyBackup(await loadSafetyBackupPreview());
+  }, []);
+
+  useEffect(() => {
+    void refreshUndoSafetyBackup();
+  }, [refreshUndoSafetyBackup]);
 
   const runExport = useCallback(async () => {
     setIsExporting(true);
@@ -64,6 +77,7 @@ export function DataBackupSection() {
           setTheme: setThemePreference,
           refreshLiveQueries
         });
+        await refreshUndoSafetyBackup();
         router.dismissAll();
         router.replace('/(tabs)/workout');
         Alert.alert('Import complete', 'Your restored data is now loaded.', [
@@ -78,8 +92,79 @@ export function DataBackupSection() {
         setIsImporting(false);
       }
     },
-    [db, router, setThemePreference]
+    [db, refreshUndoSafetyBackup, router, setThemePreference]
   );
+
+  const runUndo = useCallback(async () => {
+    setIsImporting(true);
+
+    try {
+      await undoLastImport(db, {
+        setTheme: setThemePreference,
+        refreshLiveQueries
+      });
+      setUndoSafetyBackup(null);
+      router.dismissAll();
+      router.replace('/(tabs)/workout');
+      Alert.alert(
+        'Undo complete',
+        'Your data was restored to its pre-import state.',
+        [{ text: 'OK' }]
+      );
+    } catch {
+      showSnackbar({
+        message: 'Could not undo the import. Your current data was kept.',
+        variant: 'danger'
+      });
+      await refreshUndoSafetyBackup();
+    } finally {
+      setIsImporting(false);
+    }
+  }, [db, refreshUndoSafetyBackup, router, setThemePreference]);
+
+  const runUndoPreview = useCallback(async () => {
+    setIsImporting(true);
+
+    try {
+      const result = await loadSafetyBackupPreview();
+
+      if (!result) {
+        setUndoSafetyBackup(null);
+
+        return;
+      }
+
+      setUndoSafetyBackup(result);
+      const { counts } = result.preview;
+      Alert.alert(
+        'Undo last import?',
+        [
+          `Imported before ${new Date(result.preview.createdAt).toLocaleString()}`,
+          '',
+          `${counts.exercises} exercises, ${counts.workouts} workouts`,
+          `${counts.sets} sets, ${counts.workoutTemplates} templates`,
+          '',
+          'This restores the data from before the import. The undo is one-way and cannot be repeated.'
+        ].join('\n'),
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Restore pre-import data',
+            style: 'destructive',
+            onPress: () => void runUndo()
+          }
+        ]
+      );
+    } catch {
+      showSnackbar({
+        message: 'The undo backup is no longer available.',
+        variant: 'danger'
+      });
+      setUndoSafetyBackup(null);
+    } finally {
+      setIsImporting(false);
+    }
+  }, [runUndo]);
 
   const showPreview = useCallback(
     (preview: BackupPreview, backup: LiftLogBackupV1) => {
@@ -195,6 +280,21 @@ export function DataBackupSection() {
         >
           Import backup
         </Button>
+        {undoSafetyBackup ? (
+          <Button
+            variant="secondary"
+            className="border-t-border rounded-none border-0 border-t"
+            onPress={() => void runUndoPreview()}
+            disabled={isExporting || isImporting}
+            loading={isImporting}
+            loadingLabel="Checking undo backup..."
+            accessibilityLabel="Undo last import"
+            leftIcon={<Icon as={FileJson} tone="primary" size="sm" />}
+            textClassName="text-primary"
+          >
+            Undo last import
+          </Button>
+        ) : null}
       </Card>
     </View>
   );
