@@ -3,6 +3,7 @@ import { ScreenErrorBoundary } from '@/src/providers/screen-error-boundary';
 import { AlertDialogHost } from '@/src/components/ui/alert-dialog';
 import { SnackbarHost } from '@/src/components/ui/snackbar';
 import { SettingsProvider } from '@/src/features/settings/settings-provider';
+import { UpdateProvider } from '@/src/features/app-updates/update-provider';
 import { StepsSyncHost } from '@/src/features/steps/components/steps-sync-host';
 import { RestTimerHost } from '@/src/features/rest-timer/components/rest-timer-host';
 import { AppThemeProvider } from '@/src/theme/app-theme-provider';
@@ -37,13 +38,15 @@ export function CommonProviders({
         <DatabaseProvider onError={onDatabaseError} onReady={onDatabaseReady}>
           <ScreenErrorBoundary>
             <SettingsProvider>
-              <BottomSheetModalProvider>
-                {children}
-                <StepsSyncHost />
-                <RestTimerHost />
-                <SnackbarHost />
-                <AlertDialogHost />
-              </BottomSheetModalProvider>
+              <UpdateProvider>
+                <BottomSheetModalProvider>
+                  {children}
+                  <StepsSyncHost />
+                  <RestTimerHost />
+                  <SnackbarHost />
+                  <AlertDialogHost />
+                </BottomSheetModalProvider>
+              </UpdateProvider>
             </SettingsProvider>
           </ScreenErrorBoundary>
         </DatabaseProvider>
