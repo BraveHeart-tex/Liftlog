@@ -84,7 +84,7 @@ if [[ "$ACTUAL_ABIS" != "arm64-v8a" ]]; then
   fail "Release APK must contain only the arm64-v8a ABI"
 fi
 
-ACTUAL_CERTIFICATE="$($APKSIGNER_BIN verify --print-certs "$APK_PATH" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -n 1)"
+ACTUAL_CERTIFICATE="$($APKSIGNER_BIN verify --print-certs "$APK_PATH" 2>&1 | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -n 1)"
 NORMALIZED_ACTUAL_CERTIFICATE="$(tr '[:lower:]' '[:upper:]' <<<"${ACTUAL_CERTIFICATE//:/}" | tr -d '[:space:]')"
 NORMALIZED_EXPECTED_CERTIFICATE="$(tr '[:lower:]' '[:upper:]' <<<"${EXPECTED_CERTIFICATE//:/}" | tr -d '[:space:]')"
 
