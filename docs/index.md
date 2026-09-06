@@ -24,6 +24,7 @@
 ## Engineering rules
 
 - [Agent problem log](agent-problems.md)
+- [Android release signing](android-release-signing.md)
 - [Bottom sheets](bottom-sheet.md)
 - [Data access](data-access.md)
 - [Database](database.md)

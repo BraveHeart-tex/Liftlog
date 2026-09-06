@@ -1,0 +1,56 @@
+def liftlogReleaseSigningEnvironmentVariables = [
+    'LIFTLOG_ANDROID_KEYSTORE_PATH',
+    'LIFTLOG_ANDROID_KEY_ALIAS',
+    'LIFTLOG_ANDROID_STORE_PASSWORD',
+    'LIFTLOG_ANDROID_KEY_PASSWORD'
+]
+def liftlogMissingReleaseSigningVariables =
+    liftlogReleaseSigningEnvironmentVariables.findAll {
+        !System.getenv(it)
+    }
+
+def liftlogReleaseKeystore = liftlogMissingReleaseSigningVariables.isEmpty()
+    ? file(System.getenv('LIFTLOG_ANDROID_KEYSTORE_PATH'))
+    : null
+
+def liftlogReleaseSigningConfigured =
+    liftlogMissingReleaseSigningVariables.isEmpty() &&
+    liftlogReleaseKeystore.isFile()
+
+android {
+    signingConfigs {
+        if (liftlogReleaseSigningConfigured) {
+            release {
+                storeFile liftlogReleaseKeystore
+                storePassword System.getenv('LIFTLOG_ANDROID_STORE_PASSWORD')
+                keyAlias System.getenv('LIFTLOG_ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('LIFTLOG_ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes.release.signingConfig = liftlogReleaseSigningConfigured
+        ? signingConfigs.release
+        : null
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    def liftlogReleaseTaskScheduled = taskGraph.allTasks.any { task ->
+        task.project == project && task.name.toLowerCase().contains('release')
+    }
+
+    if (System.getenv('LIFTLOG_ANDROID_RELEASE_BUILD') == '1' || liftlogReleaseTaskScheduled) {
+        if (!liftlogMissingReleaseSigningVariables.isEmpty()) {
+            throw new GradleException(
+                'Missing Android release signing environment variable(s): ' +
+                liftlogMissingReleaseSigningVariables.join(', ')
+            )
+        }
+
+        if (!liftlogReleaseKeystore.isFile()) {
+            throw new GradleException(
+                'Android release keystore does not exist at LIFTLOG_ANDROID_KEYSTORE_PATH'
+            )
+        }
+    }
+}
