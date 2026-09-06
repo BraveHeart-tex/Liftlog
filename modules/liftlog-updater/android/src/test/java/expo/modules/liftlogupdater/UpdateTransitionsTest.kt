@@ -1,5 +1,6 @@
 package expo.modules.liftlogupdater
 
+import android.content.pm.PackageInstaller
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -35,5 +36,29 @@ class UpdateTransitionsTest {
     assertTrue(UpdateTransitions.acceptsCallback("attempt-a", 42, "attempt-a", 42))
     assertFalse(UpdateTransitions.acceptsCallback("attempt-a", 42, "attempt-b", 42))
     assertFalse(UpdateTransitions.acceptsCallback("attempt-a", 42, "attempt-a", 41))
+  }
+
+  @Test
+  fun `uncommitted restored attempts interrupt without becoming success`() {
+    assertEquals(
+      UpdateStage.INTERRUPTED,
+      UpdateTransitions.reconciledStage(UpdateStage.STAGED, 7, 8, true)
+    )
+  }
+
+  @Test
+  fun `terminal installer statuses have stable public codes`() {
+    assertEquals(
+      InstallerTerminalResult(UpdateStage.CANCELLED, "UPDATER_INSTALL_CANCELLED"),
+      InstallerStatusMapping.terminal(PackageInstaller.STATUS_FAILURE_ABORTED)
+    )
+    assertEquals(
+      InstallerTerminalResult(UpdateStage.FAILED, "UPDATER_STORAGE_FAILURE"),
+      InstallerStatusMapping.terminal(PackageInstaller.STATUS_FAILURE_STORAGE)
+    )
+    assertEquals(
+      InstallerTerminalResult(UpdateStage.FAILED, "UPDATER_INSTALL_FAILED"),
+      InstallerStatusMapping.terminal(Int.MIN_VALUE)
+    )
   }
 }

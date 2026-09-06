@@ -132,10 +132,18 @@ class LiftlogUpdaterModule : Module() {
     validateOwnedFile(file, requireFile = true)
     store.markVerifying()
 
-    val digest = FileInputStream(file).use(ApkVerification::digest)
+    val digest = try {
+      FileInputStream(file).use(ApkVerification::digest)
+    } catch (error: Throwable) {
+      failVerification("UPDATER_STORAGE_FAILURE", "Could not read APK")
+    }
     if (digest.sizeBytes != expectedSize) failVerification("UPDATER_SIZE_MISMATCH", "APK size does not match")
     if (digest.sha256 != expectedHash) failVerification("UPDATER_HASH_MISMATCH", "APK checksum does not match")
-    val archive = archiveInfo(file)
+    val archive = try {
+      archiveInfo(file)
+    } catch (error: Throwable) {
+      failVerification("UPDATER_INVALID_APK", "APK manifest could not be read")
+    }
     val archiveName = archive.versionName ?: ""
     val archiveCode = archive.longVersionCode
     if (archive.packageName != context.packageName || archive.packageName != expectedPackage) {
@@ -144,8 +152,17 @@ class LiftlogUpdaterModule : Module() {
     if (archiveName != expectedName || archiveCode != expectedCode || archiveCode <= installedVersionCode()) {
       failVerification("UPDATER_VERSION_MISMATCH", "APK version does not match")
     }
-    if (!isArm64Only(file)) failVerification("UPDATER_ABI_MISMATCH", "APK is not ARM64-only")
-    val certificate = certificateSha256(archive)
+    val arm64Only = try {
+      isArm64Only(file)
+    } catch (error: Throwable) {
+      failVerification("UPDATER_INVALID_APK", "APK archive could not be read")
+    }
+    if (!arm64Only) failVerification("UPDATER_ABI_MISMATCH", "APK is not ARM64-only")
+    val certificate = try {
+      certificateSha256(archive)
+    } catch (error: Throwable) {
+      failVerification("UPDATER_CERTIFICATE_UNAVAILABLE", "APK signing certificate is unavailable")
+    }
     if (certificate != certificateSha256(installedPackageInfo())) {
       failVerification("UPDATER_CERTIFICATE_MISMATCH", "APK signer does not match")
     }
@@ -166,6 +183,7 @@ class LiftlogUpdaterModule : Module() {
     } catch (error: Throwable) {
       throw UpdaterException("UPDATER_STORAGE_FAILURE", "Could not create installer session", error)
     }
+    store.recordSession(sessionId)
     try {
       installer.openSession(sessionId).use { session ->
         session.openWrite("base.apk", 0, expectedSize).use { output ->
@@ -178,7 +196,13 @@ class LiftlogUpdaterModule : Module() {
       }
     } catch (error: Throwable) {
       runCatching { installer.abandonSession(sessionId) }
-      if (error is UpdaterException) throw error
+      if (error is UpdaterException) {
+        store.finish(UpdateStage.FAILED, "UPDATER_FILE_CHANGED")
+        cleanupOwnedFiles()
+        throw error
+      }
+      store.finish(UpdateStage.FAILED, "UPDATER_STORAGE_FAILURE")
+      cleanupOwnedFiles()
       throw UpdaterException("UPDATER_STORAGE_FAILURE", "Could not stage APK", error)
     }
     store.markStaged(sessionId)
@@ -196,6 +220,10 @@ class LiftlogUpdaterModule : Module() {
   private suspend fun commit(attemptId: String): Map<String, Any?> = withContext(Dispatchers.IO) {
     requireAttempt(attemptId)
     if (store.stage() != UpdateStage.STAGED) throw UpdaterException("UPDATER_INVALID_STAGE", "Attempt is not staged")
+    val activity = appContext.currentActivity
+    if (activity == null || activity.isFinishing) {
+      throw UpdaterException("UPDATER_FOREGROUND_REQUIRED", "LiftLog must be active before installer commit")
+    }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !context.packageManager.canRequestPackageInstalls()) {
       throw UpdaterException("UPDATER_PERMISSION_REQUIRED", "Install-source permission is required")
     }
@@ -219,8 +247,15 @@ class LiftlogUpdaterModule : Module() {
       callback,
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
     )
-    installer.openSession(sessionId).use { it.commit(pendingIntent.intentSender) }
     store.markCommitted()
+    try {
+      installer.openSession(sessionId).use { it.commit(pendingIntent.intentSender) }
+    } catch (error: Throwable) {
+      runCatching { installer.abandonSession(sessionId) }
+      store.finish(UpdateStage.FAILED, "UPDATER_INSTALL_FAILED")
+      cleanupOwnedFiles()
+      throw UpdaterException("UPDATER_INSTALL_FAILED", "Could not commit installer session", error)
+    }
     store.state()
   }
 
@@ -261,9 +296,17 @@ class LiftlogUpdaterModule : Module() {
       val attemptId = store.attemptId()
       val activity = appContext.currentActivity
       if (attemptId != null && activity != null && !activity.isFinishing) {
-        PendingConfirmationRegistry.take(attemptId)?.let { activity.startActivity(it) }
+        val continuation = PendingConfirmationRegistry.take(attemptId)
+        if (continuation != null) {
+          activity.startActivity(continuation)
+        } else {
+          val pendingSessionId = store.sessionId()
+          store.finish(UpdateStage.FAILED, "UPDATER_CONFIRMATION_UNAVAILABLE")
+          pendingSessionId.takeIf { it >= 0 }?.let { runCatching { installer.abandonSession(it) } }
+        }
       }
     }
+    if (store.stage().isTerminal) cleanupOwnedFiles()
     return store.state()
   }
 

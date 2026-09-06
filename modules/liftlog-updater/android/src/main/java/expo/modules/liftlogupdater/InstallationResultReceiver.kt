@@ -11,6 +11,8 @@ import android.content.Intent
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
 import android.os.Build
+import java.io.File
+import java.nio.file.Files
 
 class InstallationResultReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
@@ -25,21 +27,29 @@ class InstallationResultReceiver : BroadcastReceiver() {
       PackageInstaller.STATUS_PENDING_USER_ACTION -> {
         store.markPendingConfirmation()
         continuationIntent(intent)?.let { continuation ->
-          PendingConfirmationRegistry.hold(callbackAttemptId!!, continuation)
-          if (!launchWhileForeground(context, continuation)) postContinuationNotification(context, callbackSessionId, continuation)
+          if (!launchWhileForeground(context, continuation)) {
+            PendingConfirmationRegistry.hold(callbackAttemptId!!, continuation)
+            postContinuationNotification(context, callbackSessionId, continuation)
+          }
         } ?: store.finish(UpdateStage.FAILED, "UPDATER_CONFIRMATION_MISSING")
       }
       PackageInstaller.STATUS_SUCCESS -> {
         // Commit callbacks are not proof of installation. Reconciliation owns success.
         store.setStage(UpdateStage.COMMITTED)
       }
-      PackageInstaller.STATUS_FAILURE_ABORTED -> store.finish(UpdateStage.CANCELLED, "UPDATER_INSTALL_CANCELLED")
-      PackageInstaller.STATUS_FAILURE_STORAGE -> store.finish(UpdateStage.FAILED, "UPDATER_STORAGE_FAILURE")
-      PackageInstaller.STATUS_FAILURE_INCOMPATIBLE -> store.finish(UpdateStage.FAILED, "UPDATER_INCOMPATIBLE_APK")
-      PackageInstaller.STATUS_FAILURE_BLOCKED -> store.finish(UpdateStage.FAILED, "UPDATER_INSTALL_BLOCKED")
-      PackageInstaller.STATUS_FAILURE_CONFLICT -> store.finish(UpdateStage.FAILED, "UPDATER_INSTALL_CONFLICT")
-      PackageInstaller.STATUS_FAILURE_INVALID -> store.finish(UpdateStage.FAILED, "UPDATER_INVALID_APK")
-      else -> store.finish(UpdateStage.FAILED, "UPDATER_INSTALL_FAILED")
+      else -> InstallerStatusMapping.terminal(
+        intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
+      ).let { store.finish(it.stage, it.code) }
+    }
+    if (store.stage().isTerminal) deleteOwnedArtifact(context, store)
+  }
+
+  private fun deleteOwnedArtifact(context: Context, store: DurableUpdateStore) {
+    val directory = File(context.cacheDir, UpdaterContract.CACHE_DIRECTORY).canonicalFile
+    store.filePath()?.let(::File)?.let { file ->
+      if (!Files.isSymbolicLink(file.toPath()) && file.canonicalFile.parentFile == directory) {
+        file.delete()
+      }
     }
   }
 

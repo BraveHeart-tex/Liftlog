@@ -24,7 +24,7 @@ internal class DurableUpdateStore(context: Context) {
     sha256: String,
     filePath: String
   ) {
-    preferences.edit().clear()
+    persist(preferences.edit().clear()
       .putString(UpdaterContract.ATTEMPT_ID, attemptId)
       .putString(UpdaterContract.STAGE, UpdateStage.DOWNLOADING.wireValue)
       .putString(UpdaterContract.TARGET_VERSION_NAME, versionName)
@@ -32,46 +32,49 @@ internal class DurableUpdateStore(context: Context) {
       .putLong(UpdaterContract.EXPECTED_SIZE, sizeBytes)
       .putString(UpdaterContract.EXPECTED_HASH, sha256)
       .putString(UpdaterContract.FILE_PATH, filePath)
-      .putBoolean(UpdaterContract.UPDATE_EXCLUDED, true)
-      .apply()
+      .putBoolean(UpdaterContract.UPDATE_EXCLUDED, true))
   }
 
   fun markVerifying() = setStage(UpdateStage.VERIFYING)
 
+  fun recordSession(sessionId: Int) {
+    persist(preferences.edit().putInt(UpdaterContract.SESSION_ID, sessionId))
+  }
+
   fun markStaged(sessionId: Int) {
-    preferences.edit()
+    persist(preferences.edit()
       .putInt(UpdaterContract.SESSION_ID, sessionId)
-      .putString(UpdaterContract.STAGE, UpdateStage.STAGED.wireValue)
-      .apply()
+      .putString(UpdaterContract.STAGE, UpdateStage.STAGED.wireValue))
   }
 
   fun markCommitted() {
-    preferences.edit()
+    persist(preferences.edit()
       .putString(UpdaterContract.STAGE, UpdateStage.COMMITTED.wireValue)
-      .putLong(UpdaterContract.COMMITTED_AT, System.currentTimeMillis())
-      .apply()
+      .putLong(UpdaterContract.COMMITTED_AT, System.currentTimeMillis()))
   }
 
   fun markPendingConfirmation() {
-    preferences.edit()
+    persist(preferences.edit()
       .putString(UpdaterContract.STAGE, UpdateStage.PENDING_CONFIRMATION.wireValue)
-      .putBoolean(UpdaterContract.PENDING_CONFIRMATION, true)
-      .apply()
+      .putBoolean(UpdaterContract.PENDING_CONFIRMATION, true))
   }
 
   fun finish(stage: UpdateStage, resultCode: String?) {
     require(stage.isTerminal)
-    preferences.edit()
+    persist(preferences.edit()
       .putString(UpdaterContract.STAGE, stage.wireValue)
       .putString(UpdaterContract.RESULT_CODE, resultCode)
       .putBoolean(UpdaterContract.PENDING_CONFIRMATION, false)
       .putBoolean(UpdaterContract.UPDATE_EXCLUDED, false)
-      .remove(UpdaterContract.SESSION_ID)
-      .apply()
+      .remove(UpdaterContract.SESSION_ID))
   }
 
   fun setStage(stage: UpdateStage) {
-    preferences.edit().putString(UpdaterContract.STAGE, stage.wireValue).apply()
+    persist(preferences.edit().putString(UpdaterContract.STAGE, stage.wireValue))
+  }
+
+  private fun persist(editor: SharedPreferences.Editor) {
+    if (!editor.commit()) throw UpdaterException("UPDATER_STATE_WRITE_FAILED", "Could not persist updater state")
   }
 
   fun state(): Map<String, Any?> = mapOf(

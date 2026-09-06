@@ -1,5 +1,7 @@
 package expo.modules.liftlogupdater
 
+import android.content.pm.PackageInstaller
+
 internal object UpdaterContract {
   const val PREFERENCES = "liftlog_updater_v1"
   const val CACHE_DIRECTORY = "liftlog-updater"
@@ -68,5 +70,19 @@ internal object UpdateTransitions {
     }
     if (!current.isTerminal && current != UpdateStage.IDLE) return UpdateStage.INTERRUPTED
     return current
+  }
+}
+
+internal data class InstallerTerminalResult(val stage: UpdateStage, val code: String)
+
+internal object InstallerStatusMapping {
+  fun terminal(status: Int): InstallerTerminalResult = when (status) {
+    PackageInstaller.STATUS_FAILURE_ABORTED -> InstallerTerminalResult(UpdateStage.CANCELLED, "UPDATER_INSTALL_CANCELLED")
+    PackageInstaller.STATUS_FAILURE_STORAGE -> InstallerTerminalResult(UpdateStage.FAILED, "UPDATER_STORAGE_FAILURE")
+    PackageInstaller.STATUS_FAILURE_INCOMPATIBLE -> InstallerTerminalResult(UpdateStage.FAILED, "UPDATER_INCOMPATIBLE_APK")
+    PackageInstaller.STATUS_FAILURE_BLOCKED -> InstallerTerminalResult(UpdateStage.FAILED, "UPDATER_INSTALL_BLOCKED")
+    PackageInstaller.STATUS_FAILURE_CONFLICT -> InstallerTerminalResult(UpdateStage.FAILED, "UPDATER_INSTALL_CONFLICT")
+    PackageInstaller.STATUS_FAILURE_INVALID -> InstallerTerminalResult(UpdateStage.FAILED, "UPDATER_INVALID_APK")
+    else -> InstallerTerminalResult(UpdateStage.FAILED, "UPDATER_INSTALL_FAILED")
   }
 }
