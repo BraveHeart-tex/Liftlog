@@ -1,7 +1,7 @@
 {
   "name": "liftlog",
   "main": "expo-router/entry",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "expo": {
     "install": {
       "exclude": [
