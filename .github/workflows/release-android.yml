@@ -1,0 +1,136 @@
+name: Android release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
+env:
+  CI: true
+  HUSKY: 0
+  ANDROID_NDK_VERSION: 27.1.12297006
+
+jobs:
+  preflight:
+    name: Secret-free preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0c17529a66aca453f9227af23103ed11469b1e47
+        with:
+          version: 9.1.1
+          run_install: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Validate release identity and history
+        run: node scripts/prepare-android-release.mjs preflight
+      - name: TypeScript
+        run: pnpm run ts-check
+      - name: Tests
+        run: pnpm test
+      - name: ESLint
+        run: pnpm run lint
+      - name: Prettier
+        run: pnpm run prettier:check
+
+  publish:
+    name: Build and publish signed APK
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment:
+      name: android-release
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0c17529a66aca453f9227af23103ed11469b1e47
+        with:
+          version: 9.1.1
+          run_install: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Setup Java
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00
+        with:
+          distribution: temurin
+          java-version: '17.0.14'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+      - name: Install pinned Android toolchain
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;${ANDROID_NDK_VERSION}"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Reconstruct signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.LIFTLOG_ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          key_path="$RUNNER_TEMP/liftlog-release.jks"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$key_path"
+          chmod 600 "$key_path"
+          echo "LIFTLOG_ANDROID_KEYSTORE_PATH=$key_path" >> "$GITHUB_ENV"
+      - name: Build, verify, stage, and publish
+        env:
+          LIFTLOG_ANDROID_KEY_ALIAS: ${{ secrets.LIFTLOG_ANDROID_KEY_ALIAS }}
+          LIFTLOG_ANDROID_STORE_PASSWORD: ${{ secrets.LIFTLOG_ANDROID_STORE_PASSWORD }}
+          LIFTLOG_ANDROID_KEY_PASSWORD: ${{ secrets.LIFTLOG_ANDROID_KEY_PASSWORD }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: |
+          set -euo pipefail
+          apk="android/app/build/outputs/apk/release/app-release.apk"
+          name="liftlog-${GITHUB_REF_NAME#v}-arm64-v8a.apk"
+          scripts/build-android-release-single-arch.sh arm64-v8a
+          mkdir -p "$RUNNER_TEMP/liftlog-release"
+          cp "$apk" "$RUNNER_TEMP/liftlog-release/$name"
+          node scripts/prepare-android-release.mjs manifest "$RUNNER_TEMP/liftlog-release/$name" "$RUNNER_TEMP/liftlog-release/update.json"
+          test "$(jq -r .apkFilename "$RUNNER_TEMP/liftlog-release/update.json")" = "$name"
+          gh release view "$GITHUB_REF_NAME" --json isDraft,isPrerelease >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --draft --generate-notes --target "$GITHUB_SHA"
+          release_json=$(gh release view "$GITHUB_REF_NAME" --json isDraft,isPrerelease)
+          test "$(jq -r .isDraft <<<"$release_json")" = true
+          test "$(jq -r .isPrerelease <<<"$release_json")" = false
+          gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/liftlog-release/$name" "$RUNNER_TEMP/liftlog-release/update.json" --clobber
+          assets=$(gh release view "$GITHUB_REF_NAME" --json assets | jq -r '[.assets[].name] | sort | join("\n")')
+          expected_assets=$(printf '%s\n%s' "$name" update.json)
+          test "$assets" = "$expected_assets"
+          gh release download "$GITHUB_REF_NAME" --pattern "$name" --dir "$RUNNER_TEMP/liftlog-download" --clobber
+          gh release download "$GITHUB_REF_NAME" --pattern update.json --dir "$RUNNER_TEMP/liftlog-download" --clobber
+          cmp "$RUNNER_TEMP/liftlog-release/$name" "$RUNNER_TEMP/liftlog-download/$name"
+          cmp "$RUNNER_TEMP/liftlog-release/update.json" "$RUNNER_TEMP/liftlog-download/update.json"
+          node scripts/prepare-android-release.mjs manifest "$RUNNER_TEMP/liftlog-download/$name" "$RUNNER_TEMP/liftlog-download/reverified-update.json"
+          cmp "$RUNNER_TEMP/liftlog-release/update.json" "$RUNNER_TEMP/liftlog-download/reverified-update.json"
+          gh release edit "$GITHUB_REF_NAME" --draft=false
+      - name: Remove signing key
+        if: always()
+        run: rm -f -- "$RUNNER_TEMP/liftlog-release.jks"
+      - name: Retain signed artifact for inspection
+        if: always()
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+        with:
+          name: liftlog-${{ github.ref_name }}-release
+          path: ${{ runner.temp }}/liftlog-release
+          retention-days: 10
