@@ -29,6 +29,10 @@ const verifyScriptPath = resolve(
   projectRoot,
   'scripts/verify-android-release.sh'
 );
+const prepareScriptPath = resolve(
+  projectRoot,
+  'scripts/prepare-android-release.mjs'
+);
 
 const signingEnvironmentVariables = [
   'LIFTLOG_ANDROID_KEYSTORE_PATH',
@@ -290,7 +294,7 @@ test('release command fails before prebuild without signing credentials', () => 
   assert.match(result.stderr, /LIFTLOG_ANDROID_KEYSTORE_PATH is not set/);
 });
 
-test('APK verifier accepts only the configured release identity', () => {
+test('APK verifier accepts current and legacy apksigner certificate output', () => {
   const temporaryDirectory = mkdtempSync(
     join(tmpdir(), 'liftlog-release-verifier-')
   );
@@ -304,21 +308,31 @@ test('APK verifier accepts only the configured release identity', () => {
     aaptPath,
     `echo "package: name='${appConfig.expo.android.package}' versionCode='${appConfig.expo.android.versionCode}' versionName='${appConfig.expo.version}'"\n`
   );
-  writeExecutable(
-    apksignerPath,
-    `echo 'Signer #1 certificate SHA-256 digest: ${releaseConfig.certificateSha256.replaceAll(':', '').toLowerCase()}'\n`
-  );
   writeExecutable(unzipPath, "echo 'lib/arm64-v8a/libliftlog.so'\n");
 
-  const validResult = spawnSync(verifyScriptPath, [apkPath], {
-    cwd: projectRoot,
-    env: {
-      ...process.env,
-      AAPT_BIN: aaptPath,
-      APKSIGNER_BIN: apksignerPath,
-      UNZIP_BIN: unzipPath
-    },
-    encoding: 'utf8'
+  const runVerifier = () =>
+    spawnSync(verifyScriptPath, [apkPath], {
+      cwd: projectRoot,
+      env: {
+        ...process.env,
+        AAPT_BIN: aaptPath,
+        APKSIGNER_BIN: apksignerPath,
+        UNZIP_BIN: unzipPath
+      },
+      encoding: 'utf8'
+    });
+
+  const certificate = releaseConfig.certificateSha256
+    .replaceAll(':', '')
+    .toLowerCase();
+  const signerPrefixes = ['V2 Signer:', 'Signer #1'];
+  const validResults = signerPrefixes.map(prefix => {
+    writeExecutable(
+      apksignerPath,
+      `echo '${prefix} certificate SHA-256 digest: ${certificate}'\n`
+    );
+
+    return runVerifier();
   });
 
   writeExecutable(
@@ -326,22 +340,115 @@ test('APK verifier accepts only the configured release identity', () => {
     "echo 'Signer #1 certificate SHA-256 digest: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'\n"
   );
 
-  const wrongSignerResult = spawnSync(verifyScriptPath, [apkPath], {
+  const wrongSignerResult = runVerifier();
+
+  try {
+    for (const validResult of validResults) {
+      assert.equal(validResult.status, 0, validResult.stderr);
+      assert.match(validResult.stdout, /Verified production release APK/);
+    }
+
+    assert.notEqual(wrongSignerResult.status, 0);
+    assert.match(wrongSignerResult.stderr, /certificate SHA-256/);
+  } finally {
+    rmSync(temporaryDirectory, { recursive: true, force: true });
+  }
+});
+
+test('APK verifier uses the configured Android build-tools version', () => {
+  const temporaryDirectory = mkdtempSync(
+    join(tmpdir(), 'liftlog-pinned-build-tools-')
+  );
+  const apkPath = join(temporaryDirectory, 'app-release.apk');
+  const sdkPath = join(temporaryDirectory, 'android-sdk');
+  const pinnedToolsPath = join(sdkPath, 'build-tools', '36.0.0');
+  const newerToolsPath = join(sdkPath, 'build-tools', '37.0.0');
+  const unzipPath = join(temporaryDirectory, 'unzip');
+
+  mkdirSync(pinnedToolsPath, { recursive: true });
+  mkdirSync(newerToolsPath, { recursive: true });
+  writeFileSync(apkPath, 'controlled test artifact');
+  writeExecutable(
+    join(pinnedToolsPath, 'aapt'),
+    `echo "package: name='${appConfig.expo.android.package}' versionCode='${appConfig.expo.android.versionCode}' versionName='${appConfig.expo.version}'"\n`
+  );
+  writeExecutable(
+    join(pinnedToolsPath, 'apksigner'),
+    `echo 'Signer #1 certificate SHA-256 digest: ${releaseConfig.certificateSha256.replaceAll(':', '').toLowerCase()}'\n`
+  );
+  writeExecutable(join(newerToolsPath, 'aapt'), 'exit 1\n');
+  writeExecutable(join(newerToolsPath, 'apksigner'), 'exit 1\n');
+  writeExecutable(unzipPath, "echo 'lib/arm64-v8a/libliftlog.so'\n");
+
+  const result = spawnSync(verifyScriptPath, [apkPath], {
     cwd: projectRoot,
     env: {
       ...process.env,
-      AAPT_BIN: aaptPath,
-      APKSIGNER_BIN: apksignerPath,
+      AAPT_BIN: '',
+      APKSIGNER_BIN: '',
+      ANDROID_HOME: sdkPath,
+      ANDROID_SDK_ROOT: '',
+      ANDROID_BUILD_TOOLS_VERSION: '36.0.0',
       UNZIP_BIN: unzipPath
     },
     encoding: 'utf8'
   });
 
   try {
-    assert.equal(validResult.status, 0, validResult.stderr);
-    assert.match(validResult.stdout, /Verified production release APK/);
-    assert.notEqual(wrongSignerResult.status, 0);
-    assert.match(wrongSignerResult.stderr, /certificate SHA-256/);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Verified production release APK/);
+  } finally {
+    rmSync(temporaryDirectory, { recursive: true, force: true });
+  }
+});
+
+test('release manifest accepts current apksigner certificate output', () => {
+  const temporaryDirectory = mkdtempSync(
+    join(tmpdir(), 'liftlog-release-manifest-')
+  );
+  const apkPath = join(temporaryDirectory, 'app-release.apk');
+  const manifestPath = join(temporaryDirectory, 'update.json');
+  const aaptPath = join(temporaryDirectory, 'aapt');
+  const apksignerPath = join(temporaryDirectory, 'apksigner');
+  const unzipPath = join(temporaryDirectory, 'unzip');
+
+  writeFileSync(apkPath, 'controlled test artifact');
+  writeExecutable(
+    aaptPath,
+    `echo "package: name='${appConfig.expo.android.package}' versionCode='${appConfig.expo.android.versionCode}' versionName='${appConfig.expo.version}'"\n`
+  );
+  writeExecutable(
+    apksignerPath,
+    `echo 'V2 Signer: certificate SHA-256 digest: ${releaseConfig.certificateSha256.replaceAll(':', '').toLowerCase()}'\n`
+  );
+  writeExecutable(unzipPath, "echo 'lib/arm64-v8a/libliftlog.so'\n");
+
+  const result = spawnSync(
+    process.execPath,
+    [prepareScriptPath, 'manifest', apkPath, manifestPath],
+    {
+      cwd: projectRoot,
+      env: {
+        ...process.env,
+        AAPT_BIN: aaptPath,
+        APKSIGNER_BIN: apksignerPath,
+        UNZIP_BIN: unzipPath
+      },
+      encoding: 'utf8'
+    }
+  );
+
+  try {
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(JSON.parse(readFileSync(manifestPath, 'utf8')), {
+      schemaVersion: 1,
+      versionName: appConfig.expo.version,
+      versionCode: appConfig.expo.android.versionCode,
+      apkFilename: 'app-release.apk',
+      sha256:
+        'a9d5381677239ab5247bcbb781c573b005b2e65b853d1dcf503ef8d5046d62a0',
+      sizeBytes: 24
+    });
   } finally {
     rmSync(temporaryDirectory, { recursive: true, force: true });
   }

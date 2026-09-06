@@ -137,22 +137,31 @@ function preflight() {
 function apkMetadata(apkPath) {
   const androidSdk = process.env.ANDROID_SDK_ROOT || process.env.ANDROID_HOME;
   const buildTools = androidSdk ? `${androidSdk}/build-tools` : undefined;
+  const pinnedBuildTools = process.env.ANDROID_BUILD_TOOLS_VERSION;
+  const buildToolsBin =
+    buildTools && pinnedBuildTools
+      ? `${buildTools}/${pinnedBuildTools}`
+      : undefined;
   const aapt =
     process.env.AAPT_BIN ||
-    (buildTools
-      ? command('bash', [
-          '-c',
-          `find "${buildTools}" -type f -name aapt -print -quit`
-        ])
-      : 'aapt');
+    (buildToolsBin
+      ? `${buildToolsBin}/aapt`
+      : buildTools
+        ? command('bash', [
+            '-c',
+            `find "${buildTools}" -type f -name aapt -print -quit`
+          ])
+        : 'aapt');
   const apksigner =
     process.env.APKSIGNER_BIN ||
-    (buildTools
-      ? command('bash', [
-          '-c',
-          `find "${buildTools}" -type f -name apksigner -print -quit`
-        ])
-      : 'apksigner');
+    (buildToolsBin
+      ? `${buildToolsBin}/apksigner`
+      : buildTools
+        ? command('bash', [
+            '-c',
+            `find "${buildTools}" -type f -name apksigner -print -quit`
+          ])
+        : 'apksigner');
   const unzip = process.env.UNZIP_BIN || 'unzip';
   const packageLine = command(aapt, ['dump', 'badging', apkPath])
     .split('\n')
@@ -170,12 +179,10 @@ function apkMetadata(apkPath) {
     .map(item => item.match(/^lib\/([^/]+)\//)?.[1])
     .filter(Boolean);
   const uniqueAbis = [...new Set(abis)];
-  const certificate = command(apksigner, ['verify', '--print-certs', apkPath])
-    .split('\n')
-    .find(line => line.startsWith('Signer #1 certificate SHA-256 digest:'))
-    ?.replace('Signer #1 certificate SHA-256 digest:', '')
+  const signerOutput = command(apksigner, ['verify', '--print-certs', apkPath]);
+  const certificate = signerOutput
+    .match(/certificate SHA-256 digest:\s*([^\s]+)/)?.[1]
     .replaceAll(':', '')
-    .trim()
     .toUpperCase();
   const sha256 = createHash('sha256')
     .update(readFileSync(apkPath))
@@ -198,7 +205,9 @@ function apkMetadata(apkPath) {
     certificate !==
     releaseConfig.certificateSha256.replaceAll(':', '').toUpperCase()
   ) {
-    fail('APK certificate does not match release config');
+    fail(
+      `APK certificate does not match release config (actual: ${certificate ?? 'missing'}; apksigner output: ${signerOutput})`
+    );
   }
 
   return {

@@ -20,17 +20,26 @@ if [[ -z "${AAPT_BIN:-}" ]] || [[ -z "${APKSIGNER_BIN:-}" ]]; then
     fail "ANDROID_SDK_ROOT or ANDROID_HOME is required to locate Android build tools"
   fi
 
-  for candidate in "$ANDROID_SDK"/build-tools/*/aapt; do
-    if [[ -x "$candidate" ]]; then
-      AAPT_BIN="$candidate"
+  if [[ -n "${ANDROID_BUILD_TOOLS_VERSION:-}" ]]; then
+    AAPT_BIN="${AAPT_BIN:-$ANDROID_SDK/build-tools/$ANDROID_BUILD_TOOLS_VERSION/aapt}"
+    APKSIGNER_BIN="${APKSIGNER_BIN:-$ANDROID_SDK/build-tools/$ANDROID_BUILD_TOOLS_VERSION/apksigner}"
+  else
+    if [[ -z "${AAPT_BIN:-}" ]]; then
+      for candidate in "$ANDROID_SDK"/build-tools/*/aapt; do
+        if [[ -x "$candidate" ]]; then
+          AAPT_BIN="$candidate"
+        fi
+      done
     fi
-  done
 
-  for candidate in "$ANDROID_SDK"/build-tools/*/apksigner; do
-    if [[ -x "$candidate" ]]; then
-      APKSIGNER_BIN="$candidate"
+    if [[ -z "${APKSIGNER_BIN:-}" ]]; then
+      for candidate in "$ANDROID_SDK"/build-tools/*/apksigner; do
+        if [[ -x "$candidate" ]]; then
+          APKSIGNER_BIN="$candidate"
+        fi
+      done
     fi
-  done
+  fi
 fi
 
 AAPT_BIN="${AAPT_BIN:-}"
@@ -84,12 +93,16 @@ if [[ "$ACTUAL_ABIS" != "arm64-v8a" ]]; then
   fail "Release APK must contain only the arm64-v8a ABI"
 fi
 
-ACTUAL_CERTIFICATE="$($APKSIGNER_BIN verify --print-certs "$APK_PATH" 2>&1 | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -n 1)"
+if ! APKSIGNER_OUTPUT="$($APKSIGNER_BIN verify --print-certs "$APK_PATH" 2>&1)"; then
+  fail "Release APK signature verification failed: $APKSIGNER_OUTPUT"
+fi
+
+ACTUAL_CERTIFICATE="$(sed -n 's/^.*certificate SHA-256 digest: //p' <<<"$APKSIGNER_OUTPUT" | head -n 1)"
 NORMALIZED_ACTUAL_CERTIFICATE="$(tr '[:lower:]' '[:upper:]' <<<"${ACTUAL_CERTIFICATE//:/}" | tr -d '[:space:]')"
 NORMALIZED_EXPECTED_CERTIFICATE="$(tr '[:lower:]' '[:upper:]' <<<"${EXPECTED_CERTIFICATE//:/}" | tr -d '[:space:]')"
 
 if [[ "$NORMALIZED_ACTUAL_CERTIFICATE" != "$NORMALIZED_EXPECTED_CERTIFICATE" ]]; then
-  fail "Release APK certificate SHA-256 does not match config/android-release.json (expected: $EXPECTED_CERTIFICATE; actual: ${ACTUAL_CERTIFICATE:-missing})"
+  fail "Release APK certificate SHA-256 does not match config/android-release.json (expected: $EXPECTED_CERTIFICATE; actual: ${ACTUAL_CERTIFICATE:-missing}; apksigner output: $APKSIGNER_OUTPUT)"
 fi
 
 echo "Verified production release APK"
