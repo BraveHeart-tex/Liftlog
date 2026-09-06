@@ -61,3 +61,5 @@ app-example
 .env.local
 
 .pnpm-store/
+
+docs/agent-problems.md
