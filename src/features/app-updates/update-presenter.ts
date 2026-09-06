@@ -1,9 +1,32 @@
 import type { UpdateState } from './update.types';
 
 const MAX_RELEASE_NOTES_LENGTH = 4_000;
+const BYTES_PER_MEGABYTE = 1024 * 1024;
+
+function meaningfulReleaseNotes(notes?: string) {
+  if (!notes) {
+    return undefined;
+  }
+
+  const filteredNotes = notes
+    .split('\n')
+    .filter(line => !/^\s*(?:\*\*)?full changelog(?:\*\*)?\s*:/i.test(line))
+    .filter(line => !/^\s*https?:\/\/\S+\/compare\/\S+\s*$/i.test(line))
+    .join('\n')
+    .trim();
+
+  if (
+    !filteredNotes ||
+    /^#{1,6}\s+what(?:'|’)s changed\s*$/i.test(filteredNotes)
+  ) {
+    return undefined;
+  }
+
+  return filteredNotes;
+}
 
 export function presentUpdateState(state: UpdateState) {
-  const releaseNotes = state.release?.releaseNotes;
+  const releaseNotes = meaningfulReleaseNotes(state.release?.releaseNotes);
   const cappedNotes = releaseNotes
     ? releaseNotes.length > MAX_RELEASE_NOTES_LENGTH
       ? `${releaseNotes.slice(0, MAX_RELEASE_NOTES_LENGTH)}\u2026`
@@ -22,7 +45,9 @@ export function presentUpdateState(state: UpdateState) {
     availableVersion: state.release?.versionName,
     releaseNotes: cappedNotes,
     size: state.release
-      ? `${new Intl.NumberFormat('en-US').format(state.release.sizeBytes)} bytes`
+      ? `${new Intl.NumberFormat('en-US', {
+          maximumFractionDigits: 2
+        }).format(state.release.sizeBytes / BYTES_PER_MEGABYTE)} MB`
       : undefined,
     message:
       state.status === 'up_to_date'

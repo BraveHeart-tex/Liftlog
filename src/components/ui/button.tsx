@@ -53,6 +53,7 @@ interface ButtonProps extends Omit<PressableSurfaceProps, 'children'> {
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
   textClassName?: string;
+  spinnerClassName?: string;
   textStyle?: StyleProp<TextStyle>;
   children: ReactNode;
 }
@@ -107,6 +108,7 @@ export function Button({
   className,
   containerClassName,
   textClassName,
+  spinnerClassName,
   textStyle,
   children,
   pressedClassName,
@@ -135,7 +137,7 @@ export function Button({
       {loading ? (
         <View className="flex-row items-center justify-center gap-2">
           <StyledActivityIndicator
-            className={cn(buttonSpinnerVariants({ variant }))}
+            className={cn(buttonSpinnerVariants({ variant }), spinnerClassName)}
             size="small"
           />
           {isIconButton ? null : (
