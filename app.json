@@ -21,6 +21,7 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.borakaraca94.liftlog",
       "permissions": [
+        "android.permission.REQUEST_INSTALL_PACKAGES",
         "android.permission.health.READ_STEPS",
         "android.permission.health.READ_HEALTH_DATA_HISTORY",
         "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"
