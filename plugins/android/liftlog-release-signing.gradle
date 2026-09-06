@@ -29,9 +29,13 @@ android {
         }
     }
 
-    buildTypes.release.signingConfig = liftlogReleaseSigningConfigured
-        ? signingConfigs.release
-        : null
+    buildTypes {
+        release {
+            signingConfig = liftlogReleaseSigningConfigured
+                ? signingConfigs.release
+                : null
+        }
+    }
 }
 
 gradle.taskGraph.whenReady { taskGraph ->

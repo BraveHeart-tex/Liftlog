@@ -125,7 +125,7 @@ test('release signing plugin generates an idempotent secret-free Gradle contract
     assert.match(signingGradle, /gradle\.taskGraph\.whenReady/);
     assert.match(
       signingGradle,
-      /buildTypes\.release\.signingConfig = liftlogReleaseSigningConfigured/
+      /signingConfig = liftlogReleaseSigningConfigured/
     );
     assert.match(signingGradle, /throw new GradleException/);
 

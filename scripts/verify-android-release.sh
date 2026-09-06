@@ -89,7 +89,7 @@ NORMALIZED_ACTUAL_CERTIFICATE="$(tr '[:lower:]' '[:upper:]' <<<"${ACTUAL_CERTIFI
 NORMALIZED_EXPECTED_CERTIFICATE="$(tr '[:lower:]' '[:upper:]' <<<"${EXPECTED_CERTIFICATE//:/}" | tr -d '[:space:]')"
 
 if [[ "$NORMALIZED_ACTUAL_CERTIFICATE" != "$NORMALIZED_EXPECTED_CERTIFICATE" ]]; then
-  fail "Release APK certificate SHA-256 does not match config/android-release.json"
+  fail "Release APK certificate SHA-256 does not match config/android-release.json (expected: $EXPECTED_CERTIFICATE; actual: ${ACTUAL_CERTIFICATE:-missing})"
 fi
 
 echo "Verified production release APK"
