@@ -39,6 +39,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Validate release identity and history
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: node scripts/prepare-android-release.mjs preflight
       - name: TypeScript
         run: pnpm run ts-check
@@ -94,6 +96,7 @@ jobs:
           echo "LIFTLOG_ANDROID_KEYSTORE_PATH=$key_path" >> "$GITHUB_ENV"
       - name: Build, verify, stage, and publish
         env:
+          GH_TOKEN: ${{ github.token }}
           LIFTLOG_ANDROID_KEY_ALIAS: ${{ secrets.LIFTLOG_ANDROID_KEY_ALIAS }}
           LIFTLOG_ANDROID_STORE_PASSWORD: ${{ secrets.LIFTLOG_ANDROID_STORE_PASSWORD }}
           LIFTLOG_ANDROID_KEY_PASSWORD: ${{ secrets.LIFTLOG_ANDROID_KEY_PASSWORD }}
