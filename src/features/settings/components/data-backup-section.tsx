@@ -1,6 +1,7 @@
-import { Button } from '@/src/components/ui/button';
 import { Card, CardContent } from '@/src/components/ui/card';
 import { Icon } from '@/src/components/ui/icon';
+import { PressableSurface } from '@/src/components/ui/pressable-surface';
+import { StyledActivityIndicator } from '@/src/components/styled/activity-indicator';
 import { Text } from '@/src/components/ui/text';
 import { showSnackbar } from '@/src/components/ui/snackbar';
 import {
@@ -19,10 +20,57 @@ import {
 import { useDrizzle } from '@/src/providers/database-provider';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { refreshLiveQueries } from '@/src/lib/db/live-query-refresh';
-import { FileJson } from 'lucide-react-native';
+import { ChevronRight, FileDown, FileJson, FileUp } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Alert, View } from 'react-native';
+
+type BackupActionProps = {
+  title: string;
+  description: string;
+  accessibilityLabel: string;
+  disabled: boolean;
+  loading: boolean;
+  onPress: () => void;
+  icon?: ReactNode;
+};
+
+function BackupAction({
+  title,
+  description,
+  accessibilityLabel,
+  disabled,
+  loading,
+  onPress,
+  icon = <Icon as={FileJson} tone="primary" />
+}: BackupActionProps) {
+  return (
+    <PressableSurface
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={description}
+      accessibilityState={{ busy: loading }}
+      className="border-t-border min-h-20 flex-row items-center border-t px-4 py-4"
+      disabled={disabled || loading}
+      onPress={onPress}
+      pressedClassName="bg-muted"
+    >
+      <View className="w-8 items-center">
+        {loading ? (
+          <StyledActivityIndicator className="text-primary" size="small" />
+        ) : (
+          icon
+        )}
+      </View>
+      <View className="ml-3 flex-1">
+        <Text variant="bodyMedium">{title}</Text>
+        <Text variant="caption" tone="muted" className="mt-0.5">
+          {description}
+        </Text>
+      </View>
+      <Icon as={ChevronRight} tone="mutedForeground" size="sm" />
+    </PressableSurface>
+  );
+}
 
 export function DataBackupSection() {
   const db = useDrizzle();
@@ -246,54 +294,41 @@ export function DataBackupSection() {
       <Text variant="overline" tone="muted" className="mb-2">
         Data & Backup
       </Text>
-      <Card>
+      <Card className="overflow-hidden">
         <CardContent>
-          <Text variant="bodyMedium">Keep a copy of your LiftLog data</Text>
+          <Text variant="bodyMedium">Backup your data</Text>
           <Text variant="caption" tone="muted" className="mt-1">
             Export exercises, workouts, templates, preferences, and your active
             workout as readable JSON.
           </Text>
         </CardContent>
-        <Button
-          variant="secondary"
-          className="border-t-border rounded-none border-0 border-t"
+        <BackupAction
+          title="Export backup"
+          description="Save a readable JSON file to your device"
+          icon={<Icon as={FileUp} tone="primary" />}
           onPress={confirmExport}
           disabled={isExporting}
           loading={isExporting}
-          loadingLabel="Preparing backup..."
           accessibilityLabel="Export backup"
-          leftIcon={<Icon as={FileJson} tone="primary" size="sm" />}
-          textClassName="text-primary"
-        >
-          Export backup
-        </Button>
-        <Button
-          variant="secondary"
-          className="border-t-border rounded-none border-0 border-t"
+        />
+        <BackupAction
+          title="Import backup"
+          description="Restore data from a LiftLog backup file"
+          icon={<Icon as={FileDown} tone="primary" />}
           onPress={() => void runImport()}
           disabled={isExporting || isImporting}
           loading={isImporting}
-          loadingLabel="Checking backup..."
           accessibilityLabel="Import backup"
-          leftIcon={<Icon as={FileJson} tone="primary" size="sm" />}
-          textClassName="text-primary"
-        >
-          Import backup
-        </Button>
+        />
         {undoSafetyBackup ? (
-          <Button
-            variant="secondary"
-            className="border-t-border rounded-none border-0 border-t"
+          <BackupAction
+            title="Undo last import"
+            description="Restore the data saved before your last import"
             onPress={() => void runUndoPreview()}
             disabled={isExporting || isImporting}
             loading={isImporting}
-            loadingLabel="Checking undo backup..."
             accessibilityLabel="Undo last import"
-            leftIcon={<Icon as={FileJson} tone="primary" size="sm" />}
-            textClassName="text-primary"
-          >
-            Undo last import
-          </Button>
+          />
         ) : null}
       </Card>
     </View>
