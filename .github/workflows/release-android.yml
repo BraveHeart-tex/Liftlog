@@ -94,6 +94,33 @@ jobs:
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$key_path"
           chmod 600 "$key_path"
           echo "LIFTLOG_ANDROID_KEYSTORE_PATH=$key_path" >> "$GITHUB_ENV"
+      - name: Verify CI signing identity
+        env:
+          KEY_ALIAS: ${{ secrets.LIFTLOG_ANDROID_KEY_ALIAS }}
+          STORE_PASSWORD: ${{ secrets.LIFTLOG_ANDROID_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.LIFTLOG_ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          expected="$({
+            node -e '
+              const config = require("./config/android-release.json");
+              process.stdout.write(config.certificateSha256.replaceAll(":", "").toUpperCase());
+            '
+          })"
+          actual="$({
+            keytool -list -v \
+              -keystore "$LIFTLOG_ANDROID_KEYSTORE_PATH" \
+              -alias "$KEY_ALIAS" \
+              -storepass "$STORE_PASSWORD" \
+              -keypass "$KEY_PASSWORD" |
+              sed -n 's/^[[:space:]]*SHA256: //p' |
+              head -n 1 |
+              tr -d ':' |
+              tr '[:lower:]' '[:upper:]'
+          })"
+          echo "Expected certificate: $expected"
+          echo "CI keystore certificate: $actual"
+          test "$actual" = "$expected"
       - name: Build, verify, stage, and publish
         env:
           GH_TOKEN: ${{ github.token }}
