@@ -31,7 +31,12 @@ import {
   updateCustomExerciseDetails,
   updateCustomExerciseName
 } from '@/src/features/exercises/exercise.repository';
-import { cleanupLegacyHistoricalWorkoutEditDrafts } from '@/src/features/workouts/shared/workout.repository';
+import {
+  cleanupLegacyHistoricalWorkoutEditDrafts,
+  createHistoricalWorkoutDraft,
+  createWorkout,
+  repeatWorkout
+} from '@/src/features/workouts/shared/workout.repository';
 import {
   ActiveWorkoutExerciseDraftConflictError,
   completeWorkout,
@@ -51,9 +56,14 @@ import {
 } from '@/src/features/workouts/history/history.repository';
 import { getRecentExerciseIdsQuery } from '@/src/features/workouts/exercise-selection/exercise-selection.repository';
 import {
+  createWorkoutFromTemplate,
   saveWorkoutTemplateExerciseDraft,
   WorkoutTemplateExerciseDraftConflictError
 } from '@/src/features/workouts/templates/workout-template.repository';
+import {
+  applicationUpdateExclusion,
+  WorkoutCreationBlockedError
+} from '@/src/features/app-updates/update-exclusion';
 import {
   getExerciseHistoryQuery,
   mapExerciseHistoryRows,
@@ -274,6 +284,55 @@ function seedTrackedExercise(db: DrizzleDb) {
     })
     .run();
 }
+
+test('active workout creation paths honor update exclusion', async () => {
+  const { db, nodeClient } = await createMigratedTestDatabase();
+
+  try {
+    db.insert(exercises)
+      .values({
+        id: 'guard-exercise',
+        name: 'Guard Exercise',
+        normalizedName: 'guard exercise',
+        equipment: 'other',
+        trackingType: 'reps'
+      })
+      .run();
+    db.insert(workoutTemplates)
+      .values({ id: 'guard-template', name: 'Guard Template' })
+      .run();
+
+    applicationUpdateExclusion.hydrate(true);
+
+    assert.throws(
+      () =>
+        createWorkout(db, {
+          name: 'Blank',
+          status: 'in_progress',
+          startedAt: 1
+        }),
+      WorkoutCreationBlockedError
+    );
+    assert.throws(
+      () => createWorkoutFromTemplate(db, { templateId: 'guard-template' }),
+      WorkoutCreationBlockedError
+    );
+    assert.throws(
+      () =>
+        repeatWorkout(db, {
+          sourceWorkout: { name: 'Repeat' },
+          sourceWorkoutExercises: []
+        }),
+      WorkoutCreationBlockedError
+    );
+
+    assert.doesNotThrow(() => createHistoricalWorkoutDraft(db, '2026-09-07'));
+    assert.equal(db.select().from(workouts).all().length, 1);
+  } finally {
+    applicationUpdateExclusion.hydrate(false);
+    nodeClient.closeSync();
+  }
+});
 
 function createTrackedSet(
   db: DrizzleDb,

@@ -1,4 +1,7 @@
 import { mock } from 'node:test';
+import { applicationUpdateExclusion } from '@/src/features/app-updates/update-exclusion';
+
+applicationUpdateExclusion.hydrate(false);
 
 if (
   process.argv.every(

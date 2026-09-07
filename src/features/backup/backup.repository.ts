@@ -18,6 +18,7 @@ import { rebuildPersonalRecordsForExercisesInTransaction } from '@/src/features/
 import { asc, sql } from 'drizzle-orm';
 import type { LiftLogBackupV1 } from '@/src/features/backup/backup.types';
 import type { ThemePreference } from '@/src/theme/theme-preference';
+import { applicationUpdateExclusion } from '@/src/features/app-updates/update-exclusion';
 
 const byId = <T extends { id: string }>(left: T, right: T) =>
   left.id.localeCompare(right.id);
@@ -93,6 +94,10 @@ export function replaceBackupData(
   db: DrizzleDb,
   backup: LiftLogBackupV1
 ): void {
+  if (backup.data.workouts.some(workout => workout.status === 'in_progress')) {
+    applicationUpdateExclusion.assertWorkoutCreationAllowed();
+  }
+
   db.transaction(tx => {
     tx.delete(personalRecords).run();
     tx.delete(sets).run();

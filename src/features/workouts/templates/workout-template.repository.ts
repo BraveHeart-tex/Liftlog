@@ -15,6 +15,7 @@ import {
   validateStagedCustomExerciseNames
 } from '@/src/features/exercises/exercise.repository';
 import { normalizeSupersetRows } from '@/src/features/workouts/shared/superset.utils';
+import { applicationUpdateExclusion } from '@/src/features/app-updates/update-exclusion';
 import { resolveTemplateName } from '@/src/features/workouts/shared/workout-display.utils';
 import { withDatabaseSpan } from '@/src/lib/db/database-observability';
 import { toLocalDateKey } from '@/src/lib/utils/date.utils';
@@ -670,6 +671,8 @@ export function createWorkoutFromTemplate(
     discardWorkoutId?: Workout['id'];
   }
 ): Workout | undefined {
+  applicationUpdateExclusion.assertWorkoutCreationAllowed();
+
   return withDatabaseSpan(
     {
       operation: 'workoutTemplate.createWorkoutFromTemplate',

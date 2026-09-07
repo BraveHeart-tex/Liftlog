@@ -26,6 +26,7 @@ import {
 import { formatDurationMs } from '@/src/lib/utils/format-time.utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Keyboard } from 'react-native';
+import { applicationUpdateExclusion } from '@/src/features/app-updates/update-exclusion';
 
 interface UseSetFormControllerArgs {
   trackingType: TrackingType;
@@ -70,6 +71,9 @@ export function useSetFormController({
   >(() => new Set());
   const [activeDurationPicker, setActiveDurationPicker] =
     useState<ActiveDurationPickerState | null>(null);
+  const [editorRegistration] = useState(() =>
+    applicationUpdateExclusion.registerEditor()
+  );
   const nextDraftIndexRef = useRef(0);
   const pendingCopyRef = useRef(false);
   const copiedSetOrderToAnimateRef = useRef<Set['order'] | null>(null);
@@ -281,6 +285,19 @@ export function useSetFormController({
         ) ?? 0)
       : 0;
   const hasPendingCopy = pendingCopyRowKeys.size > 0;
+  const hasTransientInput =
+    draftRows.length > 0 || Object.keys(persistedEditsBySetId).length > 0;
+
+  useEffect(() => {
+    editorRegistration.setDirty(hasTransientInput);
+  }, [editorRegistration, hasTransientInput]);
+
+  useEffect(
+    () => () => {
+      editorRegistration.unregister();
+    },
+    [editorRegistration]
+  );
 
   useEffect(() => {
     const copiedSetOrder = copiedSetOrderToAnimateRef.current;
@@ -298,6 +315,8 @@ export function useSetFormController({
     field: TrackingFieldDefinition,
     value: string
   ) => {
+    editorRegistration.setDirty(true);
+
     if (row.kind === 'draft') {
       setDraftRows(currentRows =>
         currentRows.map(currentRow =>
@@ -615,6 +634,8 @@ export function useSetFormController({
   };
 
   const addDraftRow = () => {
+    editorRegistration.setDirty(true);
+
     const nextDraftKey = `draft-${nextDraftIndexRef.current}`;
     const nextOrder = getNextSetOrder();
 

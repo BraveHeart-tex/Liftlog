@@ -30,6 +30,7 @@ import {
   resolveTrackingType
 } from '@/src/features/progress/tracking.domain';
 import { normalizeSupersetRows } from '@/src/features/workouts/shared/superset.utils';
+import { applicationUpdateExclusion } from '@/src/features/app-updates/update-exclusion';
 import { formatWorkoutName } from '@/src/features/workouts/shared/workout-display.utils';
 import { toLocalDateKey } from '@/src/lib/utils/date.utils';
 import { generateUuid } from '@/src/lib/utils/uuid.utils';
@@ -385,6 +386,17 @@ export function getActiveWorkoutQuery(db: DrizzleDb) {
     .limit(1);
 }
 
+export function hasActiveWorkout(db: DrizzleDb): boolean {
+  return withDatabaseSpan(
+    {
+      operation: 'workout.hasActive',
+      feature: 'workout',
+      access: 'read'
+    },
+    () => getActiveWorkoutQuery(db).get() !== undefined
+  );
+}
+
 export function getActiveWorkoutForRestTimerNotification(
   db: DrizzleDb,
   workoutId: Workout['id'] | undefined
@@ -678,6 +690,10 @@ export function getSetsForWorkoutQuery(
 }
 
 export function createWorkout(db: DrizzleDb, data: NewWorkout): Workout {
+  if (data.status === 'in_progress') {
+    applicationUpdateExclusion.assertWorkoutCreationAllowed();
+  }
+
   return withDatabaseSpan(
     {
       operation: 'workout.create',
@@ -2276,6 +2292,8 @@ export function repeatWorkout(
     >[];
   }
 ): Workout {
+  applicationUpdateExclusion.assertWorkoutCreationAllowed();
+
   return withDatabaseSpan(
     {
       operation: 'workout.repeat',
