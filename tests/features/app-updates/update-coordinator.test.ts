@@ -329,3 +329,22 @@ test('cached freshness and available metadata survive a failed check', async () 
   assert.equal(failed.lastSuccessfulCheckAt, 1_000);
   assert.equal(failed.release?.versionCode, 5);
 });
+
+test('automatic failures stay out of diagnostics while manual unexpected failures report', async () => {
+  const diagnostics: unknown[] = [];
+  const coordinator = createUpdateCoordinator({
+    persistence: persistence(),
+    installedBuild: () => ({ versionName: '1.0.3', versionCode: 4 }),
+    now: () => 2_000,
+    reportDiagnostic: diagnostic => diagnostics.push(diagnostic),
+    github: {
+      getLatestRelease: async () => ({ status: 500 }),
+      getManifest: async () => MANIFEST
+    }
+  });
+
+  await coordinator.check('automatic');
+  assert.equal(diagnostics.length, 0);
+  await coordinator.check('manual');
+  assert.equal(diagnostics.length, 1);
+});

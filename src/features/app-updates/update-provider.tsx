@@ -10,7 +10,8 @@ import {
   useMemo,
   useState
 } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
+import { createDownloadResumable } from 'expo-file-system/legacy';
 import { createUpdateCoordinator } from './update-coordinator';
 import { updateGitHubClient } from './update-github.client';
 import { createUpdateRepository } from './update.repository';
@@ -21,11 +22,11 @@ import {
   createUpdateExclusionCoordinator
 } from './update-exclusion';
 import { hasActiveWorkout } from '@/src/features/workouts/shared/workout.repository';
-import type {
-  BeginAttemptRequest,
-  NativeUpdateState
-} from '@/modules/liftlog-updater/src/types';
-import type { ExclusionResult } from './update-exclusion';
+import {
+  createUpdateAttemptCoordinator,
+  type UpdateAttemptState
+} from './update-attempt-coordinator';
+import { generateUuid } from '@/src/lib/utils/uuid.utils';
 
 if (Platform.OS !== 'android') {
   applicationUpdateExclusion.hydrate(false);
@@ -33,10 +34,12 @@ if (Platform.OS !== 'android') {
 
 interface UpdateContextValue {
   state: UpdateState;
+  attempt: UpdateAttemptState;
   checkForUpdates(): Promise<void>;
-  beginUpdate(request: BeginAttemptRequest): Promise<ExclusionResult>;
-  commitUpdate(attemptId: string): Promise<ExclusionResult>;
-  cancelUpdate(attemptId: string): Promise<NativeUpdateState>;
+  dismissUpdate(): void;
+  startUpdate(): Promise<void>;
+  resumeUpdate(): Promise<void>;
+  cancelUpdate(): Promise<void>;
 }
 
 const UpdateContext = createContext<UpdateContextValue | null>(null);
@@ -81,6 +84,64 @@ export function UpdateProvider({ children }: PropsWithChildren) {
   const [state, setState] = useState<UpdateState>(() =>
     coordinator.currentState()
   );
+  const attemptCoordinator = useMemo(() => {
+    const updater = LiftlogUpdater;
+
+    return exclusionCoordinator && updater
+      ? createUpdateAttemptCoordinator({
+          createAttemptId: generateUuid,
+          begin: request => exclusionCoordinator.begin(request),
+          permission: () => updater.getInstallPermissionAsync(),
+          openPermissionSettings: () => updater.openInstallPermissionSettings(),
+          download: (url, filePath, onProgress) => {
+            const fileUri = filePath.startsWith('file://')
+              ? filePath
+              : `file://${filePath}`;
+            const download = createDownloadResumable(
+              url,
+              fileUri,
+              {},
+              progress =>
+                onProgress(
+                  progress.totalBytesWritten,
+                  progress.totalBytesExpectedToWrite
+                )
+            );
+
+            return {
+              promise: download.downloadAsync().then(result => {
+                if (!result) {
+                  throw Object.assign(new Error('Download cancelled'), {
+                    code: 'UPDATER_CANCELLED'
+                  });
+                }
+              }),
+              cancel: () => download.cancelAsync()
+            };
+          },
+          verify: request => updater.verifyAndStageAsync(request),
+          commit: attemptId => exclusionCoordinator.commit(attemptId),
+          cancel: attemptId => exclusionCoordinator.cancel(attemptId),
+          interrupt: async attemptId => {
+            const native = await updater.interruptAsync(attemptId);
+            applicationUpdateExclusion.reconcile(native.updateExcluded);
+
+            return native;
+          },
+          getState: () => updater.getStateAsync(),
+          reconcile: () => exclusionCoordinator.hydrate(),
+          reportUnexpected: (stage, errorCode) => {
+            captureMessage('UPDATE_ATTEMPT_FAILED', {
+              level: 'error',
+              extra: { stage, errorCode, androidApiLevel: Platform.Version }
+            });
+          }
+        })
+      : undefined;
+  }, [exclusionCoordinator]);
+  const [attempt, setAttempt] = useState<UpdateAttemptState>({
+    status: 'idle'
+  });
 
   useEffect(() => {
     if (Platform.OS !== 'android') {
@@ -98,6 +159,7 @@ export function UpdateProvider({ children }: PropsWithChildren) {
 
     void exclusionCoordinator!
       .hydrate()
+      .then(() => attemptCoordinator?.reconcile())
       .catch(error => {
         applicationUpdateExclusion.hydrate(true);
         console.error('Failed to reconcile application update state', error);
@@ -111,34 +173,84 @@ export function UpdateProvider({ children }: PropsWithChildren) {
     return () => {
       mounted = false;
     };
-  }, [exclusionCoordinator]);
+  }, [attemptCoordinator, exclusionCoordinator]);
+  useEffect(() => {
+    if (!attemptCoordinator) {
+      return;
+    }
+
+    setAttempt(attemptCoordinator.getState());
+
+    return attemptCoordinator.subscribe(setAttempt);
+  }, [attemptCoordinator]);
+  useEffect(() => {
+    if (!attemptCoordinator) {
+      return;
+    }
+
+    const subscription = AppState.addEventListener('change', nextState => {
+      if (nextState === 'active') {
+        void attemptCoordinator.foregrounded();
+      } else {
+        void attemptCoordinator.backgrounded();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [attemptCoordinator]);
   const checkForUpdates = useCallback(async () => {
     setState(current => ({ ...current, status: 'checking', error: undefined }));
     setState(await coordinator.check('manual'));
   }, [coordinator]);
-  const requireExclusionCoordinator = useCallback(() => {
-    if (!exclusionCoordinator) {
+  const dismissUpdate = useCallback(() => {
+    if (state.release) {
+      coordinator.dismiss(state.release.versionCode);
+    }
+  }, [coordinator, state.release]);
+  const requireAttemptCoordinator = useCallback(() => {
+    if (!attemptCoordinator) {
       throw new Error('Application updates are unavailable on this platform.');
     }
 
-    return exclusionCoordinator;
-  }, [exclusionCoordinator]);
-  const beginUpdate = useCallback(
-    (request: BeginAttemptRequest) =>
-      requireExclusionCoordinator().begin(request),
-    [requireExclusionCoordinator]
-  );
-  const commitUpdate = useCallback(
-    (attemptId: string) => requireExclusionCoordinator().commit(attemptId),
-    [requireExclusionCoordinator]
-  );
+    return attemptCoordinator;
+  }, [attemptCoordinator]);
+  const startUpdate = useCallback(async () => {
+    if (state.release) {
+      await requireAttemptCoordinator().start(state.release);
+    }
+  }, [requireAttemptCoordinator, state.release]);
+  const resumeUpdate = useCallback(async () => {
+    const active = requireAttemptCoordinator();
+
+    if (active.getState().status === 'permission') {
+      await active.resumePermission();
+    } else if (state.release) {
+      await active.start(state.release);
+    }
+  }, [requireAttemptCoordinator, state.release]);
   const cancelUpdate = useCallback(
-    (attemptId: string) => requireExclusionCoordinator().cancel(attemptId),
-    [requireExclusionCoordinator]
+    () => requireAttemptCoordinator().cancel(),
+    [requireAttemptCoordinator]
   );
   const value = useMemo(
-    () => ({ state, checkForUpdates, beginUpdate, commitUpdate, cancelUpdate }),
-    [beginUpdate, cancelUpdate, checkForUpdates, commitUpdate, state]
+    () => ({
+      state,
+      attempt,
+      checkForUpdates,
+      dismissUpdate,
+      startUpdate,
+      resumeUpdate,
+      cancelUpdate
+    }),
+    [
+      attempt,
+      cancelUpdate,
+      checkForUpdates,
+      dismissUpdate,
+      resumeUpdate,
+      startUpdate,
+      state
+    ]
   );
 
   return isExclusionHydrated ? (

@@ -1,4 +1,7 @@
-import { presentUpdateState } from '@/src/features/app-updates/update-presenter';
+import {
+  presentUpdateAttempt,
+  presentUpdateState
+} from '@/src/features/app-updates/update-presenter';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -26,6 +29,39 @@ test('presents no-update and actionable failure messages', () => {
   );
 });
 
+test('presents truthful attempt status and one recovery action', () => {
+  assert.deepEqual(
+    presentUpdateAttempt({
+      status: 'downloading',
+      bytesDownloaded: 40,
+      totalBytes: 100,
+      progress: 0.4
+    }),
+    {
+      message: 'Downloading update - 40% (40 of 100 bytes)',
+      action: 'cancel'
+    }
+  );
+  assert.deepEqual(presentUpdateAttempt({ status: 'verifying' }), {
+    message: 'Verifying update...',
+    action: 'cancel'
+  });
+  assert.deepEqual(presentUpdateAttempt({ status: 'installer' }), {
+    message: 'Continue in Android to install the update.',
+    action: undefined
+  });
+  assert.deepEqual(
+    presentUpdateAttempt({
+      status: 'failed',
+      blockReason: 'active_workout'
+    }),
+    {
+      message: 'Finish or discard your active workout before updating.',
+      action: 'retry'
+    }
+  );
+});
+
 test('caps remote notes and formats the APK size in MB', () => {
   const presentation = presentUpdateState({
     status: 'available',
@@ -43,7 +79,7 @@ test('caps remote notes and formats the APK size in MB', () => {
   });
 
   assert.equal(presentation.availableVersion, '1.1.0');
-  assert.equal(presentation.size, '56 MB');
+  assert.equal(presentation.size, '56 MB (58,720,256 bytes)');
   assert.equal(presentation.releaseNotes?.length, 4_001);
   assert.ok(presentation.releaseNotes?.endsWith('\u2026'));
 });

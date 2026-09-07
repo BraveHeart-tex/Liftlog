@@ -3,7 +3,10 @@ import { Card, CardContent } from '@/src/components/ui/card';
 import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { useAppUpdates } from '@/src/features/app-updates/update-provider';
-import { presentUpdateState } from '@/src/features/app-updates/update-presenter';
+import {
+  presentUpdateAttempt,
+  presentUpdateState
+} from '@/src/features/app-updates/update-presenter';
 import { iconSizes } from '@/src/theme/sizes';
 import { RefreshCw } from 'lucide-react-native';
 import { Platform, View } from 'react-native';
@@ -42,8 +45,23 @@ function MetadataRow({ label, value }: { label: string; value: string }) {
 }
 
 export function AppUpdateSection() {
-  const { state, checkForUpdates } = useAppUpdates();
+  const {
+    state,
+    attempt,
+    checkForUpdates,
+    dismissUpdate,
+    startUpdate,
+    resumeUpdate,
+    cancelUpdate
+  } = useAppUpdates();
   const presentation = presentUpdateState(state);
+  const attemptPresentation = presentUpdateAttempt(attempt);
+  const attemptActive = [
+    'permission',
+    'downloading',
+    'verifying',
+    'staging'
+  ].includes(attempt.status);
 
   if (Platform.OS !== 'android') {
     return null;
@@ -110,11 +128,81 @@ export function AppUpdateSection() {
               {presentation.message}
             </Text>
           ) : null}
+          {attemptPresentation.message ? (
+            <View
+              className="border-border border-t py-3"
+              accessibilityLiveRegion="polite"
+            >
+              <Text
+                variant="small"
+                weight="medium"
+                tone={attempt.status === 'failed' ? 'danger' : 'default'}
+              >
+                {attemptPresentation.message}
+              </Text>
+              {attempt.status === 'downloading' ? (
+                <View
+                  className="bg-muted mt-3 h-2 overflow-hidden rounded-full"
+                  accessibilityRole="progressbar"
+                  accessibilityValue={{
+                    min: 0,
+                    max: 100,
+                    now: Math.round((attempt.progress ?? 0) * 100)
+                  }}
+                >
+                  <View
+                    className="bg-primary h-full rounded-full"
+                    style={{
+                      width: `${Math.round((attempt.progress ?? 0) * 100)}%`
+                    }}
+                  />
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+          {presentation.availableVersion && attempt.status === 'idle' ? (
+            <View className="border-border flex-row gap-3 border-t py-3">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onPress={dismissUpdate}
+              >
+                Later
+              </Button>
+              <Button className="flex-1" onPress={startUpdate}>
+                Update
+              </Button>
+            </View>
+          ) : null}
+          {attemptPresentation.action ? (
+            <View className="border-border border-t py-3">
+              <Button
+                variant={
+                  attemptPresentation.action === 'cancel'
+                    ? 'secondary'
+                    : 'primary'
+                }
+                fullWidth
+                onPress={
+                  attemptPresentation.action === 'cancel'
+                    ? cancelUpdate
+                    : resumeUpdate
+                }
+              >
+                {attemptPresentation.action === 'cancel'
+                  ? 'Cancel'
+                  : attemptPresentation.action === 'permission'
+                    ? 'Open permission settings'
+                    : 'Retry'}
+              </Button>
+            </View>
+          ) : null}
           <View className="border-border border-t pt-2">
             <Button
               variant="ghost"
               fullWidth
               loading={state.status === 'checking'}
+              disabled={attemptActive}
               loadingLabel="Checking..."
               textClassName="text-primary text-small"
               spinnerClassName="text-primary"

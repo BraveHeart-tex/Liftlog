@@ -115,7 +115,7 @@ export function createUpdateCoordinator(
           ('rateLimited' in response && response.rateLimited) ||
           response.status === 429;
 
-        if (!isRateLimited) {
+        if (!isRateLimited && kind === 'manual') {
           dependencies.reportDiagnostic?.({
             code: 'UPDATE_CHECK_FAILED',
             stage: 'release_discovery',
@@ -149,12 +149,14 @@ export function createUpdateCoordinator(
 
       const malformed = error instanceof UpdateManifestError;
 
-      dependencies.reportDiagnostic?.({
-        code: malformed ? 'UPDATE_MANIFEST_INVALID' : 'UPDATE_CHECK_FAILED',
-        stage: malformed ? 'manifest_validation' : 'release_discovery',
-        androidApiLevel: dependencies.androidApiLevel ?? 'unknown',
-        manifestSchema: malformed ? 1 : undefined
-      });
+      if (kind === 'manual') {
+        dependencies.reportDiagnostic?.({
+          code: malformed ? 'UPDATE_MANIFEST_INVALID' : 'UPDATE_CHECK_FAILED',
+          stage: malformed ? 'manifest_validation' : 'release_discovery',
+          androidApiLevel: dependencies.androidApiLevel ?? 'unknown',
+          manifestSchema: malformed ? 1 : undefined
+        });
+      }
 
       return errorState(
         installed,

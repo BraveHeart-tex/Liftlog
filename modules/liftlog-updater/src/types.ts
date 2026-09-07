@@ -39,7 +39,6 @@ export type BeginAttemptRequest = {
 
 export type VerifyRequest = {
   attemptId: string;
-  expectedPackageName: string;
   expectedVersionName: string;
   expectedVersionCode: number;
   expectedSizeBytes: number;
@@ -71,5 +70,6 @@ export interface LiftlogUpdaterApi {
   verifyAndStageAsync(request: VerifyRequest): Promise<VerificationResult>;
   commitAsync(attemptId: string): Promise<NativeUpdateState>;
   cancelAsync(attemptId: string): Promise<NativeUpdateState>;
+  interruptAsync(attemptId: string): Promise<NativeUpdateState>;
   cleanupAsync(): Promise<NativeUpdateState>;
 }

@@ -76,11 +76,27 @@ class LiftlogUpdaterModule : Module() {
       cancel(attemptId)
     }
 
+    AsyncFunction("interruptAsync") Coroutine { attemptId: String ->
+      interrupt(attemptId)
+    }
+
     AsyncFunction("cleanupAsync") Coroutine cleanupCoroutine
 
     OnCreate {
       reconcile()
     }
+  }
+
+  private suspend fun interrupt(attemptId: String): Map<String, Any?> = withContext(Dispatchers.IO) {
+    requireAttempt(attemptId)
+    if (store.stage() == UpdateStage.COMMITTED || store.stage() == UpdateStage.PENDING_CONFIRMATION) {
+      return@withContext store.state()
+    }
+    val sessionId = store.sessionId()
+    if (sessionId >= 0) runCatching { installer.abandonSession(sessionId) }
+    store.finish(UpdateStage.INTERRUPTED, "UPDATER_INTERRUPTED")
+    cleanupOwnedFiles()
+    store.state()
   }
 
   private suspend fun beginAttempt(request: Map<String, Any?>): Map<String, Any?> = withContext(Dispatchers.IO) {
@@ -116,7 +132,6 @@ class LiftlogUpdaterModule : Module() {
     if (store.stage() != UpdateStage.DOWNLOADING && store.stage() != UpdateStage.VERIFYING) {
       throw UpdaterException("UPDATER_INVALID_STAGE", "Attempt is not ready for verification")
     }
-    val expectedPackage = request.string("expectedPackageName")
     val expectedName = request.string("expectedVersionName")
     val expectedCode = request.long("expectedVersionCode")
     val expectedSize = request.long("expectedSizeBytes")
@@ -146,7 +161,7 @@ class LiftlogUpdaterModule : Module() {
     }
     val archiveName = archive.versionName ?: ""
     val archiveCode = archive.longVersionCode
-    if (archive.packageName != context.packageName || archive.packageName != expectedPackage) {
+    if (archive.packageName != context.packageName) {
       failVerification("UPDATER_PACKAGE_MISMATCH", "APK package does not match")
     }
     if (archiveName != expectedName || archiveCode != expectedCode || archiveCode <= installedVersionCode()) {

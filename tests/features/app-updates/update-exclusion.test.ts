@@ -87,6 +87,11 @@ function nativeFake(initial = state('idle')) {
 
       return current;
     },
+    async interruptAsync() {
+      current = state('interrupted', { updateExcluded: false });
+
+      return current;
+    },
     async cleanupAsync() {
       return current;
     }
