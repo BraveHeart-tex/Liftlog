@@ -49,6 +49,7 @@ function errorState(
       cache?.release && cache.release.versionCode > installed.versionCode
         ? cache.release
         : undefined,
+    dismissedVersionCode: cache?.dismissedVersionCode,
     error: { code }
   };
 }
@@ -66,8 +67,20 @@ function successState(
     status: release ? 'available' : 'up_to_date',
     installedVersion: installed.versionName,
     lastSuccessfulCheckAt: cache.lastSuccessfulCheckAt,
-    release
+    release,
+    dismissedVersionCode: cache.dismissedVersionCode
   };
+}
+
+function quietState(
+  installed: InstalledBuild,
+  cache?: UpdateCache
+): UpdateState {
+  if (cache?.lastSuccessfulCheckAt === undefined) {
+    return { status: 'idle', installedVersion: installed.versionName };
+  }
+
+  return successState(installed, cache);
 }
 
 export function createUpdateCoordinator(
@@ -81,7 +94,12 @@ export function createUpdateCoordinator(
     const installed = dependencies.installedBuild();
     const cache = dependencies.persistence.read();
     const now = dependencies.now();
-    const elapsed = cache ? now - cache.lastSuccessfulCheckAt : undefined;
+    const lastAutomaticCheckAt =
+      cache?.lastAutomaticCheckAt ?? cache?.lastSuccessfulCheckAt;
+    const elapsed =
+      lastAutomaticCheckAt === undefined
+        ? undefined
+        : now - lastAutomaticCheckAt;
 
     if (
       kind === 'automatic' &&
@@ -89,12 +107,14 @@ export function createUpdateCoordinator(
       elapsed >= 0 &&
       elapsed < CHECK_INTERVAL_MS
     ) {
-      return {
-        status: 'idle',
-        installedVersion: installed.versionName,
-        lastSuccessfulCheckAt: cache?.lastSuccessfulCheckAt,
-        release: cache?.release
-      };
+      return quietState(installed, cache);
+    }
+
+    const attemptedCache =
+      kind === 'automatic' ? { ...cache, lastAutomaticCheckAt: now } : cache;
+
+    if (kind === 'automatic') {
+      dependencies.persistence.write(attemptedCache!);
     }
 
     try {
@@ -102,7 +122,7 @@ export function createUpdateCoordinator(
 
       if (response.status === 304) {
         const nextCache: UpdateCache = {
-          ...cache,
+          ...attemptedCache,
           lastSuccessfulCheckAt: now
         };
         dependencies.persistence.write(nextCache);
@@ -124,17 +144,19 @@ export function createUpdateCoordinator(
           });
         }
 
-        return errorState(
-          installed,
-          isRateLimited ? 'rate_limited' : 'check_failed',
-          cache
-        );
+        return kind === 'automatic'
+          ? quietState(installed, cache)
+          : errorState(
+              installed,
+              isRateLimited ? 'rate_limited' : 'check_failed',
+              cache
+            );
       }
 
       const manifest = await dependencies.github.getManifest(response.release);
       const available = resolveUpdateRelease(response.release, manifest);
       const nextCache: UpdateCache = {
-        ...cache,
+        ...attemptedCache,
         etag: response.etag,
         lastSuccessfulCheckAt: now,
         release: available
@@ -144,7 +166,9 @@ export function createUpdateCoordinator(
       return successState(installed, nextCache);
     } catch (error) {
       if (error instanceof UpdateNetworkError || error instanceof TypeError) {
-        return errorState(installed, 'offline', cache);
+        return kind === 'automatic'
+          ? quietState(installed, cache)
+          : errorState(installed, 'offline', cache);
       }
 
       const malformed = error instanceof UpdateManifestError;
@@ -158,11 +182,13 @@ export function createUpdateCoordinator(
         });
       }
 
-      return errorState(
-        installed,
-        malformed ? 'malformed_release' : 'check_failed',
-        cache
-      );
+      return kind === 'automatic'
+        ? quietState(installed, cache)
+        : errorState(
+            installed,
+            malformed ? 'malformed_release' : 'check_failed',
+            cache
+          );
     }
   };
 
@@ -171,9 +197,7 @@ export function createUpdateCoordinator(
       const installed = dependencies.installedBuild();
       const cache = dependencies.persistence.read();
 
-      return cache
-        ? successState(installed, cache)
-        : { status: 'idle', installedVersion: installed.versionName };
+      return quietState(installed, cache);
     },
     check(kind: 'automatic' | 'manual'): Promise<UpdateState> {
       if (activeCheck) {
@@ -190,7 +214,6 @@ export function createUpdateCoordinator(
       const cache = dependencies.persistence.read();
 
       dependencies.persistence.write({
-        lastSuccessfulCheckAt: cache?.lastSuccessfulCheckAt ?? 0,
         ...cache,
         dismissedVersionCode: versionCode
       });

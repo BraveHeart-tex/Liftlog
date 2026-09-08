@@ -228,11 +228,110 @@ test('automatic checks throttle for 24 hours, while manual checks retain ETag ca
     }
   });
 
-  assert.equal((await coordinator.check('automatic')).status, 'idle');
+  assert.equal((await coordinator.check('automatic')).status, 'up_to_date');
   assert.equal(etags.length, 0);
   assert.equal((await coordinator.check('manual')).status, 'up_to_date');
   assert.deepEqual(etags, ['etag-1']);
   assert.equal(cache.value?.lastSuccessfulCheckAt, 20_000);
+});
+
+test('a throttled automatic check does not announce a release already installed', async () => {
+  const coordinator = createUpdateCoordinator({
+    persistence: persistence({
+      lastSuccessfulCheckAt: 10_000,
+      release: {
+        releaseId: 65,
+        versionName: '1.1.0',
+        versionCode: 5,
+        apkFilename: APK_NAME,
+        apkDownloadUrl: 'apk-download',
+        sha256: 'a'.repeat(64),
+        sizeBytes: 12_345,
+        releaseNotes: 'Faster logging'
+      }
+    }),
+    installedBuild: () => ({ versionName: '1.1.0', versionCode: 5 }),
+    now: () => 20_000,
+    github: {
+      getLatestRelease: async () => {
+        throw new Error('throttled check must not use the network');
+      },
+      getManifest: async () => MANIFEST
+    }
+  });
+
+  const state = await coordinator.check('automatic');
+
+  assert.equal(state.status, 'up_to_date');
+  assert.equal(state.release, undefined);
+});
+
+test('automatic failures are quiet and throttle later automatic checks for 24 hours', async () => {
+  let now = 10_000;
+  let calls = 0;
+  const cache = persistence();
+  const coordinator = createUpdateCoordinator({
+    persistence: cache,
+    installedBuild: () => ({ versionName: '1.0.3', versionCode: 4 }),
+    now: () => now,
+    github: {
+      getLatestRelease: async () => {
+        calls += 1;
+
+        throw new TypeError('Network request failed');
+      },
+      getManifest: async () => MANIFEST
+    }
+  });
+
+  const failed = await coordinator.check('automatic');
+  assert.equal(failed.status, 'idle');
+  assert.equal(failed.error, undefined);
+  assert.equal(cache.value?.lastAutomaticCheckAt, 10_000);
+
+  now += 23 * 60 * 60 * 1_000;
+  assert.equal((await coordinator.check('automatic')).status, 'idle');
+  assert.equal(calls, 1);
+
+  now += 2 * 60 * 60 * 1_000;
+  await coordinator.check('automatic');
+  assert.equal(calls, 2);
+});
+
+test('Later only suppresses the matching banner and keeps Settings availability', async () => {
+  const cache = persistence({
+    lastSuccessfulCheckAt: 1_000,
+    release: {
+      releaseId: 65,
+      versionName: '1.1.0',
+      versionCode: 5,
+      apkFilename: APK_NAME,
+      apkDownloadUrl: 'apk-download',
+      sha256: 'a'.repeat(64),
+      sizeBytes: 12_345,
+      releaseNotes: 'Faster logging'
+    }
+  });
+  const coordinator = createUpdateCoordinator({
+    persistence: cache,
+    installedBuild: () => ({ versionName: '1.0.3', versionCode: 4 }),
+    now: () => 2_000,
+    github: {
+      getLatestRelease: async () => ({ status: 304 }),
+      getManifest: async () => MANIFEST
+    }
+  });
+
+  coordinator.dismiss(5);
+  assert.equal(coordinator.currentState().release?.versionCode, 5);
+  assert.equal(coordinator.currentState().dismissedVersionCode, 5);
+
+  cache.value = {
+    ...cache.value!,
+    release: { ...cache.value!.release!, versionCode: 6, versionName: '1.2.0' }
+  };
+  assert.equal(coordinator.currentState().dismissedVersionCode, 5);
+  assert.equal(coordinator.currentState().release?.versionCode, 6);
 });
 
 test('clock rollback permits an automatic check and concurrent checks deduplicate', async () => {

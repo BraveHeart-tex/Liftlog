@@ -34,7 +34,8 @@ export interface AvailableUpdate {
 
 export interface UpdateCache {
   etag?: string;
-  lastSuccessfulCheckAt: number;
+  lastSuccessfulCheckAt?: number;
+  lastAutomaticCheckAt?: number;
   release?: AvailableUpdate;
   dismissedVersionCode?: number;
 }
@@ -50,6 +51,7 @@ export interface UpdateState {
   installedVersion: string;
   lastSuccessfulCheckAt?: number;
   release?: AvailableUpdate;
+  dismissedVersionCode?: number;
   error?: { code: UpdateErrorCode };
 }
 

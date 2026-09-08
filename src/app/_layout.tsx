@@ -76,6 +76,14 @@ function RootNavigator() {
         }}
       />
       <Stack.Screen
+        name="update-details"
+        options={{
+          animation: reduceMotion ? 'none' : 'slide_from_right',
+          headerShown: true,
+          title: 'Update details'
+        }}
+      />
+      <Stack.Screen
         name="exercises/[id]"
         singular
         options={{

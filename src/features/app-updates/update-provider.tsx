@@ -8,6 +8,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from 'react';
 import { AppState, Platform } from 'react-native';
@@ -27,6 +28,8 @@ import {
   type UpdateAttemptState
 } from './update-attempt-coordinator';
 import { generateUuid } from '@/src/lib/utils/uuid.utils';
+import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task.utils';
+import { createAutomaticUpdateScheduler } from './update-announcement';
 
 if (Platform.OS !== 'android') {
   applicationUpdateExclusion.hydrate(false);
@@ -142,6 +145,19 @@ export function UpdateProvider({ children }: PropsWithChildren) {
   const [attempt, setAttempt] = useState<UpdateAttemptState>({
     status: 'idle'
   });
+  const automaticScheduler = useMemo(
+    () =>
+      createAutomaticUpdateScheduler({
+        schedule: scheduleIdleTask,
+        check: async () => {
+          setState(await coordinator.check('automatic'));
+        }
+      }),
+    [coordinator]
+  );
+  const automaticSchedulerRef = useRef(automaticScheduler);
+
+  automaticSchedulerRef.current = automaticScheduler;
 
   useEffect(() => {
     if (Platform.OS !== 'android') {
@@ -184,13 +200,33 @@ export function UpdateProvider({ children }: PropsWithChildren) {
     return attemptCoordinator.subscribe(setAttempt);
   }, [attemptCoordinator]);
   useEffect(() => {
-    if (!attemptCoordinator) {
+    if (Platform.OS !== 'android') {
       return;
+    }
+
+    automaticScheduler.started();
+
+    return () => automaticScheduler.dispose();
+  }, [automaticScheduler]);
+  useEffect(() => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+
+    if (!attemptCoordinator) {
+      const subscription = AppState.addEventListener('change', nextState => {
+        if (nextState === 'active') {
+          automaticSchedulerRef.current.foregrounded();
+        }
+      });
+
+      return () => subscription.remove();
     }
 
     const subscription = AppState.addEventListener('change', nextState => {
       if (nextState === 'active') {
         void attemptCoordinator.foregrounded();
+        automaticSchedulerRef.current.foregrounded();
       } else {
         void attemptCoordinator.backgrounded();
       }
@@ -205,6 +241,7 @@ export function UpdateProvider({ children }: PropsWithChildren) {
   const dismissUpdate = useCallback(() => {
     if (state.release) {
       coordinator.dismiss(state.release.versionCode);
+      setState(coordinator.currentState());
     }
   }, [coordinator, state.release]);
   const requireAttemptCoordinator = useCallback(() => {

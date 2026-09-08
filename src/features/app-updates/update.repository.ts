@@ -15,7 +15,12 @@ function parseCache(value: string | undefined): UpdateCache | undefined {
   try {
     const parsed = JSON.parse(value) as Partial<UpdateCache>;
 
-    if (!Number.isFinite(parsed.lastSuccessfulCheckAt)) {
+    const hasValidSuccessfulCheck = Number.isFinite(
+      parsed.lastSuccessfulCheckAt
+    );
+    const hasValidAutomaticCheck = Number.isFinite(parsed.lastAutomaticCheckAt);
+
+    if (!hasValidSuccessfulCheck && !hasValidAutomaticCheck) {
       return undefined;
     }
 
