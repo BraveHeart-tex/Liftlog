@@ -1,5 +1,6 @@
 import { useDrizzle } from '@/src/providers/database-provider';
 import { captureMessage } from '@sentry/react-native';
+import { nativeApplicationVersion, nativeBuildVersion } from 'expo-application';
 import Constants from 'expo-constants';
 import {
   createContext,
@@ -70,8 +71,15 @@ export function UpdateProvider({ children }: PropsWithChildren) {
         github: updateGitHubClient,
         persistence: repository,
         installedBuild: () => ({
-          versionName: Constants.nativeAppVersion ?? 'Unknown',
-          versionCode: Number(Constants.nativeBuildVersion ?? 0)
+          versionName:
+            nativeApplicationVersion ??
+            Constants.expoConfig?.version ??
+            'Unknown',
+          versionCode: Number(
+            nativeBuildVersion ??
+              Constants.expoConfig?.android?.versionCode ??
+              0
+          )
         }),
         now: Date.now,
         androidApiLevel: Platform.Version,

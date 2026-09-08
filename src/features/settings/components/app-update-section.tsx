@@ -7,6 +7,7 @@ import {
   presentUpdateAttempt,
   presentUpdateState
 } from '@/src/features/app-updates/update-presenter';
+import { cn } from '@/src/lib/utils/cn.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { RefreshCw } from 'lucide-react-native';
 import { Platform, View } from 'react-native';
@@ -31,12 +32,23 @@ function formatLastChecked(timestamp: number) {
       });
 }
 
-function MetadataRow({ label, value }: { label: string; value: string }) {
+function MetadataRow({
+  label,
+  value,
+  bordered = true
+}: {
+  label: string;
+  value: string;
+  bordered?: boolean;
+}) {
   return (
-    <View className="border-border flex-row justify-between gap-4 border-t py-3">
-      <Text variant="small" weight="medium">
-        {label}
-      </Text>
+    <View
+      className={cn(
+        'border-border flex-row justify-between gap-4 py-3',
+        bordered && 'border-t'
+      )}
+    >
+      <Text variant="bodyMedium">{label}</Text>
       <Text variant="small" tone="muted" className="shrink text-right">
         {value}
       </Text>
@@ -87,6 +99,7 @@ export function AppUpdateSection() {
           <MetadataRow
             label="Installed"
             value={presentation.installedVersion}
+            bordered={Boolean(presentation.availableVersion)}
           />
           {presentation.availableVersion ? (
             <MetadataRow
@@ -105,9 +118,7 @@ export function AppUpdateSection() {
           ) : null}
           {presentation.releaseNotes ? (
             <View className="border-border border-t py-3">
-              <Text variant="small" weight="medium">
-                Release notes
-              </Text>
+              <Text variant="bodyMedium">Release notes</Text>
               <Text
                 variant="caption"
                 weight="regular"
