@@ -48,9 +48,7 @@ export function presentUpdateState(state: UpdateState) {
     size: state.release
       ? `${new Intl.NumberFormat('en-US', {
           maximumFractionDigits: 2
-        }).format(
-          state.release.sizeBytes / BYTES_PER_MEGABYTE
-        )} MB (${new Intl.NumberFormat('en-US').format(state.release.sizeBytes)} bytes)`
+        }).format(state.release.sizeBytes / BYTES_PER_MEGABYTE)} MB`
       : undefined,
     message:
       state.status === 'up_to_date'

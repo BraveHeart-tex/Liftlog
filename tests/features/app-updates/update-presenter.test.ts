@@ -79,7 +79,7 @@ test('caps remote notes and formats the APK size in MB', () => {
   });
 
   assert.equal(presentation.availableVersion, '1.1.0');
-  assert.equal(presentation.size, '56 MB (58,720,256 bytes)');
+  assert.equal(presentation.size, '56 MB');
   assert.equal(presentation.releaseNotes?.length, 4_001);
   assert.ok(presentation.releaseNotes?.endsWith('\u2026'));
 });
