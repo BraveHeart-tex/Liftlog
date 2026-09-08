@@ -164,12 +164,17 @@ export function AppUpdateSection() {
             <View className="border-border flex-row gap-3 border-t py-3">
               <Button
                 variant="secondary"
-                className="flex-1"
+                containerClassName="flex-1"
+                className="w-full"
                 onPress={dismissUpdate}
               >
                 Later
               </Button>
-              <Button className="flex-1" onPress={startUpdate}>
+              <Button
+                containerClassName="flex-1"
+                className="w-full"
+                onPress={startUpdate}
+              >
                 Update
               </Button>
             </View>

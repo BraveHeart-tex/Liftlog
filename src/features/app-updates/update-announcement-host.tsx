@@ -2,15 +2,15 @@ import { Button } from '@/src/components/ui/button';
 import { Icon } from '@/src/components/ui/icon';
 import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
+import { router, usePathname, type Href } from 'expo-router';
+import { Download } from 'lucide-react-native';
+import { Platform, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   shouldShowUpdateAnnouncement,
   UPDATE_DETAILS_ROUTE
 } from './update-announcement';
 import { useAppUpdates } from './update-provider';
-import { router, type Href, usePathname } from 'expo-router';
-import { Download } from 'lucide-react-native';
-import { Platform, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function UpdateAnnouncementHost() {
   const insets = useSafeAreaInsets();
@@ -33,7 +33,8 @@ export function UpdateAnnouncementHost() {
       <View className="border-border bg-popover min-h-14 flex-row items-center gap-2 rounded-lg border p-2 shadow-xl">
         <PressableSurface
           accessibilityLabel={`View update details for version ${state.release!.versionName}`}
-          className="min-h-12 min-w-0 flex-1 flex-row items-center gap-3 rounded-md px-2 py-2"
+          containerClassName="min-w-0 flex-1"
+          className="min-h-12 w-full flex-row items-center gap-3 rounded-md px-2 py-2"
           pressedClassName="bg-muted"
           onPress={() => router.navigate(UPDATE_DETAILS_ROUTE as Href)}
         >
@@ -53,6 +54,7 @@ export function UpdateAnnouncementHost() {
           variant="ghost"
           size="sm"
           accessibilityLabel={`Dismiss version ${state.release!.versionName} update announcement`}
+          containerClassName="shrink-0"
           className="min-h-12 px-3"
           textClassName="text-primary text-small"
           onPress={dismissUpdate}
