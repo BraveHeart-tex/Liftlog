@@ -19,6 +19,15 @@
   historical workout draft is not an active workout.
 - **Update attempt**: The user-initiated permission, download, verification, and
   installer-commit lifecycle protected by update exclusion.
+- **Update failure diagnostic**: A sanitized, durable account of an unexpected
+  failure in an update attempt. Exception-based and Android-owned failures have
+  distinct reporting ownership so one failure is not reported twice.
+- **Diagnostic backlog**: The bounded collection of update failure diagnostics
+  that the local error reporter has not yet accepted. It never prevents an update
+  attempt from proceeding.
+- **Diagnostic acknowledgement**: Confirmation that an update failure diagnostic
+  was accepted by the local error reporter. It does not guarantee delivery to the
+  remote observability service.
 - **Installer request**: A committed Android package-installer session. It is not
   proof that the update succeeded; success requires reconciliation against the
   installed native version.
