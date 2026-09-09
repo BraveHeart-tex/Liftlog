@@ -4,6 +4,12 @@ import type { UpdateAttemptState } from './update-attempt-coordinator';
 const MAX_RELEASE_NOTES_LENGTH = 4_000;
 const BYTES_PER_MEGABYTE = 1024 * 1024;
 
+function formatMegabytes(bytes: number) {
+  return `${new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: 2
+  }).format(bytes / BYTES_PER_MEGABYTE)} MB`;
+}
+
 function meaningfulReleaseNotes(notes?: string) {
   if (!notes) {
     return undefined;
@@ -45,11 +51,7 @@ export function presentUpdateState(state: UpdateState) {
     installedVersion: state.installedVersion,
     availableVersion: state.release?.versionName,
     releaseNotes: cappedNotes,
-    size: state.release
-      ? `${new Intl.NumberFormat('en-US', {
-          maximumFractionDigits: 2
-        }).format(state.release.sizeBytes / BYTES_PER_MEGABYTE)} MB`
-      : undefined,
+    size: state.release ? formatMegabytes(state.release.sizeBytes) : undefined,
     message:
       state.status === 'up_to_date'
         ? 'LiftLog is up to date.'
@@ -64,13 +66,11 @@ export function presentUpdateAttempt(state: UpdateAttemptState): {
   action?: 'cancel' | 'retry' | 'permission';
 } {
   if (state.status === 'downloading') {
-    const written = new Intl.NumberFormat('en-US').format(
-      state.bytesDownloaded ?? 0
-    );
-    const total = new Intl.NumberFormat('en-US').format(state.totalBytes ?? 0);
+    const written = formatMegabytes(state.bytesDownloaded ?? 0);
+    const total = formatMegabytes(state.totalBytes ?? 0);
 
     return {
-      message: `Downloading update - ${Math.round((state.progress ?? 0) * 100)}% (${written} of ${total} bytes)`,
+      message: `Downloading update - ${Math.round((state.progress ?? 0) * 100)}% (${written} of ${total})`,
       action: 'cancel'
     };
   }

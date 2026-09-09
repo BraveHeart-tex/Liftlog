@@ -33,12 +33,12 @@ test('presents truthful attempt status and one recovery action', () => {
   assert.deepEqual(
     presentUpdateAttempt({
       status: 'downloading',
-      bytesDownloaded: 40,
-      totalBytes: 100,
-      progress: 0.4
+      bytesDownloaded: 24_641_536,
+      totalBytes: 58_720_256,
+      progress: 0.42
     }),
     {
-      message: 'Downloading update - 40% (40 of 100 bytes)',
+      message: 'Downloading update - 42% (23.5 MB of 56 MB)',
       action: 'cancel'
     }
   );
