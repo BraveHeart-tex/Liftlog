@@ -13,7 +13,7 @@ export default defineConfig([
       'ios/*',
       'android/*',
       'bin/*',
-      'build/*',
+      '**/build/**',
       'src/db/migrations/**',
       'expo-env.d.ts',
       'nativewind-env.d.ts',
