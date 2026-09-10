@@ -3,6 +3,7 @@ export type InstalledBuildInfo = {
   versionName: string;
   versionCode: number;
   certificateSha256: string;
+  isDebuggable: boolean;
 };
 
 export type UpdateStage =

@@ -3,6 +3,7 @@ package expo.modules.liftlogupdater
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
@@ -383,7 +384,8 @@ class LiftlogUpdaterModule : Module() {
       "packageName" to info.packageName,
       "versionName" to (info.versionName ?: ""),
       "versionCode" to info.longVersionCode,
-      "certificateSha256" to certificateSha256(info)
+      "certificateSha256" to certificateSha256(info),
+      "isDebuggable" to ((context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0)
     )
   }
 

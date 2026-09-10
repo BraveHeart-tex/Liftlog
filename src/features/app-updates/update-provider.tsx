@@ -1,5 +1,5 @@
 import { useDrizzle } from '@/src/providers/database-provider';
-import { captureMessage } from '@sentry/react-native';
+import { captureException, captureMessage } from '@sentry/react-native';
 import { nativeApplicationVersion, nativeBuildVersion } from 'expo-application';
 import Constants from 'expo-constants';
 import {
@@ -31,6 +31,7 @@ import {
 import { generateUuid } from '@/src/lib/utils/uuid.utils';
 import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task.utils';
 import { createAutomaticUpdateScheduler } from './update-announcement';
+import { createAppUpdateReporter } from './update-reporter';
 
 if (Platform.OS !== 'android') {
   applicationUpdateExclusion.hydrate(false);
@@ -98,57 +99,58 @@ export function UpdateProvider({ children }: PropsWithChildren) {
   const attemptCoordinator = useMemo(() => {
     const updater = LiftlogUpdater;
 
-    return exclusionCoordinator && updater
-      ? createUpdateAttemptCoordinator({
-          createAttemptId: generateUuid,
-          begin: request => exclusionCoordinator.begin(request),
-          permission: () => updater.getInstallPermissionAsync(),
-          openPermissionSettings: () => updater.openInstallPermissionSettings(),
-          download: (url, filePath, onProgress) => {
-            const fileUri = filePath.startsWith('file://')
-              ? filePath
-              : `file://${filePath}`;
-            const download = createDownloadResumable(
-              url,
-              fileUri,
-              {},
-              progress =>
-                onProgress(
-                  progress.totalBytesWritten,
-                  progress.totalBytesExpectedToWrite
-                )
-            );
+    if (!exclusionCoordinator || !updater) {
+      return undefined;
+    }
 
-            return {
-              promise: download.downloadAsync().then(result => {
-                if (!result) {
-                  throw Object.assign(new Error('Download cancelled'), {
-                    code: 'UPDATER_CANCELLED'
-                  });
-                }
-              }),
-              cancel: () => download.cancelAsync()
-            };
-          },
-          verify: request => updater.verifyAndStageAsync(request),
-          commit: attemptId => exclusionCoordinator.commit(attemptId),
-          cancel: attemptId => exclusionCoordinator.cancel(attemptId),
-          interrupt: async attemptId => {
-            const native = await updater.interruptAsync(attemptId);
-            applicationUpdateExclusion.reconcile(native.updateExcluded);
+    const reporter = createAppUpdateReporter({
+      captureException,
+      captureMessage,
+      getInstalledBuildInfo: () => updater.getInstalledBuildInfoAsync(),
+      androidApiLevel: Platform.Version,
+      consoleError: (message, error) => console.error(message, error)
+    });
 
-            return native;
-          },
-          getState: () => updater.getStateAsync(),
-          reconcile: () => exclusionCoordinator.hydrate(),
-          reportUnexpected: (stage, errorCode) => {
-            captureMessage('UPDATE_ATTEMPT_FAILED', {
-              level: 'error',
-              extra: { stage, errorCode, androidApiLevel: Platform.Version }
-            });
-          }
-        })
-      : undefined;
+    return createUpdateAttemptCoordinator({
+      createAttemptId: generateUuid,
+      begin: request => exclusionCoordinator.begin(request),
+      permission: () => updater.getInstallPermissionAsync(),
+      openPermissionSettings: () => updater.openInstallPermissionSettings(),
+      download: (url, filePath, onProgress) => {
+        const fileUri = filePath.startsWith('file://')
+          ? filePath
+          : `file://${filePath}`;
+        const download = createDownloadResumable(url, fileUri, {}, progress =>
+          onProgress(
+            progress.totalBytesWritten,
+            progress.totalBytesExpectedToWrite
+          )
+        );
+
+        return {
+          promise: download.downloadAsync().then(result => {
+            if (!result) {
+              throw Object.assign(new Error('Download cancelled'), {
+                code: 'UPDATER_CANCELLED'
+              });
+            }
+          }),
+          cancel: () => download.cancelAsync()
+        };
+      },
+      verify: request => updater.verifyAndStageAsync(request),
+      commit: attemptId => exclusionCoordinator.commit(attemptId),
+      cancel: attemptId => exclusionCoordinator.cancel(attemptId),
+      interrupt: async attemptId => {
+        const native = await updater.interruptAsync(attemptId);
+        applicationUpdateExclusion.reconcile(native.updateExcluded);
+
+        return native;
+      },
+      getState: () => updater.getStateAsync(),
+      reconcile: () => exclusionCoordinator.hydrate(),
+      reportUnexpected: reporter.reportUnexpected
+    });
   }, [exclusionCoordinator]);
   const [attempt, setAttempt] = useState<UpdateAttemptState>({
     status: 'idle'

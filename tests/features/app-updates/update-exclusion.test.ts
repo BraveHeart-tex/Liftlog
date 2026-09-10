@@ -47,7 +47,8 @@ function nativeFake(initial = state('idle')) {
         packageName: 'com.liftlog',
         versionName: '1.0.0',
         versionCode: 10,
-        certificateSha256: 'certificate'
+        certificateSha256: 'certificate',
+        isDebuggable: false
       };
     },
     async getStateAsync() {

@@ -269,11 +269,15 @@ test('a throttled automatic check does not announce a release already installed'
 test('automatic failures are quiet and throttle later automatic checks for 24 hours', async () => {
   let now = 10_000;
   let calls = 0;
+  let reports = 0;
   const cache = persistence();
   const coordinator = createUpdateCoordinator({
     persistence: cache,
     installedBuild: () => ({ versionName: '1.0.3', versionCode: 4 }),
     now: () => now,
+    reportDiagnostic: () => {
+      reports += 1;
+    },
     github: {
       getLatestRelease: async () => {
         calls += 1;
@@ -296,6 +300,7 @@ test('automatic failures are quiet and throttle later automatic checks for 24 ho
   now += 2 * 60 * 60 * 1_000;
   await coordinator.check('automatic');
   assert.equal(calls, 2);
+  assert.equal(reports, 0);
 });
 
 test('Later only suppresses the matching banner and keeps Settings availability', async () => {

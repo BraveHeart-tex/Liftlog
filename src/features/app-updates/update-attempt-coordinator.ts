@@ -29,6 +29,29 @@ export interface UpdateAttemptState {
   errorCode?: string;
 }
 
+export type UpdateAttemptOperation =
+  | 'start'
+  | 'resume_permission'
+  | 'foreground_commit';
+
+export type UpdateAttemptFailureStage =
+  | 'begin'
+  | 'permission'
+  | 'download'
+  | 'verification'
+  | 'commit';
+
+export interface UpdateAttemptFailure {
+  error: unknown;
+  operation: UpdateAttemptOperation;
+  stage: UpdateAttemptFailureStage;
+  errorCode: string;
+  attemptId: string;
+  targetVersionName: string;
+  targetVersionCode: number;
+  candidateSignerMatchesInstalled: boolean | null;
+}
+
 interface DownloadTask {
   promise: Promise<void>;
   cancel(): Promise<void>;
@@ -62,7 +85,64 @@ export interface UpdateAttemptDependencies {
   interrupt(attemptId: string): Promise<NativeUpdateState>;
   getState(): Promise<NativeUpdateState>;
   reconcile(): Promise<NativeUpdateState>;
-  reportUnexpected(stage: string, errorCode: string): void;
+  reportUnexpected(failure: UpdateAttemptFailure): void;
+}
+
+interface FailureContext {
+  operation: UpdateAttemptOperation;
+  stage: UpdateAttemptFailureStage;
+  candidateSignerMatchesInstalled: boolean | null;
+}
+
+const KNOWN_UPDATER_ERROR_CODES = new Set([
+  'UPDATER_ABI_MISMATCH',
+  'UPDATER_ALREADY_COMMITTED',
+  'UPDATER_ANDROID_OWNS_INSTALL',
+  'UPDATER_ATTEMPT_ACTIVE',
+  'UPDATER_CANCELLED',
+  'UPDATER_CERTIFICATE_MISMATCH',
+  'UPDATER_CERTIFICATE_UNAVAILABLE',
+  'UPDATER_CONFIRMATION_MISSING',
+  'UPDATER_CONFIRMATION_UNAVAILABLE',
+  'UPDATER_CONTEXT_UNAVAILABLE',
+  'UPDATER_FILE_CHANGED',
+  'UPDATER_FILE_MISSING',
+  'UPDATER_FOREGROUND_REQUIRED',
+  'UPDATER_HASH_MISMATCH',
+  'UPDATER_INCOMPATIBLE_APK',
+  'UPDATER_INSTALL_BLOCKED',
+  'UPDATER_INSTALL_CANCELLED',
+  'UPDATER_INSTALL_CONFLICT',
+  'UPDATER_INSTALL_FAILED',
+  'UPDATER_INTERRUPTED',
+  'UPDATER_INVALID_APK',
+  'UPDATER_INVALID_REQUEST',
+  'UPDATER_INVALID_STAGE',
+  'UPDATER_PACKAGE_MISMATCH',
+  'UPDATER_PERMISSION_REQUIRED',
+  'UPDATER_SESSION_ACTIVE',
+  'UPDATER_SESSION_MISSING',
+  'UPDATER_SIZE_MISMATCH',
+  'UPDATER_STALE_ATTEMPT',
+  'UPDATER_STATE_WRITE_FAILED',
+  'UPDATER_STORAGE_FAILURE',
+  'UPDATER_UNSAFE_PATH',
+  'UPDATER_VERSION_MISMATCH',
+  'UPDATER_VERSION_NOT_NEWER'
+]);
+
+function updaterErrorCode(error: unknown): string {
+  if (
+    typeof error === 'object' &&
+    error &&
+    'code' in error &&
+    typeof error.code === 'string' &&
+    KNOWN_UPDATER_ERROR_CODES.has(error.code)
+  ) {
+    return error.code;
+  }
+
+  return 'UPDATE_UNEXPECTED';
 }
 
 function terminalState(native: NativeUpdateState): UpdateAttemptState {
@@ -114,8 +194,10 @@ export function createUpdateAttemptCoordinator(
     attemptId: string,
     release: AvailableUpdate,
     fileUri: string,
-    runGeneration: number
+    runGeneration: number,
+    failureContext: FailureContext
   ) => {
+    failureContext.stage = 'permission';
     const permission = await dependencies.permission();
 
     if (runGeneration !== generation) {
@@ -140,6 +222,7 @@ export function createUpdateAttemptCoordinator(
       totalBytes: release.sizeBytes,
       progress: 0
     });
+    failureContext.stage = 'download';
     task = dependencies.download(
       release.apkDownloadUrl,
       fileUri,
@@ -174,6 +257,7 @@ export function createUpdateAttemptCoordinator(
 
     task = undefined;
     publish({ status: 'verifying', attemptId, release });
+    failureContext.stage = 'verification';
     await dependencies.verify({
       attemptId,
       expectedVersionName: release.versionName,
@@ -181,6 +265,7 @@ export function createUpdateAttemptCoordinator(
       expectedSizeBytes: release.sizeBytes,
       expectedSha256: release.sha256
     });
+    failureContext.candidateSignerMatchesInstalled = true;
 
     if (runGeneration !== generation) {
       return;
@@ -192,14 +277,16 @@ export function createUpdateAttemptCoordinator(
       return;
     }
 
-    await commit(attemptId, release, runGeneration);
+    await commit(attemptId, release, runGeneration, failureContext);
   };
 
   const commit = async (
     attemptId: string,
     release: AvailableUpdate,
-    runGeneration: number
+    runGeneration: number,
+    failureContext: FailureContext
   ) => {
+    failureContext.stage = 'commit';
     const committed = await dependencies.commit(attemptId);
 
     if (runGeneration !== generation) {
@@ -220,15 +307,29 @@ export function createUpdateAttemptCoordinator(
     }
   };
 
-  const safelyRun = async (operation: () => Promise<void>, stage: string) => {
+  const safelyRun = async (
+    operation: () => Promise<void>,
+    attemptId: string,
+    release: AvailableUpdate,
+    failureContext: FailureContext
+  ) => {
     try {
       await operation();
     } catch (error) {
-      const code =
-        typeof error === 'object' && error && 'code' in error
-          ? String(error.code)
-          : 'UPDATE_UNEXPECTED';
-      dependencies.reportUnexpected(stage, code);
+      const code = updaterErrorCode(error);
+      dependencies.reportUnexpected({
+        error,
+        operation: failureContext.operation,
+        stage: failureContext.stage,
+        errorCode: code,
+        attemptId,
+        targetVersionName: release.versionName,
+        targetVersionCode: release.versionCode,
+        candidateSignerMatchesInstalled:
+          code === 'UPDATER_CERTIFICATE_MISMATCH'
+            ? false
+            : failureContext.candidateSignerMatchesInstalled
+      });
       publish({ ...state, status: 'failed', errorCode: code });
     }
   };
@@ -254,68 +355,95 @@ export function createUpdateAttemptCoordinator(
 
       const attemptId = dependencies.createAttemptId();
       const runGeneration = ++generation;
-      await safelyRun(async () => {
-        const begun = await dependencies.begin({
-          attemptId,
-          targetVersionName: release.versionName,
-          targetVersionCode: release.versionCode,
-          sizeBytes: release.sizeBytes,
-          sha256: release.sha256
-        });
+      const failureContext: FailureContext = {
+        operation: 'start',
+        stage: 'begin',
+        candidateSignerMatchesInstalled: null
+      };
+      await safelyRun(
+        async () => {
+          const begun = await dependencies.begin({
+            attemptId,
+            targetVersionName: release.versionName,
+            targetVersionCode: release.versionCode,
+            sizeBytes: release.sizeBytes,
+            sha256: release.sha256
+          });
 
-        if (runGeneration !== generation) {
-          return;
-        }
+          if (runGeneration !== generation) {
+            return;
+          }
 
-        if (begun.status === 'blocked') {
-          publish({
-            status: 'failed',
+          if (begun.status === 'blocked') {
+            publish({
+              status: 'failed',
+              attemptId,
+              release,
+              blockReason: begun.reason
+            });
+
+            return;
+          }
+
+          if (begun.status !== 'started') {
+            throw new Error('Unexpected begin result');
+          }
+
+          const fileUri = begun.state.fileUri;
+
+          if (!fileUri) {
+            throw Object.assign(new Error('Missing native download target'), {
+              code: 'UPDATER_FILE_MISSING'
+            });
+          }
+
+          await runAfterPermission(
             attemptId,
             release,
-            blockReason: begun.reason
-          });
-
-          return;
-        }
-
-        if (begun.status !== 'started') {
-          throw new Error('Unexpected begin result');
-        }
-
-        const fileUri = begun.state.fileUri;
-
-        if (!fileUri) {
-          throw Object.assign(new Error('Missing native download target'), {
-            code: 'UPDATER_FILE_MISSING'
-          });
-        }
-
-        await runAfterPermission(attemptId, release, fileUri, runGeneration);
-      }, 'attempt');
+            fileUri,
+            runGeneration,
+            failureContext
+          );
+        },
+        attemptId,
+        release,
+        failureContext
+      );
     },
     async resumePermission() {
       if (state.status !== 'permission' || !state.attemptId || !state.release) {
         return;
       }
 
-      const native = await dependencies.getState();
-      const fileUri = native.fileUri;
-
-      if (!fileUri || native.attemptId !== state.attemptId) {
-        publish(terminalState(native));
-
-        return;
-      }
-
+      const attemptId = state.attemptId;
+      const release = state.release;
+      const failureContext: FailureContext = {
+        operation: 'resume_permission',
+        stage: 'permission',
+        candidateSignerMatchesInstalled: null
+      };
       await safelyRun(
-        () =>
-          runAfterPermission(
-            state.attemptId!,
-            state.release!,
+        async () => {
+          const native = await dependencies.getState();
+          const fileUri = native.fileUri;
+
+          if (!fileUri || native.attemptId !== attemptId) {
+            publish(terminalState(native));
+
+            return;
+          }
+
+          await runAfterPermission(
+            attemptId,
+            release,
             fileUri,
-            generation
-          ),
-        'permission'
+            generation,
+            failureContext
+          );
+        },
+        attemptId,
+        release,
+        failureContext
       );
     },
     async cancel() {
@@ -357,9 +485,22 @@ export function createUpdateAttemptCoordinator(
         state.attemptId &&
         state.release
       ) {
+        const failureContext: FailureContext = {
+          operation: 'foreground_commit',
+          stage: 'commit',
+          candidateSignerMatchesInstalled: true
+        };
         await safelyRun(
-          () => commit(state.attemptId!, state.release!, generation),
-          'commit'
+          () =>
+            commit(
+              state.attemptId!,
+              state.release!,
+              generation,
+              failureContext
+            ),
+          state.attemptId,
+          state.release,
+          failureContext
         );
       } else {
         await this.reconcile();
