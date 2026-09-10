@@ -62,6 +62,78 @@ test('presents truthful attempt status and one recovery action', () => {
   );
 });
 
+test('presents recovery guidance for actionable native failures', () => {
+  const cases = [
+    [
+      'UPDATER_INCOMPATIBLE_APK',
+      'This update is not compatible with your device. Download a compatible APK.'
+    ],
+    [
+      'UPDATER_INSTALL_CONFLICT',
+      'The update conflicts with the installed app. Install it from the same source as your current app.'
+    ],
+    [
+      'UPDATER_INVALID_APK',
+      'Android rejected the update file. Download the update again.'
+    ],
+    [
+      'UPDATER_INSTALL_TIMEOUT',
+      'Android did not confirm the installation in time. Try again.'
+    ],
+    [
+      'UPDATER_CONFIRMATION_UNAVAILABLE',
+      'Could not confirm whether the update installed. Restart LiftLog and check again.'
+    ],
+    [
+      'UPDATER_ABI_MISMATCH',
+      "This update does not support your device's processor. Download a compatible APK."
+    ],
+    [
+      'UPDATER_FILE_CHANGED',
+      'The update file changed before installation. Download it again.'
+    ]
+  ] as const;
+
+  for (const [errorCode, message] of cases) {
+    assert.deepEqual(
+      presentUpdateAttempt({ status: 'failed', errorCode }),
+      { message, action: 'retry' },
+      errorCode
+    );
+  }
+});
+
+test('keeps internal failures generic and expected outcomes unchanged', () => {
+  for (const errorCode of [
+    'UPDATER_SESSION_MISSING',
+    'UPDATER_INVALID_STAGE',
+    'UPDATER_STATE_WRITE_FAILED',
+    'UPDATER_CONFIRMATION_MISSING',
+    'UPDATER_INSTALL_FAILED',
+    'UPDATE_UNEXPECTED',
+    'UPDATER_UNKNOWN',
+    undefined
+  ]) {
+    assert.deepEqual(
+      presentUpdateAttempt({ status: 'failed', errorCode }),
+      {
+        message: 'Could not install the update. Try again.',
+        action: 'retry'
+      },
+      errorCode
+    );
+  }
+
+  assert.deepEqual(presentUpdateAttempt({ status: 'cancelled' }), {
+    message: 'Update cancelled.',
+    action: 'retry'
+  });
+  assert.deepEqual(presentUpdateAttempt({ status: 'interrupted' }), {
+    message: 'Update interrupted. Retry starts from the beginning.',
+    action: 'retry'
+  });
+});
+
 test('caps remote notes and formats the APK size in MB', () => {
   const presentation = presentUpdateState({
     status: 'available',

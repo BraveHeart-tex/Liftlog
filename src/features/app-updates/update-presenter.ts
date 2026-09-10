@@ -137,6 +137,20 @@ export function presentUpdateAttempt(state: UpdateAttemptState): {
 
 function failureMessage(code?: string) {
   const messages: Record<string, string> = {
+    UPDATER_ABI_MISMATCH:
+      "This update does not support your device's processor. Download a compatible APK.",
+    UPDATER_CONFIRMATION_UNAVAILABLE:
+      'Could not confirm whether the update installed. Restart LiftLog and check again.',
+    UPDATER_FILE_CHANGED:
+      'The update file changed before installation. Download it again.',
+    UPDATER_INCOMPATIBLE_APK:
+      'This update is not compatible with your device. Download a compatible APK.',
+    UPDATER_INSTALL_CONFLICT:
+      'The update conflicts with the installed app. Install it from the same source as your current app.',
+    UPDATER_INSTALL_TIMEOUT:
+      'Android did not confirm the installation in time. Try again.',
+    UPDATER_INVALID_APK:
+      'Android rejected the update file. Download the update again.',
     UPDATER_STORAGE_FAILURE: 'Not enough storage to prepare the update.',
     UPDATER_SIZE_MISMATCH: 'The downloaded update has the wrong size.',
     UPDATER_HASH_MISMATCH: 'The downloaded update could not be verified.',

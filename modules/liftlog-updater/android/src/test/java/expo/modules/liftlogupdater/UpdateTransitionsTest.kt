@@ -57,6 +57,10 @@ class UpdateTransitionsTest {
       InstallerStatusMapping.terminal(PackageInstaller.STATUS_FAILURE_STORAGE)
     )
     assertEquals(
+      InstallerTerminalResult(UpdateStage.FAILED, "UPDATER_INSTALL_TIMEOUT"),
+      InstallerStatusMapping.terminal(PackageInstaller.STATUS_FAILURE_TIMEOUT)
+    )
+    assertEquals(
       InstallerTerminalResult(UpdateStage.FAILED, "UPDATER_INSTALL_FAILED"),
       InstallerStatusMapping.terminal(Int.MIN_VALUE)
     )

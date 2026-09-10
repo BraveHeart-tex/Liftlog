@@ -88,6 +88,7 @@ internal object InstallerStatusMapping {
     PackageInstaller.STATUS_FAILURE_BLOCKED -> InstallerTerminalResult(UpdateStage.FAILED, "UPDATER_INSTALL_BLOCKED")
     PackageInstaller.STATUS_FAILURE_CONFLICT -> InstallerTerminalResult(UpdateStage.FAILED, "UPDATER_INSTALL_CONFLICT")
     PackageInstaller.STATUS_FAILURE_INVALID -> InstallerTerminalResult(UpdateStage.FAILED, "UPDATER_INVALID_APK")
+    PackageInstaller.STATUS_FAILURE_TIMEOUT -> InstallerTerminalResult(UpdateStage.FAILED, "UPDATER_INSTALL_TIMEOUT")
     else -> InstallerTerminalResult(UpdateStage.FAILED, "UPDATER_INSTALL_FAILED")
   }
 }
