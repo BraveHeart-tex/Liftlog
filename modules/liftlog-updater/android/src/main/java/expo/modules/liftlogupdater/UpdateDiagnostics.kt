@@ -121,6 +121,34 @@ internal object InstallerDiagnosticFactory {
   }
 }
 
+internal object LegacyFailureDiagnosticFactory {
+  fun create(
+    stage: UpdateStage,
+    attemptId: String?,
+    resultCode: String?,
+    targetVersionName: String?,
+    targetVersionCode: Long,
+    occurredAtMillis: Long
+  ): UpdateFailureDiagnostic? {
+    if (stage != UpdateStage.FAILED || attemptId == null || resultCode == null) return null
+
+    return UpdateFailureDiagnostic(
+      diagnosticId = "legacy-$attemptId",
+      attemptId = attemptId,
+      occurredAt = occurredAtMillis,
+      source = DiagnosticSource.ANDROID_INSTALLER_CALLBACK,
+      nativeStage = stage,
+      resultCode = resultCode,
+      targetVersionName = targetVersionName,
+      targetVersionCode = targetVersionCode.takeIf { it >= 0 },
+      rawStatus = null,
+      statusMessage = null,
+      blockingPackage = null,
+      storageLocation = null
+    )
+  }
+}
+
 internal data class PendingUpdateDiagnostics(
   val diagnostics: List<UpdateFailureDiagnostic>,
   val droppedDiagnosticCount: Long
@@ -141,22 +169,16 @@ internal data class DiagnosticBacklogState(
 internal interface DiagnosticPersistence {
   fun load(): DiagnosticBacklogState
   fun save(state: DiagnosticBacklogState)
+  fun materializeLegacy(diagnostic: UpdateFailureDiagnostic): Boolean
 }
 
 internal class UpdateDiagnosticBacklog(private val persistence: DiagnosticPersistence) {
   fun append(diagnostic: UpdateFailureDiagnostic) = synchronized(lock) {
-    val current = persistence.load()
-    val overflow = current.diagnostics.size >= MAX_DIAGNOSTICS
-    val retained = if (overflow) current.diagnostics.drop(1) else current.diagnostics
-    val droppedExposed = overflow && current.diagnostics.firstOrNull()?.diagnosticId == current.exposedDiagnosticId
-    persistence.save(
-      current.copy(
-        diagnostics = retained + diagnostic,
-        droppedDiagnosticCount = current.droppedDiagnosticCount + if (overflow) 1 else 0,
-        exposedDiagnosticId = if (droppedExposed) null else current.exposedDiagnosticId,
-        exposedDroppedDiagnosticCount = if (droppedExposed) 0 else current.exposedDroppedDiagnosticCount
-      )
-    )
+    persistence.save(appending(persistence.load(), diagnostic))
+  }
+
+  fun materializeLegacy(diagnostic: UpdateFailureDiagnostic?): Boolean = synchronized(lock) {
+    diagnostic != null && persistence.materializeLegacy(diagnostic)
   }
 
   fun snapshotPendingForSubmission(): PendingUpdateDiagnostics = synchronized(lock) {
@@ -198,6 +220,21 @@ internal class UpdateDiagnosticBacklog(private val persistence: DiagnosticPersis
   companion object {
     const val MAX_DIAGNOSTICS = 5
     private val lock = Any()
+
+    fun appending(
+      current: DiagnosticBacklogState,
+      diagnostic: UpdateFailureDiagnostic
+    ): DiagnosticBacklogState {
+      val overflow = current.diagnostics.size >= MAX_DIAGNOSTICS
+      val retained = if (overflow) current.diagnostics.drop(1) else current.diagnostics
+      val droppedExposed = overflow && current.diagnostics.firstOrNull()?.diagnosticId == current.exposedDiagnosticId
+      return current.copy(
+        diagnostics = retained + diagnostic,
+        droppedDiagnosticCount = current.droppedDiagnosticCount + if (overflow) 1 else 0,
+        exposedDiagnosticId = if (droppedExposed) null else current.exposedDiagnosticId,
+        exposedDroppedDiagnosticCount = if (droppedExposed) 0 else current.exposedDroppedDiagnosticCount
+      )
+    }
   }
 }
 
@@ -216,7 +253,31 @@ internal class SharedPreferencesDiagnosticPersistence(
   )
 
   override fun save(state: DiagnosticBacklogState) {
-    val saved = preferences.edit()
+    persist(state, preferences.edit())
+  }
+
+  override fun materializeLegacy(diagnostic: UpdateFailureDiagnostic): Boolean {
+    val materializedAttempts = preferences
+      .getStringSet(UpdaterContract.LEGACY_DIAGNOSTIC_ATTEMPT_IDS, emptySet())
+      .orEmpty()
+    if (diagnostic.attemptId in materializedAttempts) {
+      return false
+    }
+    val current = load()
+    val exists = current.diagnostics.any { it.attemptId == diagnostic.attemptId }
+    val next = if (exists) current else UpdateDiagnosticBacklog.appending(current, diagnostic)
+    persist(
+      next,
+      preferences.edit().putStringSet(
+        UpdaterContract.LEGACY_DIAGNOSTIC_ATTEMPT_IDS,
+        materializedAttempts + diagnostic.attemptId
+      )
+    )
+    return !exists
+  }
+
+  private fun persist(state: DiagnosticBacklogState, editor: SharedPreferences.Editor) {
+    val saved = editor
       .putString(UpdaterContract.DIAGNOSTICS, state.diagnostics.joinToString("\n", transform = UpdateDiagnosticCodec::encode))
       .putLong(UpdaterContract.DROPPED_DIAGNOSTIC_COUNT, state.droppedDiagnosticCount)
       .putString(UpdaterContract.EXPOSED_DIAGNOSTIC_ID, state.exposedDiagnosticId)

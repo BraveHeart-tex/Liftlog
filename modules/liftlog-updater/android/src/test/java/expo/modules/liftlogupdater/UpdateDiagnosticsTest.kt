@@ -84,6 +84,42 @@ class UpdateDiagnosticsTest {
   }
 
   @Test
+  fun `legacy failed state materializes once and acknowledged records stay materialized`() {
+    val persistence = InMemoryDiagnosticPersistence()
+    val backlog = UpdateDiagnosticBacklog(persistence)
+
+    assertTrue(backlog.materializeLegacy(legacyDiagnostic("attempt-1")))
+    assertFalse(backlog.materializeLegacy(legacyDiagnostic("attempt-1")))
+    assertTrue(backlog.acknowledge("attempt-1", "legacy-attempt-1"))
+    assertFalse(backlog.materializeLegacy(legacyDiagnostic("attempt-1")))
+    assertEquals(0, backlog.snapshotPendingForSubmission().diagnostics.size)
+    assertTrue(backlog.materializeLegacy(legacyDiagnostic("attempt-2")))
+    assertFalse(backlog.materializeLegacy(legacyDiagnostic("attempt-1")))
+  }
+
+  @Test
+  fun `existing Android diagnostic prevents duplicate legacy materialization after acknowledgement`() {
+    val persistence = InMemoryDiagnosticPersistence()
+    val backlog = UpdateDiagnosticBacklog(persistence)
+    backlog.append(diagnostic(1))
+
+    assertFalse(backlog.materializeLegacy(legacyDiagnostic("attempt-1")))
+    assertEquals(listOf("diagnostic-1"), backlog.snapshotPendingForSubmission().diagnostics.map { it.diagnosticId })
+    assertTrue(backlog.acknowledge("attempt-1", "diagnostic-1"))
+    assertFalse(backlog.materializeLegacy(legacyDiagnostic("attempt-1")))
+    assertEquals(0, backlog.snapshotPendingForSubmission().diagnostics.size)
+  }
+
+  @Test
+  fun `legacy diagnostics require failed state attempt identity and result code`() {
+    assertNull(LegacyFailureDiagnosticFactory.create(UpdateStage.CANCELLED, "attempt-1", "cancelled", null, -1, 1))
+    assertNull(LegacyFailureDiagnosticFactory.create(UpdateStage.INTERRUPTED, "attempt-1", "interrupted", null, -1, 1))
+    assertNull(LegacyFailureDiagnosticFactory.create(UpdateStage.SUCCEEDED, "attempt-1", "installed", null, -1, 1))
+    assertNull(LegacyFailureDiagnosticFactory.create(UpdateStage.FAILED, null, "UPDATER_INSTALL_FAILED", null, -1, 1))
+    assertNull(LegacyFailureDiagnosticFactory.create(UpdateStage.FAILED, "attempt-1", null, null, -1, 1))
+  }
+
+  @Test
   fun `backlog is durable FIFO capped and rejects stale acknowledgement`() {
     val persistence = InMemoryDiagnosticPersistence()
     val firstStore = UpdateDiagnosticBacklog(persistence)
@@ -126,14 +162,32 @@ class UpdateDiagnosticsTest {
     blockingPackage = null,
     storageLocation = null
   )
+
+  private fun legacyDiagnostic(attemptId: String) = LegacyFailureDiagnosticFactory.create(
+    stage = UpdateStage.FAILED,
+    attemptId = attemptId,
+    resultCode = "UPDATER_SESSION_MISSING",
+    targetVersionName = "1.1.0",
+    targetVersionCode = 11,
+    occurredAtMillis = 1
+  )!!
 }
 
 private class InMemoryDiagnosticPersistence : DiagnosticPersistence {
   private var state = DiagnosticBacklogState()
+  private val legacyAttemptIds = mutableSetOf<String>()
 
   override fun load(): DiagnosticBacklogState = state
 
   override fun save(state: DiagnosticBacklogState) {
     this.state = state
+  }
+
+  override fun materializeLegacy(diagnostic: UpdateFailureDiagnostic): Boolean {
+    if (diagnostic.attemptId in legacyAttemptIds) return false
+    val exists = state.diagnostics.any { it.attemptId == diagnostic.attemptId }
+    if (!exists) state = UpdateDiagnosticBacklog.appending(state, diagnostic)
+    legacyAttemptIds.add(diagnostic.attemptId)
+    return !exists
   }
 }

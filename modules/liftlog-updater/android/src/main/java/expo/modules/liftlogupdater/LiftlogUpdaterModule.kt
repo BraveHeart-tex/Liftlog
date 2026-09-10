@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import expo.modules.kotlin.functions.Coroutine
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
@@ -331,6 +332,8 @@ class LiftlogUpdaterModule : Module() {
       }
     }
     if (store.stage().isTerminal) cleanupOwnedFiles()
+    runCatching { store.materializeLegacyFailure(System.currentTimeMillis()) }
+      .onFailure { error -> Log.e("LiftlogUpdater", "Failed to materialize legacy update diagnostic", error) }
     return store.state()
   }
 

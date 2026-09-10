@@ -28,6 +28,7 @@ internal object UpdaterContract {
   const val DROPPED_DIAGNOSTIC_COUNT = "dropped_diagnostic_count"
   const val EXPOSED_DIAGNOSTIC_ID = "exposed_diagnostic_id"
   const val EXPOSED_DROPPED_DIAGNOSTIC_COUNT = "exposed_dropped_diagnostic_count"
+  const val LEGACY_DIAGNOSTIC_ATTEMPT_IDS = "legacy_diagnostic_attempt_ids"
 }
 
 internal enum class UpdateStage(val wireValue: String) {

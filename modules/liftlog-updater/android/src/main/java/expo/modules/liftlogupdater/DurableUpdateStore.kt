@@ -43,6 +43,17 @@ internal class DurableUpdateStore(context: Context) {
   fun acknowledgeDiagnostic(attemptId: String, diagnosticId: String): Boolean =
     diagnostics.acknowledge(attemptId, diagnosticId)
 
+  fun materializeLegacyFailure(occurredAtMillis: Long): Boolean = diagnostics.materializeLegacy(
+    LegacyFailureDiagnosticFactory.create(
+      stage = stage(),
+      attemptId = attemptId(),
+      resultCode = preferences.getString(UpdaterContract.RESULT_CODE, null),
+      targetVersionName = targetVersionName(),
+      targetVersionCode = targetVersionCode(),
+      occurredAtMillis = occurredAtMillis
+    )
+  )
+
   fun markVerifying() = setStage(UpdateStage.VERIFYING)
 
   fun recordSession(sessionId: Int) {

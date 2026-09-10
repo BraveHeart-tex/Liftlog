@@ -199,6 +199,70 @@ test('captures the original exception with stable tags and safe native build ext
   );
 });
 
+test('captures startup and foreground reconciliation exceptions with safe native context', async () => {
+  const source = new Error('reconciliation failed');
+  const captures: { error: unknown; context: unknown }[] = [];
+  const reporter = createAppUpdateReporter({
+    captureException: (error, context) => {
+      captures.push({ error, context });
+
+      return 'event-1';
+    },
+    captureMessage: () => 'event-1',
+    getInstalledBuildInfo: async () => ({
+      packageName: 'com.liftlog',
+      versionName: '1.0.4',
+      versionCode: 5,
+      certificateSha256: 'secret-certificate-hash',
+      isDebuggable: false
+    }),
+    getNativeState: async () =>
+      nativeState('committed', {
+        attemptId: 'attempt-legacy',
+        targetVersionName: '1.1.0',
+        targetVersionCode: 11
+      }),
+    androidApiLevel: 35,
+    consoleError: () => undefined
+  });
+
+  reporter.reportReconciliationFailure(source, 'startup_reconcile');
+  reporter.reportReconciliationFailure(source, 'foreground_reconcile');
+  await new Promise(resolve => setImmediate(resolve));
+
+  assert.equal(captures.length, 2);
+  assert.equal(
+    captures.every(capture => capture.error === source),
+    true
+  );
+  assert.deepEqual(
+    captures.map(capture => capture.context),
+    ['startup_reconcile', 'foreground_reconcile'].map(operation => ({
+      level: 'error',
+      tags: {
+        feature: 'app_updates',
+        operation,
+        stage: 'reconcile',
+        updater_error_code: 'UPDATE_RECONCILIATION_FAILED'
+      },
+      extra: {
+        attemptId: 'attempt-legacy',
+        installedVersionName: '1.0.4',
+        installedVersionCode: 5,
+        targetVersionName: '1.1.0',
+        targetVersionCode: 11,
+        nativeStage: 'committed',
+        androidApiLevel: 35,
+        isDebuggable: false
+      }
+    }))
+  );
+  assert.doesNotMatch(
+    JSON.stringify(captures),
+    /packageName|certificate|secret/i
+  );
+});
+
 test('uses a safe message fallback when enrichment and a non-Error rejection fail', async () => {
   const messages: { message: string; context: unknown }[] = [];
   const consoleErrors: unknown[] = [];
