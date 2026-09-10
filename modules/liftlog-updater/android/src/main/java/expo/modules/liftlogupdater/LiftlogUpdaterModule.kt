@@ -40,6 +40,14 @@ class LiftlogUpdaterModule : Module() {
       store.state()
     }
 
+    AsyncFunction("getPendingDiagnosticsAsync") {
+      store.pendingDiagnostics().toMap()
+    }
+
+    AsyncFunction("acknowledgeDiagnosticAsync") { request: Map<String, Any?> ->
+      store.acknowledgeDiagnostic(request.string("attemptId"), request.string("diagnosticId"))
+    }
+
     AsyncFunction("reconcileAsync") {
       reconcile()
     }

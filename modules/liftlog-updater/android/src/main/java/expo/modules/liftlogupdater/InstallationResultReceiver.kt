@@ -11,8 +11,10 @@ import android.content.Intent
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import java.io.File
 import java.nio.file.Files
+import java.util.UUID
 
 class InstallationResultReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
@@ -31,17 +33,57 @@ class InstallationResultReceiver : BroadcastReceiver() {
             PendingConfirmationRegistry.hold(callbackAttemptId!!, continuation)
             postContinuationNotification(context, callbackSessionId, continuation)
           }
-        } ?: store.finish(UpdateStage.FAILED, "UPDATER_CONFIRMATION_MISSING")
+        } ?: run {
+          appendFailureDiagnostic(
+            store,
+            intent,
+            callbackAttemptId!!,
+            PackageInstaller.STATUS_PENDING_USER_ACTION,
+            "UPDATER_CONFIRMATION_MISSING"
+          )
+          store.finish(UpdateStage.FAILED, "UPDATER_CONFIRMATION_MISSING")
+        }
       }
       PackageInstaller.STATUS_SUCCESS -> {
         // Commit callbacks are not proof of installation. Reconciliation owns success.
         store.setStage(UpdateStage.COMMITTED)
       }
-      else -> InstallerStatusMapping.terminal(
-        intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
-      ).let { store.finish(it.stage, it.code) }
+      else -> {
+        val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
+        val terminal = InstallerStatusMapping.terminal(status)
+        if (terminal.stage == UpdateStage.FAILED) {
+          appendFailureDiagnostic(store, intent, callbackAttemptId!!, status, terminal.code)
+        }
+        store.finish(terminal.stage, terminal.code)
+      }
     }
     if (store.stage().isTerminal) deleteOwnedArtifact(context, store)
+  }
+
+  private fun appendFailureDiagnostic(
+    store: DurableUpdateStore,
+    intent: Intent,
+    attemptId: String,
+    status: Int,
+    resultCode: String
+  ) {
+    runCatching {
+      InstallerDiagnosticFactory.create(
+        attemptId = attemptId,
+        nativeStage = store.stage(),
+        targetVersionName = store.targetVersionName(),
+        targetVersionCode = store.targetVersionCode(),
+        status = status,
+        statusMessage = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE),
+        blockingPackage = intent.getStringExtra(PackageInstaller.EXTRA_OTHER_PACKAGE_NAME),
+        storagePath = intent.getStringExtra(PackageInstaller.EXTRA_STORAGE_PATH),
+        diagnosticId = UUID.randomUUID().toString(),
+        occurredAtMillis = System.currentTimeMillis(),
+        resultCode = resultCode
+      )?.let(store::appendDiagnostic)
+    }.onFailure { error ->
+      Log.e(TAG, "Failed to persist sanitized update diagnostic", error)
+    }
   }
 
   private fun deleteOwnedArtifact(context: Context, store: DurableUpdateStore) {
@@ -99,6 +141,10 @@ class InstallationResultReceiver : BroadcastReceiver() {
       .setAutoCancel(true)
       .build()
     manager.notify(UpdaterContract.NOTIFICATION_ID, notification)
+  }
+
+  private companion object {
+    const val TAG = "LiftlogUpdater"
   }
 }
 

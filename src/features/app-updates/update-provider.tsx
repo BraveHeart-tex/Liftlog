@@ -32,6 +32,7 @@ import { generateUuid } from '@/src/lib/utils/uuid.utils';
 import { scheduleIdleTask } from '@/src/lib/utils/schedule-idle-task.utils';
 import { createAutomaticUpdateScheduler } from './update-announcement';
 import { createAppUpdateReporter } from './update-reporter';
+import { createUpdateDiagnosticReporter } from './update-diagnostic-reporter';
 
 if (Platform.OS !== 'android') {
   applicationUpdateExclusion.hydrate(false);
@@ -93,6 +94,24 @@ export function UpdateProvider({ children }: PropsWithChildren) {
       }),
     [repository]
   );
+  const diagnosticReporter = useMemo(() => {
+    const updater = LiftlogUpdater;
+
+    if (Platform.OS !== 'android' || !updater) {
+      return undefined;
+    }
+
+    return createUpdateDiagnosticReporter({
+      getPendingDiagnostics: () => updater.getPendingDiagnosticsAsync(),
+      acknowledge: (attemptId, diagnosticId) =>
+        updater.acknowledgeDiagnosticAsync({ attemptId, diagnosticId }),
+      captureMessage,
+      getInstalledBuildInfo: () => updater.getInstalledBuildInfoAsync(),
+      androidApiLevel: Platform.Version,
+      now: Date.now,
+      consoleError: (message, error) => console.error(message, error)
+    });
+  }, []);
   const [state, setState] = useState<UpdateState>(() =>
     coordinator.currentState()
   );
@@ -191,6 +210,8 @@ export function UpdateProvider({ children }: PropsWithChildren) {
         console.error('Failed to reconcile application update state', error);
       })
       .finally(() => {
+        void diagnosticReporter?.drainOne();
+
         if (mounted) {
           setIsExclusionHydrated(true);
         }
@@ -199,7 +220,7 @@ export function UpdateProvider({ children }: PropsWithChildren) {
     return () => {
       mounted = false;
     };
-  }, [attemptCoordinator, exclusionCoordinator]);
+  }, [attemptCoordinator, diagnosticReporter, exclusionCoordinator]);
   useEffect(() => {
     if (!attemptCoordinator) {
       return;
@@ -235,7 +256,9 @@ export function UpdateProvider({ children }: PropsWithChildren) {
 
     const subscription = AppState.addEventListener('change', nextState => {
       if (nextState === 'active') {
-        void attemptCoordinator.foregrounded();
+        void attemptCoordinator
+          .foregrounded()
+          .finally(() => diagnosticReporter?.drainOne());
         automaticSchedulerRef.current.foregrounded();
       } else {
         void attemptCoordinator.backgrounded();
@@ -243,7 +266,7 @@ export function UpdateProvider({ children }: PropsWithChildren) {
     });
 
     return () => subscription.remove();
-  }, [attemptCoordinator]);
+  }, [attemptCoordinator, diagnosticReporter]);
   const checkForUpdates = useCallback(async () => {
     setState(current => ({ ...current, status: 'checking', error: undefined }));
     setState(await coordinator.check('manual'));

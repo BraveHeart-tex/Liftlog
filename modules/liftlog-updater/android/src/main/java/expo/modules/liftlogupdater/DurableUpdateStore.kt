@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 internal class DurableUpdateStore(context: Context) {
   private val preferences: SharedPreferences =
     context.getSharedPreferences(UpdaterContract.PREFERENCES, Context.MODE_PRIVATE)
+  private val diagnostics = UpdateDiagnosticBacklog(SharedPreferencesDiagnosticPersistence(preferences))
 
   fun attemptId(): String? = preferences.getString(UpdaterContract.ATTEMPT_ID, null)
   fun stage(): UpdateStage = UpdateStage.fromWire(preferences.getString(UpdaterContract.STAGE, null))
@@ -24,7 +25,7 @@ internal class DurableUpdateStore(context: Context) {
     sha256: String,
     filePath: String
   ) {
-    persist(preferences.edit().clear()
+    persist(clearLifecycle(preferences.edit())
       .putString(UpdaterContract.ATTEMPT_ID, attemptId)
       .putString(UpdaterContract.STAGE, UpdateStage.DOWNLOADING.wireValue)
       .putString(UpdaterContract.TARGET_VERSION_NAME, versionName)
@@ -34,6 +35,13 @@ internal class DurableUpdateStore(context: Context) {
       .putString(UpdaterContract.FILE_PATH, filePath)
       .putBoolean(UpdaterContract.UPDATE_EXCLUDED, true))
   }
+
+  fun appendDiagnostic(diagnostic: UpdateFailureDiagnostic) = diagnostics.append(diagnostic)
+
+  fun pendingDiagnostics(): PendingUpdateDiagnostics = diagnostics.snapshotPendingForSubmission()
+
+  fun acknowledgeDiagnostic(attemptId: String, diagnosticId: String): Boolean =
+    diagnostics.acknowledge(attemptId, diagnosticId)
 
   fun markVerifying() = setStage(UpdateStage.VERIFYING)
 
@@ -76,6 +84,20 @@ internal class DurableUpdateStore(context: Context) {
   private fun persist(editor: SharedPreferences.Editor) {
     if (!editor.commit()) throw UpdaterException("UPDATER_STATE_WRITE_FAILED", "Could not persist updater state")
   }
+
+  private fun clearLifecycle(editor: SharedPreferences.Editor): SharedPreferences.Editor = editor
+    .remove(UpdaterContract.ATTEMPT_ID)
+    .remove(UpdaterContract.STAGE)
+    .remove(UpdaterContract.TARGET_VERSION_NAME)
+    .remove(UpdaterContract.TARGET_VERSION_CODE)
+    .remove(UpdaterContract.EXPECTED_SIZE)
+    .remove(UpdaterContract.EXPECTED_HASH)
+    .remove(UpdaterContract.FILE_PATH)
+    .remove(UpdaterContract.SESSION_ID)
+    .remove(UpdaterContract.PENDING_CONFIRMATION)
+    .remove(UpdaterContract.UPDATE_EXCLUDED)
+    .remove(UpdaterContract.RESULT_CODE)
+    .remove(UpdaterContract.COMMITTED_AT)
 
   fun state(): Map<String, Any?> = mapOf(
     "attemptId" to attemptId(),

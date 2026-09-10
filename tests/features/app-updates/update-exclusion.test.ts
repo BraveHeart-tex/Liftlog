@@ -56,6 +56,12 @@ function nativeFake(initial = state('idle')) {
 
       return current;
     },
+    async getPendingDiagnosticsAsync() {
+      return { diagnostics: [], droppedDiagnosticCount: 0 };
+    },
+    async acknowledgeDiagnosticAsync() {
+      return false;
+    },
     async reconcileAsync() {
       calls.push('reconcile');
 

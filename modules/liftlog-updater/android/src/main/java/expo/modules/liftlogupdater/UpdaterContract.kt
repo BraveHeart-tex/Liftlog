@@ -24,6 +24,10 @@ internal object UpdaterContract {
   const val UPDATE_EXCLUDED = "update_excluded"
   const val RESULT_CODE = "result_code"
   const val COMMITTED_AT = "committed_at"
+  const val DIAGNOSTICS = "diagnostics"
+  const val DROPPED_DIAGNOSTIC_COUNT = "dropped_diagnostic_count"
+  const val EXPOSED_DIAGNOSTIC_ID = "exposed_diagnostic_id"
+  const val EXPOSED_DROPPED_DIAGNOSTIC_COUNT = "exposed_dropped_diagnostic_count"
 }
 
 internal enum class UpdateStage(val wireValue: String) {

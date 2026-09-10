@@ -61,9 +61,34 @@ export type InstallPermissionStatus = {
   settingsSupported: boolean;
 };
 
+export type UpdateFailureDiagnostic = {
+  diagnosticId: string;
+  attemptId: string;
+  occurredAt: number;
+  source: 'android_installer_callback';
+  nativeStage: UpdateStage;
+  resultCode: string;
+  targetVersionName: string | null;
+  targetVersionCode: number | null;
+  rawStatus: number | null;
+  statusMessage: string | null;
+  blockingPackage: string | null;
+  storageLocation: 'internal' | 'external' | 'other' | null;
+};
+
+export type PendingUpdateDiagnostics = {
+  diagnostics: UpdateFailureDiagnostic[];
+  droppedDiagnosticCount: number;
+};
+
 export interface LiftlogUpdaterApi {
   getInstalledBuildInfoAsync(): Promise<InstalledBuildInfo>;
   getStateAsync(): Promise<NativeUpdateState>;
+  getPendingDiagnosticsAsync(): Promise<PendingUpdateDiagnostics>;
+  acknowledgeDiagnosticAsync(request: {
+    attemptId: string;
+    diagnosticId: string;
+  }): Promise<boolean>;
   reconcileAsync(): Promise<NativeUpdateState>;
   beginAttemptAsync(request: BeginAttemptRequest): Promise<NativeUpdateState>;
   getInstallPermissionAsync(): Promise<InstallPermissionStatus>;
