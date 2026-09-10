@@ -16,6 +16,18 @@ Keep the JKS and real values outside the repository. `.gitignore` rejects JKS an
 
 Run `pnpm run android:release:single-arch`. It performs a clean Android prebuild, builds only `arm64-v8a`, then runs `scripts/verify-android-release.sh`. The verifier compares the APK with `app.json` and `config/android-release.json` for package, version name/code, ABI, and signer fingerprint.
 
+## Prepare a release
+
+From a clean `main` branch containing the current `origin/main`, run one of:
+
+```sh
+pnpm release:prepare patch
+pnpm release:prepare minor
+pnpm release:prepare major
+```
+
+The command validates the repository, updates `package.json` and `app.json`, increments the Android version code, creates the release preparation commit, and adds the matching `v<version>` tag. It does not push. Publish the commit and tag with the explicit command printed when preparation succeeds.
+
 ## Backup readiness
 
 Before distributing the first production-signed APK:
