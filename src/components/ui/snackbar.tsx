@@ -20,6 +20,13 @@ import {
   Platform,
   View
 } from 'react-native';
+import Reanimated, {
+  Easing as ReanimatedEasing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
 
@@ -27,9 +34,15 @@ const DEFAULT_SNACKBAR_DURATION_MS = 4000;
 const SNACKBAR_DEDUPLICATION_WINDOW_MS = 1500;
 const SNACKBAR_BOTTOM_OFFSET = 16;
 const SNACKBAR_KEYBOARD_TRANSITION_MS = 220;
-const SNACKBAR_ENTER_OFFSET = 12;
-const SNACKBAR_EXIT_OFFSET = 12;
-const SNACKBAR_EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
+const SNACKBAR_ENTER_DURATION_MS = 240;
+const SNACKBAR_EXIT_DURATION_MS = 170;
+const SNACKBAR_REDUCED_MOTION_ENTER_DURATION_MS = 120;
+const SNACKBAR_REDUCED_MOTION_EXIT_DURATION_MS = 100;
+const SNACKBAR_ENTER_OFFSET = 10;
+const SNACKBAR_EXIT_OFFSET = 6;
+const SNACKBAR_ENTER_EASING = ReanimatedEasing.bezier(0.2, 0.8, 0.2, 1);
+const SNACKBAR_EXIT_EASING = ReanimatedEasing.bezier(0.4, 0, 1, 1);
+const SNACKBAR_DRAG_EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 const SNACKBAR_DISMISS_EXTRA_OFFSET = 24;
 const SNACKBAR_FALLBACK_HEIGHT = 56;
 const SWIPE_DISMISS_DISTANCE = 48;
@@ -215,12 +228,13 @@ export function SnackbarHost() {
   const [isActionPending, setIsActionPending] = useState(false);
   const [renderedMessage, setRenderedMessage] =
     useState<SnackbarMessage | null>(message);
-  const progress = useRef(new Animated.Value(message ? 1 : 0)).current;
-  const entranceOffset = useRef(
-    new Animated.Value(reduceMotion ? 0 : message ? 0 : SNACKBAR_ENTER_OFFSET)
-  ).current;
+  const opacity = useSharedValue(message ? 1 : 0);
+  const translateY = useSharedValue(
+    reduceMotion ? 0 : message ? 0 : SNACKBAR_ENTER_OFFSET
+  );
   const keyboardOffset = useRef(new Animated.Value(0)).current;
   const dragY = useRef(new Animated.Value(0)).current;
+  const renderedMessageRef = useRef<SnackbarMessage | null>(message);
   const snackbarHeightRef = useRef(0);
   const swipeDismissTargetRef = useRef<number | null>(null);
   const swipeDismissVelocityRef = useRef(0);
@@ -228,6 +242,10 @@ export function SnackbarHost() {
   const keyboardAnimationRef = useRef<SnackbarKeyboardAnimation>(
     FALLBACK_SNACKBAR_KEYBOARD_ANIMATION
   );
+  const lifecycleAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }]
+  }));
 
   useEffect(() => {
     reduceMotionRef.current = reduceMotion;
@@ -348,23 +366,7 @@ export function SnackbarHost() {
       swipeDismissTargetRef.current = null;
       swipeDismissVelocityRef.current = 0;
 
-      progress.stopAnimation();
-      entranceOffset.stopAnimation();
-
-      const exitAnimations = [
-        Animated.timing(progress, {
-          toValue: 0,
-          duration: reduceMotion ? 0 : MOTION_DURATION_MS.exit,
-          easing: SNACKBAR_EASE_OUT,
-          useNativeDriver: true
-        }),
-        Animated.timing(entranceOffset, {
-          toValue: reduceMotion ? 0 : SNACKBAR_EXIT_OFFSET,
-          duration: reduceMotion ? 0 : MOTION_DURATION_MS.exit,
-          easing: SNACKBAR_EASE_OUT,
-          useNativeDriver: true
-        })
-      ];
+      const exitAnimations = [];
 
       if (reduceMotion) {
         dragY.stopAnimation();
@@ -384,7 +386,7 @@ export function SnackbarHost() {
           Animated.timing(dragY, {
             toValue: 0,
             duration: MOTION_DURATION_MS.exit,
-            easing: SNACKBAR_EASE_OUT,
+            easing: SNACKBAR_DRAG_EASE_OUT,
             useNativeDriver: true
           })
         );
@@ -392,39 +394,61 @@ export function SnackbarHost() {
 
       const exitAnimation = Animated.parallel(exitAnimations);
 
-      exitAnimation.start(({ finished }) => {
-        if (finished && !useSnackbarStore.getState().message) {
-          setRenderedMessage(null);
+      exitAnimation.start();
+      opacity.value = withTiming(
+        0,
+        {
+          duration: reduceMotion
+            ? SNACKBAR_REDUCED_MOTION_EXIT_DURATION_MS
+            : SNACKBAR_EXIT_DURATION_MS,
+          easing: SNACKBAR_EXIT_EASING
+        },
+        finished => {
+          if (finished) {
+            runOnJS(clearRenderedMessage)();
+          }
         }
+      );
+      translateY.value = withTiming(reduceMotion ? 0 : SNACKBAR_EXIT_OFFSET, {
+        duration: reduceMotion
+          ? SNACKBAR_REDUCED_MOTION_EXIT_DURATION_MS
+          : SNACKBAR_EXIT_DURATION_MS,
+        easing: SNACKBAR_EXIT_EASING
       });
 
       return () => exitAnimation.stop();
     }
 
-    progress.stopAnimation();
-    entranceOffset.stopAnimation();
+    const isEntering = renderedMessageRef.current === null;
+    renderedMessageRef.current = message;
     setRenderedMessage(message);
     resetSnackbarDrag(dragY, reduceMotion);
 
-    const entranceAnimation = Animated.parallel([
-      Animated.timing(progress, {
-        toValue: 1,
-        duration: reduceMotion ? 0 : MOTION_DURATION_MS.standard,
-        easing: SNACKBAR_EASE_OUT,
-        useNativeDriver: true
-      }),
-      Animated.timing(entranceOffset, {
-        toValue: 0,
-        duration: reduceMotion ? 0 : MOTION_DURATION_MS.standard,
-        easing: SNACKBAR_EASE_OUT,
-        useNativeDriver: true
-      })
-    ]);
+    if (isEntering) {
+      opacity.value = 0;
+      translateY.value = reduceMotion ? 0 : SNACKBAR_ENTER_OFFSET;
+    }
 
-    entranceAnimation.start();
+    opacity.value = withTiming(1, {
+      duration: reduceMotion
+        ? SNACKBAR_REDUCED_MOTION_ENTER_DURATION_MS
+        : SNACKBAR_ENTER_DURATION_MS,
+      easing: SNACKBAR_ENTER_EASING
+    });
+    translateY.value = withTiming(0, {
+      duration: reduceMotion
+        ? SNACKBAR_REDUCED_MOTION_ENTER_DURATION_MS
+        : SNACKBAR_ENTER_DURATION_MS,
+      easing: SNACKBAR_ENTER_EASING
+    });
+  }, [dragY, message, opacity, reduceMotion, translateY]);
 
-    return () => entranceAnimation.stop();
-  }, [dragY, entranceOffset, message, progress, reduceMotion]);
+  function clearRenderedMessage() {
+    if (!useSnackbarStore.getState().message) {
+      renderedMessageRef.current = null;
+      setRenderedMessage(null);
+    }
+  }
 
   useEffect(() => {
     setIsActionPending(false);
@@ -514,55 +538,61 @@ export function SnackbarHost() {
       >
         <Animated.View
           style={{
-            opacity: Animated.multiply(progress, dragOpacity),
-            transform: [{ translateY: entranceOffset }, { translateY: dragY }]
+            opacity: dragOpacity,
+            transform: [{ translateY: dragY }]
           }}
         >
-          <View
-            onLayout={event => {
-              const height = event.nativeEvent.layout.height;
-
-              snackbarHeightRef.current = height;
-              setSnackbarHeight(height);
-            }}
-            accessibilityLiveRegion={isUrgent ? 'assertive' : 'polite'}
-            accessibilityRole={isUrgent ? 'alert' : undefined}
-            className="border-border bg-popover min-h-14 w-full flex-row items-center gap-2.5 rounded-md border py-1.5 pr-2 pl-3.5 shadow-xl"
-          >
+          <Reanimated.View style={lifecycleAnimatedStyle}>
             <View
-              {...panResponder.panHandlers}
-              className="min-w-0 flex-1 flex-row items-center gap-2.5"
+              onLayout={event => {
+                const height = event.nativeEvent.layout.height;
+
+                snackbarHeightRef.current = height;
+                setSnackbarHeight(height);
+              }}
+              accessibilityLiveRegion={isUrgent ? 'assertive' : 'polite'}
+              accessibilityRole={isUrgent ? 'alert' : undefined}
+              className="border-border bg-popover min-h-14 w-full flex-row items-center gap-2.5 rounded-md border py-1.5 pr-2 pl-3.5 shadow-xl"
             >
               <View
-                className={cn(
-                  'h-8 w-8 shrink-0 items-center justify-center rounded-full',
-                  variantStyles.iconContainerClassName
-                )}
+                {...panResponder.panHandlers}
+                className="min-w-0 flex-1 flex-row items-center gap-2.5"
               >
-                <Icon as={StatusIcon} size="sm" tone={variant} />
+                <View
+                  className={cn(
+                    'h-8 w-8 shrink-0 items-center justify-center rounded-full',
+                    variantStyles.iconContainerClassName
+                  )}
+                >
+                  <Icon as={StatusIcon} size="sm" tone={variant} />
+                </View>
+                <Text
+                  variant="body"
+                  className="min-w-0 flex-1"
+                  numberOfLines={2}
+                >
+                  {renderedMessage.message}
+                </Text>
               </View>
-              <Text variant="body" className="min-w-0 flex-1" numberOfLines={2}>
-                {renderedMessage.message}
-              </Text>
-            </View>
 
-            {renderedMessage.actionLabel ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="min-h-11 min-w-11 shrink-0 rounded-[10px] px-2.5"
-                textClassName="text-primary"
-                accessibilityLabel={
-                  isActionPending ? 'Retrying' : renderedMessage.actionLabel
-                }
-                loading={isActionPending}
-                loadingLabel="Retrying"
-                onPress={handleAction}
-              >
-                {renderedMessage.actionLabel}
-              </Button>
-            ) : null}
-          </View>
+              {renderedMessage.actionLabel ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="min-h-11 min-w-11 shrink-0 rounded-[10px] px-2.5"
+                  textClassName="text-primary"
+                  accessibilityLabel={
+                    isActionPending ? 'Retrying' : renderedMessage.actionLabel
+                  }
+                  loading={isActionPending}
+                  loadingLabel="Retrying"
+                  onPress={handleAction}
+                >
+                  {renderedMessage.actionLabel}
+                </Button>
+              ) : null}
+            </View>
+          </Reanimated.View>
         </Animated.View>
       </Animated.View>
     </View>
