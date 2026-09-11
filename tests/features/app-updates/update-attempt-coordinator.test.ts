@@ -80,6 +80,14 @@ function harness(overrides: Partial<UpdateAttemptDependencies> = {}) {
 
       return { status: 'committed', state: nativeState('committed') };
     },
+    resumeConfirmation: async () => {
+      calls.push('resume-confirmation');
+
+      return nativeState('pending_confirmation', {
+        pendingConfirmation: true,
+        sessionId: 42
+      });
+    },
     cancel: async () => {
       calls.push('cancel-native');
 
@@ -558,6 +566,63 @@ test('cancel is unavailable after installer commit', async () => {
   await app.coordinator.cancel();
   assert.equal(app.calls.includes('cancel-native'), false);
   assert.deepEqual(app.reports, []);
+});
+
+test('pending installer confirmation is reopened explicitly', async () => {
+  const app = harness({
+    reconcile: async () =>
+      nativeState('pending_confirmation', {
+        pendingConfirmation: true,
+        sessionId: 42
+      })
+  });
+
+  await app.coordinator.reconcile();
+  assert.equal(app.coordinator.getState().status, 'installer');
+  await app.coordinator.resumeConfirmation();
+  assert.equal(app.coordinator.getState().status, 'installer');
+  assert.equal(
+    app.calls.filter(call => call === 'resume-confirmation').length,
+    1
+  );
+});
+
+test('confirmation recovery failures stay retryable and rapid calls coalesce', async () => {
+  let rejectResume!: (error: Error) => void;
+  const app = harness({
+    reconcile: async () =>
+      nativeState('pending_confirmation', {
+        pendingConfirmation: true,
+        sessionId: 42
+      }),
+    resumeConfirmation: () => {
+      app.calls.push('resume-confirmation');
+
+      return new Promise<NativeUpdateState>((_resolve, reject) => {
+        rejectResume = reject;
+      });
+    }
+  });
+
+  await app.coordinator.reconcile();
+  const first = app.coordinator.resumeConfirmation();
+  const second = app.coordinator.resumeConfirmation();
+  rejectResume(
+    Object.assign(new Error('No installer details activity'), {
+      code: 'UPDATER_CONFIRMATION_UNAVAILABLE'
+    })
+  );
+  await Promise.all([first, second]);
+
+  assert.equal(
+    app.calls.filter(call => call === 'resume-confirmation').length,
+    1
+  );
+  assert.equal(app.coordinator.getState().status, 'installer');
+  assert.equal(
+    app.coordinator.getState().errorCode,
+    'UPDATER_CONFIRMATION_UNAVAILABLE'
+  );
 });
 
 test('reconciliation only reports success when native installation proves it', async () => {
