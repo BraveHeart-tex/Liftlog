@@ -1,4 +1,4 @@
-import type { UpdateState } from './update.types';
+import type { AvailableUpdate, UpdateState } from './update.types';
 import type { UpdateAttemptState } from './update-attempt-coordinator';
 
 const MAX_RELEASE_NOTES_LENGTH = 4_000;
@@ -63,9 +63,12 @@ export function presentUpdateState(state: UpdateState) {
   };
 }
 
-export function presentUpdateAttempt(state: UpdateAttemptState): {
+export function presentUpdateAttempt(
+  state: UpdateAttemptState,
+  availableRelease?: AvailableUpdate
+): {
   message?: string;
-  action?: 'cancel' | 'retry' | 'permission';
+  action?: 'cancel' | 'retry' | 'permission' | 'update';
 } {
   if (state.status === 'downloading') {
     const written = formatMegabytes(state.bytesDownloaded ?? 0);
@@ -99,10 +102,21 @@ export function presentUpdateAttempt(state: UpdateAttemptState): {
     };
   }
 
+  const targetVersionCode =
+    state.targetVersionCode ?? state.release?.versionCode;
+  const terminalAttemptIsStale =
+    availableRelease && targetVersionCode !== availableRelease.versionCode;
+
+  if (state.status === 'idle' || terminalAttemptIsStale) {
+    return { action: availableRelease ? 'update' : undefined };
+  }
+
+  const retryAction = availableRelease ? 'retry' : undefined;
+
   if (state.status === 'interrupted') {
     return {
       message: 'Update interrupted. Retry starts from the beginning.',
-      action: 'retry'
+      action: retryAction
     };
   }
 
@@ -111,7 +125,7 @@ export function presentUpdateAttempt(state: UpdateAttemptState): {
   }
 
   if (state.status === 'cancelled') {
-    return { message: 'Update cancelled.', action: 'retry' };
+    return { message: 'Update cancelled.', action: retryAction };
   }
 
   if (state.status === 'failed') {
@@ -130,7 +144,7 @@ export function presentUpdateAttempt(state: UpdateAttemptState): {
       message:
         (state.blockReason && blocked[state.blockReason]) ||
         failureMessage(state.errorCode),
-      action: 'retry'
+      action: retryAction
     };
   }
 

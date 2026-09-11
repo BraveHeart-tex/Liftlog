@@ -39,6 +39,7 @@ function nativeState(
 
 function harness(overrides: Partial<UpdateAttemptDependencies> = {}) {
   const calls: string[] = [];
+  const beginRequests: Parameters<UpdateAttemptDependencies['begin']>[0][] = [];
   const reports: Parameters<
     UpdateAttemptDependencies['reportUnexpected']
   >[0][] = [];
@@ -46,8 +47,9 @@ function harness(overrides: Partial<UpdateAttemptDependencies> = {}) {
   let resolveDownload: (() => void) | undefined;
   const dependencies: UpdateAttemptDependencies = {
     createAttemptId: () => 'attempt-1',
-    begin: async () => {
+    begin: async request => {
       calls.push('begin');
+      beginRequests.push(request);
 
       return { status: 'started', state: nativeState('downloading') };
     },
@@ -100,6 +102,7 @@ function harness(overrides: Partial<UpdateAttemptDependencies> = {}) {
 
   return {
     coordinator,
+    beginRequests,
     calls,
     reports,
     sendProgress: () => progress?.(40, 100),
@@ -563,7 +566,32 @@ test('reconciliation only reports success when native installation proves it', a
   });
   await app.coordinator.reconcile();
   assert.equal(app.coordinator.getState().status, 'succeeded');
+  assert.equal(app.coordinator.getState().targetVersionCode, 11);
   assert.deepEqual(app.reports, []);
+});
+
+test('a newer release can start after a previous update reconciles successfully', async () => {
+  const nextRelease: AvailableUpdate = {
+    ...release,
+    releaseId: 69,
+    versionName: '1.2.0',
+    versionCode: 12,
+    apkFilename: 'liftlog-1.2.0-arm64-v8a.apk'
+  };
+  const app = harness({
+    reconcile: async () => nativeState('succeeded', { updateExcluded: false })
+  });
+
+  await app.coordinator.reconcile();
+  const running = app.coordinator.start(nextRelease);
+  await new Promise(resolve => setImmediate(resolve));
+
+  assert.equal(app.beginRequests.length, 1);
+  assert.equal(app.beginRequests[0]?.targetVersionCode, 12);
+  assert.equal(app.coordinator.getState().status, 'downloading');
+
+  app.finishDownload();
+  await running;
 });
 
 test('verification finishing in background waits for foreground before commit', async () => {

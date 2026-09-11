@@ -67,7 +67,7 @@ export function AppUpdateSection() {
     cancelUpdate
   } = useAppUpdates();
   const presentation = presentUpdateState(state);
-  const attemptPresentation = presentUpdateAttempt(attempt);
+  const attemptPresentation = presentUpdateAttempt(attempt, state.release);
   const attemptActive = [
     'permission',
     'downloading',
@@ -171,7 +171,7 @@ export function AppUpdateSection() {
               ) : null}
             </View>
           ) : null}
-          {presentation.availableVersion && attempt.status === 'idle' ? (
+          {attemptPresentation.action === 'update' ? (
             <View className="border-border flex-row gap-3 border-t py-3">
               <Button
                 variant="secondary"
@@ -190,7 +190,8 @@ export function AppUpdateSection() {
               </Button>
             </View>
           ) : null}
-          {attemptPresentation.action ? (
+          {attemptPresentation.action &&
+          attemptPresentation.action !== 'update' ? (
             <View className="border-border border-t py-3">
               <Button
                 variant={

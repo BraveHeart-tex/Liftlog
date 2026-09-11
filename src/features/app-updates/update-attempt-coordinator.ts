@@ -22,6 +22,7 @@ export interface UpdateAttemptState {
   status: UpdateAttemptStatus;
   attemptId?: string;
   release?: AvailableUpdate;
+  targetVersionCode?: number;
   bytesDownloaded?: number;
   totalBytes?: number;
   progress?: number;
@@ -158,6 +159,7 @@ function terminalState(native: NativeUpdateState): UpdateAttemptState {
     return {
       status,
       attemptId: native.attemptId ?? undefined,
+      targetVersionCode: native.targetVersionCode ?? undefined,
       errorCode: native.resultCode ?? undefined
     };
   }
@@ -173,7 +175,8 @@ function terminalState(native: NativeUpdateState): UpdateAttemptState {
             : status === 'downloading'
               ? 'interrupted'
               : 'idle',
-    attemptId: native.attemptId ?? undefined
+    attemptId: native.attemptId ?? undefined,
+    targetVersionCode: native.targetVersionCode ?? undefined
   };
 }
 
@@ -349,7 +352,8 @@ export function createUpdateAttemptCoordinator(
         state.status !== 'idle' &&
         state.status !== 'interrupted' &&
         state.status !== 'failed' &&
-        state.status !== 'cancelled'
+        state.status !== 'cancelled' &&
+        state.status !== 'succeeded'
       ) {
         return;
       }

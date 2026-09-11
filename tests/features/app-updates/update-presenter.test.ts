@@ -5,6 +5,17 @@ import {
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+const availableRelease = {
+  releaseId: 65,
+  versionName: '1.1.0',
+  versionCode: 5,
+  apkFilename: 'liftlog-1.1.0-arm64-v8a.apk',
+  apkDownloadUrl: 'url',
+  sha256: 'a'.repeat(64),
+  sizeBytes: 58_720_256,
+  releaseNotes: 'Faster startup.'
+};
+
 test('presents no-update and actionable failure messages', () => {
   assert.equal(
     presentUpdateState({ status: 'checking', installedVersion: '1.0.3' })
@@ -38,6 +49,7 @@ test('presents truthful attempt status and one recovery action', () => {
   assert.deepEqual(
     presentUpdateAttempt({
       status: 'downloading',
+      release: availableRelease,
       bytesDownloaded: 24_641_536,
       totalBytes: 58_720_256,
       progress: 0.42
@@ -56,10 +68,14 @@ test('presents truthful attempt status and one recovery action', () => {
     action: undefined
   });
   assert.deepEqual(
-    presentUpdateAttempt({
-      status: 'failed',
-      blockReason: 'active_workout'
-    }),
+    presentUpdateAttempt(
+      {
+        status: 'failed',
+        blockReason: 'active_workout',
+        release: availableRelease
+      },
+      availableRelease
+    ),
     {
       message: 'Finish or discard your active workout before updating.',
       action: 'retry'
@@ -101,7 +117,10 @@ test('presents recovery guidance for actionable native failures', () => {
 
   for (const [errorCode, message] of cases) {
     assert.deepEqual(
-      presentUpdateAttempt({ status: 'failed', errorCode }),
+      presentUpdateAttempt(
+        { status: 'failed', errorCode, release: availableRelease },
+        availableRelease
+      ),
       { message, action: 'retry' },
       errorCode
     );
@@ -120,7 +139,10 @@ test('keeps internal failures generic and expected outcomes unchanged', () => {
     undefined
   ]) {
     assert.deepEqual(
-      presentUpdateAttempt({ status: 'failed', errorCode }),
+      presentUpdateAttempt(
+        { status: 'failed', errorCode, release: availableRelease },
+        availableRelease
+      ),
       {
         message: 'Could not install the update. Try again.',
         action: 'retry'
@@ -129,30 +151,95 @@ test('keeps internal failures generic and expected outcomes unchanged', () => {
     );
   }
 
+  assert.deepEqual(
+    presentUpdateAttempt(
+      { status: 'cancelled', release: availableRelease },
+      availableRelease
+    ),
+    {
+      message: 'Update cancelled.',
+      action: 'retry'
+    }
+  );
+  assert.deepEqual(
+    presentUpdateAttempt(
+      { status: 'interrupted', release: availableRelease },
+      availableRelease
+    ),
+    {
+      message: 'Update interrupted. Retry starts from the beginning.',
+      action: 'retry'
+    }
+  );
+});
+
+test('supersedes historical terminal outcomes when another release is available', () => {
+  assert.deepEqual(presentUpdateAttempt({ status: 'idle' }, availableRelease), {
+    action: 'update'
+  });
+
+  for (const status of [
+    'succeeded',
+    'failed',
+    'cancelled',
+    'interrupted'
+  ] as const) {
+    assert.deepEqual(
+      presentUpdateAttempt({ status, targetVersionCode: 4 }, availableRelease),
+      { action: 'update' },
+      status
+    );
+  }
+
+  assert.deepEqual(
+    presentUpdateAttempt({ status: 'succeeded' }, availableRelease),
+    { action: 'update' }
+  );
+});
+
+test('keeps terminal history without exposing an action that lacks a release', () => {
+  assert.deepEqual(presentUpdateAttempt({ status: 'succeeded' }), {
+    message: 'Update installed successfully.',
+    action: undefined
+  });
+  assert.deepEqual(presentUpdateAttempt({ status: 'failed' }), {
+    message: 'Could not install the update. Try again.',
+    action: undefined
+  });
   assert.deepEqual(presentUpdateAttempt({ status: 'cancelled' }), {
     message: 'Update cancelled.',
-    action: 'retry'
+    action: undefined
   });
   assert.deepEqual(presentUpdateAttempt({ status: 'interrupted' }), {
     message: 'Update interrupted. Retry starts from the beginning.',
-    action: 'retry'
+    action: undefined
   });
+});
+
+test('keeps an active attempt authoritative when discovery finds a newer release', () => {
+  assert.deepEqual(
+    presentUpdateAttempt(
+      {
+        status: 'downloading',
+        release: { ...availableRelease, versionCode: 4 },
+        bytesDownloaded: 20,
+        totalBytes: 100,
+        progress: 0.2
+      },
+      availableRelease
+    ),
+    {
+      message: 'Downloading update - 20% (0 MB of 0 MB)',
+      action: 'cancel'
+    }
+  );
 });
 
 test('caps remote notes and formats the APK size in MB', () => {
   const presentation = presentUpdateState({
     status: 'available',
     installedVersion: '1.0.3',
-    release: {
-      releaseId: 65,
-      versionName: '1.1.0',
-      versionCode: 5,
-      apkFilename: 'liftlog-1.1.0-arm64-v8a.apk',
-      apkDownloadUrl: 'url',
-      sha256: 'a'.repeat(64),
-      sizeBytes: 58_720_256,
-      releaseNotes: 'x'.repeat(5_000)
-    }
+    release: { ...availableRelease, releaseNotes: 'x'.repeat(5_000) }
   });
 
   assert.equal(presentation.availableVersion, '1.1.0');
