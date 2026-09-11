@@ -53,11 +53,13 @@ export function presentUpdateState(state: UpdateState) {
     releaseNotes: cappedNotes,
     size: state.release ? formatMegabytes(state.release.sizeBytes) : undefined,
     message:
-      state.status === 'up_to_date'
-        ? 'LiftLog is up to date.'
-        : state.error
-          ? errorMessages[state.error.code]
-          : undefined
+      state.status === 'checking'
+        ? 'Checking for updates...'
+        : state.status === 'up_to_date'
+          ? 'LiftLog is up to date.'
+          : state.error
+            ? errorMessages[state.error.code]
+            : undefined
   };
 }
 

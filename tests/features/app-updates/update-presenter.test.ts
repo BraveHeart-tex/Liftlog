@@ -7,6 +7,11 @@ import test from 'node:test';
 
 test('presents no-update and actionable failure messages', () => {
   assert.equal(
+    presentUpdateState({ status: 'checking', installedVersion: '1.0.3' })
+      .message,
+    'Checking for updates...'
+  );
+  assert.equal(
     presentUpdateState({ status: 'up_to_date', installedVersion: '1.0.3' })
       .message,
     'LiftLog is up to date.'
