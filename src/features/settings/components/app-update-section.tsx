@@ -44,8 +44,8 @@ function MetadataRow({
   return (
     <View
       className={cn(
-        'border-border flex-row justify-between gap-4 py-3',
-        bordered && 'border-t'
+        'flex-row justify-between gap-4 py-3',
+        bordered && 'border-border border-t'
       )}
     >
       <Text variant="bodyMedium">{label}</Text>
