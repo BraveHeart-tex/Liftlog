@@ -83,21 +83,6 @@ test('presents truthful attempt status and one recovery action', () => {
   );
 });
 
-test('keeps installer confirmation recovery retryable', () => {
-  assert.deepEqual(
-    presentUpdateAttempt({
-      status: 'installer',
-      pendingConfirmation: true,
-      errorCode: 'UPDATER_CONFIRMATION_UNAVAILABLE'
-    }),
-    {
-      message:
-        "Android's installer could not be reopened. Try again or use the installation notification.",
-      action: 'installer'
-    }
-  );
-});
-
 test('presents recovery guidance for actionable native failures', () => {
   const cases = [
     [

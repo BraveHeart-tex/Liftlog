@@ -82,10 +82,6 @@ class LiftlogUpdaterModule : Module() {
       commit(attemptId)
     }
 
-    AsyncFunction("resumePendingConfirmationAsync") Coroutine { attemptId: String ->
-      resumePendingConfirmation(attemptId)
-    }
-
     AsyncFunction("cancelAsync") Coroutine { attemptId: String ->
       cancel(attemptId)
     }
@@ -299,30 +295,6 @@ class LiftlogUpdaterModule : Module() {
     store.state()
   }
 
-  private suspend fun resumePendingConfirmation(attemptId: String): Map<String, Any?> =
-    withContext(Dispatchers.Main) {
-      requireAttempt(attemptId)
-      if (store.targetVersionCode() <= installedVersionCode()) return@withContext reconcile()
-      if (store.stage() != UpdateStage.PENDING_CONFIRMATION) {
-        throw UpdaterException("UPDATER_INVALID_STAGE", "Attempt is not waiting for installer confirmation")
-      }
-
-      val activity = appContext.currentActivity
-      if (activity == null || activity.isFinishing) {
-        throw UpdaterException("UPDATER_FOREGROUND_REQUIRED", "LiftLog must be active to reopen installer confirmation")
-      }
-      val sessionInfo = installer.getSessionInfo(store.sessionId()) ?: return@withContext reconcile()
-      val detailsIntent = sessionInfo.createDetailsIntent()
-        ?: throw UpdaterException("UPDATER_CONFIRMATION_UNAVAILABLE", "Android installer confirmation is unavailable")
-
-      try {
-        activity.startActivity(detailsIntent)
-      } catch (error: Throwable) {
-        throw UpdaterException("UPDATER_CONFIRMATION_UNAVAILABLE", "Could not reopen Android installer confirmation", error)
-      }
-      store.state()
-    }
-
   private fun reconcile(): Map<String, Any?> {
     val target = store.targetVersionCode()
     val current = store.stage()
@@ -345,10 +317,21 @@ class LiftlogUpdaterModule : Module() {
       }
       if (next.isTerminal) cleanupOwnedFiles()
     }
-    if (store.stage().isTerminal) {
-      UpdateConfirmationNotification.cancel(context)
-      cleanupOwnedFiles()
+    if (store.stage() == UpdateStage.PENDING_CONFIRMATION) {
+      val attemptId = store.attemptId()
+      val activity = appContext.currentActivity
+      if (attemptId != null && activity != null && !activity.isFinishing) {
+        val continuation = PendingConfirmationRegistry.take(attemptId)
+        if (continuation != null) {
+          activity.startActivity(continuation)
+        } else {
+          val pendingSessionId = store.sessionId()
+          store.finish(UpdateStage.FAILED, "UPDATER_CONFIRMATION_UNAVAILABLE")
+          pendingSessionId.takeIf { it >= 0 }?.let { runCatching { installer.abandonSession(it) } }
+        }
+      }
     }
+    if (store.stage().isTerminal) cleanupOwnedFiles()
     runCatching { store.materializeLegacyFailure(System.currentTimeMillis()) }
       .onFailure { error -> Log.e("LiftlogUpdater", "Failed to materialize legacy update diagnostic", error) }
     return store.state()

@@ -23,7 +23,6 @@ export interface UpdateAttemptState {
   attemptId?: string;
   release?: AvailableUpdate;
   targetVersionCode?: number;
-  pendingConfirmation?: boolean;
   bytesDownloaded?: number;
   totalBytes?: number;
   progress?: number;
@@ -83,7 +82,6 @@ export interface UpdateAttemptDependencies {
     expectedSha256: string;
   }): Promise<VerificationResult | void>;
   commit(attemptId: string): Promise<ExclusionResult>;
-  resumeConfirmation(attemptId: string): Promise<NativeUpdateState>;
   cancel(attemptId: string): Promise<NativeUpdateState>;
   interrupt(attemptId: string): Promise<NativeUpdateState>;
   getState(): Promise<NativeUpdateState>;
@@ -178,9 +176,7 @@ function terminalState(native: NativeUpdateState): UpdateAttemptState {
               ? 'interrupted'
               : 'idle',
     attemptId: native.attemptId ?? undefined,
-    targetVersionCode: native.targetVersionCode ?? undefined,
-    pendingConfirmation:
-      status === 'pending_confirmation' ? native.pendingConfirmation : undefined
+    targetVersionCode: native.targetVersionCode ?? undefined
   };
 }
 
@@ -189,7 +185,6 @@ export function createUpdateAttemptCoordinator(
 ) {
   let state: UpdateAttemptState = { status: 'idle' };
   let task: DownloadTask | undefined;
-  let confirmationResumeTask: Promise<void> | undefined;
   let generation = 0;
   let appActive = true;
   const listeners = new Set<(next: UpdateAttemptState) => void>();
@@ -455,40 +450,6 @@ export function createUpdateAttemptCoordinator(
         release,
         failureContext
       );
-    },
-    async resumeConfirmation() {
-      if (state.status !== 'installer' || !state.attemptId) {
-        return;
-      }
-
-      if (confirmationResumeTask) {
-        return confirmationResumeTask;
-      }
-
-      const attemptId = state.attemptId;
-      const release = state.release;
-      confirmationResumeTask = (async () => {
-        try {
-          const native = await dependencies.resumeConfirmation(attemptId);
-
-          if (state.attemptId !== attemptId) {
-            return;
-          }
-
-          publish({ ...terminalState(native), release });
-        } catch (error) {
-          if (state.status === 'installer' && state.attemptId === attemptId) {
-            publish({
-              ...state,
-              errorCode: updaterErrorCode(error)
-            });
-          }
-        }
-      })().finally(() => {
-        confirmationResumeTask = undefined;
-      });
-
-      return confirmationResumeTask;
     },
     async cancel() {
       if (

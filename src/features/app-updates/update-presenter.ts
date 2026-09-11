@@ -68,7 +68,7 @@ export function presentUpdateAttempt(
   availableRelease?: AvailableUpdate
 ): {
   message?: string;
-  action?: 'cancel' | 'retry' | 'permission' | 'installer' | 'update';
+  action?: 'cancel' | 'retry' | 'permission' | 'update';
 } {
   if (state.status === 'downloading') {
     const written = formatMegabytes(state.bytesDownloaded ?? 0);
@@ -90,11 +90,8 @@ export function presentUpdateAttempt(
 
   if (state.status === 'installer') {
     return {
-      message:
-        state.errorCode === 'UPDATER_CONFIRMATION_UNAVAILABLE'
-          ? "Android's installer could not be reopened. Try again or use the installation notification."
-          : 'Continue in Android to install the update.',
-      action: state.pendingConfirmation ? 'installer' : undefined
+      message: 'Continue in Android to install the update.',
+      action: undefined
     };
   }
 

@@ -30,7 +30,8 @@ class InstallationResultReceiver : BroadcastReceiver() {
         store.markPendingConfirmation()
         continuationIntent(intent)?.let { continuation ->
           if (!launchWhileForeground(context, continuation)) {
-            UpdateConfirmationNotification.post(context, callbackSessionId, continuation)
+            PendingConfirmationRegistry.hold(callbackAttemptId!!, continuation)
+            postContinuationNotification(context, callbackSessionId, continuation)
           }
         } ?: run {
           appendFailureDiagnostic(
@@ -55,9 +56,6 @@ class InstallationResultReceiver : BroadcastReceiver() {
         }
         store.finish(terminal.stage, terminal.code)
       }
-    }
-    if (store.stage() != UpdateStage.PENDING_CONFIRMATION) {
-      UpdateConfirmationNotification.cancel(context)
     }
     if (store.stage().isTerminal) deleteOwnedArtifact(context, store)
   }
@@ -113,54 +111,49 @@ class InstallationResultReceiver : BroadcastReceiver() {
     }.getOrDefault(false)
   }
 
-  private companion object {
-    const val TAG = "LiftlogUpdater"
-  }
-}
-
-internal object UpdateConfirmationNotification {
-  fun post(context: Context, sessionId: Int, continuation: Intent) {
+  private fun postContinuationNotification(context: Context, sessionId: Int, continuation: Intent) {
     if (
       Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
       context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
     ) return
 
-    runCatching {
-      val manager = context.getSystemService(NotificationManager::class.java)
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        manager.createNotificationChannel(
-          NotificationChannel(
-            UpdaterContract.NOTIFICATION_CHANNEL,
-            "Complete LiftLog update",
-            NotificationManager.IMPORTANCE_HIGH
-          )
+    val manager = context.getSystemService(NotificationManager::class.java)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      manager.createNotificationChannel(
+        NotificationChannel(
+          UpdaterContract.NOTIFICATION_CHANNEL,
+          "Complete LiftLog update",
+          NotificationManager.IMPORTANCE_HIGH
         )
-      }
-      val action = PendingIntent.getActivity(
-        context,
-        sessionId,
-        continuation,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
       )
-      val notification = android.app.Notification.Builder(context, UpdaterContract.NOTIFICATION_CHANNEL)
-        .setSmallIcon(context.applicationInfo.icon)
-        .setContentTitle("Complete LiftLog update")
-        .setContentText("Tap to review Android's installation confirmation")
-        .setContentIntent(action)
-        .setAutoCancel(true)
-        .build()
-      manager.notify(UpdaterContract.NOTIFICATION_ID, notification)
-    }.onFailure { error ->
-      Log.e("LiftlogUpdater", "Failed to post update confirmation notification", error)
     }
+    val action = PendingIntent.getActivity(
+      context,
+      sessionId,
+      continuation,
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    val notification = android.app.Notification.Builder(context, UpdaterContract.NOTIFICATION_CHANNEL)
+      .setSmallIcon(context.applicationInfo.icon)
+      .setContentTitle("Complete LiftLog update")
+      .setContentText("Tap to review Android's installation confirmation")
+      .setContentIntent(action)
+      .setAutoCancel(true)
+      .build()
+    manager.notify(UpdaterContract.NOTIFICATION_ID, notification)
   }
 
-  fun cancel(context: Context) {
-    runCatching {
-      context.getSystemService(NotificationManager::class.java)
-        .cancel(UpdaterContract.NOTIFICATION_ID)
-    }.onFailure { error ->
-      Log.e("LiftlogUpdater", "Failed to cancel update confirmation notification", error)
-    }
+  private companion object {
+    const val TAG = "LiftlogUpdater"
   }
+}
+
+internal object PendingConfirmationRegistry {
+  private val intents = mutableMapOf<String, Intent>()
+
+  @Synchronized fun hold(attemptId: String, intent: Intent) {
+    intents[attemptId] = intent
+  }
+
+  @Synchronized fun take(attemptId: String): Intent? = intents.remove(attemptId)
 }

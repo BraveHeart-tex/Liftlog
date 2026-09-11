@@ -168,8 +168,6 @@ export function UpdateProvider({ children }: PropsWithChildren) {
       },
       verify: request => updater.verifyAndStageAsync(request),
       commit: attemptId => exclusionCoordinator.commit(attemptId),
-      resumeConfirmation: attemptId =>
-        updater.resumePendingConfirmationAsync(attemptId),
       cancel: attemptId => exclusionCoordinator.cancel(attemptId),
       interrupt: async attemptId => {
         const native = await updater.interruptAsync(attemptId);
@@ -309,8 +307,6 @@ export function UpdateProvider({ children }: PropsWithChildren) {
 
     if (active.getState().status === 'permission') {
       await active.resumePermission();
-    } else if (active.getState().status === 'installer') {
-      await active.resumeConfirmation();
     } else if (state.release) {
       await active.start(state.release);
     }
