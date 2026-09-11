@@ -21,7 +21,6 @@ import { useDrizzle } from '@/src/providers/database-provider';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { refreshLiveQueries } from '@/src/lib/db/live-query-refresh';
 import { ChevronRight, FileDown, FileJson, FileUp } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Alert, View } from 'react-native';
 
@@ -75,7 +74,6 @@ function BackupAction({
 export function DataBackupSection() {
   const db = useDrizzle();
   const { themePreference, setThemePreference } = useAppTheme();
-  const router = useRouter();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [undoSafetyBackup, setUndoSafetyBackup] =
@@ -126,8 +124,6 @@ export function DataBackupSection() {
           refreshLiveQueries
         });
         await refreshUndoSafetyBackup();
-        router.dismissAll();
-        router.replace('/(tabs)/workout');
         Alert.alert('Import complete', 'Your restored data is now loaded.', [
           { text: 'OK' }
         ]);
@@ -140,7 +136,7 @@ export function DataBackupSection() {
         setIsImporting(false);
       }
     },
-    [db, refreshUndoSafetyBackup, router, setThemePreference]
+    [db, refreshUndoSafetyBackup, setThemePreference]
   );
 
   const runUndo = useCallback(async () => {
@@ -152,8 +148,6 @@ export function DataBackupSection() {
         refreshLiveQueries
       });
       setUndoSafetyBackup(null);
-      router.dismissAll();
-      router.replace('/(tabs)/workout');
       Alert.alert(
         'Undo complete',
         'Your data was restored to its pre-import state.',
@@ -168,7 +162,7 @@ export function DataBackupSection() {
     } finally {
       setIsImporting(false);
     }
-  }, [db, refreshUndoSafetyBackup, router, setThemePreference]);
+  }, [db, refreshUndoSafetyBackup, setThemePreference]);
 
   const runUndoPreview = useCallback(async () => {
     setIsImporting(true);
@@ -242,7 +236,7 @@ export function DataBackupSection() {
                   preview.replacesActiveWorkout
                     ? ' Any active workout and rest timer will be cancelled.'
                     : ' Any active rest timer will be cancelled.'
-                } A private safety backup will be created first. The app must restart after a successful import.`,
+                } A private safety backup will be created first. Restored data will load immediately.`,
                 [
                   { text: 'Cancel', style: 'cancel' },
                   {

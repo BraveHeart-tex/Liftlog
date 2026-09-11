@@ -71,8 +71,6 @@ export interface ReplaceBackupOptions {
   refreshLiveQueries?: () => void;
 }
 
-export type ReplaceBackupResult = { status: 'restart-required' };
-
 function safetyBackupUris(now: Date) {
   const uri = `${Paths.document.uri}/${SAFETY_BACKUP_FILENAME}`;
 
@@ -135,7 +133,7 @@ async function replaceAllWithBackupUnsafe(
   db: DrizzleDb,
   backup: LiftLogBackupV1,
   options: ReplaceBackupOptions = {}
-): Promise<ReplaceBackupResult> {
+): Promise<void> {
   const now = options.now ?? new Date();
   const port = options.filePort ?? nativeBackupFilePort;
   const previousTheme = options.themePreference ?? getThemePreference();
@@ -165,14 +163,12 @@ async function replaceAllWithBackupUnsafe(
   } finally {
     await port.remove(temporaryUri);
   }
-
-  return { status: 'restart-required' };
 }
 
 export async function undoLastImport(
   db: DrizzleDb,
   options: ReplaceBackupOptions = {}
-): Promise<ReplaceBackupResult> {
+): Promise<void> {
   return withDomainFlowSpan(
     { operation: 'backup.undoImport', feature: 'backup' },
     async () => {
@@ -189,8 +185,6 @@ export async function undoLastImport(
 
       await applyBackupWithRollback(db, backup, rollbackBackup, options);
       await port.remove(uri);
-
-      return { status: 'restart-required' };
     }
   );
 }
@@ -199,7 +193,7 @@ export function replaceAllWithBackup(
   db: DrizzleDb,
   backup: LiftLogBackupV1,
   options: ReplaceBackupOptions = {}
-): Promise<ReplaceBackupResult> {
+): Promise<void> {
   return withDomainFlowSpan(
     { operation: 'backup.replaceAll', feature: 'backup' },
     () => replaceAllWithBackupUnsafe(db, backup, options)
