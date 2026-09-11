@@ -27,7 +27,7 @@
     "prettier:check": "prettier . --check",
     "prettier:fix": "prettier . --write",
     "start": "expo start",
-    "test": "tsx --experimental-test-module-mocks --tsconfig tests/tsconfig.json --import ./tests/setup.ts --test \"tests/**/*.test.ts\"",
+    "test": "TSX_TSCONFIG_PATH=tests/tsconfig.json node --experimental-test-module-mocks --import tsx --import ./tests/setup.ts --test \"tests/**/*.test.ts\"",
     "ts-check": "tsc --noEmit true --project ./tsconfig.json"
   },
   "engines": {
