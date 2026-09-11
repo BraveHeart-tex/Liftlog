@@ -12,15 +12,15 @@
   without advancing toward a deadline or producing a notification.
 - **Rest timer cancellation**: Ending a rest timer before its deadline without
   producing completion feedback.
-- **Rest timer notification**: The system-level alert for a rest timer completion
-  while LiftLog is not in the foreground. Foreground completion feedback is not
-  a rest timer notification.
+- **Rest timer notification**: The Android system-level alert for a rest timer
+  completion while LiftLog is not in the foreground. Foreground completion
+  feedback is not a rest timer notification.
 - **Rest timer notification acknowledgement**: The user handling a delivered rest
   timer notification by opening or replacing it. Acknowledgement is neither rest
   timer completion nor rest timer cancellation.
-- **Rest timer notification preference**: The user's choice to allow rest timer
-  notifications. It is distinct from notification authorization controlled by
-  the operating system.
+- **Rest timer notification preference**: The Android user's choice to allow rest
+  timer notifications. It is distinct from notification authorization controlled
+  by the operating system.
 - **Foreground completion feedback**: The in-app sound, haptics, and message used
   when a rest timer completes while LiftLog is active.
 
