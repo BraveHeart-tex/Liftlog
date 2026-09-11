@@ -210,7 +210,9 @@ export function AppUpdateSection() {
                   ? 'Cancel'
                   : attemptPresentation.action === 'permission'
                     ? 'Open permission settings'
-                    : 'Retry'}
+                    : attemptPresentation.action === 'installer'
+                      ? 'Continue installation'
+                      : 'Retry'}
               </Button>
             </View>
           ) : null}

@@ -88,6 +88,11 @@ function nativeFake(initial = state('idle')) {
 
       return current;
     },
+    async resumePendingConfirmationAsync() {
+      calls.push('resume-confirmation');
+
+      return current;
+    },
     async cancelAsync() {
       calls.push('cancel');
       current = state('cancelled', { updateExcluded: false });

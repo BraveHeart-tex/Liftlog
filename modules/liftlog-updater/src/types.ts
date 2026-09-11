@@ -95,6 +95,7 @@ export interface LiftlogUpdaterApi {
   openInstallPermissionSettings(): void;
   verifyAndStageAsync(request: VerifyRequest): Promise<VerificationResult>;
   commitAsync(attemptId: string): Promise<NativeUpdateState>;
+  resumePendingConfirmationAsync(attemptId: string): Promise<NativeUpdateState>;
   cancelAsync(attemptId: string): Promise<NativeUpdateState>;
   interruptAsync(attemptId: string): Promise<NativeUpdateState>;
   cleanupAsync(): Promise<NativeUpdateState>;

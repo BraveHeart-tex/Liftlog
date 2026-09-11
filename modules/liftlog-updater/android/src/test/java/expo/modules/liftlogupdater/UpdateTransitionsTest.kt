@@ -24,6 +24,22 @@ class UpdateTransitionsTest {
   }
 
   @Test
+  fun `pending confirmation remains live while installer session exists`() {
+    assertEquals(
+      UpdateStage.PENDING_CONFIRMATION,
+      UpdateTransitions.reconciledStage(UpdateStage.PENDING_CONFIRMATION, 7, 8, true)
+    )
+  }
+
+  @Test
+  fun `missing pending confirmation session fails`() {
+    assertEquals(
+      UpdateStage.FAILED,
+      UpdateTransitions.reconciledStage(UpdateStage.PENDING_CONFIRMATION, 7, 8, false)
+    )
+  }
+
+  @Test
   fun `missing committed session fails instead of creating a duplicate`() {
     assertEquals(
       UpdateStage.FAILED,
