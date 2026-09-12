@@ -6,16 +6,27 @@ import {
 } from '@/src/features/rest-timer/rest-timer.coordinator';
 import {
   cancelRestTimerNotification,
+  hasDeliveredRestTimerNotification,
   scheduleRestTimerNotification
 } from '@/src/features/rest-timer/rest-timer-notifications.service';
+import { restTimerSnapshotStore } from '@/src/features/rest-timer/rest-timer-runtime-snapshot.repository';
 import { useRestTimerStore } from '@/src/features/rest-timer/rest-timer.store';
+import { getActiveWorkoutForRestTimerNotification } from '@/src/features/workouts/shared/workout.repository';
 import {
   triggerHapticImpact,
   triggerHapticWarning
 } from '@/src/lib/haptics/haptics';
+import { useDrizzle } from '@/src/providers/database-provider';
 import { useAudioPlayer } from 'expo-audio';
 import { ImpactFeedbackStyle } from 'expo-haptics';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+  type PropsWithChildren,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react';
 import { AppState, Platform } from 'react-native';
 
 const REST_TIMER_COMPLETION_SOUND_DURATION_MS = 5000;
@@ -42,7 +53,21 @@ const timerScheduler = {
   }
 };
 
-export function RestTimerHost() {
+function RestTimerNotificationResponseHost({
+  onNotificationPress
+}: {
+  onNotificationPress: () => void;
+}) {
+  useRestTimerNotificationResponses({
+    onRestTimerNotificationPress: onNotificationPress
+  });
+
+  return null;
+}
+
+export function RestTimerHost({ children }: PropsWithChildren) {
+  const db = useDrizzle();
+  const [isRestored, setIsRestored] = useState(false);
   const completionHapticTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>(
     []
   );
@@ -196,6 +221,12 @@ export function RestTimerHost() {
         clock: { now: Date.now },
         appState: appStateSource,
         scheduler: timerScheduler,
+        snapshots: restTimerSnapshotStore,
+        context: {
+          isWorkoutActive: workoutId =>
+            getActiveWorkoutForRestTimerNotification(db, workoutId) !==
+            undefined
+        },
         notifications: {
           schedule: ({ deadlineEpochMs, context }) => {
             if (Platform.OS !== 'android') {
@@ -210,7 +241,8 @@ export function RestTimerHost() {
               context
             });
           },
-          cancel: cancelRestTimerNotification
+          cancel: cancelRestTimerNotification,
+          hasDelivered: hasDeliveredRestTimerNotification
         },
         feedback: {
           complete: completeFeedback,
@@ -222,19 +254,32 @@ export function RestTimerHost() {
           console.error(`Failed to ${operation} rest timer side effects`);
         }
       }),
-    [acknowledgeFeedback, cancelFeedback, completeFeedback, stopCompletionSound]
+    [
+      acknowledgeFeedback,
+      cancelFeedback,
+      completeFeedback,
+      db,
+      stopCompletionSound
+    ]
   );
 
-  useRestTimerNotificationResponses({
-    onRestTimerNotificationPress: coordinator.acknowledgeNotificationCompletion
-  });
-
   useEffect(() => {
+    let mounted = true;
+
     isAudioHostMountedRef.current = true;
     playerRef.current = player;
-    coordinator.start();
+
+    void coordinator.restore().then(() => {
+      if (!mounted) {
+        return;
+      }
+
+      coordinator.start();
+      setIsRestored(true);
+    });
 
     return () => {
+      mounted = false;
       coordinator.stop();
       isAudioHostMountedRef.current = false;
       completionSoundOperationGenerationRef.current += 1;
@@ -248,5 +293,16 @@ export function RestTimerHost() {
     player
   ]);
 
-  return null;
+  if (!isRestored) {
+    return null;
+  }
+
+  return (
+    <>
+      {children}
+      <RestTimerNotificationResponseHost
+        onNotificationPress={coordinator.acknowledgeNotificationCompletion}
+      />
+    </>
+  );
 }

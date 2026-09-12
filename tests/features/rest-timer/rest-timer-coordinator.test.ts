@@ -3,6 +3,10 @@ import {
   createRestTimerCoordinator,
   type RestTimerAppState
 } from '@/src/features/rest-timer/rest-timer.coordinator';
+import type {
+  RestTimerRuntimeSnapshot,
+  RestTimerSnapshotReadResult
+} from '@/src/features/rest-timer/rest-timer-runtime-snapshot';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -36,6 +40,28 @@ function appStateSource(initial: RestTimerAppState = 'active') {
 const idleScheduler = {
   every: () => () => undefined
 };
+
+function snapshotStore(
+  initial: RestTimerSnapshotReadResult = { kind: 'empty' }
+) {
+  let result = initial;
+  const writes: RestTimerRuntimeSnapshot[] = [];
+  let clears = 0;
+
+  return {
+    read: () => result,
+    write(snapshot: RestTimerRuntimeSnapshot) {
+      writes.push(snapshot);
+      result = { kind: 'snapshot', snapshot };
+    },
+    clear() {
+      clears += 1;
+      result = { kind: 'empty' };
+    },
+    writes,
+    clears: () => clears
+  };
+}
 
 test('starting a timer publishes a timestamped monotonic transition', () => {
   const timer = createRestTimerStore({ now: () => 1_000 });
@@ -515,6 +541,525 @@ test('restart refreshes app state before deciding completion ownership', async (
   timer.getState().tick();
   await coordinator.settled();
 
+  assert.equal(completions, 0);
+  coordinator.stop();
+});
+
+test('startup restores a running timer from its absolute deadline before scheduling', async () => {
+  const snapshots = snapshotStore({
+    kind: 'snapshot',
+    snapshot: {
+      version: 1,
+      status: 'running',
+      deadlineEpochMs: 91_000,
+      durationSeconds: 90,
+      activeDurationSeconds: 90,
+      transitionOccurredAtEpochMs: 1_000,
+      context: { workoutId: 'workout-1' }
+    }
+  });
+  const deadlines: number[] = [];
+  const timer = createRestTimerStore({ now: () => 31_000 });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => 31_000 },
+    appState: appStateSource(),
+    scheduler: idleScheduler,
+    snapshots,
+    context: { isWorkoutActive: () => true },
+    notifications: {
+      schedule: ({ deadlineEpochMs }) => {
+        deadlines.push(deadlineEpochMs);
+      },
+      cancel: () => undefined,
+      hasDelivered: () => false
+    },
+    feedback: {
+      complete: () => undefined,
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  await coordinator.restore();
+  coordinator.start();
+  await coordinator.settled();
+
+  assert.equal(timer.getState().status, 'running');
+  assert.equal(timer.getState().secondsRemaining, 60);
+  assert.deepEqual(deadlines, [91_000]);
+  coordinator.stop();
+});
+
+test('startup restores a fresh paused timer and removes pending delivery', async () => {
+  let cancellations = 0;
+  const snapshots = snapshotStore({
+    kind: 'snapshot',
+    snapshot: {
+      version: 1,
+      status: 'paused',
+      remainingMs: 45_000,
+      durationSeconds: 90,
+      activeDurationSeconds: 120,
+      pausedAtEpochMs: 1_000
+    }
+  });
+  const timer = createRestTimerStore({ now: () => 2_000 });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => 2_000 },
+    appState: appStateSource(),
+    scheduler: idleScheduler,
+    snapshots,
+    context: { isWorkoutActive: () => true },
+    notifications: {
+      schedule: () => undefined,
+      cancel: () => {
+        cancellations += 1;
+      },
+      hasDelivered: () => false
+    },
+    feedback: {
+      complete: () => undefined,
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  await coordinator.restore();
+  coordinator.start();
+  await coordinator.settled();
+
+  assert.equal(timer.getState().status, 'paused');
+  assert.equal(timer.getState().secondsRemaining, 45);
+  assert.equal(cancellations, 1);
+  coordinator.stop();
+});
+
+test('startup silently clears paused timers older than 24 hours', async () => {
+  let cancellations = 0;
+  const pausedAtEpochMs = 1_000;
+  const snapshots = snapshotStore({
+    kind: 'snapshot',
+    snapshot: {
+      version: 1,
+      status: 'paused',
+      remainingMs: 45_000,
+      durationSeconds: 90,
+      activeDurationSeconds: 90,
+      pausedAtEpochMs
+    }
+  });
+  const timer = createRestTimerStore({
+    now: () => pausedAtEpochMs + 24 * 60 * 60 * 1000 + 1
+  });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => pausedAtEpochMs + 24 * 60 * 60 * 1000 + 1 },
+    appState: appStateSource(),
+    scheduler: idleScheduler,
+    snapshots,
+    context: { isWorkoutActive: () => true },
+    notifications: {
+      schedule: () => undefined,
+      cancel: () => {
+        cancellations += 1;
+      },
+      hasDelivered: () => false
+    },
+    feedback: {
+      complete: () => undefined,
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  await coordinator.restore();
+
+  assert.equal(timer.getState().status, 'idle');
+  assert.equal(snapshots.clears(), 1);
+  assert.equal(cancellations, 1);
+});
+
+test('startup gives a recent unowned expiry foreground feedback only once', async () => {
+  let completions = 0;
+  const snapshots = snapshotStore({
+    kind: 'snapshot',
+    snapshot: {
+      version: 1,
+      status: 'running',
+      deadlineEpochMs: 10_000,
+      durationSeconds: 10,
+      activeDurationSeconds: 10,
+      transitionOccurredAtEpochMs: 0
+    }
+  });
+  const timer = createRestTimerStore({ now: () => 14_999 });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => 14_999 },
+    appState: appStateSource(),
+    scheduler: idleScheduler,
+    snapshots,
+    context: { isWorkoutActive: () => true },
+    notifications: {
+      schedule: () => undefined,
+      cancel: () => undefined,
+      hasDelivered: () => false
+    },
+    feedback: {
+      complete: () => {
+        completions += 1;
+      },
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  await coordinator.restore();
+  coordinator.start();
+  coordinator.start();
+  await coordinator.settled();
+
+  assert.equal(timer.getState().status, 'idle');
+  assert.equal(snapshots.clears(), 1);
+  assert.equal(completions, 1);
+  coordinator.stop();
+});
+
+test('recent startup expiry waits for the app to become active', async () => {
+  let completions = 0;
+  const appState = appStateSource('background');
+  const timer = createRestTimerStore({ now: () => 14_999 });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => 14_999 },
+    appState,
+    scheduler: idleScheduler,
+    snapshots: snapshotStore({
+      kind: 'snapshot',
+      snapshot: {
+        version: 1,
+        status: 'running',
+        deadlineEpochMs: 10_000,
+        durationSeconds: 10,
+        activeDurationSeconds: 10,
+        transitionOccurredAtEpochMs: 0
+      }
+    }),
+    notifications: {
+      schedule: () => undefined,
+      cancel: () => undefined,
+      hasDelivered: () => false
+    },
+    feedback: {
+      complete: () => {
+        completions += 1;
+      },
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  await coordinator.restore();
+  coordinator.start();
+  await coordinator.settled();
+  assert.equal(completions, 0);
+
+  appState.change('active');
+  await coordinator.settled();
+  assert.equal(completions, 1);
+  coordinator.stop();
+});
+
+test('coordinator restart does not lose queued startup completion feedback', async () => {
+  let completions = 0;
+  const timer = createRestTimerStore({ now: () => 14_999 });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => 14_999 },
+    appState: appStateSource(),
+    scheduler: idleScheduler,
+    snapshots: snapshotStore({
+      kind: 'snapshot',
+      snapshot: {
+        version: 1,
+        status: 'running',
+        deadlineEpochMs: 10_000,
+        durationSeconds: 10,
+        activeDurationSeconds: 10,
+        transitionOccurredAtEpochMs: 0
+      }
+    }),
+    notifications: {
+      schedule: () => undefined,
+      cancel: () => undefined,
+      hasDelivered: () => false
+    },
+    feedback: {
+      complete: () => {
+        completions += 1;
+      },
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  await coordinator.restore();
+  coordinator.start();
+  coordinator.stop();
+  coordinator.start();
+  await coordinator.settled();
+
+  assert.equal(completions, 1);
+  coordinator.stop();
+});
+
+test('startup does not replay recent expiry when a delivered notification owns it', async () => {
+  let completions = 0;
+  const snapshots = snapshotStore({
+    kind: 'snapshot',
+    snapshot: {
+      version: 1,
+      status: 'running',
+      deadlineEpochMs: 10_000,
+      durationSeconds: 10,
+      activeDurationSeconds: 10,
+      transitionOccurredAtEpochMs: 0
+    }
+  });
+  const timer = createRestTimerStore({ now: () => 15_000 });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => 15_000 },
+    appState: appStateSource(),
+    scheduler: idleScheduler,
+    snapshots,
+    context: { isWorkoutActive: () => true },
+    notifications: {
+      schedule: () => undefined,
+      cancel: () => undefined,
+      hasDelivered: () => true
+    },
+    feedback: {
+      complete: () => {
+        completions += 1;
+      },
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  await coordinator.restore();
+  coordinator.start();
+  await coordinator.settled();
+
+  assert.equal(completions, 0);
+  assert.equal(snapshots.clears(), 1);
+  coordinator.stop();
+});
+
+test('startup clears invalid workout context with pending delivery', async () => {
+  let cancellations = 0;
+  const snapshots = snapshotStore({
+    kind: 'snapshot',
+    snapshot: {
+      version: 1,
+      status: 'running',
+      deadlineEpochMs: 91_000,
+      durationSeconds: 90,
+      activeDurationSeconds: 90,
+      transitionOccurredAtEpochMs: 1_000,
+      context: { workoutId: 'completed-workout' }
+    }
+  });
+  const timer = createRestTimerStore({ now: () => 2_000 });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => 2_000 },
+    appState: appStateSource(),
+    scheduler: idleScheduler,
+    snapshots,
+    context: { isWorkoutActive: () => false },
+    notifications: {
+      schedule: () => undefined,
+      cancel: () => {
+        cancellations += 1;
+      },
+      hasDelivered: () => false
+    },
+    feedback: {
+      complete: () => undefined,
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  await coordinator.restore();
+
+  assert.equal(timer.getState().status, 'idle');
+  assert.equal(snapshots.clears(), 1);
+  assert.equal(cancellations, 1);
+});
+
+test('startup removes pending delivery for a corrupt snapshot', async () => {
+  let cancellations = 0;
+  const timer = createRestTimerStore({ now: () => 2_000 });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => 2_000 },
+    appState: appStateSource(),
+    scheduler: idleScheduler,
+    snapshots: snapshotStore({ kind: 'invalid' }),
+    notifications: {
+      schedule: () => undefined,
+      cancel: () => {
+        cancellations += 1;
+      }
+    },
+    feedback: {
+      complete: () => undefined,
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  await coordinator.restore();
+
+  assert.equal(timer.getState().status, 'idle');
+  assert.equal(cancellations, 1);
+});
+
+test('snapshot write failure does not interrupt an in-session timer', async () => {
+  const deadlines: number[] = [];
+  const errors: string[] = [];
+  const timer = createRestTimerStore({ now: () => 1_000 });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => 1_000 },
+    appState: appStateSource(),
+    scheduler: idleScheduler,
+    snapshots: {
+      read: () => ({ kind: 'empty' }),
+      write: () => {
+        throw new Error('disk unavailable');
+      },
+      clear: () => undefined
+    },
+    context: { isWorkoutActive: () => true },
+    notifications: {
+      schedule: ({ deadlineEpochMs }) => {
+        deadlines.push(deadlineEpochMs);
+      },
+      cancel: () => undefined,
+      hasDelivered: () => false
+    },
+    feedback: {
+      complete: () => undefined,
+      cancel: () => undefined,
+      stop: () => undefined
+    },
+    onError: (_error, operation) => errors.push(operation)
+  });
+
+  coordinator.start();
+  assert.equal(timer.getState().start(90), true);
+  await coordinator.settled();
+
+  assert.equal(timer.getState().status, 'running');
+  assert.deepEqual(deadlines, [91_000]);
+  assert.deepEqual(errors, ['persist']);
+  coordinator.stop();
+});
+
+test('coordinator persists each new pause time for the 24-hour age', async () => {
+  let now = 1_000;
+  const snapshots = snapshotStore();
+  const timer = createRestTimerStore({ now: () => now });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => now },
+    appState: appStateSource(),
+    scheduler: idleScheduler,
+    snapshots,
+    notifications: {
+      schedule: () => undefined,
+      cancel: () => undefined
+    },
+    feedback: {
+      complete: () => undefined,
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  coordinator.start();
+  timer.getState().start(90);
+  now = 2_000;
+  timer.getState().pause();
+  now = 3_000;
+  timer.getState().resume();
+  now = 4_000;
+  timer.getState().pause();
+  await coordinator.settled();
+
+  const lastSnapshot = snapshots.writes.at(-1);
+
+  assert.equal(lastSnapshot?.status, 'paused');
+  assert.equal(
+    lastSnapshot?.status === 'paused'
+      ? lastSnapshot.pausedAtEpochMs
+      : undefined,
+    4_000
+  );
+  coordinator.stop();
+});
+
+test('startup clears an old running expiry without delivered lookup or feedback', async () => {
+  let deliveredLookups = 0;
+  let completions = 0;
+  const snapshots = snapshotStore({
+    kind: 'snapshot',
+    snapshot: {
+      version: 1,
+      status: 'running',
+      deadlineEpochMs: 10_000,
+      durationSeconds: 10,
+      activeDurationSeconds: 10,
+      transitionOccurredAtEpochMs: 0
+    }
+  });
+  const timer = createRestTimerStore({ now: () => 15_001 });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => 15_001 },
+    appState: appStateSource(),
+    scheduler: idleScheduler,
+    snapshots,
+    notifications: {
+      schedule: () => undefined,
+      cancel: () => undefined,
+      hasDelivered: () => {
+        deliveredLookups += 1;
+
+        return false;
+      }
+    },
+    feedback: {
+      complete: () => {
+        completions += 1;
+      },
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  await coordinator.restore();
+  coordinator.start();
+  await coordinator.settled();
+
+  assert.equal(snapshots.clears(), 1);
+  assert.equal(deliveredLookups, 0);
   assert.equal(completions, 0);
   coordinator.stop();
 });

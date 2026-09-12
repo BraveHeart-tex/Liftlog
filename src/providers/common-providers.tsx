@@ -40,14 +40,15 @@ export function CommonProviders({
           <ScreenErrorBoundary>
             <SettingsProvider>
               <UpdateProvider>
-                <BottomSheetModalProvider>
-                  {children}
-                  <UpdateAnnouncementHost />
-                  <StepsSyncHost />
-                  <RestTimerHost />
-                  <SnackbarHost />
-                  <AlertDialogHost />
-                </BottomSheetModalProvider>
+                <RestTimerHost>
+                  <BottomSheetModalProvider>
+                    {children}
+                    <UpdateAnnouncementHost />
+                    <StepsSyncHost />
+                    <SnackbarHost />
+                    <AlertDialogHost />
+                  </BottomSheetModalProvider>
+                </RestTimerHost>
               </UpdateProvider>
             </SettingsProvider>
           </ScreenErrorBoundary>

@@ -5,6 +5,7 @@ import {
   cancelScheduledNotificationAsync,
   dismissNotificationAsync,
   getAllScheduledNotificationsAsync,
+  getPresentedNotificationsAsync,
   getPermissionsAsync,
   requestPermissionsAsync,
   scheduleNotificationAsync,
@@ -127,6 +128,15 @@ export async function cancelRestTimerNotification() {
   notificationGeneration += 1;
 
   await cancelScheduledRestTimerNotification();
+}
+
+export async function hasDeliveredRestTimerNotification() {
+  const notifications = await getPresentedNotificationsAsync();
+
+  return notifications.some(
+    notification =>
+      getRestTimerNotificationData(notification.request.content.data) !== null
+  );
 }
 
 export async function scheduleRestTimerNotification({
