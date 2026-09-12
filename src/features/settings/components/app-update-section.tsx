@@ -4,13 +4,23 @@ import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
 import { useAppUpdates } from '@/src/features/app-updates/update-provider';
 import {
+  formatMegabytes,
   presentUpdateAttempt,
   presentUpdateState
 } from '@/src/features/app-updates/update-presenter';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { RefreshCw } from 'lucide-react-native';
 import { Platform, View } from 'react-native';
+import { useEffect } from 'react';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming
+} from 'react-native-reanimated';
 
 function formatLastChecked(timestamp: number) {
   const checkedAt = new Date(timestamp);
@@ -52,6 +62,91 @@ function MetadataRow({
       <Text variant="small" tone="muted" className="shrink text-right">
         {value}
       </Text>
+    </View>
+  );
+}
+
+function DownloadProgress({
+  bytesDownloaded,
+  totalBytes,
+  progress
+}: {
+  bytesDownloaded?: number;
+  totalBytes?: number;
+  progress?: number;
+}) {
+  const reduceMotion = useReducedMotion();
+  const progressValue = useSharedValue(0);
+  const safeProgress = Math.min(1, Math.max(0, progress ?? 0));
+  const downloaded = formatMegabytes(bytesDownloaded ?? 0);
+  const total = formatMegabytes(totalBytes ?? 0);
+  const numericWidth = Math.max(downloaded.length, total.length) * 8;
+
+  useEffect(() => {
+    progressValue.value = reduceMotion
+      ? safeProgress
+      : withTiming(safeProgress, {
+          duration: MOTION_DURATION_MS.standard,
+          easing: Easing.out(Easing.ease)
+        });
+  }, [progressValue, reduceMotion, safeProgress]);
+
+  const fillStyle = useAnimatedStyle(() => ({
+    width: `${progressValue.value * 100}%`
+  }));
+
+  return (
+    <View>
+      <View className="flex-row items-center">
+        <Text variant="small" weight="medium">
+          Downloading update
+        </Text>
+        <Text
+          variant="small"
+          weight="medium"
+          className="ml-auto"
+          style={{
+            fontVariant: ['tabular-nums'],
+            minWidth: 32,
+            textAlign: 'right'
+          }}
+        >
+          {Math.round(safeProgress * 100)}%
+        </Text>
+      </View>
+      <View className="mt-1 flex-row items-center">
+        <View style={{ width: numericWidth }}>
+          <Text
+            variant="caption"
+            tone="muted"
+            style={{ fontVariant: ['tabular-nums'], textAlign: 'right' }}
+          >
+            {downloaded}
+          </Text>
+        </View>
+        <Text
+          variant="caption"
+          tone="muted"
+          className="ml-1"
+          style={{ fontVariant: ['tabular-nums'] }}
+        >
+          of {total}
+        </Text>
+      </View>
+      <View
+        className="bg-muted mt-3 h-2 overflow-hidden rounded-full"
+        accessibilityRole="progressbar"
+        accessibilityValue={{
+          min: 0,
+          max: 100,
+          now: Math.round(safeProgress * 100)
+        }}
+      >
+        <Animated.View
+          className="bg-primary h-full rounded-full"
+          style={fillStyle}
+        />
+      </View>
     </View>
   );
 }
@@ -144,30 +239,21 @@ export function AppUpdateSection() {
               className="border-border border-t py-3"
               accessibilityLiveRegion="polite"
             >
-              <Text
-                variant="small"
-                weight="medium"
-                tone={attempt.status === 'failed' ? 'danger' : 'default'}
-              >
-                {attemptPresentation.message}
-              </Text>
               {attempt.status === 'downloading' ? (
-                <View
-                  className="bg-muted mt-3 h-2 overflow-hidden rounded-full"
-                  accessibilityRole="progressbar"
-                  accessibilityValue={{
-                    min: 0,
-                    max: 100,
-                    now: Math.round((attempt.progress ?? 0) * 100)
-                  }}
+                <DownloadProgress
+                  bytesDownloaded={attempt.bytesDownloaded}
+                  totalBytes={attempt.totalBytes}
+                  progress={attempt.progress}
+                />
+              ) : null}
+              {attempt.status !== 'downloading' ? (
+                <Text
+                  variant="small"
+                  weight="medium"
+                  tone={attempt.status === 'failed' ? 'danger' : 'default'}
                 >
-                  <View
-                    className="bg-primary h-full rounded-full"
-                    style={{
-                      width: `${Math.round((attempt.progress ?? 0) * 100)}%`
-                    }}
-                  />
-                </View>
+                  {attemptPresentation.message}
+                </Text>
               ) : null}
             </View>
           ) : null}

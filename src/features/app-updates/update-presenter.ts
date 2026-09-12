@@ -4,7 +4,7 @@ import type { UpdateAttemptState } from './update-attempt-coordinator';
 const MAX_RELEASE_NOTES_LENGTH = 4_000;
 const BYTES_PER_MEGABYTE = 1024 * 1024;
 
-function formatMegabytes(bytes: number) {
+export function formatMegabytes(bytes: number) {
   return `${new Intl.NumberFormat('en-US', {
     maximumFractionDigits: 2
   }).format(bytes / BYTES_PER_MEGABYTE)} MB`;
