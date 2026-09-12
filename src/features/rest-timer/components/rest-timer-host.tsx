@@ -1,6 +1,10 @@
 import { dismissSnackbar, showSnackbar } from '@/src/components/ui/snackbar';
 import { useRestTimerNotificationResponses } from '@/src/features/rest-timer/hooks/use-rest-timer-notification-responses';
 import {
+  createRestTimerCoordinator,
+  type RestTimerAppState
+} from '@/src/features/rest-timer/rest-timer.coordinator';
+import {
   cancelRestTimerNotification,
   scheduleRestTimerNotification
 } from '@/src/features/rest-timer/rest-timer-notifications.service';
@@ -11,23 +15,34 @@ import {
 } from '@/src/lib/haptics/haptics';
 import { useAudioPlayer } from 'expo-audio';
 import { ImpactFeedbackStyle } from 'expo-haptics';
-import { useCallback, useEffect, useRef } from 'react';
-import { AppState } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { AppState, Platform } from 'react-native';
 
 const REST_TIMER_COMPLETION_SOUND_DURATION_MS = 5000;
 const REST_TIMER_COMPLETION_SNACKBAR_KEY = 'rest-timer-completion';
 
+function currentAppState(): RestTimerAppState {
+  return AppState.currentState ?? 'unknown';
+}
+
+const appStateSource = {
+  current: currentAppState,
+  subscribe(listener: (state: RestTimerAppState) => void) {
+    const subscription = AppState.addEventListener('change', listener);
+
+    return () => subscription.remove();
+  }
+};
+
+const timerScheduler = {
+  every(operation: () => void, intervalMs: number) {
+    const timer = setInterval(operation, intervalMs);
+
+    return () => clearInterval(timer);
+  }
+};
+
 export function RestTimerHost() {
-  const status = useRestTimerStore(state => state.status);
-  const endTime = useRestTimerStore(state => state.endTime);
-  const context = useRestTimerStore(state => state.context);
-  const completionCount = useRestTimerStore(state => state.completionCount);
-  const cancellationCount = useRestTimerStore(state => state.cancellationCount);
-  const isSheetOpen = useRestTimerStore(state => state.isSheetOpen);
-  const tick = useRestTimerStore(state => state.tick);
-  const lastHandledCompletionCountRef = useRef(completionCount);
-  const lastHandledCancellationCountRef = useRef(cancellationCount);
-  const wasSheetOpenRef = useRef(isSheetOpen);
   const completionHapticTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>(
     []
   );
@@ -96,27 +111,6 @@ export function RestTimerHost() {
     }
   }, [clearCompletionSoundTimeout]);
 
-  const acknowledgeNotificationCompletion = useCallback(() => {
-    const timerState = useRestTimerStore.getState();
-
-    if (
-      timerState.status === 'running' &&
-      timerState.endTime !== null &&
-      timerState.endTime <= Date.now()
-    ) {
-      timerState.cancel();
-    }
-
-    lastHandledCompletionCountRef.current =
-      useRestTimerStore.getState().completionCount;
-    dismissSnackbar(REST_TIMER_COMPLETION_SNACKBAR_KEY);
-    stopCompletionSound();
-  }, [stopCompletionSound]);
-
-  useRestTimerNotificationResponses({
-    onRestTimerNotificationPress: acknowledgeNotificationCompletion
-  });
-
   const playCompletionSound = useCallback(async () => {
     const operationGeneration =
       completionSoundOperationGenerationRef.current + 1;
@@ -150,7 +144,7 @@ export function RestTimerHost() {
         }
 
         completionSoundTimeoutRef.current = null;
-        void stopCompletionSound();
+        stopCompletionSound();
       }, REST_TIMER_COMPLETION_SOUND_DURATION_MS);
     } catch (error) {
       if (!isCurrentAudioOperation(operationGeneration, operationPlayer)) {
@@ -165,118 +159,93 @@ export function RestTimerHost() {
     stopCompletionSound
   ]);
 
+  const completeFeedback = useCallback(
+    async ({ showMessage }: { showMessage: boolean }) => {
+      triggerCompletionHaptics();
+      const sound = playCompletionSound();
+
+      if (showMessage) {
+        showSnackbar({
+          key: REST_TIMER_COMPLETION_SNACKBAR_KEY,
+          message: 'Rest time is up',
+          actionLabel: 'Dismiss',
+          onDismiss: stopCompletionSound
+        });
+      }
+
+      await sound;
+    },
+    [playCompletionSound, stopCompletionSound, triggerCompletionHaptics]
+  );
+
+  const cancelFeedback = useCallback(() => {
+    clearCompletionHapticTimeouts();
+    dismissSnackbar(REST_TIMER_COMPLETION_SNACKBAR_KEY);
+    stopCompletionSound();
+  }, [clearCompletionHapticTimeouts, stopCompletionSound]);
+
+  const acknowledgeFeedback = useCallback(() => {
+    dismissSnackbar(REST_TIMER_COMPLETION_SNACKBAR_KEY);
+    stopCompletionSound();
+  }, [stopCompletionSound]);
+
+  const coordinator = useMemo(
+    () =>
+      createRestTimerCoordinator({
+        timer: useRestTimerStore,
+        clock: { now: Date.now },
+        appState: appStateSource,
+        scheduler: timerScheduler,
+        notifications: {
+          schedule: ({ deadlineEpochMs, context }) => {
+            if (Platform.OS !== 'android') {
+              return;
+            }
+
+            return scheduleRestTimerNotification({
+              seconds: Math.max(
+                1,
+                Math.ceil((deadlineEpochMs - Date.now()) / 1000)
+              ),
+              context
+            });
+          },
+          cancel: cancelRestTimerNotification
+        },
+        feedback: {
+          complete: completeFeedback,
+          cancel: cancelFeedback,
+          acknowledge: acknowledgeFeedback,
+          stop: stopCompletionSound
+        },
+        onError: (_error, operation) => {
+          console.error(`Failed to ${operation} rest timer side effects`);
+        }
+      }),
+    [acknowledgeFeedback, cancelFeedback, completeFeedback, stopCompletionSound]
+  );
+
+  useRestTimerNotificationResponses({
+    onRestTimerNotificationPress: coordinator.acknowledgeNotificationCompletion
+  });
+
   useEffect(() => {
     isAudioHostMountedRef.current = true;
     playerRef.current = player;
+    coordinator.start();
 
     return () => {
+      coordinator.stop();
       isAudioHostMountedRef.current = false;
       completionSoundOperationGenerationRef.current += 1;
       clearCompletionHapticTimeouts();
       clearCompletionSoundTimeout();
     };
-  }, [clearCompletionHapticTimeouts, clearCompletionSoundTimeout, player]);
-
-  useEffect(() => {
-    if (status !== 'running') {
-      return;
-    }
-
-    tick();
-
-    const id = setInterval(() => {
-      tick();
-    }, 500);
-
-    return () => clearInterval(id);
-  }, [status, tick]);
-
-  useEffect(() => {
-    if (status !== 'running' || endTime === null) {
-      cancelRestTimerNotification().catch(error => {
-        console.error('Failed to cancel rest timer notification', error);
-      });
-
-      return;
-    }
-
-    const seconds = Math.max(1, Math.ceil((endTime - Date.now()) / 1000));
-
-    scheduleRestTimerNotification({ seconds, context }).catch(error => {
-      console.error('Failed to schedule rest timer notification', error);
-    });
-
-    return () => {
-      cancelRestTimerNotification().catch(error => {
-        console.error('Failed to cancel rest timer notification', error);
-      });
-    };
-  }, [context, endTime, status]);
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', nextState => {
-      if (nextState === 'active') {
-        tick();
-
-        return;
-      }
-
-      stopCompletionSound();
-    });
-
-    return () => subscription.remove();
-  }, [stopCompletionSound, tick]);
-
-  useEffect(() => {
-    const wasSheetOpen = wasSheetOpenRef.current;
-
-    wasSheetOpenRef.current = isSheetOpen;
-
-    if (wasSheetOpen && !isSheetOpen) {
-      stopCompletionSound();
-    }
-  }, [isSheetOpen, stopCompletionSound]);
-
-  useEffect(() => {
-    if (cancellationCount <= lastHandledCancellationCountRef.current) {
-      return;
-    }
-
-    lastHandledCancellationCountRef.current = cancellationCount;
-    lastHandledCompletionCountRef.current =
-      useRestTimerStore.getState().completionCount;
-    clearCompletionHapticTimeouts();
-    dismissSnackbar(REST_TIMER_COMPLETION_SNACKBAR_KEY);
-    stopCompletionSound();
-  }, [cancellationCount, clearCompletionHapticTimeouts, stopCompletionSound]);
-
-  useEffect(() => {
-    if (completionCount <= lastHandledCompletionCountRef.current) {
-      return;
-    }
-
-    lastHandledCompletionCountRef.current = completionCount;
-    triggerCompletionHaptics();
-    void playCompletionSound();
-
-    if (isSheetOpen) {
-      return;
-    }
-
-    showSnackbar({
-      key: REST_TIMER_COMPLETION_SNACKBAR_KEY,
-      message: 'Rest time is up',
-      actionLabel: 'Dismiss',
-      onDismiss: () => {
-        stopCompletionSound();
-      }
-    });
   }, [
-    completionCount,
-    isSheetOpen,
-    playCompletionSound,
-    stopCompletionSound,
-    triggerCompletionHaptics
+    clearCompletionHapticTimeouts,
+    clearCompletionSoundTimeout,
+    coordinator,
+    player
   ]);
 
   return null;
