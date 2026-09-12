@@ -1,5 +1,6 @@
 import { dismissSnackbar, showSnackbar } from '@/src/components/ui/snackbar';
 import { useRestTimerNotificationResponses } from '@/src/features/rest-timer/hooks/use-rest-timer-notification-responses';
+import { useRestTimerWorkoutContextValidator } from '@/src/features/rest-timer/hooks/use-rest-timer-workout-context-validator';
 import {
   createRestTimerCoordinator,
   type RestTimerAppState
@@ -11,12 +12,10 @@ import {
 } from '@/src/features/rest-timer/rest-timer-notifications.service';
 import { restTimerSnapshotStore } from '@/src/features/rest-timer/rest-timer-runtime-snapshot.repository';
 import { useRestTimerStore } from '@/src/features/rest-timer/rest-timer.store';
-import { getActiveWorkoutForRestTimerNotification } from '@/src/features/workouts/shared/workout.repository';
 import {
   triggerHapticImpact,
   triggerHapticWarning
 } from '@/src/lib/haptics/haptics';
-import { useDrizzle } from '@/src/providers/database-provider';
 import { useAudioPlayer } from 'expo-audio';
 import { ImpactFeedbackStyle } from 'expo-haptics';
 import {
@@ -66,7 +65,7 @@ function RestTimerNotificationResponseHost({
 }
 
 export function RestTimerHost({ children }: PropsWithChildren) {
-  const db = useDrizzle();
+  const workoutContext = useRestTimerWorkoutContextValidator();
   const [isRestored, setIsRestored] = useState(false);
   const completionHapticTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>(
     []
@@ -222,11 +221,7 @@ export function RestTimerHost({ children }: PropsWithChildren) {
         appState: appStateSource,
         scheduler: timerScheduler,
         snapshots: restTimerSnapshotStore,
-        context: {
-          isWorkoutActive: workoutId =>
-            getActiveWorkoutForRestTimerNotification(db, workoutId) !==
-            undefined
-        },
+        context: workoutContext,
         notifications: {
           schedule: ({ deadlineEpochMs, context }) => {
             if (Platform.OS !== 'android') {
@@ -258,8 +253,8 @@ export function RestTimerHost({ children }: PropsWithChildren) {
       acknowledgeFeedback,
       cancelFeedback,
       completeFeedback,
-      db,
-      stopCompletionSound
+      stopCompletionSound,
+      workoutContext
     ]
   );
 

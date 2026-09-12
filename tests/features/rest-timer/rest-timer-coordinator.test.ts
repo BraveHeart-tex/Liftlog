@@ -282,6 +282,120 @@ test('coordinator gives background completion to native delivery', async () => {
   coordinator.stop();
 });
 
+test('foreground reconciliation clears an old expiry without feedback', async () => {
+  let now = 1_000;
+  let completions = 0;
+  let deliveredLookups = 0;
+  const appState = appStateSource('background');
+  const timer = createRestTimerStore({ now: () => now });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => now },
+    appState,
+    scheduler: idleScheduler,
+    notifications: {
+      schedule: () => undefined,
+      cancel: () => undefined,
+      hasDelivered: () => {
+        deliveredLookups += 1;
+
+        return false;
+      }
+    },
+    feedback: {
+      complete: () => {
+        completions += 1;
+      },
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  coordinator.start();
+  timer.getState().start(10);
+  await coordinator.settled();
+  now = 20_000;
+  appState.change('active');
+  await coordinator.settled();
+
+  assert.equal(timer.getState().status, 'idle');
+  assert.equal(deliveredLookups, 0);
+  assert.equal(completions, 0);
+  coordinator.stop();
+});
+
+test('foreground reconciliation gives recent expiry to delivered notification', async () => {
+  let now = 1_000;
+  let completions = 0;
+  const appState = appStateSource('background');
+  const timer = createRestTimerStore({ now: () => now });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => now },
+    appState,
+    scheduler: idleScheduler,
+    notifications: {
+      schedule: () => undefined,
+      cancel: () => undefined,
+      hasDelivered: () => true
+    },
+    feedback: {
+      complete: () => {
+        completions += 1;
+      },
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  coordinator.start();
+  timer.getState().start(10);
+  await coordinator.settled();
+  now = 11_000;
+  appState.change('active');
+  await coordinator.settled();
+
+  assert.equal(timer.getState().status, 'idle');
+  assert.equal(completions, 0);
+  coordinator.stop();
+});
+
+test('foreground reconciliation gives recent unowned expiry feedback once', async () => {
+  let now = 1_000;
+  let completions = 0;
+  const appState = appStateSource('background');
+  const timer = createRestTimerStore({ now: () => now });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => now },
+    appState,
+    scheduler: idleScheduler,
+    notifications: {
+      schedule: () => undefined,
+      cancel: () => undefined,
+      hasDelivered: () => false
+    },
+    feedback: {
+      complete: () => {
+        completions += 1;
+      },
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  coordinator.start();
+  timer.getState().start(10);
+  await coordinator.settled();
+  now = 11_000;
+  appState.change('active');
+  await coordinator.settled();
+
+  assert.equal(timer.getState().status, 'idle');
+  assert.equal(completions, 1);
+  coordinator.stop();
+});
+
 test('coordinator observes hydration that happened before it mounted', async () => {
   const schedules: number[] = [];
   const timer = createRestTimerStore({ now: () => 1_000 });

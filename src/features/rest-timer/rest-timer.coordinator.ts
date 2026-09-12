@@ -299,6 +299,69 @@ export function createRestTimerCoordinator(
     }
   };
 
+  const reconcileForeground = () => {
+    appState = 'active';
+    const now = dependencies.clock.now();
+    const state = dependencies.timer.getState();
+
+    if (
+      state.status !== 'running' ||
+      state.endTime === null ||
+      state.endTime > now
+    ) {
+      state.tick(now);
+      completePendingStartup();
+
+      return;
+    }
+
+    const expiryAgeMs = now - state.endTime;
+    suppressedCompletionSequence = (state.transition?.sequence ?? 0) + 1;
+    state.tick(now);
+
+    if (expiryAgeMs > RECENT_EXPIRY_WINDOW_MS) {
+      return;
+    }
+
+    const completionSequence =
+      dependencies.timer.getState().transition?.sequence;
+    const operationLifecycle = lifecycleGeneration;
+
+    runSerialized(async () => {
+      let delivered: boolean;
+
+      try {
+        delivered =
+          (await dependencies.notifications.hasDelivered?.()) ?? false;
+      } catch (error) {
+        dependencies.onError?.(error, 'restore');
+
+        return;
+      }
+
+      const currentState = dependencies.timer.getState();
+
+      if (
+        delivered ||
+        !started ||
+        operationLifecycle !== lifecycleGeneration ||
+        appState !== 'active' ||
+        currentState.status !== 'idle' ||
+        currentState.transition?.sequence !== completionSequence
+      ) {
+        return;
+      }
+
+      try {
+        await dependencies.feedback.complete({
+          showMessage: !currentState.isSheetOpen
+        });
+      } catch (error) {
+        dependencies.onError?.(error, 'complete');
+      }
+    });
+  };
+
   return {
     async restore() {
       if (restored) {
@@ -427,15 +490,13 @@ export function createRestTimerCoordinator(
         }
       );
       unsubscribeAppState = dependencies.appState.subscribe(nextState => {
-        appState = nextState;
-
         if (nextState === 'active') {
-          dependencies.timer.getState().tick(dependencies.clock.now());
-          completePendingStartup();
+          reconcileForeground();
 
           return;
         }
 
+        appState = nextState;
         stopFeedback();
       });
       cancelTimerTicks = dependencies.scheduler.every(() => {
