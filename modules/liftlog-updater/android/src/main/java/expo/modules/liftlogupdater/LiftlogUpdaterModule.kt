@@ -311,7 +311,11 @@ class LiftlogUpdaterModule : Module() {
       if (activity == null || activity.isFinishing) {
         throw UpdaterException("UPDATER_FOREGROUND_REQUIRED", "LiftLog must be active to reopen installer confirmation")
       }
-      val sessionInfo = installer.getSessionInfo(store.sessionId()) ?: return@withContext reconcile()
+      val sessionId = store.sessionId()
+      val sessionInfo = installer.getSessionInfo(sessionId) ?: return@withContext reconcile()
+      if (UpdateConfirmationNotification.resume(activity, context, sessionId)) {
+        return@withContext store.state()
+      }
       val detailsIntent = sessionInfo.createDetailsIntent()
         ?: throw UpdaterException("UPDATER_CONFIRMATION_UNAVAILABLE", "Android installer confirmation is unavailable")
 
@@ -346,7 +350,7 @@ class LiftlogUpdaterModule : Module() {
       if (next.isTerminal) cleanupOwnedFiles()
     }
     if (store.stage().isTerminal) {
-      UpdateConfirmationNotification.cancel(context)
+      UpdateConfirmationNotification.cancel(context, sessionId)
       cleanupOwnedFiles()
     }
     runCatching { store.materializeLegacyFailure(System.currentTimeMillis()) }

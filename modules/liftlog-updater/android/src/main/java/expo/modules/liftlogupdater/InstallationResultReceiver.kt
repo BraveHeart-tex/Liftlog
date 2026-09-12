@@ -1,6 +1,7 @@
 package expo.modules.liftlogupdater
 
 import android.Manifest
+import android.app.Activity
 import android.app.ActivityManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -10,6 +11,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import java.io.File
@@ -25,12 +27,19 @@ class InstallationResultReceiver : BroadcastReceiver() {
       return
     }
 
-    when (intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)) {
+    val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
+
+    when (status) {
       PackageInstaller.STATUS_PENDING_USER_ACTION -> {
         store.markPendingConfirmation()
         continuationIntent(intent)?.let { continuation ->
-          if (!launchWhileForeground(context, continuation)) {
-            UpdateConfirmationNotification.post(context, callbackSessionId, continuation)
+          val confirmation = UpdateConfirmationIntent.create(
+            context,
+            callbackSessionId,
+            continuation
+          )
+          if (!launchWhileForeground(confirmation)) {
+            UpdateConfirmationNotification.post(context, confirmation)
           }
         } ?: run {
           appendFailureDiagnostic(
@@ -48,16 +57,21 @@ class InstallationResultReceiver : BroadcastReceiver() {
         store.setStage(UpdateStage.COMMITTED)
       }
       else -> {
-        val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
         val terminal = InstallerStatusMapping.terminal(status)
         if (terminal.stage == UpdateStage.FAILED) {
-          appendFailureDiagnostic(store, intent, callbackAttemptId!!, status, terminal.code)
+          appendFailureDiagnostic(
+            store,
+            intent,
+            callbackAttemptId!!,
+            status,
+            terminal.code
+          )
         }
         store.finish(terminal.stage, terminal.code)
       }
     }
     if (store.stage() != UpdateStage.PENDING_CONFIRMATION) {
-      UpdateConfirmationNotification.cancel(context)
+      UpdateConfirmationNotification.cancel(context, callbackSessionId)
     }
     if (store.stage().isTerminal) deleteOwnedArtifact(context, store)
   }
@@ -103,12 +117,12 @@ class InstallationResultReceiver : BroadcastReceiver() {
     @Suppress("DEPRECATION") callback.getParcelableExtra(Intent.EXTRA_INTENT)
   }
 
-  private fun launchWhileForeground(context: Context, continuation: Intent): Boolean {
+  private fun launchWhileForeground(confirmation: PendingIntent): Boolean {
     val process = ActivityManager.RunningAppProcessInfo()
     ActivityManager.getMyMemoryState(process)
     if (process.importance > ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) return false
     return runCatching {
-      context.startActivity(continuation.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+      confirmation.send()
       true
     }.getOrDefault(false)
   }
@@ -118,8 +132,55 @@ class InstallationResultReceiver : BroadcastReceiver() {
   }
 }
 
+internal object UpdateConfirmationIntent {
+  private const val ACTION = "expo.modules.liftlogupdater.CONFIRM_INSTALL"
+
+  fun create(context: Context, sessionId: Int, continuation: Intent): PendingIntent =
+    PendingIntent.getActivity(
+      context,
+      sessionId,
+      wrapperIntent(context, sessionId).putExtra(Intent.EXTRA_INTENT, continuation),
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+  fun existing(context: Context, sessionId: Int): PendingIntent? =
+    PendingIntent.getActivity(
+      context,
+      sessionId,
+      wrapperIntent(context, sessionId),
+      PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+    )
+
+  private fun wrapperIntent(context: Context, sessionId: Int): Intent =
+    Intent(context, UpdateConfirmationActivity::class.java).apply {
+      action = ACTION
+      data = Uri.parse("liftlog://update-confirmation/$sessionId")
+    }
+}
+
+class UpdateConfirmationActivity : Activity() {
+  override fun onCreate(savedInstanceState: android.os.Bundle?) {
+    super.onCreate(savedInstanceState)
+    val continuation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)
+    } else {
+      @Suppress("DEPRECATION") intent.getParcelableExtra(Intent.EXTRA_INTENT)
+    }
+
+    try {
+      if (continuation != null) {
+        startActivity(continuation)
+      }
+    } catch (error: Throwable) {
+      Log.e("LiftlogUpdater", "Failed to launch update confirmation", error)
+    } finally {
+      finish()
+    }
+  }
+}
+
 internal object UpdateConfirmationNotification {
-  fun post(context: Context, sessionId: Int, continuation: Intent) {
+  fun post(context: Context, confirmation: PendingIntent) {
     if (
       Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
       context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -136,17 +197,11 @@ internal object UpdateConfirmationNotification {
           )
         )
       }
-      val action = PendingIntent.getActivity(
-        context,
-        sessionId,
-        continuation,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-      )
       val notification = android.app.Notification.Builder(context, UpdaterContract.NOTIFICATION_CHANNEL)
         .setSmallIcon(context.applicationInfo.icon)
         .setContentTitle("Complete LiftLog update")
         .setContentText("Tap to review Android's installation confirmation")
-        .setContentIntent(action)
+        .setContentIntent(confirmation)
         .setAutoCancel(true)
         .build()
       manager.notify(UpdaterContract.NOTIFICATION_ID, notification)
@@ -155,10 +210,24 @@ internal object UpdateConfirmationNotification {
     }
   }
 
-  fun cancel(context: Context) {
+  fun resume(activity: Activity, context: Context, sessionId: Int): Boolean {
+    val confirmation = UpdateConfirmationIntent.existing(context, sessionId) ?: return false
+
+    return try {
+      activity.startIntentSender(confirmation.intentSender, null, 0, 0, 0)
+      true
+    } catch (_: Throwable) {
+      false
+    }
+  }
+
+  fun cancel(context: Context, sessionId: Int) {
     runCatching {
       context.getSystemService(NotificationManager::class.java)
         .cancel(UpdaterContract.NOTIFICATION_ID)
+      if (sessionId >= 0) {
+        UpdateConfirmationIntent.existing(context, sessionId)?.cancel()
+      }
     }.onFailure { error ->
       Log.e("LiftlogUpdater", "Failed to cancel update confirmation notification", error)
     }

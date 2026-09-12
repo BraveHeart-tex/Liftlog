@@ -3,6 +3,12 @@
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
   <application>
+    <activity
+      android:name=".UpdateConfirmationActivity"
+      android:excludeFromRecents="true"
+      android:exported="false"
+      android:noHistory="true"
+      android:theme="@android:style/Theme.Translucent.NoTitleBar" />
     <receiver
       android:name=".InstallationResultReceiver"
       android:exported="false" />

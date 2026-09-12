@@ -11,7 +11,6 @@ import {
   wrap as wrapWithSentry
 } from '@sentry/react-native';
 
-import Constants from 'expo-constants';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { hideAsync, preventAutoHideAsync } from 'expo-splash-screen';
@@ -21,7 +20,6 @@ import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 initSentry({
   dsn: 'https://1bdaf14c00267e50ae9ecee83e794a69@o4507100890726400.ingest.de.sentry.io/4511688205467728',
   environment: __DEV__ ? 'development' : 'production',
-  release: `${Constants.expoConfig?.slug ?? 'liftlog'}@${Constants.nativeAppVersion ?? Constants.expoConfig?.version ?? 'unknown'}`,
   sendDefaultPii: false,
   enableLogs: false,
   tracesSampleRate: 1,
