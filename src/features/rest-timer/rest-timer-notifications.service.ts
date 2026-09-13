@@ -98,7 +98,11 @@ async function requestRestTimerNotificationPermission() {
   return isGranted(nextPermission);
 }
 
-async function cancelScheduledRestTimerNotification() {
+async function cancelScheduledRestTimerNotification({
+  dismiss
+}: {
+  dismiss: boolean;
+}) {
   const scheduledNotifications = await getAllScheduledNotificationsAsync();
   const notificationIds = new Set(
     scheduledNotifications
@@ -121,7 +125,7 @@ async function cancelScheduledRestTimerNotification() {
   await Promise.allSettled(
     [...notificationIds].flatMap(notificationId => [
       cancelScheduledNotificationAsync(notificationId),
-      dismissNotificationAsync(notificationId)
+      ...(dismiss ? [dismissNotificationAsync(notificationId)] : [])
     ])
   );
 }
@@ -129,7 +133,13 @@ async function cancelScheduledRestTimerNotification() {
 export async function cancelRestTimerNotification() {
   notificationGeneration += 1;
 
-  await cancelScheduledRestTimerNotification();
+  await cancelScheduledRestTimerNotification({ dismiss: true });
+}
+
+export async function cancelPendingRestTimerNotification() {
+  notificationGeneration += 1;
+
+  await cancelScheduledRestTimerNotification({ dismiss: false });
 }
 
 export async function hasDeliveredRestTimerNotification(
@@ -155,7 +165,7 @@ export async function scheduleRestTimerNotification({
 
   notificationGeneration = generation;
 
-  await cancelScheduledRestTimerNotification();
+  await cancelScheduledRestTimerNotification({ dismiss: true });
 
   if (seconds <= 0) {
     return;

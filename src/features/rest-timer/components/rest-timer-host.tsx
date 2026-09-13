@@ -6,6 +6,7 @@ import {
   type RestTimerAppState
 } from '@/src/features/rest-timer/rest-timer.coordinator';
 import {
+  cancelPendingRestTimerNotification,
   cancelRestTimerNotification,
   hasDeliveredRestTimerNotification,
   scheduleRestTimerNotification
@@ -238,6 +239,7 @@ export function RestTimerHost({ children }: PropsWithChildren) {
             });
           },
           cancel: cancelRestTimerNotification,
+          cancelPending: cancelPendingRestTimerNotification,
           hasDelivered: hasDeliveredRestTimerNotification
         },
         feedback: {

@@ -949,6 +949,9 @@ test('recent startup expiry waits for the app to become active', async () => {
 test('recent startup expiry rechecks notification ownership on activation', async () => {
   let completions = 0;
   let deliveredLookups = 0;
+  let delivered = false;
+  let pendingCancellations = 0;
+  let dismissingCancellations = 0;
   const appState = appStateSource('background');
   const timer = createRestTimerStore({ now: () => 14_999 });
   const coordinator = createRestTimerCoordinator({
@@ -968,11 +971,18 @@ test('recent startup expiry rechecks notification ownership on activation', asyn
     }),
     notifications: {
       schedule: () => undefined,
-      cancel: () => undefined,
+      cancel: () => {
+        dismissingCancellations += 1;
+        delivered = false;
+      },
+      cancelPending: () => {
+        pendingCancellations += 1;
+        delivered = true;
+      },
       hasDelivered: () => {
         deliveredLookups += 1;
 
-        return deliveredLookups > 1;
+        return delivered;
       }
     },
     feedback: {
@@ -993,6 +1003,8 @@ test('recent startup expiry rechecks notification ownership on activation', asyn
   await coordinator.settled();
 
   assert.equal(deliveredLookups, 2);
+  assert.equal(pendingCancellations, 1);
+  assert.equal(dismissingCancellations, 0);
   assert.equal(completions, 0);
   coordinator.stop();
 });

@@ -37,6 +37,7 @@ export interface RestTimerNotificationPort {
     context: RestTimerContext;
   }): void | Promise<void>;
   cancel(): void | Promise<void>;
+  cancelPending?(): void | Promise<void>;
   hasDelivered?(deadlineEpochMs: number): boolean | Promise<boolean>;
 }
 
@@ -352,6 +353,18 @@ export function createRestTimerCoordinator(
     }
   };
 
+  const cancelPendingNotification = async () => {
+    try {
+      if (dependencies.notifications.cancelPending) {
+        await dependencies.notifications.cancelPending();
+      } else {
+        await dependencies.notifications.cancel();
+      }
+    } catch (error) {
+      dependencies.onError?.(error, 'cancel');
+    }
+  };
+
   const completePendingBackground = () => {
     const pending = pendingBackgroundCompletion;
 
@@ -551,7 +564,7 @@ export function createRestTimerCoordinator(
       clearSnapshot();
 
       if (now - snapshot.deadlineEpochMs > RECENT_EXPIRY_WINDOW_MS) {
-        await cancelNotification();
+        await cancelPendingNotification();
 
         return;
       }
@@ -569,7 +582,7 @@ export function createRestTimerCoordinator(
         dependencies.onError?.(error, 'restore');
       }
 
-      await cancelNotification();
+      await cancelPendingNotification();
     },
     start() {
       if (started) {
