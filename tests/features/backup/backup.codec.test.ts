@@ -4,13 +4,13 @@ import {
   parseBackupJson,
   serializeBackup
 } from '@/src/features/backup/backup.codec';
-import type { LiftLogBackupV1 } from '@/src/features/backup/backup.types';
+import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-const backup: LiftLogBackupV1 = {
+const backup: LiftLogBackupV2 = {
   format: 'liftlog-backup',
-  schemaVersion: 1,
+  schemaVersion: 2,
   createdAt: '2026-09-05T12:00:00.000Z',
   appVersion: '1.0.0',
   data: {
@@ -37,6 +37,7 @@ const backup: LiftLogBackupV1 = {
       weightUnit: 'kg',
       restTimerDuration: 90,
       restTimerPresets: [],
+      restTimerNotificationsEnabled: true,
       healthConnectStepsEnabled: false,
       stepGoal: 10000
     },
@@ -56,11 +57,30 @@ test('rejects unrelated and future envelopes', () => {
       error.category === 'unrelated-file'
   );
   assert.throws(
-    () => parseBackupEnvelope({ ...backup, schemaVersion: 2 }),
+    () => parseBackupEnvelope({ ...backup, schemaVersion: 3 }),
     (error: unknown) =>
       error instanceof BackupValidationError &&
       error.category === 'unsupported-version'
   );
+});
+
+test('migrates version 1 backups with rest notifications disabled', () => {
+  const versionOne = {
+    ...backup,
+    schemaVersion: 1,
+    data: {
+      ...backup.data,
+      settings: {
+        ...backup.data.settings,
+        restTimerNotificationsEnabled: undefined
+      }
+    }
+  };
+
+  const migrated = parseBackupJson(JSON.stringify(versionOne));
+
+  assert.equal(migrated.schemaVersion, 2);
+  assert.equal(migrated.data.settings.restTimerNotificationsEnabled, false);
 });
 
 test('rejects dangling relationships and duplicate active exercise names', () => {

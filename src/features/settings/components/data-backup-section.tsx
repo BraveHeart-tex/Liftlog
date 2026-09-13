@@ -12,7 +12,7 @@ import {
   type SafetyBackupPreviewResult
 } from '@/src/features/backup/backup.service';
 import { pickBackupPreview } from '@/src/features/backup/backup-import.service';
-import type { LiftLogBackupV1 } from '@/src/features/backup/backup.types';
+import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 import {
   getBackupErrorCategory,
   type BackupPreview
@@ -115,7 +115,7 @@ export function DataBackupSection() {
   }, [runExport]);
 
   const runReplace = useCallback(
-    async (backup: LiftLogBackupV1) => {
+    async (backup: LiftLogBackupV2) => {
       setIsImporting(true);
 
       try {
@@ -209,7 +209,7 @@ export function DataBackupSection() {
   }, [runUndo]);
 
   const showPreview = useCallback(
-    (preview: BackupPreview, backup: LiftLogBackupV1) => {
+    (preview: BackupPreview, backup: LiftLogBackupV2) => {
       const { counts } = preview;
       const activeWorkoutMessage = preview.replacesActiveWorkout
         ? '\n\nThis will replace your active workout.'

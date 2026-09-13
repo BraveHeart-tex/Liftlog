@@ -3,21 +3,21 @@ import {
   createBackupPreview,
   type BackupPreview
 } from '@/src/features/backup/backup-preview';
-import type { LiftLogBackupV1 } from '@/src/features/backup/backup.types';
+import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 
 export interface SafetyBackupReader {
   read(uri: string): Promise<string>;
 }
 
 export interface SafetyBackupPreviewResult {
-  backup: LiftLogBackupV1;
+  backup: LiftLogBackupV2;
   preview: BackupPreview;
 }
 
 export async function readSafetyBackupFile(
   reader: SafetyBackupReader,
   uri: string
-): Promise<LiftLogBackupV1> {
+): Promise<LiftLogBackupV2> {
   return parseBackupJson(await reader.read(uri));
 }
 

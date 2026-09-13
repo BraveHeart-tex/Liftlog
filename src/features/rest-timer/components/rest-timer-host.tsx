@@ -9,10 +9,12 @@ import {
   cancelPendingRestTimerNotification,
   cancelRestTimerNotification,
   hasDeliveredRestTimerNotification,
-  scheduleRestTimerNotification
+  scheduleRestTimerNotification,
+  subscribeToRestTimerNotificationPermissionChanges
 } from '@/src/features/rest-timer/rest-timer-notifications.service';
 import { restTimerSnapshotStore } from '@/src/features/rest-timer/rest-timer-runtime-snapshot.repository';
 import { useRestTimerStore } from '@/src/features/rest-timer/rest-timer.store';
+import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import {
   triggerHapticImpact,
   triggerHapticWarning
@@ -66,6 +68,7 @@ function RestTimerNotificationResponseHost({
 }
 
 export function RestTimerHost({ children }: PropsWithChildren) {
+  const { restTimerNotificationsEnabled } = useSettings();
   const workoutContext = useRestTimerWorkoutContextValidator();
   const [isRestored, setIsRestored] = useState(false);
   const completionHapticTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>(
@@ -221,6 +224,7 @@ export function RestTimerHost({ children }: PropsWithChildren) {
         clock: { now: Date.now },
         appState: appStateSource,
         scheduler: timerScheduler,
+        notificationsEnabled: false,
         snapshots: restTimerSnapshotStore,
         context: workoutContext,
         notifications: {
@@ -230,10 +234,6 @@ export function RestTimerHost({ children }: PropsWithChildren) {
             }
 
             return scheduleRestTimerNotification({
-              seconds: Math.max(
-                1,
-                Math.ceil((deadlineEpochMs - Date.now()) / 1000)
-              ),
               deadlineEpochMs,
               context
             });
@@ -260,6 +260,34 @@ export function RestTimerHost({ children }: PropsWithChildren) {
       workoutContext
     ]
   );
+
+  useEffect(() => {
+    coordinator.setNotificationsEnabled(restTimerNotificationsEnabled);
+  }, [coordinator, restTimerNotificationsEnabled]);
+
+  useEffect(
+    () =>
+      subscribeToRestTimerNotificationPermissionChanges(() => {
+        if (restTimerNotificationsEnabled && Platform.OS === 'android') {
+          coordinator.reconcileNotifications();
+        }
+      }),
+    [coordinator, restTimerNotificationsEnabled]
+  );
+
+  useEffect(() => {
+    if (!restTimerNotificationsEnabled || Platform.OS !== 'android') {
+      return;
+    }
+
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active') {
+        coordinator.reconcileNotifications();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [coordinator, restTimerNotificationsEnabled]);
 
   useEffect(() => {
     let mounted = true;

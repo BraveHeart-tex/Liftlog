@@ -1350,3 +1350,44 @@ test('startup clears an old running expiry without delivered lookup or feedback'
   assert.equal(completions, 0);
   coordinator.stop();
 });
+
+test('notification preference schedules and cancels against the current deadline', async () => {
+  const deadlines: number[] = [];
+  let cancellations = 0;
+  const timer = createRestTimerStore({ now: () => 1_000 });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => 1_000 },
+    appState: appStateSource(),
+    scheduler: idleScheduler,
+    notificationsEnabled: false,
+    notifications: {
+      schedule: ({ deadlineEpochMs }) => {
+        deadlines.push(deadlineEpochMs);
+      },
+      cancel: () => {
+        cancellations += 1;
+      }
+    },
+    feedback: {
+      complete: () => undefined,
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  coordinator.start();
+  timer.getState().start(90);
+  await coordinator.settled();
+  assert.deepEqual(deadlines, []);
+
+  coordinator.setNotificationsEnabled(true);
+  await coordinator.settled();
+  assert.deepEqual(deadlines, [91_000]);
+
+  coordinator.setNotificationsEnabled(false);
+  await coordinator.settled();
+  assert.equal(timer.getState().status, 'running');
+  assert.equal(cancellations >= 2, true);
+  coordinator.stop();
+});

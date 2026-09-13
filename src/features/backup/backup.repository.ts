@@ -16,7 +16,7 @@ import {
 } from '@/src/features/settings/settings.repository';
 import { rebuildPersonalRecordsForExercisesInTransaction } from '@/src/features/progress/progress.repository';
 import { asc, sql } from 'drizzle-orm';
-import type { LiftLogBackupV1 } from '@/src/features/backup/backup.types';
+import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 import type { ThemePreference } from '@/src/theme/theme-preference';
 import { applicationUpdateExclusion } from '@/src/features/app-updates/update-exclusion';
 
@@ -28,7 +28,7 @@ export function createBackupSnapshot(
   appVersion: string,
   themePreference: ThemePreference,
   createdAt = new Date().toISOString()
-): LiftLogBackupV1 {
+): LiftLogBackupV2 {
   return db.transaction(tx => {
     const settings = getSettingsSnapshot(tx);
     const exerciseRows = tx
@@ -72,7 +72,7 @@ export function createBackupSnapshot(
 
     return {
       format: 'liftlog-backup',
-      schemaVersion: 1,
+      schemaVersion: 2,
       createdAt,
       appVersion,
       data: {
@@ -92,7 +92,7 @@ export function createBackupSnapshot(
 /** Replaces only user-owned data. Operational metadata and imported-device cache stay out. */
 export function replaceBackupData(
   db: DrizzleDb,
-  backup: LiftLogBackupV1
+  backup: LiftLogBackupV2
 ): void {
   if (backup.data.workouts.some(workout => workout.status === 'in_progress')) {
     applicationUpdateExclusion.assertWorkoutCreationAllowed();
@@ -146,7 +146,11 @@ export function replaceBackupData(
         SETTINGS_KEYS.healthConnectStepsEnabled,
         String(settings.healthConnectStepsEnabled)
       ],
-      [SETTINGS_KEYS.stepGoal, String(settings.stepGoal)]
+      [SETTINGS_KEYS.stepGoal, String(settings.stepGoal)],
+      [
+        SETTINGS_KEYS.restTimerNotificationsEnabled,
+        String(settings.restTimerNotificationsEnabled)
+      ]
     ].map(([key, value]) => ({ key, value }));
     tx.insert(appMeta)
       .values(values)

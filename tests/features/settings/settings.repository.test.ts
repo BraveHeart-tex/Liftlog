@@ -39,6 +39,7 @@ test('maps valid settings values', () => {
       ])
     },
     { key: SETTINGS_KEYS.healthConnectStepsEnabled, value: 'true' },
+    { key: SETTINGS_KEYS.restTimerNotificationsEnabled, value: 'true' },
     { key: SETTINGS_KEYS.stepGoal, value: '15000' }
   ]);
 
@@ -49,6 +50,7 @@ test('maps valid settings values', () => {
       { id: 'preset-1', name: 'Two minutes', durationSeconds: 120 }
     ],
     healthConnectStepsEnabled: true,
+    restTimerNotificationsEnabled: true,
     stepGoal: 15000
   });
 });

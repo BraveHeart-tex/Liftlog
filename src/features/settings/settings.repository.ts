@@ -30,6 +30,7 @@ export const SETTINGS_KEYS = {
   weightUnit: 'settings.weight_unit',
   restTimerDuration: 'settings.rest_timer',
   restTimerPresets: 'settings.rest_timer_presets',
+  restTimerNotificationsEnabled: 'settings.rest_timer_notifications_enabled',
   healthConnectStepsEnabled: 'settings.health_connect_steps_enabled',
   stepGoal: 'settings.step_goal',
   stepsLastSyncAt: 'settings.steps_last_sync_at'
@@ -38,6 +39,7 @@ export const SETTINGS_KEYS = {
 export const SETTINGS_DEFAULTS = {
   weightUnit: 'kg' as WeightUnit,
   restTimerDuration: 90,
+  restTimerNotificationsEnabled: false,
   healthConnectStepsEnabled: false,
   stepGoal: 10000
 };
@@ -46,6 +48,7 @@ interface Settings {
   weightUnit: WeightUnit;
   restTimerDuration: number;
   restTimerPresets: RestTimerPreset[];
+  restTimerNotificationsEnabled: boolean;
   healthConnectStepsEnabled: boolean;
   stepGoal: number;
 }
@@ -56,6 +59,7 @@ const SETTINGS_QUERY_KEYS = [
   SETTINGS_KEYS.weightUnit,
   SETTINGS_KEYS.restTimerDuration,
   SETTINGS_KEYS.restTimerPresets,
+  SETTINGS_KEYS.restTimerNotificationsEnabled,
   SETTINGS_KEYS.healthConnectStepsEnabled,
   SETTINGS_KEYS.stepGoal
 ];
@@ -322,6 +326,9 @@ export function mapSettingsRows(rows: SettingsRow[]): Settings {
     restTimerPresets: parseRestTimerPresets(
       valuesByKey.get(SETTINGS_KEYS.restTimerPresets)
     ),
+    restTimerNotificationsEnabled: parseBooleanSetting(
+      valuesByKey.get(SETTINGS_KEYS.restTimerNotificationsEnabled)
+    ),
     healthConnectStepsEnabled: parseBooleanSetting(
       valuesByKey.get(SETTINGS_KEYS.healthConnectStepsEnabled)
     ),
@@ -352,6 +359,25 @@ export function setHealthConnectStepsEnabled(
     },
     () =>
       setSetting(db, SETTINGS_KEYS.healthConnectStepsEnabled, String(isEnabled))
+  );
+}
+
+export function setRestTimerNotificationsEnabled(
+  db: DrizzleDb,
+  isEnabled: boolean
+): void {
+  withDatabaseSpan(
+    {
+      operation: 'settings.setRestTimerNotificationsEnabled',
+      feature: 'settings',
+      access: 'write'
+    },
+    () =>
+      setSetting(
+        db,
+        SETTINGS_KEYS.restTimerNotificationsEnabled,
+        String(isEnabled)
+      )
   );
 }
 

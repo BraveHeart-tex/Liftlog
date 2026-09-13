@@ -3,7 +3,7 @@ import {
   type SafetyBackupReader
 } from '@/src/features/backup/backup-safety';
 import { serializeBackup } from '@/src/features/backup/backup.codec';
-import type { LiftLogBackupV1 } from '@/src/features/backup/backup.types';
+import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -23,10 +23,10 @@ function createFileReader(files: Map<string, string>): SafetyBackupReader {
   };
 }
 
-function createBackup(): LiftLogBackupV1 {
+function createBackup(): LiftLogBackupV2 {
   return {
     format: 'liftlog-backup',
-    schemaVersion: 1,
+    schemaVersion: 2,
     createdAt: '2026-09-05T12:00:00.000Z',
     appVersion: '1.0.0',
     data: {
@@ -40,6 +40,7 @@ function createBackup(): LiftLogBackupV1 {
         weightUnit: 'kg',
         restTimerDuration: 90,
         restTimerPresets: [],
+        restTimerNotificationsEnabled: false,
         healthConnectStepsEnabled: false,
         stepGoal: 10000
       },

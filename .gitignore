@@ -68,3 +68,4 @@ docs/agent-problems.md
 *.keystore
 
 /modules/liftlog-updater/android/build/
+/modules/liftlog-exact-alarm/android/build/

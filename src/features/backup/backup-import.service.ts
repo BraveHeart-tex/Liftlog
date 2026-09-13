@@ -2,7 +2,7 @@ import {
   MAX_BACKUP_BYTES,
   parseBackupJson
 } from '@/src/features/backup/backup.codec';
-import type { LiftLogBackupV1 } from '@/src/features/backup/backup.types';
+import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 import {
   createBackupPreview,
   type BackupPreview
@@ -11,7 +11,7 @@ import { File } from 'expo-file-system';
 
 export type BackupPickResult =
   | { status: 'cancelled' }
-  | { status: 'preview'; backup: LiftLogBackupV1; preview: BackupPreview };
+  | { status: 'preview'; backup: LiftLogBackupV2; preview: BackupPreview };
 
 function isPickerCancellation(error: unknown): boolean {
   return (

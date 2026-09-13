@@ -54,6 +54,7 @@ interface RestTimerCoordinatorDependencies {
   appState: RestTimerAppStatePort;
   scheduler: RestTimerScheduler;
   notifications: RestTimerNotificationPort;
+  notificationsEnabled?: boolean;
   feedback: RestTimerFeedbackPort;
   snapshots?: RestTimerSnapshotStore;
   context?: {
@@ -129,6 +130,8 @@ export function createRestTimerCoordinator(
   let backgroundCompletionLifecycle: number | undefined;
   let suppressedCompletionSequence: number | undefined;
   let lifecycleGeneration = 0;
+  let notificationsEnabled = dependencies.notificationsEnabled ?? true;
+  let preferenceGeneration = 0;
 
   const runSerialized = (operation: () => void | Promise<void>) => {
     operationTail = operationTail.then(operation, operation);
@@ -216,6 +219,14 @@ export function createRestTimerCoordinator(
 
       const deadlineEpochMs = state.endTime;
       const context = state.context;
+
+      if (!notificationsEnabled) {
+        runTransitionOperation(transition, 'cancel', () =>
+          dependencies.notifications.cancel()
+        );
+
+        return;
+      }
 
       runTransitionOperation(transition, 'schedule', () =>
         dependencies.notifications.schedule({ deadlineEpochMs, context })
@@ -474,6 +485,82 @@ export function createRestTimerCoordinator(
   };
 
   return {
+    reconcileNotifications() {
+      const state = dependencies.timer.getState();
+
+      if (!notificationsEnabled) {
+        return;
+      }
+
+      const generation = ++preferenceGeneration;
+      const operationLifecycle = lifecycleGeneration;
+      runSerialized(async () => {
+        if (
+          !started ||
+          operationLifecycle !== lifecycleGeneration ||
+          generation !== preferenceGeneration ||
+          state.status !== 'running' ||
+          state.endTime === null ||
+          state.endTime <= dependencies.clock.now()
+        ) {
+          return;
+        }
+
+        try {
+          await dependencies.notifications.schedule({
+            deadlineEpochMs: state.endTime,
+            context: state.context
+          });
+        } catch (error) {
+          dependencies.onError?.(error, 'schedule');
+        }
+      });
+    },
+    setNotificationsEnabled(enabled: boolean) {
+      if (notificationsEnabled === enabled) {
+        return;
+      }
+
+      notificationsEnabled = enabled;
+      preferenceGeneration += 1;
+      const generation = preferenceGeneration;
+      const operationLifecycle = lifecycleGeneration;
+
+      runSerialized(async () => {
+        if (
+          !started ||
+          operationLifecycle !== lifecycleGeneration ||
+          generation !== preferenceGeneration
+        ) {
+          return;
+        }
+
+        try {
+          if (!enabled) {
+            await dependencies.notifications.cancel();
+
+            return;
+          }
+
+          const state = dependencies.timer.getState();
+
+          if (
+            state.status === 'running' &&
+            state.endTime !== null &&
+            state.endTime > dependencies.clock.now()
+          ) {
+            await dependencies.notifications.schedule({
+              deadlineEpochMs: state.endTime,
+              context: state.context
+            });
+          }
+        } catch (error) {
+          if (generation === preferenceGeneration) {
+            dependencies.onError?.(error, enabled ? 'schedule' : 'cancel');
+          }
+        }
+      });
+    },
     async restore() {
       if (restored) {
         return;

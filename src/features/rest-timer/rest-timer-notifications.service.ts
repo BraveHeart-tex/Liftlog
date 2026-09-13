@@ -3,6 +3,7 @@ import {
   IosAuthorizationStatus,
   SchedulableTriggerInputTypes,
   cancelScheduledNotificationAsync,
+  deleteNotificationChannelAsync,
   dismissNotificationAsync,
   getAllScheduledNotificationsAsync,
   getPresentedNotificationsAsync,
@@ -13,9 +14,11 @@ import {
   setNotificationHandler,
   type NotificationPermissionsStatus
 } from 'expo-notifications';
-import { Platform } from 'react-native';
+import { AppState, Linking, Platform } from 'react-native';
+import { getNotificationPresentation } from '@/src/features/rest-timer/rest-timer-notification-policy';
 
-const REST_TIMER_NOTIFICATION_CHANNEL_ID = 'rest-timer';
+const REST_TIMER_NOTIFICATION_CHANNEL_ID = 'rest-timer-v2';
+const OBSOLETE_REST_TIMER_NOTIFICATION_CHANNEL_ID = 'rest-timer';
 const REST_TIMER_NOTIFICATION_ID_PREFIX = 'rest-timer';
 const REST_TIMER_NOTIFICATION_TYPE = 'rest-timer';
 
@@ -31,7 +34,6 @@ interface RestTimerNotificationData extends RestTimerNotificationContext {
 }
 
 interface ScheduleRestTimerNotificationParams {
-  seconds: number;
   deadlineEpochMs: number;
   context: RestTimerNotificationContext;
 }
@@ -39,14 +41,14 @@ interface ScheduleRestTimerNotificationParams {
 let scheduledRestTimerNotificationId: string | null = null;
 let channelPromise: Promise<void> | null = null;
 let notificationGeneration = 0;
+const permissionChangeListeners = new Set<() => void>();
 
 setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: false,
-    shouldShowList: false,
-    shouldPlaySound: false,
-    shouldSetBadge: false
-  })
+  handleNotification: async notification =>
+    getNotificationPresentation(
+      getRestTimerNotificationData(notification.request.content.data) !== null,
+      AppState.currentState
+    )
 });
 
 function isGranted(status: NotificationPermissionsStatus) {
@@ -70,15 +72,20 @@ async function ensureRestTimerNotificationChannel() {
     REST_TIMER_NOTIFICATION_CHANNEL_ID,
     {
       name: 'Rest timer',
-      importance: AndroidImportance.DEFAULT,
-      enableVibrate: true
+      importance: AndroidImportance.HIGH,
+      enableVibrate: true,
+      sound: 'rest-timer-finished.wav'
     }
-  ).then(() => undefined);
+  ).then(async () => {
+    await deleteNotificationChannelAsync(
+      OBSOLETE_REST_TIMER_NOTIFICATION_CHANNEL_ID
+    );
+  });
 
   await channelPromise;
 }
 
-async function requestRestTimerNotificationPermission() {
+export async function requestRestTimerNotificationPermission() {
   await ensureRestTimerNotificationChannel();
 
   const existingPermission = await getPermissionsAsync();
@@ -87,16 +94,35 @@ async function requestRestTimerNotificationPermission() {
     return true;
   }
 
-  const nextPermission = await requestPermissionsAsync({
-    ios: {
-      allowAlert: true,
-      allowSound: true,
-      allowBadge: false
-    }
-  });
+  if (!existingPermission.canAskAgain) {
+    return false;
+  }
 
-  return isGranted(nextPermission);
+  const nextPermission = await requestPermissionsAsync();
+
+  const granted = isGranted(nextPermission);
+  permissionChangeListeners.forEach(listener => listener());
+
+  return granted;
 }
+
+export function subscribeToRestTimerNotificationPermissionChanges(
+  listener: () => void
+) {
+  permissionChangeListeners.add(listener);
+
+  return () => {
+    permissionChangeListeners.delete(listener);
+  };
+}
+
+export async function getRestTimerNotificationPermission() {
+  const status = await getPermissionsAsync();
+
+  return { granted: isGranted(status), canAskAgain: status.canAskAgain };
+}
+
+export const openRestTimerNotificationSettings = () => Linking.openSettings();
 
 async function cancelScheduledRestTimerNotification({
   dismiss
@@ -104,13 +130,30 @@ async function cancelScheduledRestTimerNotification({
   dismiss: boolean;
 }) {
   const scheduledNotifications = await getAllScheduledNotificationsAsync();
+  const presentedNotifications = dismiss
+    ? await getPresentedNotificationsAsync()
+    : [];
   const notificationIds = new Set(
     scheduledNotifications
-      .map(notification => notification.identifier)
-      .filter(notificationId =>
-        notificationId.startsWith(REST_TIMER_NOTIFICATION_ID_PREFIX)
+      .filter(
+        notification =>
+          notification.identifier.startsWith(
+            REST_TIMER_NOTIFICATION_ID_PREFIX
+          ) || getRestTimerNotificationData(notification.content.data) !== null
       )
+      .map(notification => notification.identifier)
   );
+
+  for (const notification of presentedNotifications) {
+    if (
+      notification.request.identifier.startsWith(
+        REST_TIMER_NOTIFICATION_ID_PREFIX
+      ) ||
+      getRestTimerNotificationData(notification.request.content.data) !== null
+    ) {
+      notificationIds.add(notification.request.identifier);
+    }
+  }
 
   if (scheduledRestTimerNotificationId) {
     notificationIds.add(scheduledRestTimerNotificationId);
@@ -157,7 +200,6 @@ export async function hasDeliveredRestTimerNotification(
 }
 
 export async function scheduleRestTimerNotification({
-  seconds,
   deadlineEpochMs,
   context
 }: ScheduleRestTimerNotificationParams) {
@@ -166,27 +208,28 @@ export async function scheduleRestTimerNotification({
   notificationGeneration = generation;
 
   await cancelScheduledRestTimerNotification({ dismiss: true });
+  await ensureRestTimerNotificationChannel();
 
-  if (seconds <= 0) {
+  if (deadlineEpochMs <= Date.now()) {
     return;
   }
 
-  const hasPermission = await requestRestTimerNotificationPermission();
+  const permission = await getRestTimerNotificationPermission();
 
-  if (!hasPermission || generation !== notificationGeneration) {
+  if (!permission.granted || generation !== notificationGeneration) {
     return;
   }
 
   const body = context.exerciseName
     ? `Back to ${context.exerciseName}`
-    : 'Back to your workout';
+    : undefined;
 
   const notificationId = await scheduleNotificationAsync({
     identifier: `${REST_TIMER_NOTIFICATION_ID_PREFIX}-${generation}`,
     content: {
       title: 'Rest time is up',
       body,
-      sound: true,
+      sound: 'rest-timer-finished.wav',
       autoDismiss: true,
       data: {
         type: REST_TIMER_NOTIFICATION_TYPE,
@@ -197,10 +240,9 @@ export async function scheduleRestTimerNotification({
       } satisfies RestTimerNotificationData
     },
     trigger: {
-      type: SchedulableTriggerInputTypes.TIME_INTERVAL,
+      type: SchedulableTriggerInputTypes.DATE,
       channelId: REST_TIMER_NOTIFICATION_CHANNEL_ID,
-      seconds,
-      repeats: false
+      date: new Date(deadlineEpochMs)
     }
   });
 

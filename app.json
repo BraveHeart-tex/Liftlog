@@ -22,6 +22,7 @@
       "package": "com.borakaraca94.liftlog",
       "permissions": [
         "android.permission.REQUEST_INSTALL_PACKAGES",
+        "android.permission.SCHEDULE_EXACT_ALARM",
         "android.permission.health.READ_STEPS",
         "android.permission.health.READ_HEALTH_DATA_HISTORY",
         "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"
@@ -42,7 +43,12 @@
         }
       ],
       "expo-font",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "sounds": ["./assets/sounds/rest-timer-finished.wav"]
+        }
+      ],
       "react-native-health-connect",
       [
         "expo-build-properties",

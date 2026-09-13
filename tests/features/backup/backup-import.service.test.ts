@@ -2,7 +2,7 @@ import {
   createBackupPreview,
   getBackupErrorCategory
 } from '@/src/features/backup/backup-preview';
-import type { LiftLogBackupV1 } from '@/src/features/backup/backup.types';
+import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -32,7 +32,7 @@ const backup = {
     },
     themePreference: 'system'
   }
-} as unknown as LiftLogBackupV1;
+} as unknown as LiftLogBackupV2;
 
 test('builds a preview without changing the backup', () => {
   const preview = createBackupPreview(backup);

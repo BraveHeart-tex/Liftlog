@@ -33,6 +33,10 @@ const prepareScriptPath = resolve(
   projectRoot,
   'scripts/prepare-android-release.mjs'
 );
+const exactAlarmModulePath = resolve(
+  projectRoot,
+  'modules/liftlog-exact-alarm/android/src/main/java/expo/modules/liftlogexactalarm/LiftlogExactAlarmModule.kt'
+);
 
 const signingEnvironmentVariables = [
   'LIFTLOG_ANDROID_KEYSTORE_PATH',
@@ -43,7 +47,8 @@ const signingEnvironmentVariables = [
 const appConfig = require(resolve(projectRoot, 'app.json')) as {
   expo: {
     version: string;
-    android: { package: string; versionCode: number };
+    android: { package: string; versionCode: number; permissions: string[] };
+    plugins: (string | [string, Record<string, unknown>])[];
   };
 };
 const releaseConfig = require(
@@ -90,6 +95,32 @@ test('source config declares a positive Android version code', () => {
 
   assert.equal(Number.isInteger(versionCode), true);
   assert.equal((versionCode as number) > 0, true);
+});
+
+test('source config declares the rest timer Android notification contract', () => {
+  assert.equal(
+    appConfig.expo.android.permissions.includes(
+      'android.permission.SCHEDULE_EXACT_ALARM'
+    ),
+    true
+  );
+  const notificationsPlugin = appConfig.expo.plugins.find(
+    plugin => Array.isArray(plugin) && plugin[0] === 'expo-notifications'
+  );
+
+  assert.deepEqual(notificationsPlugin, [
+    'expo-notifications',
+    { sounds: ['./assets/sounds/rest-timer-finished.wav'] }
+  ]);
+});
+
+test('exact alarm bridge guards Android 12 APIs and opens the dedicated settings intent', () => {
+  const source = readFileSync(exactAlarmModulePath, 'utf8');
+
+  assert.match(source, /Build\.VERSION\.SDK_INT >= Build\.VERSION_CODES\.S/);
+  assert.match(source, /canScheduleExactAlarms\(\)/);
+  assert.match(source, /Settings\.ACTION_REQUEST_SCHEDULE_EXACT_ALARM/);
+  assert.match(source, /Uri\.parse\("package:\$\{context\.packageName\}"\)/);
 });
 
 test('release signing plugin generates an idempotent secret-free Gradle contract', async () => {

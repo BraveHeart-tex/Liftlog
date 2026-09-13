@@ -12,6 +12,7 @@ import {
 } from 'expo-notifications';
 import { router, type Href, useNavigationContainerRef } from 'expo-router';
 import { useCallback, useEffect, useRef } from 'react';
+import { getRestTimerNotificationDestination as getDestination } from '@/src/features/rest-timer/rest-timer-notification-policy';
 
 interface UseRestTimerNotificationResponsesParams {
   onRestTimerNotificationPress: () => void;
@@ -19,6 +20,26 @@ interface UseRestTimerNotificationResponsesParams {
 
 const ROUTER_READY_RETRY_DELAY_MS = 50;
 const ROUTER_READY_MAX_RETRIES = 20;
+
+export function getRestTimerNotificationDestination(input: {
+  activeWorkout: boolean;
+  workoutExerciseId?: string;
+}): Href {
+  const destination = getDestination(input);
+
+  if (destination.kind === 'workouts') {
+    return '/(tabs)/workout';
+  }
+
+  if (destination.kind === 'exercise') {
+    return {
+      pathname: '/(tabs)/workout/exercise/[workoutExerciseId]',
+      params: { workoutExerciseId: destination.workoutExerciseId }
+    };
+  }
+
+  return '/(tabs)/workout/active';
+}
 
 export function useRestTimerNotificationResponses({
   onRestTimerNotificationPress
@@ -87,7 +108,9 @@ export function useRestTimerNotificationResponses({
       );
 
       if (!activeWorkout) {
-        replaceWhenRouterReady('/(tabs)/workout');
+        replaceWhenRouterReady(
+          getRestTimerNotificationDestination({ activeWorkout: false })
+        );
 
         return;
       }
@@ -100,16 +123,20 @@ export function useRestTimerNotificationResponses({
           });
 
         if (workoutExercise) {
-          replaceWhenRouterReady({
-            pathname: '/(tabs)/workout/exercise/[workoutExerciseId]',
-            params: { workoutExerciseId: workoutExercise.id }
-          });
+          replaceWhenRouterReady(
+            getRestTimerNotificationDestination({
+              activeWorkout: true,
+              workoutExerciseId: workoutExercise.id
+            })
+          );
 
           return;
         }
       }
 
-      replaceWhenRouterReady('/(tabs)/workout/active');
+      replaceWhenRouterReady(
+        getRestTimerNotificationDestination({ activeWorkout: true })
+      );
     },
     [db, onRestTimerNotificationPress, replaceWhenRouterReady]
   );

@@ -4,11 +4,12 @@ import {
   MAX_REST_TIMER_PRESETS,
   REST_TIMER_PRESET_NAME_MAX_LENGTH
 } from '@/src/features/settings/settings.repository';
-import type { LiftLogBackupV1 } from '@/src/features/backup/backup.types';
+import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 
 export const BACKUP_FORMAT = 'liftlog-backup';
 
-export const BACKUP_SCHEMA_VERSION = 1;
+export const BACKUP_SCHEMA_VERSION = 2;
+const LEGACY_BACKUP_SCHEMA_VERSION = 1;
 
 export const MAX_BACKUP_BYTES = 25 * 1024 * 1024;
 const MAX_ROWS = 100_000;
@@ -35,8 +36,8 @@ export class BackupValidationError extends Error {
 }
 
 export type ParsedSupportedBackup = {
-  schemaVersion: typeof BACKUP_SCHEMA_VERSION;
-  backup: LiftLogBackupV1;
+  schemaVersion: 1 | typeof BACKUP_SCHEMA_VERSION;
+  backup: unknown;
 };
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -300,7 +301,7 @@ function validateRows(data: Record<string, unknown>) {
   }
 }
 
-export function parseBackupEnvelope(value: unknown): LiftLogBackupV1 {
+export function parseBackupEnvelope(value: unknown): LiftLogBackupV2 {
   if (!isObject(value)) {
     fail('invalid-backup');
   }
@@ -309,7 +310,10 @@ export function parseBackupEnvelope(value: unknown): LiftLogBackupV1 {
     fail('unrelated-file');
   }
 
-  if (value.schemaVersion !== BACKUP_SCHEMA_VERSION) {
+  if (
+    value.schemaVersion !== BACKUP_SCHEMA_VERSION &&
+    value.schemaVersion !== LEGACY_BACKUP_SCHEMA_VERSION
+  ) {
     fail('unsupported-version');
   }
 
@@ -341,6 +345,8 @@ export function parseBackupEnvelope(value: unknown): LiftLogBackupV1 {
     !Array.isArray(settings.restTimerPresets) ||
     settings.restTimerPresets.length > MAX_REST_TIMER_PRESETS ||
     typeof settings.healthConnectStepsEnabled !== 'boolean' ||
+    (value.schemaVersion === BACKUP_SCHEMA_VERSION &&
+      typeof settings.restTimerNotificationsEnabled !== 'boolean') ||
     !Number.isInteger(settings.stepGoal) ||
     (settings.stepGoal as number) < 1000 ||
     (settings.stepGoal as number) > 50000
@@ -366,7 +372,21 @@ export function parseBackupEnvelope(value: unknown): LiftLogBackupV1 {
     presetIds.add(preset.id);
   }
 
-  return value as unknown as LiftLogBackupV1;
+  if (value.schemaVersion === LEGACY_BACKUP_SCHEMA_VERSION) {
+    return {
+      ...value,
+      schemaVersion: BACKUP_SCHEMA_VERSION,
+      data: {
+        ...value.data,
+        settings: {
+          ...settings,
+          restTimerNotificationsEnabled: false
+        }
+      }
+    } as unknown as LiftLogBackupV2;
+  }
+
+  return value as unknown as LiftLogBackupV2;
 }
 
 export function parseSupportedBackup(value: unknown): ParsedSupportedBackup {
@@ -377,16 +397,16 @@ export function parseSupportedBackup(value: unknown): ParsedSupportedBackup {
 
 export function migrateBackupToCurrent(
   parsedBackup: ParsedSupportedBackup
-): LiftLogBackupV1 {
+): LiftLogBackupV2 {
   switch (parsedBackup.schemaVersion) {
     case BACKUP_SCHEMA_VERSION:
-      return parsedBackup.backup;
+      return parsedBackup.backup as unknown as LiftLogBackupV2;
     default:
       throw new BackupValidationError('unsupported-version');
   }
 }
 
-export function parseBackupJson(json: string): LiftLogBackupV1 {
+export function parseBackupJson(json: string): LiftLogBackupV2 {
   if (typeof json !== 'string') {
     fail('unreadable-file');
   }
@@ -409,6 +429,6 @@ export function parseBackupJson(json: string): LiftLogBackupV1 {
   }
 }
 
-export function serializeBackup(backup: LiftLogBackupV1): string {
+export function serializeBackup(backup: LiftLogBackupV2): string {
   return `${JSON.stringify(backup, null, 2)}\n`;
 }

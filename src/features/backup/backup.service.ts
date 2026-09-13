@@ -24,7 +24,7 @@ import { cancelRestTimerNotification } from '@/src/features/rest-timer/rest-time
 import { useRestTimerStore } from '@/src/features/rest-timer/rest-timer.store';
 import { withDomainFlowSpan } from '@/src/lib/observability/observability-span';
 import { refreshLiveQueries as refreshLiveQueryConsumers } from '@/src/lib/db/live-query-refresh';
-import type { LiftLogBackupV1 } from '@/src/features/backup/backup.types';
+import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 import {
   getThemePreference,
   setThemePreference,
@@ -79,7 +79,7 @@ function safetyBackupUris(now: Date) {
 
 export async function readSafetyBackup(
   filePort: BackupFilePort = nativeBackupFilePort
-): Promise<LiftLogBackupV1> {
+): Promise<LiftLogBackupV2> {
   const { uri } = safetyBackupUris(new Date());
 
   return readSafetyBackupFile(filePort, uri);
@@ -95,8 +95,8 @@ export async function loadSafetyBackupPreview(
 
 async function applyBackupWithRollback(
   db: DrizzleDb,
-  backup: LiftLogBackupV1,
-  rollbackBackup: LiftLogBackupV1,
+  backup: LiftLogBackupV2,
+  rollbackBackup: LiftLogBackupV2,
   options: ReplaceBackupOptions
 ): Promise<void> {
   const previousTheme = options.themePreference ?? getThemePreference();
@@ -131,7 +131,7 @@ async function applyBackupWithRollback(
 
 async function replaceAllWithBackupUnsafe(
   db: DrizzleDb,
-  backup: LiftLogBackupV1,
+  backup: LiftLogBackupV2,
   options: ReplaceBackupOptions = {}
 ): Promise<void> {
   const now = options.now ?? new Date();
@@ -191,7 +191,7 @@ export async function undoLastImport(
 
 export function replaceAllWithBackup(
   db: DrizzleDb,
-  backup: LiftLogBackupV1,
+  backup: LiftLogBackupV2,
   options: ReplaceBackupOptions = {}
 ): Promise<void> {
   return withDomainFlowSpan(

@@ -1,4 +1,4 @@
-import type { LiftLogBackupV1 } from '@/src/features/backup/backup.types';
+import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 import type { BackupErrorCategory } from '@/src/features/backup/backup.codec';
 
 export interface BackupPreview {
@@ -15,7 +15,7 @@ export interface BackupPreview {
   replacesActiveWorkout: boolean;
 }
 
-export function createBackupPreview(backup: LiftLogBackupV1): BackupPreview {
+export function createBackupPreview(backup: LiftLogBackupV2): BackupPreview {
   const { data } = backup;
 
   return {
