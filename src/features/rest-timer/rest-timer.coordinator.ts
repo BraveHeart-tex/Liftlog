@@ -37,7 +37,7 @@ export interface RestTimerNotificationPort {
     context: RestTimerContext;
   }): void | Promise<void>;
   cancel(): void | Promise<void>;
-  hasDelivered?(): boolean | Promise<boolean>;
+  hasDelivered?(deadlineEpochMs: number): boolean | Promise<boolean>;
 }
 
 export interface RestTimerFeedbackPort {
@@ -121,7 +121,7 @@ export function createRestTimerCoordinator(
   let cancelTimerTicks: (() => void) | undefined;
   let started = false;
   let restored = false;
-  let pendingStartupCompletion = false;
+  let pendingStartupCompletionDeadline: number | undefined;
   let startupCompletionLifecycle: number | undefined;
   let pendingBackgroundCompletion:
     | { deadlineEpochMs: number; transitionSequence: number }
@@ -271,8 +271,10 @@ export function createRestTimerCoordinator(
   };
 
   const completePendingStartup = () => {
+    const deadlineEpochMs = pendingStartupCompletionDeadline;
+
     if (
-      !pendingStartupCompletion ||
+      deadlineEpochMs === undefined ||
       startupCompletionLifecycle === lifecycleGeneration ||
       appState !== 'active'
     ) {
@@ -291,8 +293,41 @@ export function createRestTimerCoordinator(
         return;
       }
 
-      pendingStartupCompletion = false;
+      let delivered: boolean;
+
+      try {
+        delivered =
+          (await dependencies.notifications.hasDelivered?.(deadlineEpochMs)) ??
+          false;
+      } catch (error) {
+        if (startupCompletionLifecycle === operationLifecycle) {
+          startupCompletionLifecycle = undefined;
+        }
+
+        dependencies.onError?.(error, 'restore');
+
+        return;
+      }
+
+      if (
+        pendingStartupCompletionDeadline !== deadlineEpochMs ||
+        !started ||
+        operationLifecycle !== lifecycleGeneration ||
+        appState !== 'active'
+      ) {
+        if (startupCompletionLifecycle === operationLifecycle) {
+          startupCompletionLifecycle = undefined;
+        }
+
+        return;
+      }
+
+      pendingStartupCompletionDeadline = undefined;
       startupCompletionLifecycle = undefined;
+
+      if (delivered) {
+        return;
+      }
 
       try {
         await dependencies.feedback.complete({ showMessage: true });
@@ -350,7 +385,9 @@ export function createRestTimerCoordinator(
 
       try {
         delivered =
-          (await dependencies.notifications.hasDelivered?.()) ?? false;
+          (await dependencies.notifications.hasDelivered?.(
+            pending.deadlineEpochMs
+          )) ?? false;
       } catch (error) {
         if (backgroundCompletionLifecycle === operationLifecycle) {
           backgroundCompletionLifecycle = undefined;
@@ -520,9 +557,13 @@ export function createRestTimerCoordinator(
 
       try {
         const delivered =
-          (await dependencies.notifications.hasDelivered?.()) ?? false;
+          (await dependencies.notifications.hasDelivered?.(
+            snapshot.deadlineEpochMs
+          )) ?? false;
 
-        pendingStartupCompletion = !delivered;
+        pendingStartupCompletionDeadline = delivered
+          ? undefined
+          : snapshot.deadlineEpochMs;
       } catch (error) {
         dependencies.onError?.(error, 'restore');
       }

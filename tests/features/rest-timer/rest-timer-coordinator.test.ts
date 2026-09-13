@@ -945,6 +945,105 @@ test('recent startup expiry waits for the app to become active', async () => {
   coordinator.stop();
 });
 
+test('recent startup expiry rechecks notification ownership on activation', async () => {
+  let completions = 0;
+  let deliveredLookups = 0;
+  const appState = appStateSource('background');
+  const timer = createRestTimerStore({ now: () => 14_999 });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => 14_999 },
+    appState,
+    scheduler: idleScheduler,
+    snapshots: snapshotStore({
+      kind: 'snapshot',
+      snapshot: {
+        version: 1,
+        status: 'running',
+        deadlineEpochMs: 10_000,
+        durationSeconds: 10,
+        activeDurationSeconds: 10,
+        transitionOccurredAtEpochMs: 0
+      }
+    }),
+    notifications: {
+      schedule: () => undefined,
+      cancel: () => undefined,
+      hasDelivered: () => {
+        deliveredLookups += 1;
+
+        return deliveredLookups > 1;
+      }
+    },
+    feedback: {
+      complete: () => {
+        completions += 1;
+      },
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  await coordinator.restore();
+  coordinator.start();
+  await coordinator.settled();
+  assert.equal(completions, 0);
+
+  appState.change('active');
+  await coordinator.settled();
+
+  assert.equal(deliveredLookups, 2);
+  assert.equal(completions, 0);
+  coordinator.stop();
+});
+
+test('startup checks delivered ownership for the restored deadline', async () => {
+  const deliveredDeadlineLookups: number[] = [];
+  let completions = 0;
+  const timer = createRestTimerStore({ now: () => 14_999 });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => 14_999 },
+    appState: appStateSource(),
+    scheduler: idleScheduler,
+    snapshots: snapshotStore({
+      kind: 'snapshot',
+      snapshot: {
+        version: 1,
+        status: 'running',
+        deadlineEpochMs: 10_000,
+        durationSeconds: 10,
+        activeDurationSeconds: 10,
+        transitionOccurredAtEpochMs: 0
+      }
+    }),
+    notifications: {
+      schedule: () => undefined,
+      cancel: () => undefined,
+      hasDelivered: deadlineEpochMs => {
+        deliveredDeadlineLookups.push(deadlineEpochMs);
+
+        return deadlineEpochMs === 10_000;
+      }
+    },
+    feedback: {
+      complete: () => {
+        completions += 1;
+      },
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  await coordinator.restore();
+  coordinator.start();
+  await coordinator.settled();
+
+  assert.deepEqual(deliveredDeadlineLookups, [10_000]);
+  assert.equal(completions, 0);
+  coordinator.stop();
+});
+
 test('coordinator restart does not lose queued startup completion feedback', async () => {
   let completions = 0;
   const timer = createRestTimerStore({ now: () => 14_999 });

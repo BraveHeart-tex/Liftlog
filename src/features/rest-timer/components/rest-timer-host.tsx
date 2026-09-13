@@ -233,6 +233,7 @@ export function RestTimerHost({ children }: PropsWithChildren) {
                 1,
                 Math.ceil((deadlineEpochMs - Date.now()) / 1000)
               ),
+              deadlineEpochMs,
               context
             });
           },

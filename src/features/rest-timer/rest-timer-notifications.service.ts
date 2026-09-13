@@ -27,10 +27,12 @@ interface RestTimerNotificationContext {
 
 interface RestTimerNotificationData extends RestTimerNotificationContext {
   type: typeof REST_TIMER_NOTIFICATION_TYPE;
+  deadlineEpochMs?: number;
 }
 
 interface ScheduleRestTimerNotificationParams {
   seconds: number;
+  deadlineEpochMs: number;
   context: RestTimerNotificationContext;
 }
 
@@ -130,17 +132,23 @@ export async function cancelRestTimerNotification() {
   await cancelScheduledRestTimerNotification();
 }
 
-export async function hasDeliveredRestTimerNotification() {
+export async function hasDeliveredRestTimerNotification(
+  deadlineEpochMs: number
+) {
   const notifications = await getPresentedNotificationsAsync();
 
-  return notifications.some(
-    notification =>
-      getRestTimerNotificationData(notification.request.content.data) !== null
-  );
+  return notifications.some(notification => {
+    const data = getRestTimerNotificationData(
+      notification.request.content.data
+    );
+
+    return data?.deadlineEpochMs === deadlineEpochMs;
+  });
 }
 
 export async function scheduleRestTimerNotification({
   seconds,
+  deadlineEpochMs,
   context
 }: ScheduleRestTimerNotificationParams) {
   const generation = notificationGeneration + 1;
@@ -172,6 +180,7 @@ export async function scheduleRestTimerNotification({
       autoDismiss: true,
       data: {
         type: REST_TIMER_NOTIFICATION_TYPE,
+        deadlineEpochMs,
         workoutId: context.workoutId,
         workoutExerciseId: context.workoutExerciseId,
         exerciseName: context.exerciseName
@@ -206,6 +215,11 @@ export function getRestTimerNotificationData(
 
   return {
     type: REST_TIMER_NOTIFICATION_TYPE,
+    deadlineEpochMs:
+      Number.isSafeInteger(data.deadlineEpochMs) &&
+      (data.deadlineEpochMs as number) >= 0
+        ? (data.deadlineEpochMs as number)
+        : undefined,
     workoutId: typeof data.workoutId === 'string' ? data.workoutId : undefined,
     workoutExerciseId:
       typeof data.workoutExerciseId === 'string'
