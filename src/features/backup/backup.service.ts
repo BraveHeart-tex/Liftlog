@@ -4,6 +4,7 @@ import {
   replaceBackupData
 } from '@/src/features/backup/backup.repository';
 import {
+  parseBackupEnvelope,
   parseBackupJson,
   serializeBackup
 } from '@/src/features/backup/backup.codec';
@@ -196,7 +197,11 @@ export function replaceAllWithBackup(
 ): Promise<void> {
   return withDomainFlowSpan(
     { operation: 'backup.replaceAll', feature: 'backup' },
-    () => replaceAllWithBackupUnsafe(db, backup, options)
+    async () => {
+      const validatedBackup = parseBackupEnvelope(backup);
+
+      await replaceAllWithBackupUnsafe(db, validatedBackup, options);
+    }
   );
 }
 

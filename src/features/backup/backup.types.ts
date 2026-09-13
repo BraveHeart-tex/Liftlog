@@ -88,6 +88,23 @@ export interface BackupSettingsV2 extends BackupSettingsV1 {
   restTimerNotificationsEnabled: boolean;
 }
 
+export interface LiftLogBackupV1 {
+  format: 'liftlog-backup';
+  schemaVersion: 1;
+  createdAt: string;
+  appVersion: string;
+  data: {
+    exercises: BackupExerciseV1[];
+    workouts: BackupWorkoutV1[];
+    workoutExercises: BackupWorkoutExerciseV1[];
+    sets: BackupSetV1[];
+    workoutTemplates: BackupWorkoutTemplateV1[];
+    workoutTemplateExercises: BackupWorkoutTemplateExerciseV1[];
+    settings: BackupSettingsV1;
+    themePreference: ThemePreference;
+  };
+}
+
 export interface LiftLogBackupV2 {
   format: 'liftlog-backup';
   schemaVersion: 2;

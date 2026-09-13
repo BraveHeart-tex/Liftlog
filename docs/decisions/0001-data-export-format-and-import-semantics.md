@@ -20,7 +20,7 @@ step rows have different ownership from workout history.
 
 ### Product contract
 
-Version 1 provides complete manual backup and replace-all restore. It does not
+The current format provides complete manual backup and replace-all restore. It does not
 provide scheduled backups, selective export, merge import, encryption, partial
 recovery, or a third-party interchange contract.
 
@@ -36,7 +36,7 @@ not a SQLite database or generated migration artifact. The envelope starts with:
 ```json
 {
   "format": "liftlog-backup",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "createdAt": "2026-09-05T12:00:00.000Z",
   "appVersion": "1.0.0",
   "data": {}
@@ -45,8 +45,9 @@ not a SQLite database or generated migration artifact. The envelope starts with:
 
 `schemaVersion` versions the backup contract independently from Drizzle's
 migration index. A newer app migrates supported older backup versions in memory
-before validation. An older app rejects an unsupported newer version without
-changing local state.
+before validation. Version 1 backups remain importable and migrate with Android
+rest timer notifications disabled. An older app rejects an unsupported newer
+version without changing local state.
 
 The `data` object contains:
 
@@ -54,7 +55,8 @@ The `data` object contains:
   stable relationships.
 - Workouts, workout exercises, sets, templates, and template exercises.
 - The active workout and unexpired persisted workout edits.
-- User-owned SQLite preferences from an explicit allowlist.
+- User-owned SQLite preferences from an explicit allowlist, including the
+  Android rest timer notification preference.
 - The MMKV theme preference.
 
 The backup excludes:

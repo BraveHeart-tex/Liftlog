@@ -9,7 +9,11 @@ import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 export const BACKUP_FORMAT = 'liftlog-backup';
 
 export const BACKUP_SCHEMA_VERSION = 2;
-const LEGACY_BACKUP_SCHEMA_VERSION = 1;
+
+export const LEGACY_BACKUP_SCHEMA_VERSION = 1;
+type SupportedBackupSchemaVersion =
+  | typeof LEGACY_BACKUP_SCHEMA_VERSION
+  | typeof BACKUP_SCHEMA_VERSION;
 
 export const MAX_BACKUP_BYTES = 25 * 1024 * 1024;
 const MAX_ROWS = 100_000;
@@ -36,8 +40,8 @@ export class BackupValidationError extends Error {
 }
 
 export type ParsedSupportedBackup = {
-  schemaVersion: 1 | typeof BACKUP_SCHEMA_VERSION;
-  backup: unknown;
+  schemaVersion: SupportedBackupSchemaVersion;
+  backup: Record<string, unknown>;
 };
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -49,6 +53,14 @@ const isNullable = (value: unknown, predicate: (value: unknown) => boolean) =>
 
 function fail(category: BackupErrorCategory): never {
   throw new BackupValidationError(category);
+}
+
+function isSupportedSchemaVersion(
+  value: unknown
+): value is SupportedBackupSchemaVersion {
+  return (
+    value === LEGACY_BACKUP_SCHEMA_VERSION || value === BACKUP_SCHEMA_VERSION
+  );
 }
 
 function string(value: unknown, max = MAX_STRING_LENGTH): value is string {
@@ -301,7 +313,9 @@ function validateRows(data: Record<string, unknown>) {
   }
 }
 
-export function parseBackupEnvelope(value: unknown): LiftLogBackupV2 {
+function validateBackupEnvelope(
+  value: unknown
+): asserts value is Record<string, unknown> {
   if (!isObject(value)) {
     fail('invalid-backup');
   }
@@ -310,10 +324,7 @@ export function parseBackupEnvelope(value: unknown): LiftLogBackupV2 {
     fail('unrelated-file');
   }
 
-  if (
-    value.schemaVersion !== BACKUP_SCHEMA_VERSION &&
-    value.schemaVersion !== LEGACY_BACKUP_SCHEMA_VERSION
-  ) {
+  if (!isSupportedSchemaVersion(value.schemaVersion)) {
     fail('unsupported-version');
   }
 
@@ -328,7 +339,9 @@ export function parseBackupEnvelope(value: unknown): LiftLogBackupV2 {
   validateRows(value.data);
 
   if (
-    !['system', 'light', 'dark'].includes(String(value.data.themePreference))
+    value.data.themePreference !== 'system' &&
+    value.data.themePreference !== 'light' &&
+    value.data.themePreference !== 'dark'
   ) {
     fail('invalid-backup');
   }
@@ -337,7 +350,7 @@ export function parseBackupEnvelope(value: unknown): LiftLogBackupV2 {
 
   if (
     !isObject(settings) ||
-    !['kg', 'lb'].includes(String(settings.weightUnit)) ||
+    (settings.weightUnit !== 'kg' && settings.weightUnit !== 'lb') ||
     !isFiniteNumber(settings.restTimerDuration) ||
     !Number.isInteger(settings.restTimerDuration) ||
     settings.restTimerDuration < 10 ||
@@ -371,13 +384,21 @@ export function parseBackupEnvelope(value: unknown): LiftLogBackupV2 {
 
     presetIds.add(preset.id);
   }
+}
 
-  if (value.schemaVersion === LEGACY_BACKUP_SCHEMA_VERSION) {
+function migrateValidatedBackup(
+  value: Record<string, unknown>,
+  schemaVersion: SupportedBackupSchemaVersion
+): LiftLogBackupV2 {
+  if (schemaVersion === LEGACY_BACKUP_SCHEMA_VERSION) {
+    const data = value.data as Record<string, unknown>;
+    const settings = data.settings as Record<string, unknown>;
+
     return {
       ...value,
       schemaVersion: BACKUP_SCHEMA_VERSION,
       data: {
-        ...value.data,
+        ...data,
         settings: {
           ...settings,
           restTimerNotificationsEnabled: false
@@ -389,21 +410,37 @@ export function parseBackupEnvelope(value: unknown): LiftLogBackupV2 {
   return value as unknown as LiftLogBackupV2;
 }
 
-export function parseSupportedBackup(value: unknown): ParsedSupportedBackup {
-  const backup = parseBackupEnvelope(value);
+export function parseBackupEnvelope(value: unknown): LiftLogBackupV2 {
+  const parsedBackup = parseSupportedBackup(value);
 
-  return { schemaVersion: BACKUP_SCHEMA_VERSION, backup };
+  return migrateValidatedBackup(
+    parsedBackup.backup,
+    parsedBackup.schemaVersion
+  );
+}
+
+export function parseSupportedBackup(value: unknown): ParsedSupportedBackup {
+  validateBackupEnvelope(value);
+
+  return {
+    schemaVersion: value.schemaVersion as SupportedBackupSchemaVersion,
+    backup: value
+  };
 }
 
 export function migrateBackupToCurrent(
   parsedBackup: ParsedSupportedBackup
 ): LiftLogBackupV2 {
-  switch (parsedBackup.schemaVersion) {
-    case BACKUP_SCHEMA_VERSION:
-      return parsedBackup.backup as unknown as LiftLogBackupV2;
-    default:
-      throw new BackupValidationError('unsupported-version');
+  validateBackupEnvelope(parsedBackup.backup);
+
+  if (parsedBackup.backup.schemaVersion !== parsedBackup.schemaVersion) {
+    fail('invalid-backup');
   }
+
+  return migrateValidatedBackup(
+    parsedBackup.backup,
+    parsedBackup.schemaVersion
+  );
 }
 
 export function parseBackupJson(json: string): LiftLogBackupV2 {
@@ -430,5 +467,5 @@ export function parseBackupJson(json: string): LiftLogBackupV2 {
 }
 
 export function serializeBackup(backup: LiftLogBackupV2): string {
-  return `${JSON.stringify(backup, null, 2)}\n`;
+  return `${JSON.stringify(parseBackupEnvelope(backup), null, 2)}\n`;
 }

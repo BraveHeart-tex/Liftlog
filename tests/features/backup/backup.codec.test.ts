@@ -1,7 +1,9 @@
 import {
   BackupValidationError,
+  migrateBackupToCurrent,
   parseBackupEnvelope,
   parseBackupJson,
+  parseSupportedBackup,
   serializeBackup
 } from '@/src/features/backup/backup.codec';
 import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
@@ -81,6 +83,65 @@ test('migrates version 1 backups with rest notifications disabled', () => {
 
   assert.equal(migrated.schemaVersion, 2);
   assert.equal(migrated.data.settings.restTimerNotificationsEnabled, false);
+});
+
+test('keeps the source version while migrating a version 1 envelope', () => {
+  const versionOne = {
+    ...backup,
+    schemaVersion: 1,
+    data: {
+      ...backup.data,
+      settings: {
+        ...backup.data.settings,
+        restTimerNotificationsEnabled: undefined
+      }
+    }
+  };
+
+  const parsed = parseSupportedBackup(versionOne);
+
+  assert.equal(parsed.schemaVersion, 1);
+  assert.equal(
+    migrateBackupToCurrent(parsed).data.settings.restTimerNotificationsEnabled,
+    false
+  );
+});
+
+test('requires a boolean rest notification preference in version 2', () => {
+  for (const value of [undefined, null, 'true', 1]) {
+    const invalid = {
+      ...backup,
+      data: {
+        ...backup.data,
+        settings: {
+          ...backup.data.settings,
+          restTimerNotificationsEnabled: value
+        }
+      }
+    };
+
+    assert.throws(
+      () => parseBackupEnvelope(invalid),
+      (error: unknown) =>
+        error instanceof BackupValidationError &&
+        error.category === 'invalid-backup'
+    );
+  }
+});
+
+test('serializer validates the current settings payload before writing', () => {
+  const invalid = {
+    ...backup,
+    data: {
+      ...backup.data,
+      settings: {
+        ...backup.data.settings,
+        restTimerNotificationsEnabled: undefined
+      }
+    }
+  };
+
+  assert.throws(() => serializeBackup(invalid as unknown as LiftLogBackupV2));
 });
 
 test('rejects dangling relationships and duplicate active exercise names', () => {

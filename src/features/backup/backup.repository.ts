@@ -1,4 +1,5 @@
 import type { DrizzleDb } from '@/src/db/client';
+import { parseBackupEnvelope } from '@/src/features/backup/backup.codec';
 import {
   appMeta,
   exercises,
@@ -94,7 +95,13 @@ export function replaceBackupData(
   db: DrizzleDb,
   backup: LiftLogBackupV2
 ): void {
-  if (backup.data.workouts.some(workout => workout.status === 'in_progress')) {
+  const validatedBackup = parseBackupEnvelope(backup);
+
+  if (
+    validatedBackup.data.workouts.some(
+      workout => workout.status === 'in_progress'
+    )
+  ) {
     applicationUpdateExclusion.assertWorkoutCreationAllowed();
   }
 
@@ -108,33 +115,37 @@ export function replaceBackupData(
     tx.delete(exercises).run();
     tx.delete(healthStepDays).run();
 
-    if (backup.data.exercises.length) {
-      tx.insert(exercises).values(backup.data.exercises).run();
+    if (validatedBackup.data.exercises.length) {
+      tx.insert(exercises).values(validatedBackup.data.exercises).run();
     }
 
-    if (backup.data.workouts.length) {
-      tx.insert(workouts).values(backup.data.workouts).run();
+    if (validatedBackup.data.workouts.length) {
+      tx.insert(workouts).values(validatedBackup.data.workouts).run();
     }
 
-    if (backup.data.workoutTemplates.length) {
-      tx.insert(workoutTemplates).values(backup.data.workoutTemplates).run();
-    }
-
-    if (backup.data.workoutExercises.length) {
-      tx.insert(workoutExercises).values(backup.data.workoutExercises).run();
-    }
-
-    if (backup.data.workoutTemplateExercises.length) {
-      tx.insert(workoutTemplateExercises)
-        .values(backup.data.workoutTemplateExercises)
+    if (validatedBackup.data.workoutTemplates.length) {
+      tx.insert(workoutTemplates)
+        .values(validatedBackup.data.workoutTemplates)
         .run();
     }
 
-    if (backup.data.sets.length) {
-      tx.insert(sets).values(backup.data.sets).run();
+    if (validatedBackup.data.workoutExercises.length) {
+      tx.insert(workoutExercises)
+        .values(validatedBackup.data.workoutExercises)
+        .run();
     }
 
-    const settings = backup.data.settings;
+    if (validatedBackup.data.workoutTemplateExercises.length) {
+      tx.insert(workoutTemplateExercises)
+        .values(validatedBackup.data.workoutTemplateExercises)
+        .run();
+    }
+
+    if (validatedBackup.data.sets.length) {
+      tx.insert(sets).values(validatedBackup.data.sets).run();
+    }
+
+    const settings = validatedBackup.data.settings;
     const values = [
       [SETTINGS_KEYS.weightUnit, settings.weightUnit],
       [SETTINGS_KEYS.restTimerDuration, String(settings.restTimerDuration)],
@@ -162,7 +173,7 @@ export function replaceBackupData(
 
     rebuildPersonalRecordsForExercisesInTransaction(
       tx,
-      backup.data.exercises.map(exercise => exercise.id)
+      validatedBackup.data.exercises.map(exercise => exercise.id)
     );
 
     const violations = tx.all<{ table: string }>(sql`PRAGMA foreign_key_check`);
