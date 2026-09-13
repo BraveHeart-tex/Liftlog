@@ -123,6 +123,10 @@ export function createRestTimerCoordinator(
   let restored = false;
   let pendingStartupCompletion = false;
   let startupCompletionLifecycle: number | undefined;
+  let pendingBackgroundCompletion:
+    | { deadlineEpochMs: number; transitionSequence: number }
+    | undefined;
+  let backgroundCompletionLifecycle: number | undefined;
   let suppressedCompletionSequence: number | undefined;
   let lifecycleGeneration = 0;
 
@@ -158,7 +162,8 @@ export function createRestTimerCoordinator(
 
   const observeTransition = (
     transition: RestTimerTransition,
-    state: RestTimerState
+    state: RestTimerState,
+    previousState?: RestTimerState
   ) => {
     latestTransitionSequence = transition.sequence;
 
@@ -174,6 +179,20 @@ export function createRestTimerCoordinator(
       } catch (error) {
         dependencies.onError?.(error, 'persist');
       }
+    }
+
+    if (
+      transition.kind === 'complete' &&
+      appState !== 'active' &&
+      previousState?.status === 'running' &&
+      previousState.endTime !== null
+    ) {
+      pendingBackgroundCompletion = {
+        deadlineEpochMs: previousState.endTime,
+        transitionSequence: transition.sequence
+      };
+    } else if (transition.kind !== 'complete') {
+      pendingBackgroundCompletion = undefined;
     }
 
     if (
@@ -299,6 +318,80 @@ export function createRestTimerCoordinator(
     }
   };
 
+  const completePendingBackground = () => {
+    const pending = pendingBackgroundCompletion;
+
+    if (!pending || backgroundCompletionLifecycle === lifecycleGeneration) {
+      return;
+    }
+
+    if (
+      dependencies.clock.now() - pending.deadlineEpochMs >
+      RECENT_EXPIRY_WINDOW_MS
+    ) {
+      pendingBackgroundCompletion = undefined;
+
+      return;
+    }
+
+    const operationLifecycle = lifecycleGeneration;
+    backgroundCompletionLifecycle = operationLifecycle;
+
+    runSerialized(async () => {
+      if (!started || operationLifecycle !== lifecycleGeneration) {
+        if (backgroundCompletionLifecycle === operationLifecycle) {
+          backgroundCompletionLifecycle = undefined;
+        }
+
+        return;
+      }
+
+      let delivered: boolean;
+
+      try {
+        delivered =
+          (await dependencies.notifications.hasDelivered?.()) ?? false;
+      } catch (error) {
+        if (backgroundCompletionLifecycle === operationLifecycle) {
+          backgroundCompletionLifecycle = undefined;
+        }
+
+        dependencies.onError?.(error, 'restore');
+
+        return;
+      }
+
+      const currentState = dependencies.timer.getState();
+
+      if (backgroundCompletionLifecycle === operationLifecycle) {
+        backgroundCompletionLifecycle = undefined;
+      }
+
+      if (
+        pendingBackgroundCompletion !== pending ||
+        appState !== 'active' ||
+        currentState.status !== 'idle' ||
+        currentState.transition?.sequence !== pending.transitionSequence
+      ) {
+        return;
+      }
+
+      pendingBackgroundCompletion = undefined;
+
+      if (delivered) {
+        return;
+      }
+
+      try {
+        await dependencies.feedback.complete({
+          showMessage: !currentState.isSheetOpen
+        });
+      } catch (error) {
+        dependencies.onError?.(error, 'complete');
+      }
+    });
+  };
+
   const reconcileForeground = () => {
     appState = 'active';
     const now = dependencies.clock.now();
@@ -311,55 +404,24 @@ export function createRestTimerCoordinator(
     ) {
       state.tick(now);
       completePendingStartup();
+      completePendingBackground();
 
       return;
     }
 
-    const expiryAgeMs = now - state.endTime;
+    const deadlineEpochMs = state.endTime;
     suppressedCompletionSequence = (state.transition?.sequence ?? 0) + 1;
     state.tick(now);
-
-    if (expiryAgeMs > RECENT_EXPIRY_WINDOW_MS) {
-      return;
-    }
-
     const completionSequence =
       dependencies.timer.getState().transition?.sequence;
-    const operationLifecycle = lifecycleGeneration;
 
-    runSerialized(async () => {
-      let delivered: boolean;
-
-      try {
-        delivered =
-          (await dependencies.notifications.hasDelivered?.()) ?? false;
-      } catch (error) {
-        dependencies.onError?.(error, 'restore');
-
-        return;
-      }
-
-      const currentState = dependencies.timer.getState();
-
-      if (
-        delivered ||
-        !started ||
-        operationLifecycle !== lifecycleGeneration ||
-        appState !== 'active' ||
-        currentState.status !== 'idle' ||
-        currentState.transition?.sequence !== completionSequence
-      ) {
-        return;
-      }
-
-      try {
-        await dependencies.feedback.complete({
-          showMessage: !currentState.isSheetOpen
-        });
-      } catch (error) {
-        dependencies.onError?.(error, 'complete');
-      }
-    });
+    if (completionSequence !== undefined) {
+      pendingBackgroundCompletion = {
+        deadlineEpochMs,
+        transitionSequence: completionSequence
+      };
+      completePendingBackground();
+    }
   };
 
   return {
@@ -485,7 +547,7 @@ export function createRestTimerCoordinator(
             state.transition &&
             state.transition.sequence !== previousState.transition?.sequence
           ) {
-            observeTransition(state.transition, state);
+            observeTransition(state.transition, state, previousState);
           }
         }
       );
@@ -511,6 +573,7 @@ export function createRestTimerCoordinator(
       }
 
       completePendingStartup();
+      completePendingBackground();
     },
     stop() {
       if (!started) {
@@ -530,6 +593,7 @@ export function createRestTimerCoordinator(
       return operationTail;
     },
     acknowledgeNotificationCompletion() {
+      pendingBackgroundCompletion = undefined;
       const state = dependencies.timer.getState();
       const operationLifecycle = lifecycleGeneration;
 

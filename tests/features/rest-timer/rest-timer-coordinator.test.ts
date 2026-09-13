@@ -41,6 +41,23 @@ const idleScheduler = {
   every: () => () => undefined
 };
 
+function manualScheduler() {
+  let operation: (() => void) | undefined;
+
+  return {
+    every(nextOperation: () => void) {
+      operation = nextOperation;
+
+      return () => {
+        operation = undefined;
+      };
+    },
+    fire() {
+      operation?.();
+    }
+  };
+}
+
 function snapshotStore(
   initial: RestTimerSnapshotReadResult = { kind: 'empty' }
 ) {
@@ -392,6 +409,48 @@ test('foreground reconciliation gives recent unowned expiry feedback once', asyn
   await coordinator.settled();
 
   assert.equal(timer.getState().status, 'idle');
+  assert.equal(completions, 1);
+  coordinator.stop();
+});
+
+test('foreground reconciliation owns a recent expiry completed by a background tick', async () => {
+  let now = 1_000;
+  let completions = 0;
+  const appState = appStateSource('background');
+  const scheduler = manualScheduler();
+  const timer = createRestTimerStore({ now: () => now });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => now },
+    appState,
+    scheduler,
+    notifications: {
+      schedule: () => undefined,
+      cancel: () => undefined,
+      hasDelivered: () => false
+    },
+    feedback: {
+      complete: () => {
+        completions += 1;
+      },
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  coordinator.start();
+  timer.getState().start(10);
+  await coordinator.settled();
+  now = 11_000;
+  scheduler.fire();
+  assert.equal(timer.getState().status, 'idle');
+
+  appState.change('active');
+  await coordinator.settled();
+  appState.change('background');
+  appState.change('active');
+  await coordinator.settled();
+
   assert.equal(completions, 1);
   coordinator.stop();
 });
