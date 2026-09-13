@@ -25,7 +25,6 @@ export type RestTimerRuntimeSnapshot =
   | (RestTimerRuntimeSnapshotBase & {
       status: 'running';
       deadlineEpochMs: number;
-      transitionOccurredAtEpochMs: number;
     })
   | (RestTimerRuntimeSnapshotBase & {
       status: 'paused';
@@ -139,13 +138,11 @@ function parseSnapshot(value: unknown): RestTimerRuntimeSnapshot | null {
         'status',
         'deadlineEpochMs',
         'durationSeconds',
-        'activeDurationSeconds',
-        'transitionOccurredAtEpochMs'
+        'activeDurationSeconds'
       ],
       ['context']
     ) &&
-    isSafeTimestamp(value.deadlineEpochMs) &&
-    isSafeTimestamp(value.transitionOccurredAtEpochMs)
+    isSafeTimestamp(value.deadlineEpochMs)
   ) {
     return {
       version: SNAPSHOT_VERSION,
@@ -153,7 +150,6 @@ function parseSnapshot(value: unknown): RestTimerRuntimeSnapshot | null {
       deadlineEpochMs: value.deadlineEpochMs,
       durationSeconds: value.durationSeconds,
       activeDurationSeconds: value.activeDurationSeconds,
-      transitionOccurredAtEpochMs: value.transitionOccurredAtEpochMs,
       ...(context ? { context } : {})
     };
   }

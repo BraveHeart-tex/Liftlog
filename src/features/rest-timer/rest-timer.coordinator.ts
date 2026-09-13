@@ -86,7 +86,6 @@ function snapshotForTransition(
       deadlineEpochMs: state.endTime,
       durationSeconds: state.durationSeconds,
       activeDurationSeconds: state.activeDurationSeconds,
-      transitionOccurredAtEpochMs: transition.occurredAtEpochMs,
       ...(Object.keys(state.context).length > 0
         ? { context: state.context }
         : {})
@@ -552,6 +551,8 @@ export function createRestTimerCoordinator(
       clearSnapshot();
 
       if (now - snapshot.deadlineEpochMs > RECENT_EXPIRY_WINDOW_MS) {
+        await cancelNotification();
+
         return;
       }
 
@@ -567,6 +568,8 @@ export function createRestTimerCoordinator(
       } catch (error) {
         dependencies.onError?.(error, 'restore');
       }
+
+      await cancelNotification();
     },
     start() {
       if (started) {

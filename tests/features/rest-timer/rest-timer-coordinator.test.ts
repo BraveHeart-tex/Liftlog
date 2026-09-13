@@ -727,7 +727,6 @@ test('startup restores a running timer from its absolute deadline before schedul
       deadlineEpochMs: 91_000,
       durationSeconds: 90,
       activeDurationSeconds: 90,
-      transitionOccurredAtEpochMs: 1_000,
       context: { workoutId: 'workout-1' }
     }
   });
@@ -856,6 +855,7 @@ test('startup silently clears paused timers older than 24 hours', async () => {
 
 test('startup gives a recent unowned expiry foreground feedback only once', async () => {
   let completions = 0;
+  let cancellations = 0;
   const snapshots = snapshotStore({
     kind: 'snapshot',
     snapshot: {
@@ -863,8 +863,7 @@ test('startup gives a recent unowned expiry foreground feedback only once', asyn
       status: 'running',
       deadlineEpochMs: 10_000,
       durationSeconds: 10,
-      activeDurationSeconds: 10,
-      transitionOccurredAtEpochMs: 0
+      activeDurationSeconds: 10
     }
   });
   const timer = createRestTimerStore({ now: () => 14_999 });
@@ -877,7 +876,9 @@ test('startup gives a recent unowned expiry foreground feedback only once', asyn
     context: { isWorkoutActive: () => true },
     notifications: {
       schedule: () => undefined,
-      cancel: () => undefined,
+      cancel: () => {
+        cancellations += 1;
+      },
       hasDelivered: () => false
     },
     feedback: {
@@ -896,6 +897,7 @@ test('startup gives a recent unowned expiry foreground feedback only once', asyn
 
   assert.equal(timer.getState().status, 'idle');
   assert.equal(snapshots.clears(), 1);
+  assert.equal(cancellations, 1);
   assert.equal(completions, 1);
   coordinator.stop();
 });
@@ -916,8 +918,7 @@ test('recent startup expiry waits for the app to become active', async () => {
         status: 'running',
         deadlineEpochMs: 10_000,
         durationSeconds: 10,
-        activeDurationSeconds: 10,
-        transitionOccurredAtEpochMs: 0
+        activeDurationSeconds: 10
       }
     }),
     notifications: {
@@ -962,8 +963,7 @@ test('recent startup expiry rechecks notification ownership on activation', asyn
         status: 'running',
         deadlineEpochMs: 10_000,
         durationSeconds: 10,
-        activeDurationSeconds: 10,
-        transitionOccurredAtEpochMs: 0
+        activeDurationSeconds: 10
       }
     }),
     notifications: {
@@ -1013,8 +1013,7 @@ test('startup checks delivered ownership for the restored deadline', async () =>
         status: 'running',
         deadlineEpochMs: 10_000,
         durationSeconds: 10,
-        activeDurationSeconds: 10,
-        transitionOccurredAtEpochMs: 0
+        activeDurationSeconds: 10
       }
     }),
     notifications: {
@@ -1059,8 +1058,7 @@ test('coordinator restart does not lose queued startup completion feedback', asy
         status: 'running',
         deadlineEpochMs: 10_000,
         durationSeconds: 10,
-        activeDurationSeconds: 10,
-        transitionOccurredAtEpochMs: 0
+        activeDurationSeconds: 10
       }
     }),
     notifications: {
@@ -1089,6 +1087,7 @@ test('coordinator restart does not lose queued startup completion feedback', asy
 
 test('startup does not replay recent expiry when a delivered notification owns it', async () => {
   let completions = 0;
+  let cancellations = 0;
   const snapshots = snapshotStore({
     kind: 'snapshot',
     snapshot: {
@@ -1096,8 +1095,7 @@ test('startup does not replay recent expiry when a delivered notification owns i
       status: 'running',
       deadlineEpochMs: 10_000,
       durationSeconds: 10,
-      activeDurationSeconds: 10,
-      transitionOccurredAtEpochMs: 0
+      activeDurationSeconds: 10
     }
   });
   const timer = createRestTimerStore({ now: () => 15_000 });
@@ -1110,7 +1108,9 @@ test('startup does not replay recent expiry when a delivered notification owns i
     context: { isWorkoutActive: () => true },
     notifications: {
       schedule: () => undefined,
-      cancel: () => undefined,
+      cancel: () => {
+        cancellations += 1;
+      },
       hasDelivered: () => true
     },
     feedback: {
@@ -1128,6 +1128,7 @@ test('startup does not replay recent expiry when a delivered notification owns i
 
   assert.equal(completions, 0);
   assert.equal(snapshots.clears(), 1);
+  assert.equal(cancellations, 1);
   coordinator.stop();
 });
 
@@ -1141,7 +1142,6 @@ test('startup clears invalid workout context with pending delivery', async () =>
       deadlineEpochMs: 91_000,
       durationSeconds: 90,
       activeDurationSeconds: 90,
-      transitionOccurredAtEpochMs: 1_000,
       context: { workoutId: 'completed-workout' }
     }
   });
@@ -1290,6 +1290,7 @@ test('coordinator persists each new pause time for the 24-hour age', async () =>
 test('startup clears an old running expiry without delivered lookup or feedback', async () => {
   let deliveredLookups = 0;
   let completions = 0;
+  let cancellations = 0;
   const snapshots = snapshotStore({
     kind: 'snapshot',
     snapshot: {
@@ -1297,8 +1298,7 @@ test('startup clears an old running expiry without delivered lookup or feedback'
       status: 'running',
       deadlineEpochMs: 10_000,
       durationSeconds: 10,
-      activeDurationSeconds: 10,
-      transitionOccurredAtEpochMs: 0
+      activeDurationSeconds: 10
     }
   });
   const timer = createRestTimerStore({ now: () => 15_001 });
@@ -1310,7 +1310,9 @@ test('startup clears an old running expiry without delivered lookup or feedback'
     snapshots,
     notifications: {
       schedule: () => undefined,
-      cancel: () => undefined,
+      cancel: () => {
+        cancellations += 1;
+      },
       hasDelivered: () => {
         deliveredLookups += 1;
 
@@ -1332,6 +1334,7 @@ test('startup clears an old running expiry without delivered lookup or feedback'
 
   assert.equal(snapshots.clears(), 1);
   assert.equal(deliveredLookups, 0);
+  assert.equal(cancellations, 1);
   assert.equal(completions, 0);
   coordinator.stop();
 });

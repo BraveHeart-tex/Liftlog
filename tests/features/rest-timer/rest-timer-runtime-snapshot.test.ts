@@ -34,7 +34,6 @@ test('runtime snapshot round trips complete running state', () => {
     deadlineEpochMs: 91_000,
     durationSeconds: 90,
     activeDurationSeconds: 120,
-    transitionOccurredAtEpochMs: 1_000,
     context: {
       workoutId: 'workout-1',
       workoutExerciseId: 'exercise-1',
@@ -75,8 +74,7 @@ test('runtime snapshot rejects unsupported versions', () => {
       status: 'running',
       deadlineEpochMs: 91_000,
       durationSeconds: 90,
-      activeDurationSeconds: 90,
-      transitionOccurredAtEpochMs: 1_000
+      activeDurationSeconds: 90
     })
   );
   const snapshots = createRestTimerSnapshotStore(storage);
