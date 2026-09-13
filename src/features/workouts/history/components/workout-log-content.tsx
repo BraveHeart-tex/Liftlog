@@ -2,6 +2,7 @@ import { StyledFlatList } from '@/src/components/styled/flat-list';
 import { Button } from '@/src/components/ui/button';
 import { EmptyState } from '@/src/components/ui/empty-state';
 import { Icon } from '@/src/components/ui/icon';
+import { Skeleton } from '@/src/components/ui/skeleton';
 import { Text } from '@/src/components/ui/text';
 import { WorkoutLogCalendar } from '@/src/features/workouts/history/components/workout-log-calendar';
 import { WorkoutLogRow } from '@/src/features/workouts/history/components/workout-log-row';
@@ -87,9 +88,11 @@ export function WorkoutLogContent() {
   const transitionPhaseRef = useRef<WorkoutListTransitionPhase>('idle');
   const latestSelectedDateKeyRef = useRef(selectedDateKey);
   const skipFirstQueryStateRef = useRef(false);
-  const { workoutCountByDateKey } = useWorkoutCalendarMarks(
-    WORKOUT_LOG_PAST_MONTH_RANGE
-  );
+  const {
+    workoutCountByDateKey,
+    isLive: areWorkoutCountsLive,
+    error: workoutCountsError
+  } = useWorkoutCalendarMarks(WORKOUT_LOG_PAST_MONTH_RANGE);
   const {
     workoutRows,
     isLive: areWorkoutRowsLive,
@@ -241,8 +244,9 @@ export function WorkoutLogContent() {
     [workoutListOpacity, workoutListTranslateY]
   );
 
-  const workoutCountLabel = `${workoutRows.length} ${
-    workoutRows.length === 1 ? 'workout' : 'workouts'
+  const selectedWorkoutCount = workoutCountByDateKey.get(selectedDateKey) ?? 0;
+  const workoutCountLabel = `${selectedWorkoutCount} ${
+    selectedWorkoutCount === 1 ? 'workout' : 'workouts'
   }`;
   const hasWorkoutRows = workoutRows.length > 0;
 
@@ -267,9 +271,20 @@ export function WorkoutLogContent() {
               {formatSelectedDate(selectedDateKey)}
             </Text>
           </View>
-          <Text variant="caption" tone="muted">
-            {workoutCountLabel}
-          </Text>
+          {areWorkoutCountsLive ? (
+            <Text variant="caption" tone="muted">
+              {workoutCountLabel}
+            </Text>
+          ) : workoutCountsError ? null : (
+            <View
+              accessible
+              accessibilityLabel="Loading workout count"
+              accessibilityRole="progressbar"
+              accessibilityState={{ busy: true }}
+            >
+              <Skeleton className="h-3 w-16 rounded-sm" />
+            </View>
+          )}
         </View>
 
         <View className="mt-4 min-h-11 flex-row items-center justify-between gap-4">
@@ -293,11 +308,13 @@ export function WorkoutLogContent() {
     ),
     [
       hasWorkoutRows,
+      areWorkoutCountsLive,
       openStartSheet,
       selectDate,
       selectedDateKey,
       workoutCountByDateKey,
-      workoutCountLabel
+      workoutCountLabel,
+      workoutCountsError
     ]
   );
 
