@@ -162,7 +162,7 @@ function WorkoutTemplatesScreenContent({ onRetry }: { onRetry: () => void }) {
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
-          <View className="pt-4 pb-4">
+          <View className="pb-4">
             <InputGroup className="min-h-11 px-3 py-2">
               <InputSlot className="mr-3">
                 <SearchInputIcon />
