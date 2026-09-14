@@ -46,6 +46,12 @@ export interface RestTimerFeedbackPort {
   cancel(): void | Promise<void>;
   acknowledge?(): void | Promise<void>;
   stop(): void | Promise<void>;
+  notificationFailure?(): void | Promise<void>;
+}
+
+export interface RestTimerNotificationAccess {
+  permission: 'granted' | 'blocked' | 'unknown';
+  exactAlarm: 'available' | 'unavailable' | 'unsupported' | 'unknown';
 }
 
 interface RestTimerCoordinatorDependencies {
@@ -55,6 +61,7 @@ interface RestTimerCoordinatorDependencies {
   scheduler: RestTimerScheduler;
   notifications: RestTimerNotificationPort;
   notificationsEnabled?: boolean;
+  notificationAccess?: RestTimerNotificationAccess;
   feedback: RestTimerFeedbackPort;
   snapshots?: RestTimerSnapshotStore;
   context?: {
@@ -132,6 +139,36 @@ export function createRestTimerCoordinator(
   let lifecycleGeneration = 0;
   let notificationsEnabled = dependencies.notificationsEnabled ?? true;
   let preferenceGeneration = 0;
+  let notificationAccess: RestTimerNotificationAccess =
+    dependencies.notificationAccess ?? {
+      permission: 'granted',
+      exactAlarm: 'unknown'
+    };
+  let scheduleFailureMessageShown = false;
+
+  const reportScheduleFailure = async (error: unknown) => {
+    dependencies.onError?.(error, 'schedule');
+
+    if (scheduleFailureMessageShown) {
+      return;
+    }
+
+    scheduleFailureMessageShown = true;
+
+    try {
+      await dependencies.feedback.notificationFailure?.();
+    } catch (feedbackError) {
+      dependencies.onError?.(feedbackError, 'complete');
+    }
+  };
+
+  const scheduleNotification = async (
+    deadlineEpochMs: number,
+    context: RestTimerContext
+  ) => {
+    await dependencies.notifications.schedule({ deadlineEpochMs, context });
+    scheduleFailureMessageShown = false;
+  };
 
   const runSerialized = (operation: () => void | Promise<void>) => {
     operationTail = operationTail.then(operation, operation);
@@ -157,7 +194,11 @@ export function createRestTimerCoordinator(
         await operation(isCurrent);
       } catch (error) {
         if (isCurrent()) {
-          dependencies.onError?.(error, operationName);
+          if (operationName === 'schedule') {
+            await reportScheduleFailure(error);
+          } else {
+            dependencies.onError?.(error, operationName);
+          }
         }
       }
     });
@@ -169,6 +210,10 @@ export function createRestTimerCoordinator(
     previousState?: RestTimerState
   ) => {
     latestTransitionSequence = transition.sequence;
+
+    if (transition.kind === 'start') {
+      scheduleFailureMessageShown = false;
+    }
 
     if (transition.kind !== 'hydrate' && dependencies.snapshots) {
       try {
@@ -220,7 +265,10 @@ export function createRestTimerCoordinator(
       const deadlineEpochMs = state.endTime;
       const context = state.context;
 
-      if (!notificationsEnabled) {
+      if (
+        !notificationsEnabled ||
+        notificationAccess.permission !== 'granted'
+      ) {
         runTransitionOperation(transition, 'cancel', () =>
           dependencies.notifications.cancel()
         );
@@ -229,7 +277,7 @@ export function createRestTimerCoordinator(
       }
 
       runTransitionOperation(transition, 'schedule', () =>
-        dependencies.notifications.schedule({ deadlineEpochMs, context })
+        scheduleNotification(deadlineEpochMs, context)
       );
 
       return;
@@ -488,7 +536,10 @@ export function createRestTimerCoordinator(
     reconcileNotifications() {
       const state = dependencies.timer.getState();
 
-      if (!notificationsEnabled) {
+      if (
+        !notificationsEnabled ||
+        notificationAccess.permission !== 'granted'
+      ) {
         return;
       }
 
@@ -507,12 +558,53 @@ export function createRestTimerCoordinator(
         }
 
         try {
-          await dependencies.notifications.schedule({
-            deadlineEpochMs: state.endTime,
-            context: state.context
-          });
+          await scheduleNotification(state.endTime, state.context);
         } catch (error) {
-          dependencies.onError?.(error, 'schedule');
+          if (
+            started &&
+            operationLifecycle === lifecycleGeneration &&
+            generation === preferenceGeneration
+          ) {
+            await reportScheduleFailure(error);
+          }
+        }
+      });
+    },
+    reconcileNotificationAccess(access: RestTimerNotificationAccess) {
+      notificationAccess = access;
+      const generation = ++preferenceGeneration;
+      const operationLifecycle = lifecycleGeneration;
+
+      runSerialized(async () => {
+        if (
+          !started ||
+          operationLifecycle !== lifecycleGeneration ||
+          generation !== preferenceGeneration ||
+          !notificationsEnabled
+        ) {
+          return;
+        }
+
+        if (notificationAccess.permission !== 'granted') {
+          await cancelPendingNotification();
+
+          return;
+        }
+
+        const state = dependencies.timer.getState();
+
+        if (
+          state.status === 'running' &&
+          state.endTime !== null &&
+          state.endTime > dependencies.clock.now()
+        ) {
+          try {
+            await scheduleNotification(state.endTime, state.context);
+          } catch (error) {
+            if (generation === preferenceGeneration) {
+              await reportScheduleFailure(error);
+            }
+          }
         }
       });
     },
@@ -545,18 +637,20 @@ export function createRestTimerCoordinator(
           const state = dependencies.timer.getState();
 
           if (
+            notificationAccess.permission === 'granted' &&
             state.status === 'running' &&
             state.endTime !== null &&
             state.endTime > dependencies.clock.now()
           ) {
-            await dependencies.notifications.schedule({
-              deadlineEpochMs: state.endTime,
-              context: state.context
-            });
+            await scheduleNotification(state.endTime, state.context);
           }
         } catch (error) {
           if (generation === preferenceGeneration) {
-            dependencies.onError?.(error, enabled ? 'schedule' : 'cancel');
+            if (enabled) {
+              await reportScheduleFailure(error);
+            } else {
+              dependencies.onError?.(error, 'cancel');
+            }
           }
         }
       });

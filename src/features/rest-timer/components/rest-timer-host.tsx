@@ -6,9 +6,16 @@ import {
   type RestTimerAppState
 } from '@/src/features/rest-timer/rest-timer.coordinator';
 import {
+  createRestTimerDiagnostic,
+  type RestTimerDiagnosticEnvironment
+} from '@/src/features/rest-timer/rest-timer-diagnostics';
+import { getExactAlarmAccess } from '@/src/features/rest-timer/rest-timer-exact-alarm';
+import { createLatestRestTimerNotificationAccessReconciler } from '@/src/features/rest-timer/rest-timer-notification-access';
+import {
   cancelPendingRestTimerNotification,
   cancelRestTimerNotification,
   hasDeliveredRestTimerNotification,
+  getRestTimerNotificationPermission,
   reconcileRestTimerNotificationChannel,
   scheduleRestTimerNotification,
   subscribeToRestTimerNotificationPermissionChanges
@@ -22,6 +29,7 @@ import {
 } from '@/src/lib/haptics/haptics';
 import { useAudioPlayer } from 'expo-audio';
 import { ImpactFeedbackStyle } from 'expo-haptics';
+import { captureMessage } from '@sentry/react-native';
 import {
   type PropsWithChildren,
   useCallback,
@@ -34,6 +42,8 @@ import { AppState, Platform } from 'react-native';
 
 const REST_TIMER_COMPLETION_SOUND_DURATION_MS = 5000;
 const REST_TIMER_COMPLETION_SNACKBAR_KEY = 'rest-timer-completion';
+const REST_TIMER_NOTIFICATION_FAILURE_SNACKBAR_KEY =
+  'rest-timer-notification-failure';
 
 function currentAppState(): RestTimerAppState {
   return AppState.currentState ?? 'unknown';
@@ -87,6 +97,12 @@ export function RestTimerHost({ children }: PropsWithChildren) {
   const completionSoundOperationGenerationRef = useRef(0);
   const isAudioHostMountedRef = useRef(false);
   const playerRef = useRef(player);
+  const diagnosticEnvironmentRef = useRef<RestTimerDiagnosticEnvironment>({
+    platform: Platform.OS === 'android' ? 'android' : 'ios',
+    appState: currentAppState(),
+    permission: 'unknown',
+    exactAlarm: 'unknown'
+  });
 
   const clearCompletionHapticTimeouts = useCallback(() => {
     completionHapticTimeoutsRef.current.forEach(clearTimeout);
@@ -226,6 +242,10 @@ export function RestTimerHost({ children }: PropsWithChildren) {
         appState: appStateSource,
         scheduler: timerScheduler,
         notificationsEnabled: false,
+        notificationAccess: {
+          permission: 'unknown',
+          exactAlarm: 'unknown'
+        },
         snapshots: restTimerSnapshotStore,
         context: workoutContext,
         notifications: {
@@ -247,9 +267,27 @@ export function RestTimerHost({ children }: PropsWithChildren) {
           complete: completeFeedback,
           cancel: cancelFeedback,
           acknowledge: acknowledgeFeedback,
-          stop: stopCompletionSound
+          stop: stopCompletionSound,
+          notificationFailure: () => {
+            showSnackbar({
+              key: REST_TIMER_NOTIFICATION_FAILURE_SNACKBAR_KEY,
+              message: 'Rest alert could not be scheduled.',
+              variant: 'danger'
+            });
+          }
         },
         onError: (_error, operation) => {
+          const reason =
+            operation === 'persist' || operation === 'restore'
+              ? 'persistence_failure'
+              : 'native_failure';
+          captureMessage('REST_TIMER_OPERATION_FAILED', {
+            level: 'error',
+            extra: createRestTimerDiagnostic(operation, reason, {
+              ...diagnosticEnvironmentRef.current,
+              appState: currentAppState()
+            })
+          });
           console.error(`Failed to ${operation} rest timer side effects`);
         }
       }),
@@ -260,6 +298,38 @@ export function RestTimerHost({ children }: PropsWithChildren) {
       stopCompletionSound,
       workoutContext
     ]
+  );
+
+  const reconcileNotificationAccess = useMemo(
+    () =>
+      createLatestRestTimerNotificationAccessReconciler(
+        async () => {
+          try {
+            const permission = await getRestTimerNotificationPermission();
+            const exactAlarm = getExactAlarmAccess();
+
+            return {
+              permission: permission.granted ? 'granted' : 'blocked',
+              exactAlarm: !exactAlarm.supported
+                ? 'unsupported'
+                : exactAlarm.granted
+                  ? 'available'
+                  : 'unavailable'
+            };
+          } catch {
+            return { permission: 'unknown', exactAlarm: 'unknown' };
+          }
+        },
+        access => {
+          diagnosticEnvironmentRef.current = {
+            platform: 'android',
+            appState: currentAppState(),
+            ...access
+          };
+          coordinator.reconcileNotificationAccess(access);
+        }
+      ),
+    [coordinator]
   );
 
   useEffect(() => {
@@ -274,7 +344,7 @@ export function RestTimerHost({ children }: PropsWithChildren) {
     void reconcileRestTimerNotificationChannel()
       .then(() => {
         if (restTimerNotificationsEnabled) {
-          coordinator.reconcileNotifications();
+          void reconcileNotificationAccess();
         }
       })
       .catch(error => {
@@ -283,16 +353,16 @@ export function RestTimerHost({ children }: PropsWithChildren) {
           error
         );
       });
-  }, [coordinator, restTimerNotificationsEnabled]);
+  }, [reconcileNotificationAccess, restTimerNotificationsEnabled]);
 
   useEffect(
     () =>
       subscribeToRestTimerNotificationPermissionChanges(() => {
         if (restTimerNotificationsEnabled && Platform.OS === 'android') {
-          coordinator.reconcileNotifications();
+          void reconcileNotificationAccess();
         }
       }),
-    [coordinator, restTimerNotificationsEnabled]
+    [reconcileNotificationAccess, restTimerNotificationsEnabled]
   );
 
   useEffect(() => {
@@ -302,12 +372,12 @@ export function RestTimerHost({ children }: PropsWithChildren) {
 
     const subscription = AppState.addEventListener('change', state => {
       if (state === 'active') {
-        coordinator.reconcileNotifications();
+        void reconcileNotificationAccess();
       }
     });
 
     return () => subscription.remove();
-  }, [coordinator, restTimerNotificationsEnabled]);
+  }, [reconcileNotificationAccess, restTimerNotificationsEnabled]);
 
   useEffect(() => {
     let mounted = true;

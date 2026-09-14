@@ -1395,3 +1395,187 @@ test('notification preference schedules and cancels against the current deadline
   assert.equal(cancellations >= 2, true);
   coordinator.stop();
 });
+
+test('authorization revocation cancels pending delivery without disabling intent', async () => {
+  const deadlines: number[] = [];
+  let pendingCancellations = 0;
+  const timer = createRestTimerStore({ now: () => 1_000 });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => 1_000 },
+    appState: appStateSource(),
+    scheduler: idleScheduler,
+    notifications: {
+      schedule: ({ deadlineEpochMs }) => {
+        deadlines.push(deadlineEpochMs);
+      },
+      cancel: () => undefined,
+      cancelPending: () => {
+        pendingCancellations += 1;
+      }
+    },
+    feedback: {
+      complete: () => undefined,
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  coordinator.start();
+  timer.getState().start(90);
+  await coordinator.settled();
+
+  coordinator.reconcileNotificationAccess({
+    permission: 'blocked',
+    exactAlarm: 'available'
+  });
+  await coordinator.settled();
+  timer.getState().addTime(30);
+  await coordinator.settled();
+  coordinator.reconcileNotificationAccess({
+    permission: 'granted',
+    exactAlarm: 'unavailable'
+  });
+  await coordinator.settled();
+
+  assert.equal(timer.getState().status, 'running');
+  assert.equal(pendingCancellations, 1);
+  assert.deepEqual(deadlines, [91_000, 121_000]);
+  coordinator.stop();
+});
+
+test('exact-alarm revocation replaces delivery at the unchanged deadline', async () => {
+  const deadlines: number[] = [];
+  const timer = createRestTimerStore({ now: () => 1_000 });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => 1_000 },
+    appState: appStateSource(),
+    scheduler: idleScheduler,
+    notifications: {
+      schedule: ({ deadlineEpochMs }) => {
+        deadlines.push(deadlineEpochMs);
+      },
+      cancel: () => undefined
+    },
+    feedback: {
+      complete: () => undefined,
+      cancel: () => undefined,
+      stop: () => undefined
+    }
+  });
+
+  coordinator.start();
+  timer.getState().start(90);
+  await coordinator.settled();
+  coordinator.reconcileNotificationAccess({
+    permission: 'granted',
+    exactAlarm: 'available'
+  });
+  coordinator.reconcileNotificationAccess({
+    permission: 'granted',
+    exactAlarm: 'unavailable'
+  });
+  await coordinator.settled();
+
+  assert.equal(timer.getState().endTime, 91_000);
+  assert.deepEqual(deadlines, [91_000, 91_000]);
+  coordinator.stop();
+});
+
+test('superseded reconciliation failure cannot surface stale feedback', async () => {
+  let rejectSchedule!: (error: Error) => void;
+  const pendingSchedule = new Promise<void>((_resolve, reject) => {
+    rejectSchedule = reject;
+  });
+  let schedules = 0;
+  let failureMessages = 0;
+  const timer = createRestTimerStore({ now: () => 1_000 });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => 1_000 },
+    appState: appStateSource(),
+    scheduler: idleScheduler,
+    notifications: {
+      schedule: () => {
+        schedules += 1;
+
+        return schedules === 1 ? undefined : pendingSchedule;
+      },
+      cancel: () => undefined
+    },
+    feedback: {
+      complete: () => undefined,
+      cancel: () => undefined,
+      stop: () => undefined,
+      notificationFailure: () => {
+        failureMessages += 1;
+      }
+    }
+  });
+
+  coordinator.start();
+  timer.getState().start(90);
+  await coordinator.settled();
+  coordinator.reconcileNotifications();
+  await new Promise(resolve => setImmediate(resolve));
+  coordinator.reconcileNotificationAccess({
+    permission: 'blocked',
+    exactAlarm: 'available'
+  });
+  rejectSchedule(new Error('late native failure'));
+  await coordinator.settled();
+
+  assert.equal(failureMessages, 0);
+  assert.equal(timer.getState().status, 'running');
+  coordinator.stop();
+});
+
+test('schedule failure message is shown once per session and resets on success', async () => {
+  let shouldFail = true;
+  let failureMessages = 0;
+  const timer = createRestTimerStore({ now: () => 1_000 });
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => 1_000 },
+    appState: appStateSource(),
+    scheduler: idleScheduler,
+    notifications: {
+      schedule: () => {
+        if (shouldFail) {
+          throw new Error('native detail must stay private');
+        }
+      },
+      cancel: () => undefined
+    },
+    feedback: {
+      complete: () => undefined,
+      cancel: () => undefined,
+      stop: () => undefined,
+      notificationFailure: () => {
+        failureMessages += 1;
+      }
+    }
+  });
+
+  coordinator.start();
+  timer.getState().start(90);
+  await coordinator.settled();
+  coordinator.reconcileNotifications();
+  await coordinator.settled();
+  assert.equal(failureMessages, 1);
+
+  shouldFail = false;
+  coordinator.reconcileNotifications();
+  await coordinator.settled();
+  shouldFail = true;
+  coordinator.reconcileNotifications();
+  await coordinator.settled();
+  assert.equal(failureMessages, 2);
+
+  timer.getState().cancel();
+  timer.getState().start(90);
+  await coordinator.settled();
+  assert.equal(failureMessages, 3);
+  coordinator.stop();
+});
