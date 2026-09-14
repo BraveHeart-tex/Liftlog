@@ -21,6 +21,10 @@ const pluginPath = resolve(
   projectRoot,
   'plugins/with-android-release-signing.js'
 );
+const notificationsProguardPluginPath = resolve(
+  projectRoot,
+  'plugins/with-android-notifications-proguard.js'
+);
 const buildScriptPath = resolve(
   projectRoot,
   'scripts/build-android-release-single-arch.sh'
@@ -68,6 +72,25 @@ async function runPlugin(projectDirectory: string): Promise<void> {
     config: Parameters<typeof compileModsAsync>[0]
   ) => Parameters<typeof compileModsAsync>[0];
   const config = withAndroidReleaseSigning({
+    name: 'Liftlog',
+    slug: 'liftlog'
+  });
+
+  await compileModsAsync(config, {
+    projectRoot: projectDirectory,
+    platforms: ['android']
+  });
+}
+
+async function runNotificationsProguardPlugin(
+  projectDirectory: string
+): Promise<void> {
+  const withAndroidNotificationsProguard = require(
+    notificationsProguardPluginPath
+  ) as (
+    config: Parameters<typeof compileModsAsync>[0]
+  ) => Parameters<typeof compileModsAsync>[0];
+  const config = withAndroidNotificationsProguard({
     name: 'Liftlog',
     slug: 'liftlog'
   });
@@ -130,6 +153,41 @@ test('source config declares the rest timer Android notification contract', () =
     'expo-notifications',
     { sounds: ['./assets/sounds/rest_timer_finished.wav'] }
   ]);
+  assert.equal(
+    appConfig.expo.plugins.includes(
+      './plugins/with-android-notifications-proguard'
+    ),
+    true
+  );
+});
+
+test('notifications ProGuard plugin adds the keep rule idempotently', async () => {
+  const projectDirectory = createAndroidProject();
+  const proguardPath = join(
+    projectDirectory,
+    'android',
+    'app',
+    'proguard-rules.pro'
+  );
+
+  writeFileSync(proguardPath, '# Existing rules\n');
+
+  try {
+    await runNotificationsProguardPlugin(projectDirectory);
+    await runNotificationsProguardPlugin(projectDirectory);
+
+    const proguardRules = readFileSync(proguardPath, 'utf8');
+
+    assert.equal(
+      proguardRules.match(
+        /-keep class expo\.modules\.notifications\.\*\* \{ \*; \}/g
+      )?.length,
+      1
+    );
+    assert.match(proguardRules, /# Existing rules/);
+  } finally {
+    rmSync(projectDirectory, { recursive: true, force: true });
+  }
 });
 
 test('exact alarm bridge guards Android 12 APIs and opens the dedicated settings intent', () => {
@@ -240,7 +298,7 @@ test(
             versionCode: appConfig.expo.android.versionCode,
             permissions: appConfig.expo.android.permissions
           },
-          plugins: [pluginPath]
+          plugins: [notificationsProguardPluginPath, pluginPath]
         }
       })
     );
@@ -280,6 +338,13 @@ test(
           'utf8'
         ),
         /gradle\.taskGraph\.whenReady/
+      );
+      assert.match(
+        readFileSync(
+          join(projectDirectory, 'android', 'app', 'proguard-rules.pro'),
+          'utf8'
+        ),
+        /-keep class expo\.modules\.notifications\.\*\* \{ \*; \}/
       );
       const generatedManifest = readFileSync(
         join(

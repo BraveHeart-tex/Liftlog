@@ -69,6 +69,7 @@
         }
       ],
       "expo-asset",
+      "./plugins/with-android-notifications-proguard",
       "./plugins/with-android-release-signing"
     ],
     "experiments": {
