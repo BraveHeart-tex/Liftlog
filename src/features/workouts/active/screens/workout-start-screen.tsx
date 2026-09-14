@@ -4,16 +4,26 @@ import { Screen } from '@/src/components/ui/screen';
 import { Text } from '@/src/components/ui/text';
 import { ActiveWorkoutSummaryCard } from '@/src/features/workouts/active/components/active-workout-summary-card';
 import { RecentWorkoutsSection } from '@/src/features/workouts/active/components/recent-workouts-section';
+import { StartWorkoutSheet } from '@/src/features/workouts/active/components/start-workout-sheet';
 import { WorkoutTemplatesSection } from '@/src/features/workouts/templates/components/workout-templates-section';
 import { useWorkoutStart } from '@/src/features/workouts/active/hooks/use-workout-start';
+import { useWorkoutTemplates } from '@/src/features/workouts/templates/hooks/use-workout-templates';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 import { useFocusEffect } from 'expo-router';
 import { DumbbellIcon } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 
 export function WorkoutStartScreen() {
-  const { activeWorkout, startWorkout, resumeWorkout } = useWorkoutStart();
+  const {
+    activeWorkout,
+    startWorkout,
+    resumeWorkout,
+    startWorkoutFromTemplate
+  } = useWorkoutStart();
+  const { templates, error: templatesError, isLoading } = useWorkoutTemplates();
   const [isStartingWorkout, setIsStartingWorkout] = useState(false);
+  const [isStartSheetOpen, setIsStartSheetOpen] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -22,15 +32,31 @@ export function WorkoutStartScreen() {
   );
 
   const handleStartWorkout = useCallback(() => {
-    if (isStartingWorkout) {
+    if (isStartingWorkout || isLoading) {
       return;
     }
 
-    // Keep the CTA mounted while the live query reflects the newly-created
-    // workout. The active route is still transitioning in above this screen.
+    if (templatesError) {
+      showSnackbar({
+        message: 'Could not load templates. Please try again.',
+        variant: 'danger'
+      });
+
+      return;
+    }
+
+    if (templates.length > 0) {
+      setIsStartSheetOpen(true);
+
+      return;
+    }
+
     setIsStartingWorkout(true);
-    startWorkout();
-  }, [isStartingWorkout, startWorkout]);
+
+    if (!startWorkout()) {
+      setIsStartingWorkout(false);
+    }
+  }, [isLoading, isStartingWorkout, startWorkout, templates, templatesError]);
 
   return (
     <Screen scroll keyboardShouldPersistTaps="handled">
@@ -49,7 +75,11 @@ export function WorkoutStartScreen() {
             className="mt-6 h-14"
             leftIcon={<Icon as={DumbbellIcon} tone="primaryForeground" />}
             fullWidth
-            disabled={isStartingWorkout}
+            disabled={isStartingWorkout || isLoading}
+            loading={isStartingWorkout || isLoading}
+            loadingLabel={
+              isStartingWorkout ? 'Starting workout...' : 'Loading templates...'
+            }
             onPress={handleStartWorkout}
           >
             Start Workout
@@ -62,6 +92,15 @@ export function WorkoutStartScreen() {
 
       <WorkoutTemplatesSection />
       <RecentWorkoutsSection />
+
+      <StartWorkoutSheet
+        isOpen={isStartSheetOpen}
+        templates={templates}
+        onClose={() => setIsStartSheetOpen(false)}
+        onStartEmpty={startWorkout}
+        onStartTemplate={startWorkoutFromTemplate}
+        onWorkoutStarted={() => setIsStartingWorkout(true)}
+      />
     </Screen>
   );
 }

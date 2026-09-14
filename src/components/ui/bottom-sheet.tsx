@@ -42,6 +42,8 @@ interface BottomSheetComponentProps {
   snapPoints?: (string | number)[];
   enablePanDownToClose?: boolean;
   enableDynamicSizing?: boolean;
+  maxDynamicContentSize?: number;
+  wrapDynamicContent?: boolean;
   keyboardBehavior?: 'interactive' | 'extend' | 'fillParent';
   androidKeyboardInputMode?: 'adjustPan' | 'adjustResize';
   activeOffsetY?: PanGestureHandlerProps['activeOffsetY'];
@@ -86,6 +88,8 @@ export function BottomSheet({
   snapPoints,
   enablePanDownToClose = true,
   enableDynamicSizing = false,
+  maxDynamicContentSize,
+  wrapDynamicContent = true,
   keyboardBehavior = 'extend',
   androidKeyboardInputMode,
   activeOffsetY,
@@ -179,6 +183,7 @@ export function BottomSheet({
       index={0}
       keyboardBehavior={keyboardBehavior}
       keyboardBlurBehavior={'restore'}
+      maxDynamicContentSize={maxDynamicContentSize}
       onChange={handleChange}
       onDismiss={handleDismiss}
       overrideReduceMotion={
@@ -188,7 +193,7 @@ export function BottomSheet({
       stackBehavior={stackBehavior}
       enableContentPanningGesture={enableContentPanningGesture}
     >
-      {enableDynamicSizing ? (
+      {enableDynamicSizing && wrapDynamicContent ? (
         <BottomSheetView style={undefined} className={className}>
           {renderedChildren}
         </BottomSheetView>

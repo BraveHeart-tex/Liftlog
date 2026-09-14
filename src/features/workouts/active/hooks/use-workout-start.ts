@@ -56,12 +56,16 @@ export function useWorkoutStart() {
           router.navigate(activeWorkoutRoute);
         }
       );
+
+      return true;
     } catch (error) {
       console.error('Failed to start workout', error);
       showSnackbar({
         message: 'Could not start workout. Please try again.',
         variant: 'danger'
       });
+
+      return false;
     }
   }, [db]);
 
@@ -72,7 +76,7 @@ export function useWorkoutStart() {
   const startWorkoutFromTemplate = useCallback(
     (templateId: WorkoutTemplate['id']) => {
       try {
-        withDomainFlowSpan(
+        const createdWorkoutStarted = withDomainFlowSpan(
           { operation: 'workout.start', feature: 'workout' },
           () => {
             const createdWorkout = createWorkoutFromTemplate(db, {
@@ -85,19 +89,25 @@ export function useWorkoutStart() {
                 variant: 'warning'
               });
 
-              return;
+              return false;
             }
 
             triggerHapticMedium('workout creation');
             router.navigate(activeWorkoutRoute);
+
+            return true;
           }
         );
+
+        return createdWorkoutStarted;
       } catch (error) {
         console.error('Failed to start workout from template', error);
         showSnackbar({
           message: 'Could not start workout. Please try again.',
           variant: 'danger'
         });
+
+        return false;
       }
     },
     [db]
