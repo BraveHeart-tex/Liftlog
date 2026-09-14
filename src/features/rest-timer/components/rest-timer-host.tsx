@@ -29,7 +29,7 @@ import {
 } from '@/src/lib/haptics/haptics';
 import { useAudioPlayer } from 'expo-audio';
 import { ImpactFeedbackStyle } from 'expo-haptics';
-import { captureMessage } from '@sentry/react-native';
+import { captureException } from '@sentry/react-native';
 import {
   type PropsWithChildren,
   useCallback,
@@ -276,12 +276,12 @@ export function RestTimerHost({ children }: PropsWithChildren) {
             });
           }
         },
-        onError: (_error, operation) => {
+        onError: (error, operation) => {
           const reason =
             operation === 'persist' || operation === 'restore'
               ? 'persistence_failure'
               : 'native_failure';
-          captureMessage('REST_TIMER_OPERATION_FAILED', {
+          captureException(error, {
             level: 'error',
             extra: createRestTimerDiagnostic(operation, reason, {
               ...diagnosticEnvironmentRef.current,
