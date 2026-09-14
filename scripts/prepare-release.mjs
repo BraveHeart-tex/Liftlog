@@ -122,6 +122,7 @@ appJson.expo.android.versionCode += 1;
 writeFileSync(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
 writeFileSync(appPath, `${JSON.stringify(appJson, null, 2)}\n`);
 
+run('pnpm', ['exec', 'prettier', '--write', 'package.json', 'app.json']);
 run('pnpm', ['exec', 'prettier', '--check', 'package.json', 'app.json']);
 run('git', ['add', 'package.json', 'app.json']);
 run('git', ['commit', '-m', `chore: prepare Android ${version} release`]);
