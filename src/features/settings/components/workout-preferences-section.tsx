@@ -107,7 +107,8 @@ export const WorkoutPreferencesSection = () => {
                     }}
                   />
                 </View>
-                {notificationPreference.state === 'Blocked' ? (
+                {notificationPreference.state === 'Blocked' ||
+                notificationPreference.state === 'On' ? (
                   <Button
                     variant="secondary"
                     className="mt-3"
@@ -123,7 +124,9 @@ export const WorkoutPreferencesSection = () => {
                       void notificationPreference.openNotificationSettings()
                     }
                   >
-                    Open notification settings
+                    {notificationPreference.state === 'On'
+                      ? 'Rest timer notification settings'
+                      : 'Open notification settings'}
                   </Button>
                 ) : null}
                 {notificationPreference.timingMayBeDelayed ? (

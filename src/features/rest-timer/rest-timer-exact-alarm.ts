@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 interface ExactAlarmModule {
   getAccess(): { supported: boolean; granted: boolean };
   openSettings(): void;
+  openNotificationChannelSettings?(channelId: string): void;
 }
 
 const nativeModule =
@@ -17,4 +18,14 @@ export function getExactAlarmAccess() {
 
 export function openExactAlarmSettings() {
   nativeModule?.openSettings();
+}
+
+export function openRestTimerNotificationChannelSettings() {
+  if (!nativeModule?.openNotificationChannelSettings) {
+    return false;
+  }
+
+  nativeModule.openNotificationChannelSettings('rest-timer-v2');
+
+  return true;
 }

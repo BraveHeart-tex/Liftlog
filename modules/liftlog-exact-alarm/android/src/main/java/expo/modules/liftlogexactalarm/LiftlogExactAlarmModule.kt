@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.provider.Settings
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
@@ -14,24 +13,42 @@ class LiftlogExactAlarmModule : Module() {
     get() = appContext.reactContext
       ?: throw IllegalStateException("Application context is unavailable")
 
+  private fun openSettings(spec: SettingsIntentSpec) {
+    context.startActivity(Intent(spec.action).apply {
+      spec.data?.let { data = Uri.parse(it) }
+      spec.extras.forEach { (key, value) -> putExtra(key, value) }
+      addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    })
+  }
+
   override fun definition() = ModuleDefinition {
     Name("LiftlogExactAlarm")
 
     Function("getAccess") {
-      val supported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-      val granted = !supported ||
+      val canScheduleExactAlarms = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
         context.getSystemService(AlarmManager::class.java).canScheduleExactAlarms()
+      val access = ExactAlarmContract.access(
+        Build.VERSION.SDK_INT,
+        canScheduleExactAlarms
+      )
 
-      mapOf("supported" to supported, "granted" to granted)
+      mapOf("supported" to access.supported, "granted" to access.granted)
     }
 
     Function("openSettings") {
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-          data = Uri.parse("package:${context.packageName}")
-          addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        })
-      }
+      ExactAlarmContract.exactAlarmSettingsIntent(
+        Build.VERSION.SDK_INT,
+        context.packageName
+      )?.let(::openSettings)
+    }
+
+    Function("openNotificationChannelSettings") { channelId: String ->
+      openSettings(
+        ExactAlarmContract.notificationChannelSettingsIntent(
+          context.packageName,
+          channelId
+        )
+      )
     }
   }
 }

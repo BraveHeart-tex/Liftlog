@@ -68,22 +68,31 @@ async function ensureRestTimerNotificationChannel() {
     return;
   }
 
-  channelPromise ??= setNotificationChannelAsync(
-    REST_TIMER_NOTIFICATION_CHANNEL_ID,
-    {
+  channelPromise ??= cancelScheduledRestTimerNotification({
+    dismiss: false
+  }).then(async () => {
+    await setNotificationChannelAsync(REST_TIMER_NOTIFICATION_CHANNEL_ID, {
       name: 'Rest timer',
       importance: AndroidImportance.HIGH,
       enableVibrate: true,
       sound: 'rest-timer-finished.wav'
-    }
-  ).then(async () => {
+    });
     await deleteNotificationChannelAsync(
       OBSOLETE_REST_TIMER_NOTIFICATION_CHANNEL_ID
     );
   });
 
-  await channelPromise;
+  try {
+    await channelPromise;
+  } catch (error) {
+    channelPromise = null;
+
+    throw error;
+  }
 }
+
+export const reconcileRestTimerNotificationChannel =
+  ensureRestTimerNotificationChannel;
 
 export async function requestRestTimerNotificationPermission() {
   await ensureRestTimerNotificationChannel();

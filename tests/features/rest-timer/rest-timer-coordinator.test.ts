@@ -1385,6 +1385,10 @@ test('notification preference schedules and cancels against the current deadline
   await coordinator.settled();
   assert.deepEqual(deadlines, [91_000]);
 
+  coordinator.reconcileNotifications();
+  await coordinator.settled();
+  assert.deepEqual(deadlines, [91_000, 91_000]);
+
   coordinator.setNotificationsEnabled(false);
   await coordinator.settled();
   assert.equal(timer.getState().status, 'running');

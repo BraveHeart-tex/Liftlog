@@ -1,7 +1,8 @@
 import { showSnackbar } from '@/src/components/ui/snackbar';
 import {
   getExactAlarmAccess,
-  openExactAlarmSettings
+  openExactAlarmSettings,
+  openRestTimerNotificationChannelSettings
 } from '@/src/features/rest-timer/rest-timer-exact-alarm';
 import {
   cancelRestTimerNotification,
@@ -119,12 +120,20 @@ export function useRestTimerNotificationPreference() {
     [setRestTimerNotificationsEnabled]
   );
 
+  const openNotificationSettings = useCallback(() => {
+    if (state === 'On' && openRestTimerNotificationChannelSettings()) {
+      return;
+    }
+
+    return openRestTimerNotificationSettings();
+  }, [state]);
+
   return {
     enabled: restTimerNotificationsEnabled,
     state,
     timingMayBeDelayed,
     setEnabled,
-    openNotificationSettings: openRestTimerNotificationSettings,
+    openNotificationSettings,
     openExactAlarmSettings
   };
 }

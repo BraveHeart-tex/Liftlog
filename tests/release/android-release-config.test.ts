@@ -37,6 +37,14 @@ const exactAlarmModulePath = resolve(
   projectRoot,
   'modules/liftlog-exact-alarm/android/src/main/java/expo/modules/liftlogexactalarm/LiftlogExactAlarmModule.kt'
 );
+const exactAlarmContractPath = resolve(
+  projectRoot,
+  'modules/liftlog-exact-alarm/android/src/main/java/expo/modules/liftlogexactalarm/ExactAlarmContract.kt'
+);
+const exactAlarmManifestPath = resolve(
+  projectRoot,
+  'modules/liftlog-exact-alarm/android/src/main/AndroidManifest.xml'
+);
 
 const signingEnvironmentVariables = [
   'LIFTLOG_ANDROID_KEYSTORE_PATH',
@@ -104,6 +112,16 @@ test('source config declares the rest timer Android notification contract', () =
     ),
     true
   );
+  assert.equal(
+    appConfig.expo.android.permissions.includes(
+      'android.permission.USE_EXACT_ALARM'
+    ),
+    false
+  );
+  const moduleManifest = readFileSync(exactAlarmManifestPath, 'utf8');
+
+  assert.match(moduleManifest, /android\.permission\.SCHEDULE_EXACT_ALARM/);
+  assert.doesNotMatch(moduleManifest, /android\.permission\.USE_EXACT_ALARM/);
   const notificationsPlugin = appConfig.expo.plugins.find(
     plugin => Array.isArray(plugin) && plugin[0] === 'expo-notifications'
   );
@@ -115,12 +133,16 @@ test('source config declares the rest timer Android notification contract', () =
 });
 
 test('exact alarm bridge guards Android 12 APIs and opens the dedicated settings intent', () => {
-  const source = readFileSync(exactAlarmModulePath, 'utf8');
+  const source = [exactAlarmModulePath, exactAlarmContractPath]
+    .map(path => readFileSync(path, 'utf8'))
+    .join('\n');
 
-  assert.match(source, /Build\.VERSION\.SDK_INT >= Build\.VERSION_CODES\.S/);
+  assert.match(source, /sdkInt >= Build\.VERSION_CODES\.S/);
   assert.match(source, /canScheduleExactAlarms\(\)/);
   assert.match(source, /Settings\.ACTION_REQUEST_SCHEDULE_EXACT_ALARM/);
-  assert.match(source, /Uri\.parse\("package:\$\{context\.packageName\}"\)/);
+  assert.match(source, /data = "package:\$packageName"/);
+  assert.match(source, /Settings\.ACTION_CHANNEL_NOTIFICATION_SETTINGS/);
+  assert.match(source, /Settings\.EXTRA_CHANNEL_ID/);
 });
 
 test('release signing plugin generates an idempotent secret-free Gradle contract', async () => {
@@ -215,7 +237,8 @@ test(
           version: appConfig.expo.version,
           android: {
             package: appConfig.expo.android.package,
-            versionCode: appConfig.expo.android.versionCode
+            versionCode: appConfig.expo.android.versionCode,
+            permissions: appConfig.expo.android.permissions
           },
           plugins: [pluginPath]
         }
@@ -257,6 +280,26 @@ test(
           'utf8'
         ),
         /gradle\.taskGraph\.whenReady/
+      );
+      const generatedManifest = readFileSync(
+        join(
+          projectDirectory,
+          'android',
+          'app',
+          'src',
+          'main',
+          'AndroidManifest.xml'
+        ),
+        'utf8'
+      );
+
+      assert.match(
+        generatedManifest,
+        /android\.permission\.SCHEDULE_EXACT_ALARM/
+      );
+      assert.doesNotMatch(
+        generatedManifest,
+        /android\.permission\.USE_EXACT_ALARM/
       );
     } finally {
       rmSync(projectDirectory, { recursive: true, force: true });

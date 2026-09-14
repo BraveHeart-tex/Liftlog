@@ -9,6 +9,7 @@ import {
   cancelPendingRestTimerNotification,
   cancelRestTimerNotification,
   hasDeliveredRestTimerNotification,
+  reconcileRestTimerNotificationChannel,
   scheduleRestTimerNotification,
   subscribeToRestTimerNotificationPermissionChanges
 } from '@/src/features/rest-timer/rest-timer-notifications.service';
@@ -263,6 +264,25 @@ export function RestTimerHost({ children }: PropsWithChildren) {
 
   useEffect(() => {
     coordinator.setNotificationsEnabled(restTimerNotificationsEnabled);
+  }, [coordinator, restTimerNotificationsEnabled]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+
+    void reconcileRestTimerNotificationChannel()
+      .then(() => {
+        if (restTimerNotificationsEnabled) {
+          coordinator.reconcileNotifications();
+        }
+      })
+      .catch(error => {
+        console.error(
+          'Failed to reconcile rest timer notification channel',
+          error
+        );
+      });
   }, [coordinator, restTimerNotificationsEnabled]);
 
   useEffect(

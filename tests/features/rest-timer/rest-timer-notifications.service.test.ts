@@ -8,6 +8,12 @@ let presented: { request: (typeof scheduled)[number] }[] = [];
 const cancelled: string[] = [];
 const dismissed: string[] = [];
 const triggers: Record<string, unknown>[] = [];
+const channelOperations: string[] = [];
+let channelFailuresRemaining = 1;
+const configuredChannels: {
+  id: string;
+  options: Record<string, unknown>;
+}[] = [];
 
 mock.module('react-native', {
   namedExports: {
@@ -26,7 +32,9 @@ mock.module('expo-notifications', {
       cancelled.push(id);
       scheduled = scheduled.filter(item => item.identifier !== id);
     },
-    deleteNotificationChannelAsync: async () => undefined,
+    deleteNotificationChannelAsync: async (id: string) => {
+      channelOperations.push(`delete:${id}`);
+    },
     dismissNotificationAsync: async (id: string) => {
       dismissed.push(id);
       presented = presented.filter(item => item.request.identifier !== id);
@@ -49,13 +57,68 @@ mock.module('expo-notifications', {
 
       return request.identifier;
     },
-    setNotificationChannelAsync: async () => undefined,
+    setNotificationChannelAsync: async (
+      id: string,
+      options: Record<string, unknown>
+    ) => {
+      channelOperations.push(`set:${id}`);
+      configuredChannels.push({ id, options });
+
+      if (channelFailuresRemaining > 0) {
+        channelFailuresRemaining -= 1;
+
+        throw new Error('transient channel failure');
+      }
+    },
     setNotificationHandler: () => undefined
   }
 });
 
 const servicePromise =
   import('@/src/features/rest-timer/rest-timer-notifications.service');
+
+test('channel upgrade cancels legacy requests before replacing the obsolete channel', async () => {
+  scheduled = [
+    {
+      identifier: 'rest-timer-legacy',
+      content: { data: { type: 'rest-timer' } }
+    }
+  ];
+  const service = await servicePromise;
+
+  await assert.rejects(
+    service.reconcileRestTimerNotificationChannel(),
+    /transient channel failure/
+  );
+  await service.reconcileRestTimerNotificationChannel();
+
+  assert.deepEqual(cancelled, ['rest-timer-legacy']);
+  assert.deepEqual(channelOperations, [
+    'set:rest-timer-v2',
+    'set:rest-timer-v2',
+    'delete:rest-timer'
+  ]);
+  assert.deepEqual(configuredChannels, [
+    {
+      id: 'rest-timer-v2',
+      options: {
+        name: 'Rest timer',
+        importance: 4,
+        enableVibrate: true,
+        sound: 'rest-timer-finished.wav'
+      }
+    },
+    {
+      id: 'rest-timer-v2',
+      options: {
+        name: 'Rest timer',
+        importance: 4,
+        enableVibrate: true,
+        sound: 'rest-timer-finished.wav'
+      }
+    }
+  ]);
+});
 
 test('blocked permission does not repeatedly open the system prompt', async () => {
   const service = await servicePromise;
