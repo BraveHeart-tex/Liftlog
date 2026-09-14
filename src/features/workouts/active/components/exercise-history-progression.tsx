@@ -130,7 +130,7 @@ export function ExerciseHistoryProgression({
       </View>
 
       <Card>
-        <CardContent>
+        <CardContent className="min-h-96">
           {isLoading ? (
             <LoadingState
               label="Loading progress..."
