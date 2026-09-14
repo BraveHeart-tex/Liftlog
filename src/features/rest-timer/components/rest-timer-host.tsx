@@ -89,7 +89,7 @@ export function RestTimerHost({ children }: PropsWithChildren) {
     typeof setTimeout
   > | null>(null);
   const player = useAudioPlayer(
-    require('@/assets/sounds/rest-timer-finished.wav'),
+    require('@/assets/sounds/rest_timer_finished.wav'),
     {
       downloadFirst: true
     }

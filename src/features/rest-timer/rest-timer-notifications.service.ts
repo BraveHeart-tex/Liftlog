@@ -75,7 +75,7 @@ async function ensureRestTimerNotificationChannel() {
       name: 'Rest timer',
       importance: AndroidImportance.HIGH,
       enableVibrate: true,
-      sound: 'rest-timer-finished.wav'
+      sound: 'rest_timer_finished.wav'
     });
     await deleteNotificationChannelAsync(
       OBSOLETE_REST_TIMER_NOTIFICATION_CHANNEL_ID
@@ -238,7 +238,7 @@ export async function scheduleRestTimerNotification({
     content: {
       title: 'Rest time is up',
       body,
-      sound: 'rest-timer-finished.wav',
+      sound: 'rest_timer_finished.wav',
       autoDismiss: true,
       data: {
         type: REST_TIMER_NOTIFICATION_TYPE,

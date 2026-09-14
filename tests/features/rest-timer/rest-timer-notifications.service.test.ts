@@ -105,7 +105,7 @@ test('channel upgrade cancels legacy requests before replacing the obsolete chan
         name: 'Rest timer',
         importance: 4,
         enableVibrate: true,
-        sound: 'rest-timer-finished.wav'
+        sound: 'rest_timer_finished.wav'
       }
     },
     {
@@ -114,7 +114,7 @@ test('channel upgrade cancels legacy requests before replacing the obsolete chan
         name: 'Rest timer',
         importance: 4,
         enableVibrate: true,
-        sound: 'rest-timer-finished.wav'
+        sound: 'rest_timer_finished.wav'
       }
     }
   ]);

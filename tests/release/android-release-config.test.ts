@@ -128,7 +128,7 @@ test('source config declares the rest timer Android notification contract', () =
 
   assert.deepEqual(notificationsPlugin, [
     'expo-notifications',
-    { sounds: ['./assets/sounds/rest-timer-finished.wav'] }
+    { sounds: ['./assets/sounds/rest_timer_finished.wav'] }
   ]);
 });
 

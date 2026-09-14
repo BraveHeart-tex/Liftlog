@@ -46,7 +46,7 @@
       [
         "expo-notifications",
         {
-          "sounds": ["./assets/sounds/rest-timer-finished.wav"]
+          "sounds": ["./assets/sounds/rest_timer_finished.wav"]
         }
       ],
       "react-native-health-connect",
