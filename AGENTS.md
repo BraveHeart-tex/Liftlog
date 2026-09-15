@@ -6,6 +6,7 @@
 - Honor `.codexignore` before broad discovery. Keep the smallest working change: preserve existing patterns and avoid unrelated refactors, new abstractions, or production dependencies unless explicitly approved.
 - Generated artifacts are outputs, not edit targets. Change source schema and tooling inputs; never hand-edit Drizzle migrations, snapshots, generated SQL, or other generated files.
 - Configure Expo audio mode once at the app/provider boundary. Leaf components only control their own players; they do not call `setAudioModeAsync` or `setIsAudioActiveAsync`.
+- Follow the commit and pull-request conventions in `CONTRIBUTING.md`.
 
 ## Agent problem log
 

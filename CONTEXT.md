@@ -58,3 +58,35 @@
 - **Transient workout edit**: Workout input currently held only by a mounted editor
   and not yet committed to SQLite. Unlike a persisted historical draft, it must be
   resolved before an update attempt can begin.
+
+## Backups
+
+- **Backup snapshot**: An immutable recovery point containing LiftLog's
+  user-owned backup data at a particular moment. It is not a synchronized or
+  live copy of application state.
+- **Automatic backup**: An opt-in backup snapshot stored remotely after LiftLog
+  determines that a backup is due and the backup data has changed.
+- **Backup stream**: The ordered history of automatic backup snapshots produced
+  by one LiftLog installation. Installations using the same remote account have
+  separate backup streams.
+- **Backup check**: An inexact opportunity for LiftLog to determine whether an
+  automatic backup is due. A successful check does not imply that a new backup
+  snapshot was created.
+- **Backup retention**: The rule that preserves the seven newest successful
+  snapshots in each backup stream. Maintenance failures do not invalidate an
+  otherwise successful backup.
+- **Connected backup account**: The remote account currently authorized to store
+  and retrieve automatic backups for this LiftLog installation. Disconnecting it
+  does not delete its existing backup snapshots.
+- **Fresh installation**: A LiftLog installation whose one-time recovery choice
+  has not yet been completed or dismissed. Seeded exercise data does not make an
+  installation non-fresh.
+- **Cloud restore**: A full replacement of user-owned backup data from a remotely
+  stored backup snapshot. It has the same validation, migration, confirmation,
+  rollback, and undo guarantees as a file import.
+- **Installation label**: A non-account identifier that distinguishes the source
+  installation of a backup stream. It is remote snapshot metadata, not backup
+  data.
+- **Manual backup**: A user-requested backup check that can connect or
+  reauthenticate in the foreground. It does not require automatic backups to be
+  enabled and does not create a duplicate unchanged snapshot.
