@@ -8,12 +8,26 @@ import { RestTimerSettingSheet } from '@/src/features/settings/components/rest-t
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import { useRestTimerNotificationPreference } from '@/src/features/settings/hooks/use-rest-timer-notification-preference';
 import { Switch } from '@/src/components/ui/switch';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import type { WeightUnit } from '@/src/lib/utils/weight.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { ChevronDown, ExternalLink } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 
 import { Platform, View } from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition
+} from 'react-native-reanimated';
+
+const notificationActionEntering = FadeIn.duration(MOTION_DURATION_MS.standard);
+const notificationActionExiting = FadeOut.duration(MOTION_DURATION_MS.exit);
+const notificationLayout = LinearTransition.duration(
+  MOTION_DURATION_MS.standard
+);
+const AnimatedCard = Animated.createAnimatedComponent(Card);
 
 const WEIGHT_UNIT_OPTIONS: {
   label: string;
@@ -24,6 +38,7 @@ const WEIGHT_UNIT_OPTIONS: {
 ];
 
 export const WorkoutPreferencesSection = () => {
+  const reduceMotion = useReducedMotion();
   const [isTimerSheetOpen, setIsTimerSheetOpen] = useState(false);
   const { weightUnit, formattedRestTimerDuration, setWeightUnit } =
     useSettings();
@@ -51,7 +66,7 @@ export const WorkoutPreferencesSection = () => {
         <Text variant="overline" tone="muted" className="mb-2">
           Workout Preferences
         </Text>
-        <Card>
+        <AnimatedCard layout={reduceMotion ? undefined : notificationLayout}>
           <CardContent className="gap-4">
             <View className="flex-row items-center justify-between">
               <Text variant="bodyMedium" className="flex-1">
@@ -88,7 +103,10 @@ export const WorkoutPreferencesSection = () => {
               </View>
             </View>
             {Platform.OS === 'android' ? (
-              <View className="border-border border-t pt-4">
+              <Animated.View
+                className="border-border border-t pt-4"
+                layout={reduceMotion ? undefined : notificationLayout}
+              >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1 pr-4">
                     <Text variant="bodyMedium">Rest timer notifications</Text>
@@ -101,7 +119,7 @@ export const WorkoutPreferencesSection = () => {
                   </View>
                   <Switch
                     checked={notificationPreference.enabled}
-                    disabled={notificationPreference.state === 'Enabling'}
+                    disabled={notificationPreference.isEnabling}
                     onCheckedChange={value => {
                       void notificationPreference.setEnabled(value);
                     }}
@@ -109,40 +127,60 @@ export const WorkoutPreferencesSection = () => {
                 </View>
                 {notificationPreference.state === 'Blocked' ||
                 notificationPreference.state === 'On' ? (
-                  <Button
-                    variant="secondary"
+                  <Animated.View
                     className="mt-3"
-                    textClassName="text-small text-primary"
-                    rightIcon={
-                      <Icon
-                        as={ExternalLink}
-                        tone="primary"
-                        size={iconSizes.sm}
-                      />
+                    entering={
+                      reduceMotion ? undefined : notificationActionEntering
                     }
-                    onPress={() =>
-                      void notificationPreference.openNotificationSettings()
+                    exiting={
+                      reduceMotion ? undefined : notificationActionExiting
                     }
+                    layout={reduceMotion ? undefined : notificationLayout}
                   >
-                    {notificationPreference.state === 'On'
-                      ? 'Rest timer notification settings'
-                      : 'Open notification settings'}
-                  </Button>
+                    <Button
+                      variant="secondary"
+                      textClassName="text-small text-primary"
+                      rightIcon={
+                        <Icon
+                          as={ExternalLink}
+                          tone="primary"
+                          size={iconSizes.sm}
+                        />
+                      }
+                      onPress={() =>
+                        void notificationPreference.openNotificationSettings()
+                      }
+                    >
+                      {notificationPreference.state === 'On'
+                        ? 'Rest timer notification settings'
+                        : 'Open notification settings'}
+                    </Button>
+                  </Animated.View>
                 ) : null}
                 {notificationPreference.timingMayBeDelayed ? (
-                  <Button
-                    variant="secondary"
+                  <Animated.View
                     className="mt-3"
-                    textClassName="text-small text-primary"
-                    onPress={notificationPreference.openExactAlarmSettings}
+                    entering={
+                      reduceMotion ? undefined : notificationActionEntering
+                    }
+                    exiting={
+                      reduceMotion ? undefined : notificationActionExiting
+                    }
+                    layout={reduceMotion ? undefined : notificationLayout}
                   >
-                    Open Alarms and reminders
-                  </Button>
+                    <Button
+                      variant="secondary"
+                      textClassName="text-small text-primary"
+                      onPress={notificationPreference.openExactAlarmSettings}
+                    >
+                      Open Alarms and reminders
+                    </Button>
+                  </Animated.View>
                 ) : null}
-              </View>
+              </Animated.View>
             ) : null}
           </CardContent>
-        </Card>
+        </AnimatedCard>
       </View>
       {isTimerSheetOpen ? (
         <RestTimerSettingSheet isOpen onClose={closeTimerSheet} />

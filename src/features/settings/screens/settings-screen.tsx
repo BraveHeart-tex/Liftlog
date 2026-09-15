@@ -4,15 +4,33 @@ import { DataBackupSection } from '@/src/features/settings/components/data-backu
 import { StepsSection } from '@/src/features/settings/components/steps-section';
 import { ThemeSelectionSection } from '@/src/features/settings/components/theme-selection-section';
 import { WorkoutPreferencesSection } from '@/src/features/settings/components/workout-preferences-section';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
+import Animated, { LinearTransition } from 'react-native-reanimated';
+
+const sectionLayout = LinearTransition.duration(MOTION_DURATION_MS.standard);
 
 export function SettingsScreen() {
+  const reduceMotion = useReducedMotion();
+  const layoutTransition = reduceMotion ? undefined : sectionLayout;
+
   return (
     <Screen scroll edges={[]}>
-      <ThemeSelectionSection />
-      <WorkoutPreferencesSection />
-      <StepsSection />
-      <DataBackupSection />
-      <AppUpdateSection />
+      <Animated.View layout={layoutTransition}>
+        <ThemeSelectionSection />
+      </Animated.View>
+      <Animated.View layout={layoutTransition}>
+        <WorkoutPreferencesSection />
+      </Animated.View>
+      <Animated.View layout={layoutTransition}>
+        <StepsSection />
+      </Animated.View>
+      <Animated.View layout={layoutTransition}>
+        <DataBackupSection />
+      </Animated.View>
+      <Animated.View layout={layoutTransition}>
+        <AppUpdateSection />
+      </Animated.View>
     </Screen>
   );
 }

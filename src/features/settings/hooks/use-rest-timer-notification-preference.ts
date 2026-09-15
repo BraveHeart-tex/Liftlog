@@ -15,7 +15,7 @@ import {
   getRestTimerNotificationPreferenceState,
   type RestTimerNotificationPreferenceState
 } from '@/src/features/rest-timer/rest-timer-notification-policy';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, Platform } from 'react-native';
 
 export function useRestTimerNotificationPreference() {
@@ -24,9 +24,15 @@ export function useRestTimerNotificationPreference() {
   const [state, setState] = useState<RestTimerNotificationPreferenceState>(
     restTimerNotificationsEnabled ? 'Blocked' : 'Off'
   );
+  const [isEnabling, setIsEnabling] = useState(false);
+  const isEnablingRef = useRef(false);
   const [timingMayBeDelayed, setTimingMayBeDelayed] = useState(false);
 
   const refresh = useCallback(async () => {
+    if (isEnablingRef.current) {
+      return;
+    }
+
     if (Platform.OS !== 'android' || !restTimerNotificationsEnabled) {
       setState('Off');
       setTimingMayBeDelayed(false);
@@ -82,7 +88,8 @@ export function useRestTimerNotificationPreference() {
       }
 
       setRestTimerNotificationsEnabled(true);
-      setState('Enabling');
+      isEnablingRef.current = true;
+      setIsEnabling(true);
 
       try {
         const granted = await requestRestTimerNotificationPermission();
@@ -115,6 +122,9 @@ export function useRestTimerNotificationPreference() {
           message: 'Could not enable rest timer notifications.',
           variant: 'danger'
         });
+      } finally {
+        isEnablingRef.current = false;
+        setIsEnabling(false);
       }
     },
     [setRestTimerNotificationsEnabled]
@@ -131,6 +141,7 @@ export function useRestTimerNotificationPreference() {
   return {
     enabled: restTimerNotificationsEnabled,
     state,
+    isEnabling,
     timingMayBeDelayed,
     setEnabled,
     openNotificationSettings,
