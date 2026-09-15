@@ -1,27 +1,19 @@
 # LiftLog
 
-LiftLog is a local-first workout tracker for lifters focused on strength and hypertrophy. Log workouts with minimal interruption, track progress over time, and keep your training data on your device without an account or internet connection.
-
-Built with Expo, React Native, TypeScript, NativeWind, Expo SQLite, and Drizzle ORM.
-
----
+LiftLog is a local-first workout tracker for iOS and Android. It is designed for fast strength and hypertrophy logging without an account, with workout data stored on the device in SQLite.
 
 ## Features
 
-- Start, resume, and complete workouts
-- Log exercises using weight, reps, distance, and time tracking
-- Organize exercises into supersets and reorder them during a workout
-- Use rest timers with custom presets, haptics, sounds, and notifications
-- Save workouts as reusable templates
-- Review completed workouts in the calendar and exercise history
-- Track progressive overload, personal records, and exercise progress
-- Browse the exercise library with search and filters
-- Create, edit, archive, and delete custom exercises
-- Android: track steps and sync history with Health Connect
-- Configure theme, weight unit, rest timer, and step preferences
-- Store all workout data locally in SQLite
-
----
+- Start, resume, and complete workouts, or add and edit workouts from history
+- Track sets by weight, reps, distance, or duration across six tracking modes
+- Reorder exercises, group supersets, and review exercise history while training
+- Use reusable workout templates and progression suggestions
+- Run rest timers with presets, haptics, audio, and optional Android notifications
+- Review workout history, personal records, and exercise progress charts
+- Search the built-in exercise library and manage custom exercises
+- Export, import, preview, and undo JSON backup restores
+- Choose light, dark, or system theme and kilograms or pounds
+- On Android, sync daily steps from Health Connect and install signed updates from GitHub Releases
 
 ## Screenshots
 
@@ -33,90 +25,91 @@ Built with Expo, React Native, TypeScript, NativeWind, Expo SQLite, and Drizzle 
   <img src="https://github.com/user-attachments/assets/c52f65fa-0213-45e2-9809-f0f73e088f80" width="180" />
 </p>
 
----
+## Stack
+
+- Expo 54 and React Native 0.81
+- React 19 and TypeScript
+- Expo Router with typed file-based routes
+- NativeWind 5 and Tailwind CSS 4
+- Expo SQLite and Drizzle ORM
+- Gorhom Bottom Sheet, Reanimated, Skia, and Victory Native
+- Sentry for production diagnostics
 
 ## Requirements
 
-- Node.js `>=22.13.0`
-- pnpm `9.1.1`
-- iOS or Android development tooling for the target platform
+- Node.js 22.13.0 or newer (the repository includes `.nvmrc`)
+- pnpm 9.1.1
+- Xcode and CocoaPods for iOS development
+- Android Studio and the Android SDK for Android development
 
----
+LiftLog uses native modules, including local Android modules for exact alarms and app updates. Use a native development build rather than Expo Go.
 
-## Getting Started
+## Local development
 
-Install dependencies and start the Expo development server:
+Install dependencies:
 
-```bash
+```sh
 pnpm install
-pnpm start
 ```
 
-Run the app on a simulator or connected device:
+Build and launch the app for a simulator, emulator, or connected device:
 
-```bash
+```sh
 pnpm ios
 pnpm android
 ```
 
-Health Connect integration is available on Android. Workout logging remains available without step tracking.
+To start Metro separately for an existing development build:
 
----
-
-## Scripts
-
-```bash
-pnpm start           # Start the Expo development server
-pnpm ios             # Run on an iOS simulator or device
-pnpm android         # Run on an Android emulator or device
-pnpm test            # Run the test suite
-pnpm run ts-check    # Type-check the project
-pnpm run lint        # Lint the project
-pnpm run format      # Format the project
-pnpm run knip        # Check for unused exports
+```sh
+pnpm start
 ```
 
----
+Health Connect, exact-alarm handling, and in-app updates are Android-specific. Core workout tracking and backup features work on both supported platforms.
 
-## Tech Stack
+## Quality checks
 
-| Layer      | Technology                                |
-| ---------- | ----------------------------------------- |
-| Framework  | Expo 54 · React Native 0.81 · React 19    |
-| Navigation | Expo Router                               |
-| Language   | TypeScript                                |
-| Styling    | NativeWind 5 · Tailwind CSS v4            |
-| Database   | Expo SQLite · Drizzle ORM                 |
-| UI         | Gorhom Bottom Sheet · Lucide React Native |
-| Platform   | `expo-audio` · Health Connect             |
-
----
-
-## Project Structure
-
+```sh
+pnpm run ts-check         # TypeScript
+pnpm test                 # Node test suite
+pnpm run lint             # ESLint
+pnpm run prettier:check   # Formatting
+pnpm exec knip            # Unused files and exports (advisory in CI)
 ```
+
+`pnpm run format` applies Prettier, while `pnpm run lint:fix` applies ESLint fixes. Pull requests and pushes to `main` run type checking, tests, linting, and formatting in GitHub Actions.
+
+## Project structure
+
+```text
 src/
-  app/                  # Routes and screens (Expo Router)
-  components/
-    ui/                 # Shared UI primitives
-    styled/             # NativeWind wrappers for third-party controls
-  db/                   # Schema, migrations, and seed data
-  features/             # Exercises, workouts, progress, steps, and settings
-  lib/                  # Shared utilities and cross-feature helpers
-  theme/                # Design tokens for native props
-tests/                  # Test suites and test-only runtime mocks
+  app/          Expo Router routes
+  components/   Shared UI primitives and styled native wrappers
+  db/           SQLite schema, startup migrations, and seed data
+  features/     Workouts, exercises, progress, rest timers, steps, backups, updates, and settings
+  lib/          Cross-feature utilities and platform services
+  providers/    App-level database, theme, error, and runtime providers
+  theme/        Theme tokens, fonts, and preferences
+modules/        Local Expo native modules
+plugins/        Expo config plugins
+scripts/        Release preparation, build, and verification tooling
+tests/          Unit, integration, and release-configuration tests
 ```
 
----
+The app initializes SQLite, runs committed Drizzle migrations, and seeds the exercise library at startup. `src/db/schema.ts` is the schema source; migration SQL and snapshots are generated artifacts and should not be edited by hand.
 
-## Database
+## Android releases
 
-LiftLog stores workout data locally with Expo SQLite. Drizzle ORM manages the schema and migrations.
+Android releases are produced from `v*.*.*` tags. From a clean, up-to-date `main` branch, prepare a version with:
 
-After changing `src/db/schema.ts`, generate a migration with:
-
-```bash
-pnpm exec drizzle-kit generate
+```sh
+pnpm release:prepare patch
 ```
 
-Migrations run automatically when the app starts through `DatabaseProvider`.
+`minor` and `major` are also supported. The command runs the quality checks, updates the package and app versions, increments the Android version code, then creates a commit and tag without pushing them. Pushing the commit and tag triggers the release workflow, which builds and verifies a signed ARM64 APK plus its update manifest before publishing a GitHub Release.
+
+Release signing credentials and recovery requirements are documented in [`docs/android-release-signing.md`](docs/android-release-signing.md).
+
+## Contributing
+
+Use Conventional Commits and reference the relevant GitHub issue. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the repository conventions.
