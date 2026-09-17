@@ -186,6 +186,32 @@ internal object CompletionDiagnosticFactory {
   )
 }
 
+internal object InstallerResultOutcomeDiagnosticFactory {
+  fun create(
+    attemptId: String,
+    nativeStage: UpdateStage,
+    resultCode: String,
+    targetVersionName: String?,
+    targetVersionCode: Long,
+    diagnosticId: String,
+    occurredAtMillis: Long
+  ) = UpdateDiagnostic(
+    kind = DiagnosticKind.OUTCOME,
+    diagnosticId = diagnosticId,
+    attemptId = attemptId,
+    occurredAt = occurredAtMillis,
+    source = DiagnosticSource.ANDROID_INSTALLER_CALLBACK,
+    nativeStage = nativeStage,
+    resultCode = resultCode,
+    targetVersionName = targetVersionName,
+    targetVersionCode = targetVersionCode.takeIf { it >= 0 },
+    rawStatus = null,
+    statusMessage = null,
+    blockingPackage = null,
+    storageLocation = null
+  )
+}
+
 internal data class PendingUpdateDiagnostics(
   val diagnostics: List<UpdateDiagnostic>,
   val droppedDiagnosticCount: Long

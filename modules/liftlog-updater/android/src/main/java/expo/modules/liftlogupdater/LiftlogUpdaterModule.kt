@@ -285,11 +285,13 @@ class LiftlogUpdaterModule : Module() {
       ?: throw UpdaterException("UPDATER_SESSION_MISSING", "Installer session is missing")
     if (sessionInfo.isCommitted) throw UpdaterException("UPDATER_ALREADY_COMMITTED", "Installer session is already committed")
 
-    val callback = Intent(context, InstallationResultReceiver::class.java).apply {
+    val callback = Intent(context, InstallationResultActivity::class.java).apply {
+      action = UpdaterContract.INSTALLER_RESULT_ACTION
+      data = Uri.parse("liftlog://installer-result/$sessionId")
       putExtra(UpdaterContract.EXTRA_ATTEMPT_ID, attemptId)
       putExtra(UpdaterContract.EXTRA_SESSION_ID, sessionId)
     }
-    val pendingIntent = PendingIntent.getBroadcast(
+    val pendingIntent = PendingIntent.getActivity(
       context,
       sessionId,
       callback,

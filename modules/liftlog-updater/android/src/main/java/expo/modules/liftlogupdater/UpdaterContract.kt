@@ -13,6 +13,7 @@ internal object UpdaterContract {
 
   const val EXTRA_ATTEMPT_ID = "liftlog.attempt_id"
   const val EXTRA_SESSION_ID = "liftlog.session_id"
+  const val INSTALLER_RESULT_ACTION = "expo.modules.liftlogupdater.INSTALLER_RESULT"
 
   const val ATTEMPT_ID = "attempt_id"
   const val STAGE = "stage"
@@ -32,6 +33,7 @@ internal object UpdaterContract {
   const val EXPOSED_DROPPED_DIAGNOSTIC_COUNT = "exposed_dropped_diagnostic_count"
   const val LEGACY_DIAGNOSTIC_ATTEMPT_IDS = "legacy_diagnostic_attempt_ids"
   const val COMPLETION_ACKNOWLEDGEMENT = "completion_acknowledgement"
+  const val COMPLETION_SESSION_ID = "completion_session_id"
 }
 
 internal enum class UpdateStage(val wireValue: String) {

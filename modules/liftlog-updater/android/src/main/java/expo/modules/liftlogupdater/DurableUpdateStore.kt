@@ -15,6 +15,10 @@ internal class DurableUpdateStore(context: Context) {
   fun expectedSize(): Long = preferences.getLong(UpdaterContract.EXPECTED_SIZE, -1)
   fun expectedHash(): String? = preferences.getString(UpdaterContract.EXPECTED_HASH, null)
   fun sessionId(): Int = preferences.getInt(UpdaterContract.SESSION_ID, -1)
+  fun callbackSessionId(): Int = preferences.getInt(
+    UpdaterContract.COMPLETION_SESSION_ID,
+    sessionId()
+  )
   fun filePath(): String? = preferences.getString(UpdaterContract.FILE_PATH, null)
 
   fun begin(
@@ -89,7 +93,7 @@ internal class DurableUpdateStore(context: Context) {
   }
 
   fun finishSucceeded(completion: UpdateCompletionAcknowledgement) {
-    persist(preferences.edit()
+    val editor = preferences.edit()
       .putString(UpdaterContract.STAGE, UpdateStage.SUCCEEDED.wireValue)
       .putString(UpdaterContract.RESULT_CODE, "installed")
       .putBoolean(UpdaterContract.PENDING_CONFIRMATION, false)
@@ -98,7 +102,10 @@ internal class DurableUpdateStore(context: Context) {
         UpdaterContract.COMPLETION_ACKNOWLEDGEMENT,
         UpdateCompletionCodec.encode(completion)
       )
-      .remove(UpdaterContract.SESSION_ID))
+    sessionId().takeIf { it >= 0 }?.let {
+      editor.putInt(UpdaterContract.COMPLETION_SESSION_ID, it)
+    }
+    persist(editor.remove(UpdaterContract.SESSION_ID))
   }
 
   fun completion(): UpdateCompletionAcknowledgement? = synchronized(completionLock) {
@@ -110,7 +117,9 @@ internal class DurableUpdateStore(context: Context) {
   fun acknowledgeCompletion(attemptId: String): Boolean = synchronized(completionLock) {
     val completion = completion() ?: return@synchronized false
     if (completion.attemptId != attemptId) return@synchronized false
-    persist(preferences.edit().remove(UpdaterContract.COMPLETION_ACKNOWLEDGEMENT))
+    persist(preferences.edit()
+      .remove(UpdaterContract.COMPLETION_ACKNOWLEDGEMENT)
+      .remove(UpdaterContract.COMPLETION_SESSION_ID))
     true
   }
 
@@ -135,6 +144,7 @@ internal class DurableUpdateStore(context: Context) {
     .remove(UpdaterContract.UPDATE_EXCLUDED)
     .remove(UpdaterContract.RESULT_CODE)
     .remove(UpdaterContract.COMMITTED_AT)
+    .remove(UpdaterContract.COMPLETION_SESSION_ID)
 
   fun state(): Map<String, Any?> = mapOf(
     "attemptId" to attemptId(),

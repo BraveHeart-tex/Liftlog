@@ -23,94 +23,25 @@ class InstallationResultReceiver : BroadcastReceiver() {
     val store = DurableUpdateStore(context)
     val callbackAttemptId = intent.getStringExtra(UpdaterContract.EXTRA_ATTEMPT_ID)
     val callbackSessionId = intent.getIntExtra(UpdaterContract.EXTRA_SESSION_ID, -1)
-    if (!UpdateTransitions.acceptsCallback(store.attemptId(), store.sessionId(), callbackAttemptId, callbackSessionId)) {
-      return
-    }
-
     val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
-
-    when (status) {
-      PackageInstaller.STATUS_PENDING_USER_ACTION -> {
-        store.markPendingConfirmation()
-        continuationIntent(intent)?.let { continuation ->
-          val confirmation = UpdateConfirmationIntent.create(
-            context,
-            callbackSessionId,
-            continuation
-          )
-          if (!launchWhileForeground(confirmation)) {
-            UpdateConfirmationNotification.post(context, confirmation)
-          }
-        } ?: run {
-          appendFailureDiagnostic(
-            store,
-            intent,
-            callbackAttemptId!!,
-            PackageInstaller.STATUS_PENDING_USER_ACTION,
-            "UPDATER_CONFIRMATION_MISSING"
-          )
-          store.finish(UpdateStage.FAILED, "UPDATER_CONFIRMATION_MISSING")
-        }
-      }
-      PackageInstaller.STATUS_SUCCESS -> {
-        if (!UpdateReplacementCompletion.reconcile(context, store)) {
-          // Commit callbacks are not proof of installation. Package metadata owns success.
-          store.setStage(UpdateStage.COMMITTED)
-        }
-      }
-      else -> {
-        val terminal = InstallerStatusMapping.terminal(status)
-        if (terminal.stage == UpdateStage.FAILED) {
-          appendFailureDiagnostic(
-            store,
-            intent,
-            callbackAttemptId!!,
-            status,
-            terminal.code
-          )
-        }
-        store.finish(terminal.stage, terminal.code)
-      }
-    }
-    if (store.stage() != UpdateStage.PENDING_CONFIRMATION) {
-      UpdateConfirmationNotification.cancel(context, callbackSessionId)
-    }
-    if (store.stage().isTerminal) OwnedUpdateArtifact.delete(context, store)
+    val validCallback = UpdateTransitions.acceptsCallback(
+      store.attemptId(),
+      store.callbackSessionId(),
+      callbackAttemptId,
+      callbackSessionId
+    )
+    InstallerResultHandler(
+      AndroidInstallerResultEffects(
+        context = context,
+        callback = intent,
+        store = store,
+        attemptId = callbackAttemptId,
+        sessionId = callbackSessionId,
+        launchConfirmation = ::launchWhileForeground,
+        relaunch = { RelaunchOutcome.FAILED }
+      )
+    ).handle(validCallback, status, relaunchEligible = false)
   }
-
-  private fun appendFailureDiagnostic(
-    store: DurableUpdateStore,
-    intent: Intent,
-    attemptId: String,
-    status: Int,
-    resultCode: String
-  ) {
-    runCatching {
-      InstallerDiagnosticFactory.create(
-        attemptId = attemptId,
-        nativeStage = store.stage(),
-        targetVersionName = store.targetVersionName(),
-        targetVersionCode = store.targetVersionCode(),
-        status = status,
-        statusMessage = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE),
-        blockingPackage = intent.getStringExtra(PackageInstaller.EXTRA_OTHER_PACKAGE_NAME),
-        storagePath = intent.getStringExtra(PackageInstaller.EXTRA_STORAGE_PATH),
-        diagnosticId = UUID.randomUUID().toString(),
-        occurredAtMillis = System.currentTimeMillis(),
-        resultCode = resultCode
-      )?.let(store::appendDiagnostic)
-    }.onFailure { error ->
-      Log.e(TAG, "Failed to persist sanitized update diagnostic", error)
-    }
-  }
-
-  private fun continuationIntent(callback: Intent): Intent? =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-      callback.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)
-    } else {
-      @Suppress("DEPRECATION")
-      callback.getParcelableExtra(Intent.EXTRA_INTENT)
-    }
 
   private fun launchWhileForeground(confirmation: PendingIntent): Boolean {
     val process = ActivityManager.RunningAppProcessInfo()
@@ -120,10 +51,6 @@ class InstallationResultReceiver : BroadcastReceiver() {
       confirmation.send()
       true
     }.getOrDefault(false)
-  }
-
-  private companion object {
-    const val TAG = "LiftlogUpdater"
   }
 }
 
@@ -152,6 +79,12 @@ internal object UpdateReplacementCompletion {
       .onFailure { error -> Log.e("LiftlogUpdater", "Failed to inspect replaced package", error) }
       .getOrNull()
       ?: return false
+    val existingCompletion = store.completion()
+    if (
+      store.stage() == UpdateStage.SUCCEEDED &&
+      existingCompletion?.attemptId == store.attemptId() &&
+      installed.longVersionCode >= store.targetVersionCode()
+    ) return true
     val result = InstallerResultHandling.packageReplaced(
       stage = store.stage(),
       attemptId = store.attemptId(),
