@@ -1,16 +1,16 @@
 import type {
   InstalledBuildInfo,
   PendingUpdateDiagnostics,
-  UpdateFailureDiagnostic
+  UpdateDiagnostic
 } from '@/modules/liftlog-updater/src/types';
 
 interface DiagnosticCaptureContext {
-  level: 'error';
+  level: 'error' | 'info';
   fingerprint: string[];
   tags: {
     feature: 'app_updates';
-    operation: UpdateFailureDiagnostic['source'];
-    stage: UpdateFailureDiagnostic['nativeStage'];
+    operation: UpdateDiagnostic['source'];
+    stage: UpdateDiagnostic['nativeStage'];
     updater_error_code: string;
   };
   extra: Record<string, boolean | number | string>;
@@ -56,7 +56,7 @@ function sanitizedStatusMessage(value: string | null): string | undefined {
 }
 
 function captureContext(
-  diagnostic: UpdateFailureDiagnostic,
+  diagnostic: UpdateDiagnostic,
   droppedDiagnosticCount: number,
   installedBuild: InstalledBuildInfo | undefined,
   androidApiLevel: number | string,
@@ -65,9 +65,11 @@ function captureContext(
   const statusMessage = sanitizedStatusMessage(diagnostic.statusMessage);
 
   return {
-    level: 'error',
+    level: diagnostic.kind === 'failure' ? 'error' : 'info',
     fingerprint: [
-      'UPDATE_INSTALL_FAILED',
+      diagnostic.kind === 'failure'
+        ? 'UPDATE_INSTALL_FAILED'
+        : 'UPDATE_INSTALL_OUTCOME',
       diagnostic.resultCode,
       diagnostic.nativeStage,
       String(diagnostic.rawStatus ?? 'unknown')
@@ -154,7 +156,9 @@ export function createUpdateDiagnosticReporter(
 
     try {
       eventId = dependencies.captureMessage(
-        'UPDATE_INSTALL_FAILED',
+        diagnostic.kind === 'failure'
+          ? 'UPDATE_INSTALL_FAILED'
+          : 'UPDATE_INSTALL_OUTCOME',
         captureContext(
           diagnostic,
           pending.droppedDiagnosticCount,

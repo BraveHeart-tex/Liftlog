@@ -62,6 +62,13 @@ function nativeFake(initial = state('idle')) {
     async acknowledgeDiagnosticAsync() {
       return false;
     },
+    async cancelCompletionNotificationAsync() {},
+    async getCompletionAsync() {
+      return null;
+    },
+    async acknowledgeCompletionAsync() {
+      return false;
+    },
     async reconcileAsync() {
       calls.push('reconcile');
 

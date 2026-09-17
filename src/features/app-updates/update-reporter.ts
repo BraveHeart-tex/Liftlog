@@ -1,16 +1,20 @@
 import type {
   InstalledBuildInfo,
-  NativeUpdateState
+  NativeUpdateState,
+  UpdateCompletionAcknowledgement
 } from '@/modules/liftlog-updater/src/types';
 import type { UpdateAttemptFailure } from './update-attempt-coordinator';
 import type { ReconciliationOperation } from './update-lifecycle';
 
 interface CaptureContext {
-  level: 'error';
+  level: 'error' | 'info';
   tags: {
     feature: 'app_updates';
-    operation: UpdateAttemptFailure['operation'] | ReconciliationOperation;
-    stage: UpdateAttemptFailure['stage'] | 'reconcile';
+    operation:
+      | UpdateAttemptFailure['operation']
+      | ReconciliationOperation
+      | 'successful_startup';
+    stage: UpdateAttemptFailure['stage'] | 'reconcile' | 'completed';
     updater_error_code: string;
   };
   extra: Record<string, boolean | number | string | null>;
@@ -67,6 +71,27 @@ export function createAppUpdateReporter(
   };
 
   return {
+    reportCompletion(completion: UpdateCompletionAcknowledgement): void {
+      try {
+        dependencies.captureMessage('UPDATE_INSTALL_COMPLETED', {
+          level: 'info',
+          tags: {
+            feature: 'app_updates',
+            operation: 'successful_startup',
+            stage: 'completed',
+            updater_error_code: 'UPDATER_COMPLETION_CONSUMED'
+          },
+          extra: {
+            attemptId: completion.attemptId,
+            installedVersionName: completion.installedVersionName,
+            installedVersionCode: completion.installedVersionCode,
+            androidApiLevel: dependencies.androidApiLevel
+          }
+        });
+      } catch (error) {
+        safelyLog('Failed to report application update completion', error);
+      }
+    },
     reportUnexpected(failure: UpdateAttemptFailure): void {
       void (async () => {
         let installedBuild: InstalledBuildInfo | undefined;

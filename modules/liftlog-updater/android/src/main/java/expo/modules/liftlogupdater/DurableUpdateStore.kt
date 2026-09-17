@@ -36,7 +36,7 @@ internal class DurableUpdateStore(context: Context) {
       .putBoolean(UpdaterContract.UPDATE_EXCLUDED, true))
   }
 
-  fun appendDiagnostic(diagnostic: UpdateFailureDiagnostic) = diagnostics.append(diagnostic)
+  fun appendDiagnostic(diagnostic: UpdateDiagnostic) = diagnostics.append(diagnostic)
 
   fun pendingDiagnostics(): PendingUpdateDiagnostics = diagnostics.snapshotPendingForSubmission()
 
@@ -88,6 +88,32 @@ internal class DurableUpdateStore(context: Context) {
       .remove(UpdaterContract.SESSION_ID))
   }
 
+  fun finishSucceeded(completion: UpdateCompletionAcknowledgement) {
+    persist(preferences.edit()
+      .putString(UpdaterContract.STAGE, UpdateStage.SUCCEEDED.wireValue)
+      .putString(UpdaterContract.RESULT_CODE, "installed")
+      .putBoolean(UpdaterContract.PENDING_CONFIRMATION, false)
+      .putBoolean(UpdaterContract.UPDATE_EXCLUDED, false)
+      .putString(
+        UpdaterContract.COMPLETION_ACKNOWLEDGEMENT,
+        UpdateCompletionCodec.encode(completion)
+      )
+      .remove(UpdaterContract.SESSION_ID))
+  }
+
+  fun completion(): UpdateCompletionAcknowledgement? = synchronized(completionLock) {
+    preferences
+      .getString(UpdaterContract.COMPLETION_ACKNOWLEDGEMENT, null)
+      ?.let(UpdateCompletionCodec::decode)
+  }
+
+  fun acknowledgeCompletion(attemptId: String): Boolean = synchronized(completionLock) {
+    val completion = completion() ?: return@synchronized false
+    if (completion.attemptId != attemptId) return@synchronized false
+    persist(preferences.edit().remove(UpdaterContract.COMPLETION_ACKNOWLEDGEMENT))
+    true
+  }
+
   fun setStage(stage: UpdateStage) {
     persist(preferences.edit().putString(UpdaterContract.STAGE, stage.wireValue))
   }
@@ -121,4 +147,8 @@ internal class DurableUpdateStore(context: Context) {
     "updateExcluded" to preferences.getBoolean(UpdaterContract.UPDATE_EXCLUDED, false),
     "resultCode" to preferences.getString(UpdaterContract.RESULT_CODE, null)
   )
+
+  private companion object {
+    val completionLock = Any()
+  }
 }

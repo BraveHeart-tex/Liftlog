@@ -61,11 +61,12 @@ export type InstallPermissionStatus = {
   settingsSupported: boolean;
 };
 
-export type UpdateFailureDiagnostic = {
+export type UpdateDiagnostic = {
+  kind: 'failure' | 'outcome';
   diagnosticId: string;
   attemptId: string;
   occurredAt: number;
-  source: 'android_installer_callback';
+  source: 'android_installer_callback' | 'android_package_replaced';
   nativeStage: UpdateStage;
   resultCode: string;
   targetVersionName: string | null;
@@ -77,8 +78,14 @@ export type UpdateFailureDiagnostic = {
 };
 
 export type PendingUpdateDiagnostics = {
-  diagnostics: UpdateFailureDiagnostic[];
+  diagnostics: UpdateDiagnostic[];
   droppedDiagnosticCount: number;
+};
+
+export type UpdateCompletionAcknowledgement = {
+  attemptId: string;
+  installedVersionName: string;
+  installedVersionCode: number;
 };
 
 export interface LiftlogUpdaterApi {
@@ -89,6 +96,9 @@ export interface LiftlogUpdaterApi {
     attemptId: string;
     diagnosticId: string;
   }): Promise<boolean>;
+  cancelCompletionNotificationAsync(): Promise<void>;
+  getCompletionAsync(): Promise<UpdateCompletionAcknowledgement | null>;
+  acknowledgeCompletionAsync(attemptId: string): Promise<boolean>;
   reconcileAsync(): Promise<NativeUpdateState>;
   beginAttemptAsync(request: BeginAttemptRequest): Promise<NativeUpdateState>;
   getInstallPermissionAsync(): Promise<InstallPermissionStatus>;

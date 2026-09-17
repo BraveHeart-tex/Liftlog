@@ -5,10 +5,20 @@ import java.nio.charset.StandardCharsets
 import java.util.Base64
 
 internal enum class DiagnosticSource(val wireValue: String) {
-  ANDROID_INSTALLER_CALLBACK("android_installer_callback");
+  ANDROID_INSTALLER_CALLBACK("android_installer_callback"),
+  ANDROID_PACKAGE_REPLACED("android_package_replaced");
 
   companion object {
     fun fromWire(value: String): DiagnosticSource? = entries.firstOrNull { it.wireValue == value }
+  }
+}
+
+internal enum class DiagnosticKind(val wireValue: String) {
+  FAILURE("failure"),
+  OUTCOME("outcome");
+
+  companion object {
+    fun fromWire(value: String): DiagnosticKind? = entries.firstOrNull { it.wireValue == value }
   }
 }
 
@@ -22,7 +32,8 @@ internal enum class DiagnosticStorageLocation(val wireValue: String) {
   }
 }
 
-internal data class UpdateFailureDiagnostic(
+internal data class UpdateDiagnostic(
+  val kind: DiagnosticKind = DiagnosticKind.FAILURE,
   val diagnosticId: String,
   val attemptId: String,
   val occurredAt: Long,
@@ -37,6 +48,7 @@ internal data class UpdateFailureDiagnostic(
   val storageLocation: DiagnosticStorageLocation?
 ) {
   fun toMap(): Map<String, Any?> = mapOf(
+    "kind" to kind.wireValue,
     "diagnosticId" to diagnosticId,
     "attemptId" to attemptId,
     "occurredAt" to occurredAt,
@@ -100,11 +112,12 @@ internal object InstallerDiagnosticFactory {
     diagnosticId: String,
     occurredAtMillis: Long,
     resultCode: String? = null
-  ): UpdateFailureDiagnostic? {
+  ): UpdateDiagnostic? {
     val terminal = InstallerStatusMapping.terminal(status)
     if (terminal.stage != UpdateStage.FAILED) return null
 
-    return UpdateFailureDiagnostic(
+    return UpdateDiagnostic(
+      kind = DiagnosticKind.FAILURE,
       diagnosticId = diagnosticId,
       attemptId = attemptId,
       occurredAt = occurredAtMillis,
@@ -129,10 +142,11 @@ internal object LegacyFailureDiagnosticFactory {
     targetVersionName: String?,
     targetVersionCode: Long,
     occurredAtMillis: Long
-  ): UpdateFailureDiagnostic? {
+  ): UpdateDiagnostic? {
     if (stage != UpdateStage.FAILED || attemptId == null || resultCode == null) return null
 
-    return UpdateFailureDiagnostic(
+    return UpdateDiagnostic(
+      kind = DiagnosticKind.FAILURE,
       diagnosticId = "legacy-$attemptId",
       attemptId = attemptId,
       occurredAt = occurredAtMillis,
@@ -149,18 +163,41 @@ internal object LegacyFailureDiagnosticFactory {
   }
 }
 
+internal object CompletionDiagnosticFactory {
+  fun create(
+    completion: UpdateCompletionAcknowledgement,
+    outcome: CompletionNotificationOutcome,
+    diagnosticId: String,
+    occurredAtMillis: Long
+  ) = UpdateDiagnostic(
+    kind = DiagnosticKind.OUTCOME,
+    diagnosticId = diagnosticId,
+    attemptId = completion.attemptId,
+    occurredAt = occurredAtMillis,
+    source = DiagnosticSource.ANDROID_PACKAGE_REPLACED,
+    nativeStage = UpdateStage.SUCCEEDED,
+    resultCode = outcome.resultCode,
+    targetVersionName = completion.installedVersionName,
+    targetVersionCode = completion.installedVersionCode,
+    rawStatus = null,
+    statusMessage = null,
+    blockingPackage = null,
+    storageLocation = null
+  )
+}
+
 internal data class PendingUpdateDiagnostics(
-  val diagnostics: List<UpdateFailureDiagnostic>,
+  val diagnostics: List<UpdateDiagnostic>,
   val droppedDiagnosticCount: Long
 ) {
   fun toMap(): Map<String, Any?> = mapOf(
-    "diagnostics" to diagnostics.map(UpdateFailureDiagnostic::toMap),
+    "diagnostics" to diagnostics.map(UpdateDiagnostic::toMap),
     "droppedDiagnosticCount" to droppedDiagnosticCount
   )
 }
 
 internal data class DiagnosticBacklogState(
-  val diagnostics: List<UpdateFailureDiagnostic> = emptyList(),
+  val diagnostics: List<UpdateDiagnostic> = emptyList(),
   val droppedDiagnosticCount: Long = 0,
   val exposedDiagnosticId: String? = null,
   val exposedDroppedDiagnosticCount: Long = 0
@@ -169,15 +206,15 @@ internal data class DiagnosticBacklogState(
 internal interface DiagnosticPersistence {
   fun load(): DiagnosticBacklogState
   fun save(state: DiagnosticBacklogState)
-  fun materializeLegacy(diagnostic: UpdateFailureDiagnostic): Boolean
+  fun materializeLegacy(diagnostic: UpdateDiagnostic): Boolean
 }
 
 internal class UpdateDiagnosticBacklog(private val persistence: DiagnosticPersistence) {
-  fun append(diagnostic: UpdateFailureDiagnostic) = synchronized(lock) {
+  fun append(diagnostic: UpdateDiagnostic) = synchronized(lock) {
     persistence.save(appending(persistence.load(), diagnostic))
   }
 
-  fun materializeLegacy(diagnostic: UpdateFailureDiagnostic?): Boolean = synchronized(lock) {
+  fun materializeLegacy(diagnostic: UpdateDiagnostic?): Boolean = synchronized(lock) {
     diagnostic != null && persistence.materializeLegacy(diagnostic)
   }
 
@@ -223,7 +260,7 @@ internal class UpdateDiagnosticBacklog(private val persistence: DiagnosticPersis
 
     fun appending(
       current: DiagnosticBacklogState,
-      diagnostic: UpdateFailureDiagnostic
+      diagnostic: UpdateDiagnostic
     ): DiagnosticBacklogState {
       val overflow = current.diagnostics.size >= MAX_DIAGNOSTICS
       val retained = if (overflow) current.diagnostics.drop(1) else current.diagnostics
@@ -256,7 +293,7 @@ internal class SharedPreferencesDiagnosticPersistence(
     persist(state, preferences.edit())
   }
 
-  override fun materializeLegacy(diagnostic: UpdateFailureDiagnostic): Boolean {
+  override fun materializeLegacy(diagnostic: UpdateDiagnostic): Boolean {
     val materializedAttempts = preferences
       .getStringSet(UpdaterContract.LEGACY_DIAGNOSTIC_ATTEMPT_IDS, emptySet())
       .orEmpty()
@@ -291,7 +328,7 @@ internal object UpdateDiagnosticCodec {
   private val encoder = Base64.getUrlEncoder().withoutPadding()
   private val decoder = Base64.getUrlDecoder()
 
-  fun encode(diagnostic: UpdateFailureDiagnostic): String = listOf(
+  fun encode(diagnostic: UpdateDiagnostic): String = listOf(
     diagnostic.diagnosticId,
     diagnostic.attemptId,
     diagnostic.occurredAt.toString(),
@@ -303,13 +340,18 @@ internal object UpdateDiagnosticCodec {
     diagnostic.rawStatus?.toString(),
     diagnostic.statusMessage,
     diagnostic.blockingPackage,
-    diagnostic.storageLocation?.wireValue
+    diagnostic.storageLocation?.wireValue,
+    diagnostic.kind.wireValue
   ).joinToString("|") { value -> value?.let(::encodeString).orEmpty() }
 
-  fun decode(value: String): UpdateFailureDiagnostic? = runCatching {
+  fun decode(value: String): UpdateDiagnostic? = runCatching {
     val fields = value.split('|')
-    if (fields.size != 12) return null
-    UpdateFailureDiagnostic(
+    if (fields.size != 12 && fields.size != 13) return null
+    UpdateDiagnostic(
+      kind = fields.getOrNull(12)
+        ?.decodeNullable()
+        ?.let(DiagnosticKind::fromWire)
+        ?: DiagnosticKind.FAILURE,
       diagnosticId = decodeString(fields[0]),
       attemptId = decodeString(fields[1]),
       occurredAt = decodeString(fields[2]).toLong(),

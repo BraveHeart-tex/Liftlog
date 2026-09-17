@@ -53,8 +53,10 @@ class InstallationResultReceiver : BroadcastReceiver() {
         }
       }
       PackageInstaller.STATUS_SUCCESS -> {
-        // Commit callbacks are not proof of installation. Reconciliation owns success.
-        store.setStage(UpdateStage.COMMITTED)
+        if (!UpdateReplacementCompletion.reconcile(context, store)) {
+          // Commit callbacks are not proof of installation. Package metadata owns success.
+          store.setStage(UpdateStage.COMMITTED)
+        }
       }
       else -> {
         val terminal = InstallerStatusMapping.terminal(status)
@@ -73,7 +75,7 @@ class InstallationResultReceiver : BroadcastReceiver() {
     if (store.stage() != UpdateStage.PENDING_CONFIRMATION) {
       UpdateConfirmationNotification.cancel(context, callbackSessionId)
     }
-    if (store.stage().isTerminal) deleteOwnedArtifact(context, store)
+    if (store.stage().isTerminal) OwnedUpdateArtifact.delete(context, store)
   }
 
   private fun appendFailureDiagnostic(
@@ -102,20 +104,13 @@ class InstallationResultReceiver : BroadcastReceiver() {
     }
   }
 
-  private fun deleteOwnedArtifact(context: Context, store: DurableUpdateStore) {
-    val directory = File(context.cacheDir, UpdaterContract.CACHE_DIRECTORY).canonicalFile
-    store.filePath()?.let(::File)?.let { file ->
-      if (!Files.isSymbolicLink(file.toPath()) && file.canonicalFile.parentFile == directory) {
-        file.delete()
-      }
+  private fun continuationIntent(callback: Intent): Intent? =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      callback.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)
+    } else {
+      @Suppress("DEPRECATION")
+      callback.getParcelableExtra(Intent.EXTRA_INTENT)
     }
-  }
-
-  private fun continuationIntent(callback: Intent): Intent? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-    callback.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)
-  } else {
-    @Suppress("DEPRECATION") callback.getParcelableExtra(Intent.EXTRA_INTENT)
-  }
 
   private fun launchWhileForeground(confirmation: PendingIntent): Boolean {
     val process = ActivityManager.RunningAppProcessInfo()
@@ -130,6 +125,75 @@ class InstallationResultReceiver : BroadcastReceiver() {
   private companion object {
     const val TAG = "LiftlogUpdater"
   }
+}
+
+internal object OwnedUpdateArtifact {
+  fun delete(context: Context, store: DurableUpdateStore) {
+    val directory = File(context.cacheDir, UpdaterContract.CACHE_DIRECTORY).canonicalFile
+    store.filePath()?.let(::File)?.let { file ->
+      if (!Files.isSymbolicLink(file.toPath()) && file.canonicalFile.parentFile == directory) {
+        file.delete()
+      }
+    }
+  }
+}
+
+class PackageReplacementReceiver : BroadcastReceiver() {
+  override fun onReceive(context: Context, intent: Intent) {
+    if (intent.action != Intent.ACTION_MY_PACKAGE_REPLACED) return
+
+    UpdateReplacementCompletion.reconcile(context, DurableUpdateStore(context))
+  }
+}
+
+internal object UpdateReplacementCompletion {
+  fun reconcile(context: Context, store: DurableUpdateStore): Boolean {
+    val installed = runCatching { installedPackageInfo(context) }
+      .onFailure { error -> Log.e("LiftlogUpdater", "Failed to inspect replaced package", error) }
+      .getOrNull()
+      ?: return false
+    val result = InstallerResultHandling.packageReplaced(
+      stage = store.stage(),
+      attemptId = store.attemptId(),
+      targetVersionCode = store.targetVersionCode(),
+      installedVersionName = installed.versionName.orEmpty(),
+      installedVersionCode = installed.longVersionCode
+    )
+    return UpdateCompletionHandler(
+      effects = object : UpdateCompletionEffects {
+        override fun persist(completion: UpdateCompletionAcknowledgement) {
+          store.finishSucceeded(completion)
+        }
+
+        override fun cleanup() {
+          OwnedUpdateArtifact.delete(context, store)
+        }
+
+        override fun postNotification(): CompletionNotificationOutcome =
+          UpdateCompletionNotification.post(context)
+
+        override fun appendDiagnostic(diagnostic: UpdateDiagnostic) {
+          store.appendDiagnostic(diagnostic)
+        }
+      },
+      createDiagnosticId = { UUID.randomUUID().toString() },
+      now = System::currentTimeMillis,
+      onFailure = { error ->
+        Log.e("LiftlogUpdater", "Update completion fallback failed", error)
+      }
+    ).complete(result)
+  }
+
+  private fun installedPackageInfo(context: Context) =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      context.packageManager.getPackageInfo(
+        context.packageName,
+        PackageManager.PackageInfoFlags.of(0)
+      )
+    } else {
+      @Suppress("DEPRECATION")
+      context.packageManager.getPackageInfo(context.packageName, 0)
+    }
 }
 
 internal object UpdateConfirmationIntent {
@@ -230,6 +294,65 @@ internal object UpdateConfirmationNotification {
       }
     }.onFailure { error ->
       Log.e("LiftlogUpdater", "Failed to cancel update confirmation notification", error)
+    }
+  }
+}
+
+internal object UpdateCompletionNotification {
+  fun post(context: Context): CompletionNotificationOutcome {
+    val manager = context.getSystemService(NotificationManager::class.java)
+    val permissionGranted = !(
+      Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+      context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+    ) && manager.areNotificationsEnabled()
+
+    val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+      ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+    val decision = CompletionNotificationDecision.decide(
+      permissionGranted,
+      launchIntent != null
+    )
+    if (decision != CompletionNotificationOutcome.POSTED) return decision
+    val contentIntent = PendingIntent.getActivity(
+      context,
+      UpdaterContract.COMPLETION_NOTIFICATION_ID,
+      launchIntent!!,
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    return runCatching {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        manager.createNotificationChannel(
+          NotificationChannel(
+            UpdaterContract.COMPLETION_NOTIFICATION_CHANNEL,
+            "LiftLog updates",
+            NotificationManager.IMPORTANCE_DEFAULT
+          )
+        )
+      }
+      val notification = android.app.Notification.Builder(
+        context,
+        UpdaterContract.COMPLETION_NOTIFICATION_CHANNEL
+      )
+        .setSmallIcon(context.applicationInfo.icon)
+        .setContentTitle("Update installed - Open LiftLog")
+        .setContentText("Tap to continue in LiftLog")
+        .setContentIntent(contentIntent)
+        .setAutoCancel(true)
+        .build()
+      manager.notify(UpdaterContract.COMPLETION_NOTIFICATION_ID, notification)
+      CompletionNotificationOutcome.POSTED
+    }.onFailure { error ->
+      Log.e("LiftlogUpdater", "Failed to post update completion notification", error)
+    }.getOrDefault(CompletionNotificationOutcome.POST_FAILED)
+  }
+
+  fun cancel(context: Context) {
+    runCatching {
+      context.getSystemService(NotificationManager::class.java)
+        .cancel(UpdaterContract.COMPLETION_NOTIFICATION_ID)
+    }.onFailure { error ->
+      Log.e("LiftlogUpdater", "Failed to cancel update completion notification", error)
     }
   }
 }

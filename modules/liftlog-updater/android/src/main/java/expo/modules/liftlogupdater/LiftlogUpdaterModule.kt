@@ -49,6 +49,18 @@ class LiftlogUpdaterModule : Module() {
       store.acknowledgeDiagnostic(request.string("attemptId"), request.string("diagnosticId"))
     }
 
+    AsyncFunction("cancelCompletionNotificationAsync") {
+      UpdateCompletionNotification.cancel(context)
+    }
+
+    AsyncFunction("getCompletionAsync") {
+      store.completion()?.toMap()
+    }
+
+    AsyncFunction("acknowledgeCompletionAsync") { attemptId: String ->
+      store.acknowledgeCompletion(attemptId)
+    }
+
     AsyncFunction("reconcileAsync") {
       reconcile()
     }
@@ -257,7 +269,14 @@ class LiftlogUpdaterModule : Module() {
       throw UpdaterException("UPDATER_PERMISSION_REQUIRED", "Install-source permission is required")
     }
     if (store.targetVersionCode() <= installedVersionCode()) {
-      store.finish(UpdateStage.SUCCEEDED, "installed")
+      val installed = installedPackageInfo()
+      store.finishSucceeded(
+        UpdateCompletionAcknowledgement(
+          attemptId,
+          installed.versionName.orEmpty(),
+          installed.longVersionCode
+        )
+      )
       cleanupOwnedFiles()
       return@withContext store.state()
     }
@@ -331,9 +350,10 @@ class LiftlogUpdaterModule : Module() {
     val target = store.targetVersionCode()
     val current = store.stage()
     val sessionId = store.sessionId()
+    val installed = installedPackageInfo()
     val next = UpdateTransitions.reconciledStage(
       current,
-      installedVersionCode(),
+      installed.longVersionCode,
       target,
       sessionId >= 0 && installer.getSessionInfo(sessionId) != null
     )
@@ -342,7 +362,13 @@ class LiftlogUpdaterModule : Module() {
         runCatching { installer.abandonSession(sessionId) }
       }
       when (next) {
-        UpdateStage.SUCCEEDED -> store.finish(next, "installed")
+        UpdateStage.SUCCEEDED -> store.finishSucceeded(
+          UpdateCompletionAcknowledgement(
+            store.attemptId() ?: return store.state(),
+            installed.versionName.orEmpty(),
+            installed.longVersionCode
+          )
+        )
         UpdateStage.FAILED -> store.finish(next, "UPDATER_SESSION_MISSING")
         UpdateStage.INTERRUPTED -> store.finish(next, "interrupted")
         else -> store.setStage(next)

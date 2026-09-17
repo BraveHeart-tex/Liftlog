@@ -34,6 +34,7 @@ import { createAutomaticUpdateScheduler } from './update-announcement';
 import { createAppUpdateReporter } from './update-reporter';
 import { createUpdateDiagnosticReporter } from './update-diagnostic-reporter';
 import { createUpdateLifecycle } from './update-lifecycle';
+import { showSnackbar } from '@/src/components/ui/snackbar';
 
 if (Platform.OS !== 'android') {
   applicationUpdateExclusion.hydrate(false);
@@ -200,12 +201,28 @@ export function UpdateProvider({ children }: PropsWithChildren) {
   automaticSchedulerRef.current = automaticScheduler;
 
   const updateLifecycle = useMemo(() => {
-    if (!attemptCoordinator || !appUpdateReporter) {
+    const updater = LiftlogUpdater;
+
+    if (!attemptCoordinator || !appUpdateReporter || !updater) {
       return undefined;
     }
 
     return createUpdateLifecycle({
       coordinator: attemptCoordinator,
+      cancelCompletionNotification: () =>
+        updater.cancelCompletionNotificationAsync(),
+      getCompletion: () => updater.getCompletionAsync(),
+      acknowledgeCompletion: attemptId =>
+        updater.acknowledgeCompletionAsync(attemptId),
+      showCompletion: completion => {
+        showSnackbar({
+          key: 'app-update-complete',
+          message: `LiftLog updated to ${completion.installedVersionName}.`,
+          variant: 'success'
+        });
+      },
+      reportCompletion: completion =>
+        appUpdateReporter.reportCompletion(completion),
       drainDiagnostics: () =>
         diagnosticReporter?.drainOne() ?? Promise.resolve(),
       reportReconciliationFailure:

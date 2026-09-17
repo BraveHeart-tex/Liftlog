@@ -1,12 +1,13 @@
 import type {
   PendingUpdateDiagnostics,
-  UpdateFailureDiagnostic
+  UpdateDiagnostic
 } from '@/modules/liftlog-updater/src/types';
 import { createUpdateDiagnosticReporter } from '@/src/features/app-updates/update-diagnostic-reporter';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-const diagnostic: UpdateFailureDiagnostic = {
+const diagnostic: UpdateDiagnostic = {
+  kind: 'failure',
   diagnosticId: 'diagnostic-1',
   attemptId: 'attempt-1',
   occurredAt: 1_700_000_000_000,
@@ -21,8 +22,36 @@ const diagnostic: UpdateFailureDiagnostic = {
   storageLocation: 'external'
 };
 
+test('submits sanitized native lifecycle outcomes as informational diagnostics', async () => {
+  const app = harness({
+    getPendingDiagnostics: async () =>
+      pending([
+        {
+          ...diagnostic,
+          kind: 'outcome',
+          source: 'android_package_replaced',
+          nativeStage: 'succeeded',
+          resultCode: 'UPDATER_COMPLETION_NOTIFICATION_POSTED',
+          rawStatus: null,
+          statusMessage: null,
+          blockingPackage: null,
+          storageLocation: null
+        }
+      ])
+  });
+
+  await app.reporter.drainOne();
+
+  assert.equal(app.captures[0]?.message, 'UPDATE_INSTALL_OUTCOME');
+  assert.deepEqual(
+    (app.captures[0]?.context as { level: string }).level,
+    'info'
+  );
+  assert.deepEqual(app.acknowledgements, [['attempt-1', 'diagnostic-1']]);
+});
+
 function pending(
-  diagnostics: UpdateFailureDiagnostic[] = [diagnostic]
+  diagnostics: UpdateDiagnostic[] = [diagnostic]
 ): PendingUpdateDiagnostics {
   return { diagnostics, droppedDiagnosticCount: 2 };
 }

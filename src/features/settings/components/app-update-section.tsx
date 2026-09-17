@@ -224,6 +224,17 @@ export function AppUpdateSection() {
               </Text>
             </View>
           ) : null}
+          {presentation.availableVersion ? (
+            <Text
+              variant="caption"
+              tone="muted"
+              className="border-border border-t py-3"
+            >
+              LiftLog closes while Android replaces the app. If it does not
+              reopen, use the update-installed notification or open LiftLog from
+              your launcher.
+            </Text>
+          ) : null}
           {presentation.message ? (
             <Text
               variant="caption"

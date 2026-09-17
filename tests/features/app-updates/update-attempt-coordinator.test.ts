@@ -274,6 +274,55 @@ test('captures startup and foreground reconciliation exceptions with safe native
   );
 });
 
+test('captures successful startup completion with installed version only', () => {
+  const captures: { message: string; context: unknown }[] = [];
+  const reporter = createAppUpdateReporter({
+    captureException: () => 'event-1',
+    captureMessage: (message, context) => {
+      captures.push({ message, context });
+
+      return 'event-1';
+    },
+    getInstalledBuildInfo: async () => ({
+      packageName: 'com.liftlog',
+      versionName: '1.1.0',
+      versionCode: 11,
+      certificateSha256: 'must-not-be-sent',
+      isDebuggable: false
+    }),
+    androidApiLevel: 35,
+    consoleError: () => undefined
+  });
+
+  reporter.reportCompletion({
+    attemptId: 'attempt-1',
+    installedVersionName: '1.1.0',
+    installedVersionCode: 11
+  });
+
+  assert.deepEqual(captures, [
+    {
+      message: 'UPDATE_INSTALL_COMPLETED',
+      context: {
+        level: 'info',
+        tags: {
+          feature: 'app_updates',
+          operation: 'successful_startup',
+          stage: 'completed',
+          updater_error_code: 'UPDATER_COMPLETION_CONSUMED'
+        },
+        extra: {
+          attemptId: 'attempt-1',
+          installedVersionName: '1.1.0',
+          installedVersionCode: 11,
+          androidApiLevel: 35
+        }
+      }
+    }
+  ]);
+  assert.doesNotMatch(JSON.stringify(captures), /packageName|certificate/i);
+});
+
 test('uses a safe message fallback when enrichment and a non-Error rejection fail', async () => {
   const messages: { message: string; context: unknown }[] = [];
   const consoleErrors: unknown[] = [];

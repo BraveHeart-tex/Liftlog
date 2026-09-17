@@ -148,7 +148,19 @@ class UpdateDiagnosticsTest {
     assertEquals(expected, UpdateDiagnosticCodec.decode(UpdateDiagnosticCodec.encode(expected)))
   }
 
-  private fun diagnostic(index: Int) = UpdateFailureDiagnostic(
+  @Test
+  fun `legacy diagnostic encoding defaults to failure kind`() {
+    val legacy = UpdateDiagnosticCodec.encode(diagnostic(1))
+      .substringBeforeLast('|')
+
+    assertEquals(
+      DiagnosticKind.FAILURE,
+      UpdateDiagnosticCodec.decode(legacy)?.kind
+    )
+  }
+
+  private fun diagnostic(index: Int) = UpdateDiagnostic(
+    kind = DiagnosticKind.FAILURE,
     diagnosticId = "diagnostic-$index",
     attemptId = "attempt-$index",
     occurredAt = index.toLong(),
@@ -183,7 +195,7 @@ private class InMemoryDiagnosticPersistence : DiagnosticPersistence {
     this.state = state
   }
 
-  override fun materializeLegacy(diagnostic: UpdateFailureDiagnostic): Boolean {
+  override fun materializeLegacy(diagnostic: UpdateDiagnostic): Boolean {
     if (diagnostic.attemptId in legacyAttemptIds) return false
     val exists = state.diagnostics.any { it.attemptId == diagnostic.attemptId }
     if (!exists) state = UpdateDiagnosticBacklog.appending(state, diagnostic)

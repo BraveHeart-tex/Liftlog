@@ -63,6 +63,22 @@ class UpdateTransitionsTest {
   }
 
   @Test
+  fun `terminal outcomes never become success after an unrelated later replacement`() {
+    for (stage in listOf(
+      UpdateStage.CANCELLED,
+      UpdateStage.FAILED,
+      UpdateStage.INTERRUPTED,
+      UpdateStage.SUCCEEDED
+    )) {
+      assertEquals(
+        stage.wireValue,
+        stage,
+        UpdateTransitions.reconciledStage(stage, 9, 8, false)
+      )
+    }
+  }
+
+  @Test
   fun `terminal installer statuses have stable public codes`() {
     assertEquals(
       InstallerTerminalResult(UpdateStage.CANCELLED, "UPDATER_INSTALL_CANCELLED"),

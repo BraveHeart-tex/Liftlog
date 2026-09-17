@@ -8,6 +8,8 @@ internal object UpdaterContract {
   const val APK_FILE = "candidate.apk"
   const val NOTIFICATION_CHANNEL = "liftlog_update_confirmation"
   const val NOTIFICATION_ID = 8402
+  const val COMPLETION_NOTIFICATION_CHANNEL = "liftlog_update_complete"
+  const val COMPLETION_NOTIFICATION_ID = 8403
 
   const val EXTRA_ATTEMPT_ID = "liftlog.attempt_id"
   const val EXTRA_SESSION_ID = "liftlog.session_id"
@@ -29,6 +31,7 @@ internal object UpdaterContract {
   const val EXPOSED_DIAGNOSTIC_ID = "exposed_diagnostic_id"
   const val EXPOSED_DROPPED_DIAGNOSTIC_COUNT = "exposed_dropped_diagnostic_count"
   const val LEGACY_DIAGNOSTIC_ATTEMPT_IDS = "legacy_diagnostic_attempt_ids"
+  const val COMPLETION_ACKNOWLEDGEMENT = "completion_acknowledgement"
 }
 
 internal enum class UpdateStage(val wireValue: String) {
@@ -69,7 +72,11 @@ internal object UpdateTransitions {
     targetVersionCode: Long,
     sessionExists: Boolean
   ): UpdateStage {
-    if (targetVersionCode > 0 && installedVersionCode >= targetVersionCode) return UpdateStage.SUCCEEDED
+    if (
+      (current == UpdateStage.COMMITTED || current == UpdateStage.PENDING_CONFIRMATION) &&
+      targetVersionCode > 0 &&
+      installedVersionCode >= targetVersionCode
+    ) return UpdateStage.SUCCEEDED
     if (current == UpdateStage.COMMITTED || current == UpdateStage.PENDING_CONFIRMATION) {
       return if (sessionExists) current else UpdateStage.FAILED
     }
