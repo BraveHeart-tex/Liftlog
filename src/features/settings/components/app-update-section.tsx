@@ -230,9 +230,9 @@ export function AppUpdateSection() {
               tone="muted"
               className="border-border border-t py-3"
             >
-              LiftLog closes while Android replaces the app. If it does not
-              reopen, use the update-installed notification or open LiftLog from
-              your launcher.
+              Android closes LiftLog while replacing the app. After
+              installation, open LiftLog from the update-installed notification
+              or your launcher.
             </Text>
           ) : null}
           {presentation.message ? (

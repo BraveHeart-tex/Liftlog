@@ -4,12 +4,6 @@
 
   <application>
     <activity
-      android:name=".InstallationResultActivity"
-      android:excludeFromRecents="true"
-      android:exported="false"
-      android:noHistory="true"
-      android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-    <activity
       android:name=".UpdateConfirmationActivity"
       android:excludeFromRecents="true"
       android:exported="false"

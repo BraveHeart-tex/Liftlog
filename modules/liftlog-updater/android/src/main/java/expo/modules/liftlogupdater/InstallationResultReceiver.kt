@@ -3,6 +3,7 @@ package expo.modules.liftlogupdater
 import android.Manifest
 import android.app.Activity
 import android.app.ActivityManager
+import android.app.ActivityOptions
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -37,19 +38,20 @@ class InstallationResultReceiver : BroadcastReceiver() {
         store = store,
         attemptId = callbackAttemptId,
         sessionId = callbackSessionId,
-        launchConfirmation = ::launchWhileForeground,
-        relaunch = { RelaunchOutcome.FAILED }
+        launchConfirmation = { continuation -> launchWhileForeground(context, continuation) }
       )
-    ).handle(validCallback, status, relaunchEligible = false)
+    ).handle(validCallback, status)
   }
 
-  private fun launchWhileForeground(confirmation: PendingIntent): Boolean {
+  private fun launchWhileForeground(context: Context, continuation: Intent): Boolean {
     val process = ActivityManager.RunningAppProcessInfo()
     ActivityManager.getMyMemoryState(process)
     if (process.importance > ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) return false
     return runCatching {
-      confirmation.send()
+      context.startActivity(continuation.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
       true
+    }.onFailure { error ->
+      Log.e("LiftlogUpdater", "Failed to launch update confirmation while foregrounded", error)
     }.getOrDefault(false)
   }
 }
@@ -211,7 +213,19 @@ internal object UpdateConfirmationNotification {
     val confirmation = UpdateConfirmationIntent.existing(context, sessionId) ?: return false
 
     return try {
-      activity.startIntentSender(confirmation.intentSender, null, 0, 0, 0)
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        val mode = if (Build.VERSION.SDK_INT >= 36) {
+          ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_IF_VISIBLE
+        } else {
+          ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+        }
+        val options = ActivityOptions.makeBasic().apply {
+          setPendingIntentBackgroundActivityStartMode(mode)
+        }
+        confirmation.send(activity, 0, null, null, null, null, options.toBundle())
+      } else {
+        confirmation.send(activity, 0, null)
+      }
       true
     } catch (_: Throwable) {
       false

@@ -7,243 +7,118 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class InstallerResultHandlerTest {
-  @Test
-  fun `pending confirmation launches Android action and preserves fallback when launch fails`() {
-    val effects = RecordingInstallerResultEffects(
-      confirmationAvailable = true,
-      confirmationLaunched = false
-    )
-
-    InstallerResultHandler(effects).handle(
-      validCallback = true,
-      status = PackageInstaller.STATUS_PENDING_USER_ACTION,
-      relaunchEligible = true
-    )
-
+  @Test fun `valid pending callback persists pending state`() {
+    val effects = RecordingEffects(confirmationAvailable = true)
+    handle(effects, PackageInstaller.STATUS_PENDING_USER_ACTION)
     assertEquals(UpdateStage.PENDING_CONFIRMATION, effects.stage)
-    assertEquals(1, effects.confirmationLaunchCalls)
-    assertEquals(1, effects.confirmationFallbackCalls)
-    assertFalse(effects.relaunchRequested)
   }
 
-  @Test
-  fun `verified success from result activity attempts normal launcher entry`() {
-    val effects = RecordingInstallerResultEffects(
-      completionProven = true,
-      relaunchOutcome = RelaunchOutcome.LAUNCHED
-    )
+  @Test fun `available continuation preserves fallback before attempting launch`() {
+    val effects = RecordingEffects(confirmationAvailable = true)
+    handle(effects, PackageInstaller.STATUS_PENDING_USER_ACTION)
+    assertEquals(listOf("pending", "check", "fallback", "launch"), effects.calls)
+  }
 
-    InstallerResultHandler(effects).handle(
-      validCallback = true,
-      status = PackageInstaller.STATUS_SUCCESS,
-      relaunchEligible = true
-    )
+  @Test fun `foreground launch success does not remove fallback`() {
+    val effects = RecordingEffects(confirmationAvailable = true, confirmationLaunched = true)
+    handle(effects, PackageInstaller.STATUS_PENDING_USER_ACTION)
+    assertEquals(1, effects.fallbackCalls)
+    assertEquals(0, effects.cancelCalls)
+  }
 
-    assertTrue(effects.relaunchRequested)
+  @Test fun `foreground launch failure remains pending and recoverable`() {
+    val effects = RecordingEffects(confirmationAvailable = true)
+    handle(effects, PackageInstaller.STATUS_PENDING_USER_ACTION)
+    assertEquals(UpdateStage.PENDING_CONFIRMATION, effects.stage)
+    assertEquals(1, effects.fallbackCalls)
+    assertEquals(0, effects.cleanupCalls)
+  }
+
+  @Test fun `missing continuation fails with cleanup`() {
+    val effects = RecordingEffects()
+    handle(effects, PackageInstaller.STATUS_PENDING_USER_ACTION)
+    assertEquals(UpdateStage.FAILED, effects.stage)
+    assertEquals(1, effects.cancelCalls)
+    assertEquals(1, effects.cleanupCalls)
+    assertFalse(effects.calls.contains("launch"))
+  }
+
+  @Test fun `proven success reconciles and cancels confirmation`() {
+    val effects = RecordingEffects(completionProven = true)
+    handle(effects, PackageInstaller.STATUS_SUCCESS)
     assertEquals(UpdateStage.SUCCEEDED, effects.stage)
-    assertEquals(
-      listOf(
-        "UPDATER_RESULT_ACTIVITY_ENTERED",
-        "UPDATER_RELAUNCH_ATTEMPTED",
-        "UPDATER_RELAUNCH_SUCCEEDED"
-      ),
-      effects.outcomes
-    )
+    assertEquals(1, effects.cancelCalls)
   }
 
-  @Test
-  fun `unavailable launcher records failure and keeps fallback without blocking success`() {
-    val effects = RecordingInstallerResultEffects(
-      completionProven = true,
-      relaunchOutcome = RelaunchOutcome.LAUNCHER_UNAVAILABLE
-    )
-
-    InstallerResultHandler(effects).handle(
-      validCallback = true,
-      status = PackageInstaller.STATUS_SUCCESS,
-      relaunchEligible = true
-    )
-
-    assertEquals(UpdateStage.SUCCEEDED, effects.stage)
-    assertEquals(
-      listOf(
-        "UPDATER_RESULT_ACTIVITY_ENTERED",
-        "UPDATER_RELAUNCH_ATTEMPTED",
-        "UPDATER_RELAUNCH_LAUNCHER_UNAVAILABLE"
-      ),
-      effects.outcomes
-    )
-  }
-
-  @Test
-  fun `relaunch failure records failure after preserving reconciliation fallback`() {
-    val effects = RecordingInstallerResultEffects(
-      completionProven = true,
-      relaunchOutcome = RelaunchOutcome.FAILED
-    )
-
-    InstallerResultHandler(effects).handle(
-      validCallback = true,
-      status = PackageInstaller.STATUS_SUCCESS,
-      relaunchEligible = true
-    )
-
-    assertEquals(1, effects.fallbackInteractionCalls)
-    assertEquals(
-      listOf(
-        "UPDATER_RESULT_ACTIVITY_ENTERED",
-        "UPDATER_RELAUNCH_ATTEMPTED",
-        "UPDATER_RELAUNCH_FAILED"
-      ),
-      effects.outcomes
-    )
-  }
-
-  @Test
-  fun `unproven success remains committed and never relaunches`() {
-    val effects = RecordingInstallerResultEffects(completionProven = false)
-
-    InstallerResultHandler(effects).handle(
-      validCallback = true,
-      status = PackageInstaller.STATUS_SUCCESS,
-      relaunchEligible = true
-    )
-
+  @Test fun `unproven success remains committed`() {
+    val effects = RecordingEffects().apply { stage = UpdateStage.PENDING_CONFIRMATION }
+    handle(effects, PackageInstaller.STATUS_SUCCESS)
     assertEquals(UpdateStage.COMMITTED, effects.stage)
-    assertFalse(effects.relaunchRequested)
+    assertEquals(0, effects.cancelCalls)
   }
 
-  @Test
-  fun `cancellation failure and stale identity never relaunch or display success`() {
-    val cancelled = RecordingInstallerResultEffects()
-    InstallerResultHandler(cancelled).handle(
-      validCallback = true,
-      status = PackageInstaller.STATUS_FAILURE_ABORTED,
-      relaunchEligible = true
-    )
-    assertEquals(UpdateStage.CANCELLED, cancelled.stage)
-    assertFalse(cancelled.relaunchRequested)
-    assertEquals(1, cancelled.cleanupCalls)
-
-    val failed = RecordingInstallerResultEffects()
-    InstallerResultHandler(failed).handle(
-      validCallback = true,
-      status = PackageInstaller.STATUS_FAILURE_INVALID,
-      relaunchEligible = true
-    )
-    assertEquals(UpdateStage.FAILED, failed.stage)
-    assertFalse(failed.relaunchRequested)
-    assertEquals(1, failed.cleanupCalls)
-
-    val stale = RecordingInstallerResultEffects(completionProven = true)
-    InstallerResultHandler(stale).handle(
-      validCallback = false,
-      status = PackageInstaller.STATUS_SUCCESS,
-      relaunchEligible = true
-    )
-    assertEquals(UpdateStage.COMMITTED, stale.stage)
-    assertFalse(stale.relaunchRequested)
-    assertTrue(stale.outcomes.isEmpty())
+  @Test fun `cancellation maps to cancelled and cleans up`() {
+    val effects = RecordingEffects()
+    handle(effects, PackageInstaller.STATUS_FAILURE_ABORTED)
+    assertEquals(UpdateStage.CANCELLED, effects.stage)
+    assertEquals(1, effects.cancelCalls)
+    assertEquals(1, effects.cleanupCalls)
   }
 
-  @Test
-  fun `legacy broadcast success preserves fallback but cannot relaunch`() {
-    val effects = RecordingInstallerResultEffects(completionProven = true)
-
-    InstallerResultHandler(effects).handle(
-      validCallback = true,
-      status = PackageInstaller.STATUS_SUCCESS,
-      relaunchEligible = false
-    )
-
-    assertEquals(UpdateStage.SUCCEEDED, effects.stage)
-    assertFalse(effects.relaunchRequested)
-    assertEquals(1, effects.fallbackInteractionCalls)
-    assertTrue(effects.outcomes.isEmpty())
+  @Test fun `installer failures map correctly and clean up`() {
+    val effects = RecordingEffects()
+    handle(effects, PackageInstaller.STATUS_FAILURE_INVALID)
+    assertEquals(UpdateStage.FAILED, effects.stage)
+    assertEquals(1, effects.cancelCalls)
+    assertEquals(1, effects.cleanupCalls)
   }
 
-  @Test
-  fun `diagnostic reporting failure cannot block verified relaunch`() {
-    val effects = RecordingInstallerResultEffects(
-      completionProven = true,
-      relaunchOutcome = RelaunchOutcome.LAUNCHED,
-      failOutcome = true
-    )
+  @Test fun `stale attempt or session callback makes no changes`() {
+    val effects = RecordingEffects(completionProven = true)
+    InstallerResultHandler(effects).handle(false, PackageInstaller.STATUS_SUCCESS)
+    assertEquals(UpdateStage.COMMITTED, effects.stage)
+    assertTrue(effects.calls.isEmpty())
+  }
 
-    InstallerResultHandler(effects).handle(
-      validCallback = true,
-      status = PackageInstaller.STATUS_SUCCESS,
-      relaunchEligible = true
-    )
+  @Test fun `diagnostic failure cannot block state transitions`() {
+    val effects = RecordingEffects(diagnosticFailure = true)
+    handle(effects, PackageInstaller.STATUS_FAILURE_BLOCKED)
+    assertEquals(UpdateStage.FAILED, effects.stage)
+    assertEquals(1, effects.cleanupCalls)
+  }
 
-    assertEquals(UpdateStage.SUCCEEDED, effects.stage)
-    assertTrue(effects.relaunchRequested)
+  private fun handle(effects: RecordingEffects, status: Int) {
+    InstallerResultHandler(effects).handle(true, status)
   }
 }
 
-private class RecordingInstallerResultEffects(
+private class RecordingEffects(
   private val confirmationAvailable: Boolean = false,
   private val confirmationLaunched: Boolean = false,
   private val completionProven: Boolean = false,
-  private val relaunchOutcome: RelaunchOutcome = RelaunchOutcome.FAILED,
-  private val failOutcome: Boolean = false
+  private val diagnosticFailure: Boolean = false
 ) : InstallerResultEffects {
   var stage = UpdateStage.COMMITTED
-  var confirmationLaunchCalls = 0
-  var confirmationFallbackCalls = 0
-  var relaunchRequested = false
+  var fallbackCalls = 0
+  var cancelCalls = 0
   var cleanupCalls = 0
-  var fallbackInteractionCalls = 0
-  val outcomes = mutableListOf<String>()
+  val calls = mutableListOf<String>()
 
-  override fun appendOutcome(resultCode: String) {
-    if (failOutcome) throw IllegalStateException("diagnostics unavailable")
-    outcomes += resultCode
-  }
-
-  override fun markPendingConfirmation() {
-    stage = UpdateStage.PENDING_CONFIRMATION
-  }
-
-  override fun hasConfirmation(): Boolean = confirmationAvailable
-
-  override fun launchConfirmation(): Boolean {
-    confirmationLaunchCalls += 1
-    return confirmationLaunched
-  }
-
-  override fun preserveConfirmationFallback() {
-    confirmationFallbackCalls += 1
-  }
-
-  override fun failMissingConfirmation() {
-    stage = UpdateStage.FAILED
-  }
-
+  override fun markPendingConfirmation() { calls += "pending"; stage = UpdateStage.PENDING_CONFIRMATION }
+  override fun hasConfirmation(): Boolean { calls += "check"; return confirmationAvailable }
+  override fun launchConfirmation(): Boolean { calls += "launch"; return confirmationLaunched }
+  override fun preserveConfirmationFallback() { calls += "fallback"; fallbackCalls += 1 }
+  override fun failMissingConfirmation() { stage = UpdateStage.FAILED }
   override fun reconcileSuccess(): Boolean {
-    if (completionProven) {
-      stage = UpdateStage.SUCCEEDED
-      fallbackInteractionCalls += 1
-    }
+    calls += "reconcile"
+    if (completionProven) stage = UpdateStage.SUCCEEDED
     return completionProven
   }
-
-  override fun markCommitted() {
-    stage = UpdateStage.COMMITTED
-  }
-
-  override fun relaunch(): RelaunchOutcome {
-    relaunchRequested = true
-    return relaunchOutcome
-  }
-
+  override fun markCommitted() { stage = UpdateStage.COMMITTED }
   override fun finish(status: Int) {
+    runCatching { if (diagnosticFailure) error("diagnostics unavailable") }
     stage = InstallerStatusMapping.terminal(status).stage
   }
-
-  override fun cancelConfirmation() = Unit
-
-  override fun cleanupTerminal() {
-    cleanupCalls += 1
-  }
+  override fun cancelConfirmation() { cancelCalls += 1 }
+  override fun cleanupTerminal() { cleanupCalls += 1 }
 }
