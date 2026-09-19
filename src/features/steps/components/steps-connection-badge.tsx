@@ -12,6 +12,10 @@ export function StepsConnectionBadge({
   availabilityLabel,
   isConnected
 }: StepsConnectionBadgeProps) {
+  if (!isConnected) {
+    return null;
+  }
+
   return (
     <Badge
       className={cn(

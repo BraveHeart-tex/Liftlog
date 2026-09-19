@@ -22,12 +22,15 @@ import {
 import { Stack } from 'expo-router';
 import { EllipsisIcon } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 const STEP_CHART_DAY_COUNT = 7;
 
 export function StepsContent() {
   const [isActionsSheetOpen, setIsActionsSheetOpen] = useState(false);
+  const [selectedChartDateKey, setSelectedChartDateKey] = useState<
+    string | null
+  >(null);
   const {
     availability,
     errorMessage,
@@ -56,6 +59,9 @@ export function StepsContent() {
     ? [...recentCalendarDays].reverse()
     : [];
   const today = recentCalendarDays[recentCalendarDays.length - 1];
+  const selectedChartDay =
+    recentCalendarDays.find(day => day.dateKey === selectedChartDateKey) ??
+    today;
   const bestDay = recentCalendarDays.reduce(
     (best, day) => (best === null || day.steps > best.steps ? day : best),
     null as (typeof recentCalendarDays)[number] | null
@@ -73,6 +79,7 @@ export function StepsContent() {
     !permissions.canReadSteps || !healthConnectStepsEnabled;
   const isConnected = !shouldConnectSteps;
   const availabilityLabel = getAvailabilityLabel(availability);
+
   const isStepTrackingUnavailable = availability !== 'available';
   const shouldShowDataUnavailableState =
     isStepTrackingUnavailable || shouldConnectSteps;
@@ -83,16 +90,17 @@ export function StepsContent() {
   const nativeHeader = (
     <Stack.Screen
       options={{
-        headerRight: () => (
-          <Button
-            variant="ghost"
-            size="icon"
-            accessibilityLabel="Open step actions"
-            onPress={openActionsSheet}
-          >
-            <Icon as={EllipsisIcon} size="lg" tone="foreground" />
-          </Button>
-        )
+        headerRight: () =>
+          shouldConnectSteps ? null : (
+            <Button
+              variant="ghost"
+              size="icon"
+              accessibilityLabel="Open step actions"
+              onPress={openActionsSheet}
+            >
+              <Icon as={EllipsisIcon} size="lg" tone="foreground" />
+            </Button>
+          )
       }}
     />
   );
@@ -211,55 +219,54 @@ export function StepsContent() {
           requiredDayCount={stats.recentActivityStatus.requiredDayCount}
         />
 
-        <View
-          accessible
-          accessibilityRole="image"
-          accessibilityLabel={`Daily steps for the last seven days: ${recentCalendarDays
-            .map(
-              day =>
-                `${formatStepWeekday(day.startAt)}, ${formatSteps(day.steps)} steps`
-            )
-            .join('; ')}`}
-          className="mt-7"
-        >
+        <View className="mt-7">
           <Text variant="bodyMedium">Last 7 days</Text>
-          <Text variant="caption" tone="muted" className="mt-1">
-            Daily steps
+          <Text
+            accessibilityLiveRegion="polite"
+            variant="caption"
+            tone="muted"
+            className="mt-1"
+          >
+            {formatStepWeekday(selectedChartDay.startAt)},{' '}
+            {formatStepMonthDay(selectedChartDay.startAt)} ·{' '}
+            {formatSteps(selectedChartDay.steps)} steps
           </Text>
           <View className="border-border mt-3 h-40 border-b">
-            <View className="h-32 flex-row items-end gap-2">
-              {recentCalendarDays.map((day, index) => {
+            <View className="h-full flex-row items-end gap-2">
+              {recentCalendarDays.map(day => {
                 const barHeight = Math.max(
                   3,
                   Math.round((day.steps / chartMaxSteps) * 100)
                 );
-                const isToday = index === recentCalendarDays.length - 1;
+                const isSelected = day.dateKey === selectedChartDay.dateKey;
 
                 return (
-                  <View
+                  <Pressable
                     key={day.dateKey}
+                    accessibilityLabel={`${formatStepWeekday(day.startAt)}, ${formatStepMonthDay(day.startAt)}, ${formatSteps(day.steps)} steps`}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
                     className="h-full flex-1 items-center justify-end"
+                    onPress={() => setSelectedChartDateKey(day.dateKey)}
                   >
-                    <View
-                      className={
-                        isToday
-                          ? 'bg-primary w-4 rounded-t-md'
-                          : 'bg-border dark:bg-secondary w-4 rounded-t-md'
-                      }
-                      style={{ height: `${barHeight}%` }}
-                    />
-                  </View>
+                    <View className="h-32 w-full items-center justify-end">
+                      <View
+                        className={
+                          isSelected
+                            ? 'bg-primary w-4 rounded-t-md'
+                            : 'bg-border dark:bg-secondary w-4 rounded-t-md'
+                        }
+                        style={{ height: `${barHeight}%` }}
+                      />
+                    </View>
+                    <View className="h-8 items-center justify-center">
+                      <Text variant="caption" tone="muted">
+                        {formatStepWeekdayShort(day.startAt)}
+                      </Text>
+                    </View>
+                  </Pressable>
                 );
               })}
-            </View>
-            <View className="h-8 flex-row items-center gap-2">
-              {recentCalendarDays.map(day => (
-                <View key={day.dateKey} className="flex-1 items-center">
-                  <Text variant="caption" tone="muted">
-                    {formatStepWeekdayShort(day.startAt)}
-                  </Text>
-                </View>
-              ))}
             </View>
           </View>
         </View>
