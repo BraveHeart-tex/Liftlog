@@ -47,3 +47,12 @@ test('null equipment leaves the primary filter unchanged', () => {
     false
   );
 });
+
+test('normalizes equipment values before matching', () => {
+  const exercise = createExercise('barbell', ' BarBell ');
+
+  assert.equal(
+    matchesExercisePickerFilters(exercise, 'all', 'barbell', new Set()),
+    true
+  );
+});

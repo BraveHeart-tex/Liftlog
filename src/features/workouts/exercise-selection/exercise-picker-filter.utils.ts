@@ -18,6 +18,7 @@ export function matchesExercisePickerFilters(
 
   return (
     matchesPrimaryFilter &&
-    (selectedEquipment === null || exercise.equipment === selectedEquipment)
+    (selectedEquipment === null ||
+      exercise.equipment?.trim().toLowerCase() === selectedEquipment)
   );
 }
