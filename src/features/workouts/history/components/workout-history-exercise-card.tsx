@@ -1,39 +1,87 @@
 import { Card, CardContent } from '@/src/components/ui/card';
-import type { Set } from '@/src/db';
-import type { TrackingType } from '@/src/features/progress/tracking.domain';
-import type { WeightUnit } from '@/src/lib/utils/weight.utils';
-import { WorkoutExerciseSummary } from '@/src/features/workouts/shared/components/workout-exercise-summary';
+import { Text } from '@/src/components/ui/text';
+import type { WorkoutHistoryExerciseUiModel } from '@/src/features/workouts/history/workout-history.ui-model';
 import { cn } from '@/src/lib/utils/cn.utils';
-import { View } from 'react-native';
+import { View, type TextStyle } from 'react-native';
+
+const tabularNumericStyle = {
+  fontVariant: ['tabular-nums']
+} satisfies TextStyle;
 
 interface WorkoutHistoryExerciseCardProps {
-  exerciseName: string;
-  completedSets: Set[];
-  weightUnit: WeightUnit;
-  trackingType: TrackingType;
-  personalRecordSetIds?: ReadonlySet<string>;
+  exercise: WorkoutHistoryExerciseUiModel;
   className?: string;
   variant?: 'default' | 'grouped';
 }
 
 export const WorkoutHistoryExerciseCard = ({
-  exerciseName,
-  completedSets,
-  weightUnit,
-  trackingType,
-  personalRecordSetIds,
+  exercise,
   className,
   variant = 'default'
 }: WorkoutHistoryExerciseCardProps) => {
   const isGrouped = variant === 'grouped';
   const summary = (
-    <WorkoutExerciseSummary
-      exerciseName={exerciseName}
-      completedSets={completedSets}
-      weightUnit={weightUnit}
-      trackingType={trackingType}
-      personalRecordSetIds={personalRecordSetIds}
-    />
+    <View className="gap-3">
+      <View className="flex-row items-start justify-between gap-3">
+        <View className="flex-1">
+          <Text variant="bodyMedium" numberOfLines={2}>
+            {exercise.exerciseName}
+          </Text>
+          {exercise.setCountLabel ? (
+            <Text variant="small" tone="muted" className="mt-0.5">
+              {exercise.setCountLabel}
+            </Text>
+          ) : null}
+        </View>
+
+        {exercise.latestSetLabel ? (
+          <Text variant="small" className="text-foreground mt-6 font-medium">
+            {exercise.latestSetLabel}
+          </Text>
+        ) : null}
+      </View>
+
+      {exercise.volumeLabel ? (
+        <Text variant="small" tone="muted">
+          {exercise.volumeLabel}
+        </Text>
+      ) : null}
+
+      {exercise.setRows.length > 0 ? (
+        <View>
+          {exercise.setRows.map((setRow, index) => {
+            const isLast = index === exercise.setRows.length - 1;
+
+            return (
+              <View
+                key={setRow.id}
+                className={cn(
+                  'flex-row items-center py-2',
+                  !isLast && 'border-border border-b',
+                  isLast && 'pb-0'
+                )}
+              >
+                <Text
+                  variant="small"
+                  tone="muted"
+                  className="w-12"
+                  style={tabularNumericStyle}
+                >
+                  {setRow.positionLabel}
+                </Text>
+                <Text
+                  variant="small"
+                  className="text-foreground min-w-0 flex-1 text-right font-medium"
+                  style={tabularNumericStyle}
+                >
+                  {setRow.valueLabel}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      ) : null}
+    </View>
   );
 
   if (isGrouped) {

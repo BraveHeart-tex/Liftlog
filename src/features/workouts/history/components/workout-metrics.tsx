@@ -1,19 +1,26 @@
 import { Card, CardContent } from '@/src/components/ui/card';
-import { Icon, type IconComponent } from '@/src/components/ui/icon';
+import { Icon } from '@/src/components/ui/icon';
 import { Text } from '@/src/components/ui/text';
+import { ClockIcon, DumbbellIcon, LayersIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
-interface WorkoutMetric {
-  label: string;
-  value: string | number;
-  icon: IconComponent;
-}
-
 interface WorkoutMetricsProps {
-  metrics: WorkoutMetric[];
+  durationLabel: string;
+  setCountLabel: string;
+  volumeLabel: string;
 }
 
-export const WorkoutMetrics = ({ metrics }: WorkoutMetricsProps) => {
+export const WorkoutMetrics = ({
+  durationLabel,
+  setCountLabel,
+  volumeLabel
+}: WorkoutMetricsProps) => {
+  const metrics = [
+    { label: 'Duration', value: durationLabel, icon: ClockIcon },
+    { label: 'Sets', value: setCountLabel, icon: DumbbellIcon },
+    { label: 'Volume', value: volumeLabel, icon: LayersIcon }
+  ];
+
   return (
     <Card>
       <CardContent className="flex-row p-0">

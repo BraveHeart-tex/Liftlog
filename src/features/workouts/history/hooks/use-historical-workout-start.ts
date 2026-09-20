@@ -5,8 +5,12 @@ import {
   createHistoricalWorkoutDraftFromTemplate
 } from '@/src/features/workouts/history/history.repository';
 import { useWorkoutTemplates } from '@/src/features/workouts/templates/hooks/use-workout-templates';
+import {
+  mapWorkoutLogStartDate,
+  mapWorkoutLogTemplates
+} from '@/src/features/workouts/history/workout-history.ui-model';
 import { router } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 interface UseHistoricalWorkoutStartOptions {
   enabled?: boolean;
@@ -19,6 +23,14 @@ export function useHistoricalWorkoutStart(
   const { enabled = true } = options ?? {};
   const db = useDrizzle();
   const { templates, isLoading } = useWorkoutTemplates({ enabled });
+  const templateItems = useMemo(
+    () => mapWorkoutLogTemplates(templates),
+    [templates]
+  );
+  const selectedDateLabel = useMemo(
+    () => mapWorkoutLogStartDate(dateKey),
+    [dateKey]
+  );
 
   const openDraft = useCallback((workoutId: string) => {
     router.navigate(
@@ -51,7 +63,8 @@ export function useHistoricalWorkoutStart(
   );
 
   return {
-    templates,
+    templates: templateItems,
+    selectedDateLabel,
     startBlankWorkout,
     startWorkoutFromTemplate,
     isLoading

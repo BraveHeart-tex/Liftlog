@@ -1,19 +1,21 @@
 import { Text } from '@/src/components/ui/text';
-import type { Workout } from '@/src/db/schema';
 import { usePressScale } from '@/src/lib/animations/use-press-scale.hook';
 import { cn } from '@/src/lib/utils/cn.utils';
-import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date.utils';
 import { Animated, Pressable, View } from 'react-native';
 
 interface WorkoutLogRowProps {
-  workout: Workout;
-  setCount: number;
-  onPress: (workout: Workout) => void;
+  name: string;
+  durationLabel: string;
+  dateLabel: string;
+  setCountLabel: string;
+  onPress: () => void;
 }
 
 export function WorkoutLogRow({
-  workout,
-  setCount,
+  name,
+  durationLabel,
+  dateLabel,
+  setCountLabel,
   onPress
 }: WorkoutLogRowProps) {
   const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();
@@ -21,7 +23,7 @@ export function WorkoutLogRow({
   return (
     <Animated.View style={scaleStyle}>
       <Pressable
-        onPress={() => onPress(workout)}
+        onPress={onPress}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         className={cn(
@@ -31,22 +33,19 @@ export function WorkoutLogRow({
       >
         <View className="flex-row items-start justify-between gap-4">
           <Text variant="bodyMedium" className="flex-1">
-            {workout.name}
+            {name}
           </Text>
           <Text variant="caption" tone="muted">
-            {formatDuration({
-              startedAt: workout.startedAt,
-              completedAt: workout.completedAt
-            })}
+            {durationLabel}
           </Text>
         </View>
 
         <View className="mt-2 flex-row items-center justify-between gap-4">
           <Text variant="caption" tone="muted" className="flex-1">
-            {formatWorkoutDate(workout.startedAt)}
+            {dateLabel}
           </Text>
           <Text variant="caption" tone="muted">
-            {setCount} {setCount === 1 ? 'set' : 'sets'}
+            {setCountLabel}
           </Text>
         </View>
       </Pressable>

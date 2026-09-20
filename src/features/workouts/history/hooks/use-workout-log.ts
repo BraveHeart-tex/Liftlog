@@ -6,6 +6,7 @@ import {
 } from '@/src/features/workouts/history/history.repository';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { toLocalDateKey } from '@/src/lib/utils/date.utils';
+import { mapWorkoutLogItems } from '@/src/features/workouts/history/workout-history.ui-model';
 import { useMemo } from 'react';
 
 function getWorkoutCalendarDateRange(
@@ -78,7 +79,10 @@ export function useWorkoutRowsForDate(selectedDateKey: string) {
   );
 
   return {
-    workoutRows: workoutResult.data,
+    workouts: useMemo(
+      () => mapWorkoutLogItems(workoutResult.data),
+      [workoutResult.data]
+    ),
     isLive: workoutResult.isLive,
     error: workoutResult.error
   };

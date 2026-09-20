@@ -6,6 +6,8 @@ import {
 import { getActiveWorkoutQuery } from '@/src/features/workouts/active/active.repository';
 import { useSettings } from '@/src/features/settings/hooks/use-settings';
 import { getWorkoutTemplateBySourceWorkoutIdQuery } from '@/src/features/workouts/templates/workout-template.repository';
+import { useRepeatWorkout } from '@/src/features/workouts/history/hooks/use-repeat-workout';
+import { mapWorkoutHistoryDetailUiModel } from '@/src/features/workouts/history/workout-history.ui-model';
 import { useLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { useMemo } from 'react';
 
@@ -59,22 +61,53 @@ export function useWorkoutHistoryDetail(workoutId: string | undefined) {
   const canRepeatWorkout = Boolean(
     workout && (activeWorkout || contentResult.isLive)
   );
-
-  return {
+  const repeatWorkout = useRepeatWorkout({
     workout,
     activeWorkout,
     workoutExerciseRows,
-    exerciseById,
-    setsByWorkoutExerciseId,
-    totalVolume,
-    totalCompletedSets,
-    weightUnit,
+    canRepeatWorkout
+  });
+  const detail = useMemo(
+    () =>
+      workout
+        ? mapWorkoutHistoryDetailUiModel(
+            {
+              workout,
+              workoutExerciseRows,
+              exerciseById,
+              setsByWorkoutExerciseId,
+              totalVolume,
+              totalCompletedSets
+            },
+            weightUnit,
+            {
+              hasActiveWorkout: Boolean(activeWorkout),
+              hasSavedTemplate
+            }
+          )
+        : undefined,
+    [
+      activeWorkout,
+      exerciseById,
+      hasSavedTemplate,
+      setsByWorkoutExerciseId,
+      totalCompletedSets,
+      totalVolume,
+      weightUnit,
+      workout,
+      workoutExerciseRows
+    ]
+  );
+
+  return {
+    detail,
+    repeatWorkout,
     isLoading:
       Boolean(workoutId) &&
       [contentResult, activeWorkoutResult, savedTemplateResult].some(
         result => !result.isLive && !result.error
       ),
     canRepeatWorkout,
-    hasSavedTemplate
+    hasActiveWorkout: Boolean(activeWorkout)
   };
 }

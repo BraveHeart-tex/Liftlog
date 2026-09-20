@@ -8,31 +8,20 @@ import { RenameSheet } from '@/src/components/ui/rename-sheet';
 import { Screen } from '@/src/components/ui/screen';
 import { showSnackbar } from '@/src/components/ui/snackbar';
 import { Text } from '@/src/components/ui/text';
-import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
 import { useWorkoutDelete } from '@/src/features/workouts/active/hooks/use-workout-delete';
 import { useWorkoutRename } from '@/src/features/workouts/active/hooks/use-workout-rename';
 import { WorkoutDetailActionsSheet } from '@/src/features/workouts/history/components/workout-detail-actions-sheet';
 import { WorkoutHistoryExerciseCard } from '@/src/features/workouts/history/components/workout-history-exercise-card';
 import { WorkoutMetrics } from '@/src/features/workouts/history/components/workout-metrics';
 import { useHistoricalWorkoutEditStart } from '@/src/features/workouts/history/hooks/use-historical-workout-edit-start';
-import { useRepeatWorkout } from '@/src/features/workouts/history/hooks/use-repeat-workout';
 import { useWorkoutHistoryDetail } from '@/src/features/workouts/history/hooks/use-workout-history-detail';
 import { SupersetExerciseGroup } from '@/src/features/workouts/shared/components/superset-exercise-group';
-import {
-  formatSupersetLabel,
-  groupSupersetBlocks
-} from '@/src/features/workouts/shared/superset.utils';
 import { SaveWorkoutTemplateSheet } from '@/src/features/workouts/templates/components/save-workout-template-sheet';
 import { triggerHapticWarning } from '@/src/lib/haptics/haptics';
-import { formatDuration, formatWorkoutDate } from '@/src/lib/utils/date.utils';
-import { formatWeightForUnit } from '@/src/lib/utils/weight.utils';
 import { Stack, router } from 'expo-router';
 import {
   BookmarkIcon,
-  ClockIcon,
-  DumbbellIcon,
   EllipsisIcon,
-  LayersIcon,
   PlayIcon,
   RepeatIcon
 } from 'lucide-react-native';
@@ -50,7 +39,7 @@ export function WorkoutDetailScreen({ workoutId }: { workoutId?: string }) {
     );
   }
 
-  if (!detail.workout) {
+  if (!detail.detail) {
     return (
       <Screen
         withPadding={false}
@@ -67,100 +56,48 @@ export function WorkoutDetailScreen({ workoutId }: { workoutId?: string }) {
   }
 
   return (
-    <WorkoutDetailLoaded detail={{ ...detail, workout: detail.workout }} />
+    <WorkoutDetailLoaded
+      detail={detail.detail}
+      canRepeatWorkout={detail.canRepeatWorkout}
+      hasActiveWorkout={detail.hasActiveWorkout}
+      repeatWorkout={detail.repeatWorkout}
+    />
   );
 }
 
 interface WorkoutDetailLoadedProps {
-  detail: NonNullable<ReturnType<typeof useWorkoutHistoryDetail>> & {
-    workout: NonNullable<ReturnType<typeof useWorkoutHistoryDetail>['workout']>;
-  };
+  detail: NonNullable<ReturnType<typeof useWorkoutHistoryDetail>['detail']>;
+  canRepeatWorkout: boolean;
+  hasActiveWorkout: boolean;
+  repeatWorkout: () => void;
 }
 
-function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
+function WorkoutDetailLoaded({
+  detail,
+  canRepeatWorkout,
+  hasActiveWorkout,
+  repeatWorkout
+}: WorkoutDetailLoadedProps) {
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
   const [isRenameSheetOpen, setIsRenameSheetOpen] = useState(false);
 
   const {
-    workout,
-    activeWorkout,
-    workoutExerciseRows,
-    exerciseById,
-    setsByWorkoutExerciseId,
-    totalVolume,
-    totalCompletedSets,
-    weightUnit,
-    canRepeatWorkout,
-    hasSavedTemplate
+    id: workoutId,
+    name: workoutName,
+    dateLabel,
+    durationLabel,
+    setCountLabel,
+    volumeLabel,
+    exerciseCountLabel,
+    exerciseBlocks,
+    canSaveAsTemplate,
+    repeatButtonLabel,
+    templateExerciseRows
   } = detail;
   const renameWorkout = useWorkoutRename();
-  const workoutName = workout.name;
   const deleteWorkout = useWorkoutDelete();
   const startWorkoutEdit = useHistoricalWorkoutEditStart();
-  const repeatWorkout = useRepeatWorkout({
-    workout,
-    activeWorkout,
-    workoutExerciseRows,
-    canRepeatWorkout
-  });
-  const workoutExerciseRowsForTemplate = useMemo(
-    () =>
-      workoutExerciseRows.map(workoutExercise => ({
-        exerciseId: workoutExercise.exerciseId,
-        order: workoutExercise.order,
-        supersetId: workoutExercise.supersetId
-      })),
-    [workoutExerciseRows]
-  );
-  const supersetBlocks = useMemo(() => {
-    return groupSupersetBlocks(workoutExerciseRows);
-  }, [workoutExerciseRows]);
-  const supersetLabelByBlockId = useMemo(() => {
-    let supersetIndex = 0;
-
-    return new Map(
-      supersetBlocks
-        .filter(block => block.supersetId)
-        .map(block => [block.id, formatSupersetLabel(supersetIndex++)])
-    );
-  }, [supersetBlocks]);
-
-  const workoutMetrics = useMemo(() => {
-    if (!workout?.startedAt) {
-      return [];
-    }
-
-    return [
-      {
-        label: 'Duration',
-        value: formatDuration({
-          startedAt: workout.startedAt,
-          completedAt: workout.completedAt
-        }),
-        icon: ClockIcon
-      },
-      {
-        label: 'Sets',
-        value: totalCompletedSets,
-        icon: DumbbellIcon
-      },
-      {
-        label: 'Volume',
-        value: `${formatWeightForUnit(totalVolume, weightUnit, {
-          useGrouping: true,
-          maximumFractionDigits: 0
-        })} ${weightUnit}`,
-        icon: LayersIcon
-      }
-    ];
-  }, [
-    totalCompletedSets,
-    totalVolume,
-    weightUnit,
-    workout.completedAt,
-    workout.startedAt
-  ]);
 
   const openActions = useCallback(() => setIsActionSheetOpen(true), []);
   const closeActions = useCallback(() => setIsActionSheetOpen(false), []);
@@ -174,7 +111,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
 
   const editWorkout = useCallback(() => {
     try {
-      const draftWorkout = startWorkoutEdit(workout.id);
+      const draftWorkout = startWorkoutEdit(workoutId);
 
       if (!draftWorkout) {
         showSnackbar({
@@ -189,7 +126,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
         variant: 'danger'
       });
     }
-  }, [startWorkoutEdit, workout.id]);
+  }, [startWorkoutEdit, workoutId]);
 
   const confirmDeleteWorkout = useCallback(() => {
     void confirmDialog({
@@ -203,7 +140,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
       }
 
       try {
-        const didDelete = deleteWorkout(workout.id);
+        const didDelete = deleteWorkout(workoutId);
 
         if (!didDelete) {
           showSnackbar({
@@ -230,13 +167,13 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
         });
       }
     });
-  }, [deleteWorkout, workout.id, workoutName]);
+  }, [deleteWorkout, workoutId, workoutName]);
 
   const handleRenameWorkout = useCallback(
     (nextName: string) => {
       try {
         const updatedWorkout = renameWorkout({
-          workoutId: workout.id,
+          workoutId,
           nextName
         });
 
@@ -251,7 +188,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
 
       return undefined;
     },
-    [renameWorkout, workout.id]
+    [renameWorkout, workoutId]
   );
 
   const historyHeader = useMemo(
@@ -260,15 +197,19 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
         <View>
           <Text variant="h2">{workoutName}</Text>
           <Text variant="small" tone="muted" className="mt-1">
-            {formatWorkoutDate(workout.startedAt, 'full')}
+            {dateLabel}
           </Text>
         </View>
 
         <View className="mt-6">
-          <WorkoutMetrics metrics={workoutMetrics} />
+          <WorkoutMetrics
+            durationLabel={durationLabel}
+            setCountLabel={setCountLabel}
+            volumeLabel={volumeLabel}
+          />
         </View>
 
-        {workoutExerciseRows.length > 0 && !hasSavedTemplate && (
+        {canSaveAsTemplate && (
           <View className="mt-6">
             <Button
               variant="secondary"
@@ -286,14 +227,14 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
             <Text variant="caption" tone="muted" className="tracking-widest">
               EXERCISES
             </Text>
-            {workoutExerciseRows.length > 0 && (
+            {exerciseCountLabel ? (
               <Text variant="caption" tone="muted">
-                {workoutExerciseRows.length} total
+                {exerciseCountLabel}
               </Text>
-            )}
+            ) : null}
           </View>
 
-          {workoutExerciseRows.length === 0 ? (
+          {exerciseBlocks.length === 0 ? (
             <EmptyState className="mt-3 py-8">
               <EmptyState.Title variant="bodyMedium">
                 No exercises were logged in this workout.
@@ -304,54 +245,50 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
       </View>
     ),
     [
-      hasSavedTemplate,
+      canSaveAsTemplate,
+      dateLabel,
+      durationLabel,
+      exerciseBlocks.length,
+      exerciseCountLabel,
       openTemplateSheet,
-      workoutExerciseRows.length,
-      workoutMetrics,
-      workoutName,
-      workout.startedAt
+      setCountLabel,
+      volumeLabel,
+      workoutName
     ]
   );
 
   const renderHistoryBlock = useCallback(
-    ({ item: block }: { item: (typeof supersetBlocks)[number] }) => {
+    ({ item: block }: { item: (typeof exerciseBlocks)[number] }) => {
       const renderExerciseCard = (
-        workoutExercise: (typeof workoutExerciseRows)[number],
+        exercise: (typeof block.exercises)[number],
         className?: string,
         isGrouped = false
       ) => {
-        const exercise = exerciseById.get(workoutExercise.exerciseId);
-        const completedSets =
-          setsByWorkoutExerciseId.get(workoutExercise.id) ?? [];
-
         return (
           <WorkoutHistoryExerciseCard
-            key={workoutExercise.id}
-            exerciseName={exercise?.name ?? 'Unknown exercise'}
+            key={exercise.id}
+            exercise={exercise}
             variant={isGrouped ? 'grouped' : 'default'}
-            completedSets={completedSets}
-            weightUnit={weightUnit}
-            trackingType={resolveTrackingType(exercise?.trackingType)}
             className={className}
           />
         );
       };
 
-      if (!block.supersetId) {
-        return renderExerciseCard(block.rows[0]);
+      if (!block.supersetLabel) {
+        return renderExerciseCard(block.exercises[0]);
       }
 
       return (
         <View className="mt-3">
           <SupersetExerciseGroup
-            rows={block.rows}
-            supersetLabel={supersetLabelByBlockId.get(block.id) ?? 'Superset'}
+            rows={block.exercises}
+            supersetLabel={block.supersetLabel}
             renderRow={({ row }) => renderExerciseCard(row, 'mt-0', true)}
           />
         </View>
       );
     },
-    [exerciseById, setsByWorkoutExerciseId, supersetLabelByBlockId, weightUnit]
+    []
   );
 
   return (
@@ -364,12 +301,12 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
           onPress={repeatWorkout}
           leftIcon={
             <Icon
-              as={activeWorkout ? PlayIcon : RepeatIcon}
+              as={hasActiveWorkout ? PlayIcon : RepeatIcon}
               tone="primaryForeground"
             />
           }
         >
-          {activeWorkout ? 'Resume active workout' : 'Repeat this workout'}
+          {repeatButtonLabel}
         </Button>
       }
     >
@@ -388,7 +325,7 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
         }}
       />
       <StyledFlashList
-        data={supersetBlocks}
+        data={exerciseBlocks}
         renderItem={renderHistoryBlock}
         keyExtractor={block => block.id}
         className="flex-1"
@@ -402,8 +339,8 @@ function WorkoutDetailLoaded({ detail }: WorkoutDetailLoadedProps) {
         <SaveWorkoutTemplateSheet
           isOpen
           initialName={workoutName}
-          sourceWorkoutId={workout.id}
-          workoutExerciseRows={workoutExerciseRowsForTemplate}
+          sourceWorkoutId={workoutId}
+          workoutExerciseRows={templateExerciseRows}
           onClose={closeTemplateSheet}
         />
       ) : null}

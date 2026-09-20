@@ -7,11 +7,14 @@ import { Text } from '@/src/components/ui/text';
 import { WorkoutLogCalendar } from '@/src/features/workouts/history/components/workout-log-calendar';
 import { WorkoutLogRow } from '@/src/features/workouts/history/components/workout-log-row';
 import { WorkoutLogStartSheet } from '@/src/features/workouts/history/components/workout-log-start-sheet';
-import type { CompletedWorkoutLogRow } from '@/src/features/workouts/history/history.repository';
 import {
   useWorkoutCalendarMarks,
   useWorkoutRowsForDate
 } from '@/src/features/workouts/history/hooks/use-workout-log';
+import {
+  mapWorkoutLogDay,
+  type WorkoutLogItemUiModel
+} from '@/src/features/workouts/history/workout-history.ui-model';
 import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { toLocalDateKey } from '@/src/lib/utils/date.utils';
 import { router } from 'expo-router';
@@ -64,17 +67,6 @@ function WorkoutListTransitionContainer({
   return <Animated.View style={animatedStyle}>{children}</Animated.View>;
 }
 
-function formatSelectedDate(dateKey: string): string {
-  const [year, month, day] = dateKey.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
-
-  return new Intl.DateTimeFormat(undefined, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short'
-  }).format(date);
-}
-
 export function WorkoutLogContent() {
   const [selectedDateKey, setSelectedDateKey] = useState(
     toLocalDateKey(Date.now())
@@ -94,7 +86,7 @@ export function WorkoutLogContent() {
     error: workoutCountsError
   } = useWorkoutCalendarMarks(WORKOUT_LOG_PAST_MONTH_RANGE);
   const {
-    workoutRows,
+    workouts,
     isLive: areWorkoutRowsLive,
     error: workoutRowsError
   } = useWorkoutRowsForDate(renderedDateKey);
@@ -224,18 +216,20 @@ export function WorkoutLogContent() {
   ]);
 
   const renderWorkoutRow = useCallback(
-    ({ item }: { item: CompletedWorkoutLogRow }) => (
+    ({ item }: { item: WorkoutLogItemUiModel }) => (
       <WorkoutListTransitionContainer
         opacity={workoutListOpacity}
         translateY={workoutListTranslateY}
       >
         <WorkoutLogRow
-          workout={item.workout}
-          setCount={item.setCount}
-          onPress={workout =>
+          name={item.name}
+          durationLabel={item.durationLabel}
+          dateLabel={item.dateLabel}
+          setCountLabel={item.setCountLabel}
+          onPress={() =>
             router.navigate({
               pathname: '/workouts/[id]',
-              params: { id: workout.id }
+              params: { id: item.id }
             })
           }
         />
@@ -245,10 +239,11 @@ export function WorkoutLogContent() {
   );
 
   const selectedWorkoutCount = workoutCountByDateKey.get(selectedDateKey) ?? 0;
-  const workoutCountLabel = `${selectedWorkoutCount} ${
-    selectedWorkoutCount === 1 ? 'workout' : 'workouts'
-  }`;
-  const hasWorkoutRows = workoutRows.length > 0;
+  const selectedDay = useMemo(
+    () => mapWorkoutLogDay(selectedDateKey, selectedWorkoutCount),
+    [selectedDateKey, selectedWorkoutCount]
+  );
+  const hasWorkoutRows = workouts.length > 0;
 
   const listHeader = useMemo(
     () => (
@@ -268,12 +263,12 @@ export function WorkoutLogContent() {
               Selected day
             </Text>
             <Text variant="h3" className="mt-1">
-              {formatSelectedDate(selectedDateKey)}
+              {selectedDay.dateLabel}
             </Text>
           </View>
           {areWorkoutCountsLive ? (
             <Text variant="caption" tone="muted">
-              {workoutCountLabel}
+              {selectedDay.workoutCountLabel}
             </Text>
           ) : workoutCountsError ? null : (
             <View
@@ -313,7 +308,7 @@ export function WorkoutLogContent() {
       selectDate,
       selectedDateKey,
       workoutCountByDateKey,
-      workoutCountLabel,
+      selectedDay,
       workoutCountsError
     ]
   );
@@ -321,10 +316,10 @@ export function WorkoutLogContent() {
   return (
     <>
       <StyledFlatList
-        data={workoutRows}
+        data={workouts}
         className="flex-1"
         directionalLockEnabled
-        keyExtractor={item => item.workout.id}
+        keyExtractor={item => item.id}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={listHeader}
