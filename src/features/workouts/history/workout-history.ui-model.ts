@@ -1,16 +1,11 @@
 import type { Exercise, Set, Workout, WorkoutExercise } from '@/src/db/schema';
-import {
-  formatTrackingValue,
-  getSetValues,
-  resolveTrackingType
-} from '@/src/features/progress/tracking.domain';
+import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
 import type { CompletedWorkoutLogRow } from '@/src/features/workouts/history/history.repository';
 import type { WorkoutStartTemplateItem } from '@/src/features/workouts/templates/workout-template.repository';
 import {
-  formatDisplaySetPosition,
-  getDisplaySetGroups,
-  getWeightRepsVolume
-} from '@/src/features/workouts/shared/set-display.utils';
+  mapWorkoutExerciseSummary,
+  type WorkoutExerciseSummaryUiModel
+} from '@/src/features/workouts/shared/workout-exercise-summary.ui-model';
 import {
   formatSupersetLabel,
   groupSupersetBlocks
@@ -34,19 +29,8 @@ export interface WorkoutLogDayUiModel {
   workoutCountLabel: string;
 }
 
-export interface WorkoutHistorySetUiModel {
+export interface WorkoutHistoryExerciseUiModel extends WorkoutExerciseSummaryUiModel {
   id: string;
-  positionLabel: string;
-  valueLabel: string;
-}
-
-export interface WorkoutHistoryExerciseUiModel {
-  id: string;
-  exerciseName: string;
-  setCountLabel?: string;
-  latestSetLabel?: string;
-  volumeLabel?: string;
-  setRows: WorkoutHistorySetUiModel[];
 }
 
 export interface WorkoutHistoryBlockUiModel {
@@ -164,46 +148,15 @@ function mapWorkoutHistoryExercise(
   weightUnit: WeightUnit
 ): GroupableWorkoutHistoryExerciseUiModel {
   const trackingType = resolveTrackingType(exercise?.trackingType);
-  const displayGroups = getDisplaySetGroups(
-    completedSets,
-    undefined,
-    trackingType
-  );
-  const latestSet = completedSets.at(-1);
 
   return {
     id: workoutExercise.id,
-    exerciseName: exercise?.name ?? 'Unknown exercise',
-    setCountLabel:
-      completedSets.length > 0
-        ? formatSetCount(completedSets.length)
-        : undefined,
-    latestSetLabel: latestSet
-      ? formatTrackingValue(trackingType, getSetValues(latestSet), weightUnit)
-      : undefined,
-    volumeLabel:
-      completedSets.length > 0 && trackingType === 'weight_reps'
-        ? `${formatWeightForUnit(
-            getWeightRepsVolume(completedSets),
-            weightUnit,
-            {
-              useGrouping: true,
-              maximumFractionDigits: 0
-            }
-          )} ${weightUnit} total`
-        : undefined,
-    setRows:
-      displayGroups.length > 1
-        ? displayGroups.map(group => ({
-            id: group.setIds.join('-'),
-            positionLabel: formatDisplaySetPosition(group),
-            valueLabel: formatTrackingValue(
-              trackingType,
-              getSetValues(group.set),
-              weightUnit
-            )
-          }))
-        : [],
+    ...mapWorkoutExerciseSummary({
+      exerciseName: exercise?.name ?? 'Unknown exercise',
+      completedSets,
+      weightUnit,
+      trackingType
+    }),
     supersetId: workoutExercise.supersetId
   };
 }
