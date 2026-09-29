@@ -44,7 +44,6 @@ const rowEntering = FadeInUp.duration(MOTION_DURATION_MS.standard)
     opacity: 0,
     transform: [{ translateY: 8 }]
   });
-const rowEnteringAfterEmpty = rowEntering.delay(MOTION_DURATION_MS.exit);
 const rowExiting = FadeOut.duration(MOTION_DURATION_MS.exit).easing(rowEaseOut);
 const rowLayout = LinearTransition.springify().dampingRatio(1).stiffness(200);
 const saveStateEntering = FadeIn.duration(MOTION_DURATION_MS.pressIn).easing(
@@ -62,7 +61,6 @@ interface SetFormRowProps {
   weightUnit: ReturnType<typeof useSettings>['weightUnit'];
   fieldColors: SetFormFieldColors;
   hasPendingCopy: boolean;
-  shouldDelayEntering?: boolean;
   onFieldChange: (
     row: SetFormRowModel,
     field: TrackingFieldDefinition,
@@ -89,7 +87,6 @@ export function SetFormRow({
   weightUnit,
   fieldColors,
   hasPendingCopy,
-  shouldDelayEntering = false,
   onFieldChange,
   onCommit,
   onCopy,
@@ -110,11 +107,7 @@ export function SetFormRow({
       )
     : '-';
   const entering =
-    row.animateOnMount && !reduceMotion
-      ? shouldDelayEntering
-        ? rowEnteringAfterEmpty
-        : rowEntering
-      : undefined;
+    row.animateOnMount && !reduceMotion ? rowEntering : undefined;
 
   return (
     <Animated.View

@@ -51,6 +51,7 @@ function ExerciseTrackContent({
 
   const scrollViewRef = useRef<ScrollView>(null);
   const focusedRowKeyRef = useRef<string | null>(null);
+  const rowKeyToScrollToRef = useRef<string | null>(null);
   const pendingAnimationFramesRef = useRef(new Set<number>());
   const pendingIdleTasksRef = useRef(new Set<() => void>());
   const rowLayoutsRef = useRef(new Map<string, LayoutRectangle>());
@@ -65,23 +66,16 @@ function ExerciseTrackContent({
     pendingAnimationFramesRef.current.add(animationFrame);
   }, [reduceMotion]);
 
-  const schedulePostMutationWork = useCallback(
-    ({ shouldScroll }: { shouldScroll: boolean }) => {
-      let cancelIdleTask: () => void = () => undefined;
+  const schedulePostMutationWork = useCallback(() => {
+    let cancelIdleTask: () => void = () => undefined;
 
-      cancelIdleTask = scheduleIdleTask(() => {
-        pendingIdleTasksRef.current.delete(cancelIdleTask);
-        void refreshHistory();
+    cancelIdleTask = scheduleIdleTask(() => {
+      pendingIdleTasksRef.current.delete(cancelIdleTask);
+      void refreshHistory();
+    });
 
-        if (shouldScroll) {
-          scrollToBottom();
-        }
-      });
-
-      pendingIdleTasksRef.current.add(cancelIdleTask);
-    },
-    [refreshHistory, scrollToBottom]
-  );
+    pendingIdleTasksRef.current.add(cancelIdleTask);
+  }, [refreshHistory]);
 
   const scrollToFocusedRow = useCallback(() => {
     const focusedRowKey = focusedRowKeyRef.current;
@@ -161,9 +155,18 @@ function ExerciseTrackContent({
   const handleRowLayout = useCallback(
     (rowKey: string, layout: LayoutRectangle) => {
       rowLayoutsRef.current.set(rowKey, layout);
+
+      if (rowKeyToScrollToRef.current === rowKey) {
+        rowKeyToScrollToRef.current = null;
+        scrollToBottom();
+      }
     },
-    []
+    [scrollToBottom]
   );
+
+  const handleRowAdded = useCallback((rowKey: string) => {
+    rowKeyToScrollToRef.current = rowKey;
+  }, []);
 
   const {
     addSet: _handleAddSet,
@@ -180,14 +183,11 @@ function ExerciseTrackContent({
   });
 
   const handleAddSet = async (
-    data: Parameters<typeof _handleAddSet>[0],
-    options?: { shouldScrollAfterMutation?: boolean }
+    data: Parameters<typeof _handleAddSet>[0]
   ): Promise<Set> => {
     const createdSet = await Promise.resolve(_handleAddSet(data));
 
-    schedulePostMutationWork({
-      shouldScroll: options?.shouldScrollAfterMutation ?? true
-    });
+    schedulePostMutationWork();
 
     return createdSet;
   };
@@ -197,7 +197,7 @@ function ExerciseTrackContent({
   ): Promise<Set | undefined> => {
     const updatedSet = await Promise.resolve(_handleUpdateSet(data));
 
-    schedulePostMutationWork({ shouldScroll: false });
+    schedulePostMutationWork();
 
     return updatedSet;
   };
@@ -206,7 +206,7 @@ function ExerciseTrackContent({
     setId: Parameters<typeof _handleDeleteSet>[0]
   ) => {
     await Promise.resolve(_handleDeleteSet(setId));
-    schedulePostMutationWork({ shouldScroll: false });
+    schedulePostMutationWork();
   };
 
   return (
@@ -230,6 +230,7 @@ function ExerciseTrackContent({
         enableStopwatch={mode === 'active'}
         onRowFocus={handleRowFocus}
         onRowLayout={handleRowLayout}
+        onRowAdded={handleRowAdded}
         onAddSet={handleAddSet}
         onUpdateSet={handleUpdateSet}
         onDeleteSet={handleDeleteSet}

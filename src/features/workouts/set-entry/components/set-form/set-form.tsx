@@ -17,7 +17,7 @@ import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { useAppTheme } from '@/src/theme/app-theme-provider';
 import { PlusIcon } from 'lucide-react-native';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, type LayoutChangeEvent } from 'react-native';
 import Animated, {
   Easing,
@@ -41,9 +41,6 @@ const formEaseOut = Easing.bezier(0.23, 1, 0.32, 1);
 const formStateEntering = FadeIn.duration(MOTION_DURATION_MS.standard).easing(
   formEaseOut
 );
-const formStateEnteringAfterEmpty = FadeIn.delay(MOTION_DURATION_MS.exit)
-  .duration(MOTION_DURATION_MS.standard)
-  .easing(formEaseOut);
 const formStateExiting = FadeOut.duration(MOTION_DURATION_MS.exit).easing(
   formEaseOut
 );
@@ -81,14 +78,12 @@ interface SetFormProps {
     rowKey: string,
     layout: LayoutChangeEvent['nativeEvent']['layout']
   ) => void;
-  onAddSet: (
-    data: SetValues & { order: Set['order'] },
-    options?: { shouldScrollAfterMutation?: boolean }
-  ) => Set | Promise<Set>;
+  onAddSet: (data: SetValues & { order: Set['order'] }) => Set | Promise<Set>;
   onUpdateSet: (
     data: SetValues & { setId: Set['id'] }
   ) => Set | undefined | Promise<Set | undefined>;
   onDeleteSet: (setId: Set['id']) => void | Promise<void>;
+  onRowAdded?: (rowKey: string) => void;
 }
 
 export function SetForm({
@@ -100,7 +95,8 @@ export function SetForm({
   onRowLayout,
   onAddSet,
   onUpdateSet,
-  onDeleteSet
+  onDeleteSet,
+  onRowAdded
 }: SetFormProps) {
   const reduceMotion = useReducedMotion();
   const [shouldAnimateStateChange, setShouldAnimateStateChange] =
@@ -136,20 +132,15 @@ export function SetForm({
     previousSets,
     onAddSet,
     onUpdateSet,
-    onDeleteSet
+    onDeleteSet,
+    onRowAdded
   });
   const hasRows = controller.rows.length > 0;
-  const previousHasRowsRef = useRef(hasRows);
-  const isEnteringFilledState = hasRows && !previousHasRowsRef.current;
   const layoutTransition = reduceMotion ? undefined : formLayout;
 
   useEffect(() => {
     setShouldAnimateStateChange(true);
   }, []);
-
-  useEffect(() => {
-    previousHasRowsRef.current = hasRows;
-  }, [hasRows]);
 
   return (
     <View className="flex-1">
@@ -163,7 +154,6 @@ export function SetForm({
             weightUnit={weightUnit}
             fieldColors={animatedFieldColors}
             hasPendingCopy={controller.hasPendingCopy}
-            shouldDelayEntering={isEnteringFilledState && !reduceMotion}
             onFieldChange={controller.updateFieldValue}
             onCommit={controller.commitRow}
             onCopy={controller.copyRow}
@@ -180,9 +170,7 @@ export function SetForm({
           key="controls"
           entering={
             shouldAnimateStateChange && !reduceMotion
-              ? isEnteringFilledState
-                ? formStateEnteringAfterEmpty
-                : formStateEntering
+              ? formStateEntering
               : undefined
           }
           exiting={
