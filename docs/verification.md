@@ -70,6 +70,8 @@ Conventions for the levels above; read this and the nearest example before writi
   `tests/features/steps/steps.repository.db.test.ts`). Unit tests end in `.test.ts`,
   component tests in `.test.tsx`, database integration tests in `.db.test.ts`; native
   and tooling tests are `tests/native/*.test.ts` and `tests/tooling/*.test.ts`.
+  `tests/compat/<project>` holds library contract tests that no real test covers; each
+  names the upgrade it catches.
 - **Support helpers:** `tests/support/db.ts` opens migrated real-SQLite databases
   (`createMigratedTestDatabase`, `closeTestDatabases`), `tests/support/factories.ts`
   builds rows with fixed IDs and timestamps, and `tests/support/sqlite-adapter.ts`

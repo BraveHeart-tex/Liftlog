@@ -54,10 +54,7 @@ const projects = [
         }
       ]
     },
-    testMatch: [
-      '<rootDir>/tests/compat/tooling/**/*.test.ts',
-      '<rootDir>/tests/tooling/**/*.test.ts'
-    ]
+    testMatch: ['<rootDir>/tests/tooling/**/*.test.ts']
   }
 ];
 

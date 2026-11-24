@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 // body against its parent template. Returns problems as plain sentences; an empty list
 // passes. Prose rules lose to an author's pull toward completeness, so the size limits
 // are enforced here.
-export const sizeLimits = {
+const sizeLimits = {
   Migrations: 1,
   'New screens': 3,
   'Native modules': 1,

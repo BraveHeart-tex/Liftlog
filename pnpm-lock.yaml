@@ -213,6 +213,9 @@ importers:
       '@typescript-eslint/parser':
         specifier: 8.58.1
         version: 8.58.1(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)
+      babel-jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@babel/core@7.29.6)
       babel-plugin-inline-import:
         specifier: 3.0.0
         version: 3.0.0
@@ -264,9 +267,6 @@ importers:
       tailwindcss:
         specifier: ^4.2.2
         version: 4.2.2
-      tsx:
-        specifier: 4.21.0
-        version: 4.21.0
       typescript:
         specifier: ~5.9.2
         version: 5.9.3
@@ -6998,7 +6998,7 @@ snapshots:
 
   '@babel/generator@7.29.7':
     dependencies:
-      '@babel/parser': 7.29.7
+      '@babel/parser': 7.29.8
       '@babel/types': 7.29.8
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
@@ -12822,7 +12822,7 @@ snapshots:
     dependencies:
       '@babel/core': 7.29.6
       '@babel/generator': 7.29.8
-      '@babel/parser': 7.29.7
+      '@babel/parser': 7.29.8
       '@babel/types': 7.29.8
       flow-enums-runtime: 0.0.6
       metro: 0.83.3
@@ -12863,7 +12863,7 @@ snapshots:
       '@babel/code-frame': 7.29.7
       '@babel/core': 7.29.6
       '@babel/generator': 7.29.8
-      '@babel/parser': 7.29.7
+      '@babel/parser': 7.29.8
       '@babel/template': 7.28.6
       '@babel/traverse': 7.29.0
       '@babel/types': 7.29.8

@@ -1,9 +1,0 @@
-{
-  "extends": "../tsconfig.json",
-  "compilerOptions": {
-    "paths": {
-      "@/*": ["../*"],
-      "lucide-react-native": ["./mocks/lucide-react-native.ts"]
-    }
-  }
-}
