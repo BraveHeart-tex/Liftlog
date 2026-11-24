@@ -1,148 +1,121 @@
+import { exercises } from '@/src/db/schema';
 import type { DrizzleDb } from '@/src/db/client';
 import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
-import assert from 'node:assert/strict';
+import type { ReplaceBackupOptions } from '@/src/features/backup/backup.service';
+import {
+  closeTestDatabases,
+  createMigratedTestDatabase
+} from '@/tests/support/db';
+import { createBackup, seedTrackedExercise } from '@/tests/support/factories';
 
-const events: string[] = [];
-
-const backup: LiftLogBackupV2 = {
-  format: 'liftlog-backup',
-  schemaVersion: 2,
-  createdAt: '2026-09-05T12:00:00.000Z',
-  appVersion: '1.0.0',
-  data: {
-    exercises: [],
-    workouts: [],
-    workoutExercises: [],
-    sets: [],
-    workoutTemplates: [],
-    workoutTemplateExercises: [],
-    settings: {
-      weightUnit: 'kg',
-      restTimerDuration: 90,
-      restTimerPresets: [],
-      restTimerNotificationsEnabled: true,
-      healthConnectStepsEnabled: false,
-      stepGoal: 10000
-    },
-    themePreference: 'system'
-  }
-};
-
-jest.doMock('expo-constants', () => ({
-  __esModule: true,
-  default: { expoConfig: { version: '1.0.0' } }
-}));
+// jest-expo loads no native File/Paths for expo-file-system, so Paths is undefined.
 jest.doMock('expo-file-system', () => ({
   File: class {},
-  Paths: {
-    cache: { uri: 'cache:' },
-    document: { uri: 'document:' }
-  }
-}));
-jest.doMock('expo-file-system/legacy', () => ({
-  deleteAsync: async () => undefined,
-  moveAsync: async () => undefined,
-  writeAsStringAsync: async () => undefined
-}));
-jest.doMock('expo-sharing', () => ({
-  isAvailableAsync: async () => true,
-  shareAsync: async () => undefined
-}));
-jest.doMock('@/src/features/backup/backup.repository', () => ({
-  createBackupSnapshot: () => backup,
-  replaceBackupData: () => {
-    events.push('replace-data');
-  }
-}));
-jest.doMock(
-  '@/src/features/rest-timer/rest-timer-notifications.service',
-  () => ({
-    cancelRestTimerNotification: async () => {
-      events.push('cancel-notification');
-    }
-  })
-);
-jest.doMock('@/src/features/rest-timer/rest-timer.store', () => ({
-  useRestTimerStore: {
-    getState: () => ({
-      cancel: () => {
-        events.push('cancel-timer');
-      }
-    })
-  }
-}));
-jest.doMock('@/src/lib/db/live-query-refresh', () => ({
-  refreshLiveQueries: () => {
-    events.push('refresh');
-  }
-}));
-jest.doMock('@/src/theme/theme-preference', () => ({
-  getThemePreference: () => 'system',
-  setThemePreference: () => {
-    events.push('set-theme');
-  }
+  Paths: { cache: { uri: 'cache:' }, document: { uri: 'document:' } }
 }));
 
 const servicePromise = import('@/src/features/backup/backup.service');
 
-test('replace-all cancels the active timer before its pending notification', async () => {
-  const service = await servicePromise;
-  events.length = 0;
+afterEach(closeTestDatabases);
 
-  await service.replaceAllWithBackup({} as DrizzleDb, backup, {
+const importedExercise = {
+  id: 'exercise-imported',
+  name: 'Imported lift',
+  normalizedName: 'imported lift',
+  equipment: null,
+  trackingType: 'reps' as const,
+  primaryMuscles: null,
+  secondaryMuscles: null,
+  isCustom: 1,
+  isArchived: 0,
+  createdAt: 1
+};
+
+/** Which data the database holds at the moment a port runs. */
+function dataState(db: DrizzleDb) {
+  const ids = db
+    .select({ id: exercises.id })
+    .from(exercises)
+    .all()
+    .map(row => row.id);
+
+  return ids.includes(importedExercise.id) ? 'imported' : 'local';
+}
+
+function harness(db: DrizzleDb) {
+  const events: string[] = [];
+  const files = new Map<string, string>();
+  const record = (event: string) => {
+    events.push(`${event}:${dataState(db)}`);
+  };
+
+  const options: ReplaceBackupOptions = {
     now: new Date('2026-09-05T12:00:00.000Z'),
+    themePreference: 'system',
     filePort: {
-      write: async () => {
-        events.push('write-safety-backup');
+      write: async (uri: string, contents: string) => {
+        files.set(uri, contents);
+        record('write-safety-backup');
       },
-      promote: async () => {
-        events.push('promote-safety-backup');
-      },
-      remove: async () => {
-        events.push('remove-temporary-file');
-      },
+      promote: async () => record('promote-safety-backup'),
+      remove: async () => record('remove-temporary-file'),
       read: async () => '',
       share: async () => undefined
     },
-    cancelTimer: () => events.push('cancel-timer'),
-    cancelNotification: async () => {
-      events.push('cancel-notification');
-    },
-    setTheme: () => events.push('set-theme'),
-    refreshLiveQueries: () => events.push('refresh')
-  });
+    cancelTimer: () => record('cancel-timer'),
+    cancelNotification: async () => record('cancel-notification'),
+    setTheme: () => record('set-theme'),
+    refreshLiveQueries: () => record('refresh')
+  };
 
-  assert.deepEqual(events, [
-    'write-safety-backup',
-    'promote-safety-backup',
-    'cancel-timer',
-    'cancel-notification',
-    'replace-data',
-    'set-theme',
-    'refresh',
-    'remove-temporary-file'
+  return { events, files, options };
+}
+
+test('replace-all writes the Safety backup first and cancels the timer before its notification', async () => {
+  const { replaceAllWithBackup } = await servicePromise;
+  const { db } = await createMigratedTestDatabase();
+  seedTrackedExercise(db);
+  const { events, files, options } = harness(db);
+
+  await replaceAllWithBackup(
+    db,
+    createBackup({ data: { exercises: [importedExercise] } }),
+    options
+  );
+
+  expect(events).toEqual([
+    'write-safety-backup:local',
+    'promote-safety-backup:local',
+    'cancel-timer:local',
+    'cancel-notification:local',
+    'set-theme:imported',
+    'refresh:imported',
+    'remove-temporary-file:imported'
   ]);
+  const [safetyContents] = files.values();
+  expect(
+    (JSON.parse(safetyContents) as LiftLogBackupV2).data.exercises.map(
+      row => row.id
+    )
+  ).toEqual(['exercise-1']);
 });
 
 test('replace-all validates v2 settings before touching timer or safety state', async () => {
-  const service = await servicePromise;
-  events.length = 0;
-  const invalidBackup = {
-    ...backup,
-    data: {
-      ...backup.data,
-      settings: {
-        ...backup.data.settings,
-        restTimerNotificationsEnabled: undefined
-      }
+  const { replaceAllWithBackup } = await servicePromise;
+  const { db } = await createMigratedTestDatabase();
+  seedTrackedExercise(db);
+  const { events, options } = harness(db);
+  const invalidBackup = createBackup({
+    data: { exercises: [importedExercise] },
+    settings: {
+      restTimerNotificationsEnabled: undefined as unknown as boolean
     }
-  } as unknown as LiftLogBackupV2;
+  });
 
-  await assert.rejects(
-    service.replaceAllWithBackup({} as DrizzleDb, invalidBackup, {
-      cancelTimer: () => events.push('cancel-timer')
-    })
-  );
+  await expect(
+    replaceAllWithBackup(db, invalidBackup, options)
+  ).rejects.toThrow();
 
-  assert.deepEqual(events, []);
+  expect(events).toEqual([]);
+  expect(dataState(db)).toBe('local');
 });

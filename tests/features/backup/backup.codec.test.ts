@@ -8,12 +8,9 @@ import {
 } from '@/src/features/backup/backup.codec';
 import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 import assert from 'node:assert/strict';
+import { createBackup } from '@/tests/support/factories';
 
-const backup: LiftLogBackupV2 = {
-  format: 'liftlog-backup',
-  schemaVersion: 2,
-  createdAt: '2026-09-05T12:00:00.000Z',
-  appVersion: '1.0.0',
+const backup = createBackup({
   data: {
     exercises: [
       {
@@ -28,23 +25,10 @@ const backup: LiftLogBackupV2 = {
         isArchived: 0,
         createdAt: 1
       }
-    ],
-    workouts: [],
-    workoutExercises: [],
-    sets: [],
-    workoutTemplates: [],
-    workoutTemplateExercises: [],
-    settings: {
-      weightUnit: 'kg',
-      restTimerDuration: 90,
-      restTimerPresets: [],
-      restTimerNotificationsEnabled: true,
-      healthConnectStepsEnabled: false,
-      stepGoal: 10000
-    },
-    themePreference: 'system'
-  }
-};
+    ]
+  },
+  settings: { restTimerNotificationsEnabled: true }
+});
 
 test('serializes and parses a supported backup envelope', () => {
   assert.deepEqual(parseBackupJson(serializeBackup(backup)), backup);

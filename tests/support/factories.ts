@@ -5,6 +5,10 @@ import {
   workoutExercises,
   workouts
 } from '@/src/db/schema';
+import type {
+  BackupSettingsV2,
+  LiftLogBackupV2
+} from '@/src/features/backup/backup.types';
 import { createCompletedSet } from '@/src/features/workouts/set-entry/set-entry.repository';
 
 // Fixed IDs and timestamps only, so every run produces identical rows.
@@ -62,5 +66,39 @@ export function createStepDay(index: number): NewHealthStepDay {
     startAt: index * 1_000,
     endAt: index * 1_000 + 999,
     syncedAt: 10_000 + index
+  };
+}
+
+/** An empty, valid v2 Backup envelope; overrides replace data tables and settings. */
+export function createBackup(
+  overrides: {
+    data?: Partial<Omit<LiftLogBackupV2['data'], 'settings'>>;
+    settings?: Partial<BackupSettingsV2>;
+  } = {}
+): LiftLogBackupV2 {
+  return {
+    format: 'liftlog-backup',
+    schemaVersion: 2,
+    createdAt: '2026-09-05T12:00:00.000Z',
+    appVersion: '1.0.0',
+    data: {
+      exercises: [],
+      workouts: [],
+      workoutExercises: [],
+      sets: [],
+      workoutTemplates: [],
+      workoutTemplateExercises: [],
+      themePreference: 'system',
+      ...overrides.data,
+      settings: {
+        weightUnit: 'kg',
+        restTimerDuration: 90,
+        restTimerPresets: [],
+        restTimerNotificationsEnabled: false,
+        healthConnectStepsEnabled: false,
+        stepGoal: 10000,
+        ...overrides.settings
+      }
+    }
   };
 }

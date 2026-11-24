@@ -3,8 +3,8 @@ import {
   type SafetyBackupReader
 } from '@/src/features/backup/backup-safety';
 import { serializeBackup } from '@/src/features/backup/backup.codec';
-import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 import assert from 'node:assert/strict';
+import { createBackup } from '@/tests/support/factories';
 
 const safetyUri = 'safety-backup.json';
 
@@ -18,32 +18,6 @@ function createFileReader(files: Map<string, string>): SafetyBackupReader {
       }
 
       return contents;
-    }
-  };
-}
-
-function createBackup(): LiftLogBackupV2 {
-  return {
-    format: 'liftlog-backup',
-    schemaVersion: 2,
-    createdAt: '2026-09-05T12:00:00.000Z',
-    appVersion: '1.0.0',
-    data: {
-      exercises: [],
-      workouts: [],
-      workoutExercises: [],
-      sets: [],
-      workoutTemplates: [],
-      workoutTemplateExercises: [],
-      settings: {
-        weightUnit: 'kg',
-        restTimerDuration: 90,
-        restTimerPresets: [],
-        restTimerNotificationsEnabled: false,
-        healthConnectStepsEnabled: false,
-        stepGoal: 10000
-      },
-      themePreference: 'system'
     }
   };
 }

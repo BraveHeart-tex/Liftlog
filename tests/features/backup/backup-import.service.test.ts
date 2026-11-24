@@ -4,32 +4,19 @@ import {
 } from '@/src/features/backup/backup-preview';
 import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 import assert from 'node:assert/strict';
+import { createBackup } from '@/tests/support/factories';
 
+const versionOne = createBackup();
 const backup = {
-  format: 'liftlog-backup',
+  ...versionOne,
   schemaVersion: 1,
-  createdAt: '2026-09-05T12:00:00.000Z',
-  appVersion: '1.0.0',
   data: {
-    exercises: [],
-    workouts: [
-      {
-        id: 'workout-1',
-        status: 'in_progress'
-      }
-    ],
-    workoutExercises: [],
-    sets: [],
-    workoutTemplates: [],
-    workoutTemplateExercises: [],
+    ...versionOne.data,
+    workouts: [{ id: 'workout-1', status: 'in_progress' }],
     settings: {
-      weightUnit: 'kg',
-      restTimerDuration: 90,
-      restTimerPresets: [],
-      healthConnectStepsEnabled: false,
-      stepGoal: 10000
-    },
-    themePreference: 'system'
+      ...versionOne.data.settings,
+      restTimerNotificationsEnabled: undefined
+    }
   }
 } as unknown as LiftLogBackupV2;
 
