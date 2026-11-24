@@ -6,6 +6,7 @@ import { compileModsAsync } from 'expo/config-plugins';
 import assert from 'node:assert/strict';
 import {
   chmodSync,
+  cpSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -62,13 +63,32 @@ const signingEnvironmentVariables = [
 const appConfig = loadModule(resolve(projectRoot, 'app.json')) as {
   expo: {
     version: string;
-    android: { package: string; versionCode: number; permissions: string[] };
+    android: { package: string; versionCode: number };
     plugins: (string | [string, Record<string, unknown>])[];
   };
 };
 const releaseConfig = loadModule(
   resolve(projectRoot, 'config/android-release.json')
 ) as { certificateSha256: string };
+
+// ADR-0007 Keep rows whose origin reaches the generated manifest (template,
+// app.json, config plugins). Library-merged rows appear only in the APK (#148).
+const generatedPermissionAllowlist = [
+  'android.permission.INTERNET',
+  'android.permission.REQUEST_INSTALL_PACKAGES',
+  'android.permission.SCHEDULE_EXACT_ALARM',
+  'android.permission.VIBRATE',
+  'android.permission.health.READ_HEALTH_DATA_HISTORY',
+  'android.permission.health.READ_STEPS'
+];
+
+function requestedPermissions(manifest: string): string[] {
+  return [...manifest.matchAll(/<uses-permission(?:-sdk-23)?\b[^>]*>/g)]
+    .map(match => match[0])
+    .filter(element => !/tools:node="remove"/.test(element))
+    .map(element => /android:name="([^"]+)"/.exec(element)?.[1] ?? element)
+    .sort();
+}
 
 async function runPlugin(projectDirectory: string): Promise<void> {
   const withAndroidReleaseSigning = loadModule(pluginPath) as (
@@ -132,18 +152,6 @@ test('source config declares a positive Android version code', () => {
 });
 
 test('source config declares the rest timer Android notification contract', () => {
-  assert.equal(
-    appConfig.expo.android.permissions.includes(
-      'android.permission.SCHEDULE_EXACT_ALARM'
-    ),
-    true
-  );
-  assert.equal(
-    appConfig.expo.android.permissions.includes(
-      'android.permission.USE_EXACT_ALARM'
-    ),
-    false
-  );
   const moduleManifest = readFileSync(exactAlarmManifestPath, 'utf8');
 
   assert.match(moduleManifest, /android\.permission\.SCHEDULE_EXACT_ALARM/);
@@ -295,8 +303,7 @@ test('clean Expo SDK 54 prebuild generates release signing configuration', () =>
         version: appConfig.expo.version,
         android: {
           package: appConfig.expo.android.package,
-          versionCode: appConfig.expo.android.versionCode,
-          permissions: appConfig.expo.android.permissions
+          versionCode: appConfig.expo.android.versionCode
         },
         plugins: [notificationsProguardPluginPath, pluginPath]
       }
@@ -346,25 +353,64 @@ test('clean Expo SDK 54 prebuild generates release signing configuration', () =>
       ),
       /-keep class expo\.modules\.notifications\.\*\* \{ \*; \}/
     );
-    const generatedManifest = readFileSync(
-      join(
-        projectDirectory,
-        'android',
-        'app',
-        'src',
-        'main',
-        'AndroidManifest.xml'
-      ),
-      'utf8'
+  } finally {
+    rmSync(projectDirectory, { recursive: true, force: true });
+  }
+}, 60_000);
+
+test('generated Android manifest requests only the permission policy allowlist', () => {
+  const projectDirectory = mkdtempSync(
+    join(tmpdir(), 'liftlog-generated-permissions-')
+  );
+
+  for (const entry of ['app.json', 'package.json', 'assets', 'plugins']) {
+    cpSync(resolve(projectRoot, entry), join(projectDirectory, entry), {
+      recursive: true
+    });
+  }
+
+  symlinkSync(
+    resolve(projectRoot, 'node_modules'),
+    join(projectDirectory, 'node_modules'),
+    'dir'
+  );
+
+  const result = spawnSync(
+    resolve(projectRoot, 'node_modules/.bin/expo'),
+    ['prebuild', '--clean', '--platform', 'android', '--no-install'],
+    {
+      cwd: projectDirectory,
+      env: { ...process.env, CI: 'true', EXPO_NO_GIT_STATUS: '1' },
+      encoding: 'utf8'
+    }
+  );
+
+  try {
+    assert.equal(result.status, 0, result.stderr);
+    const permissions = requestedPermissions(
+      readFileSync(
+        join(
+          projectDirectory,
+          'android',
+          'app',
+          'src',
+          'main',
+          'AndroidManifest.xml'
+        ),
+        'utf8'
+      )
+    );
+    const unexpected = permissions.filter(
+      permission => !generatedPermissionAllowlist.includes(permission)
+    );
+    const missing = generatedPermissionAllowlist.filter(
+      permission => !permissions.includes(permission)
     );
 
-    assert.match(
-      generatedManifest,
-      /android\.permission\.SCHEDULE_EXACT_ALARM/
-    );
-    assert.doesNotMatch(
-      generatedManifest,
-      /android\.permission\.USE_EXACT_ALARM/
+    assert.deepEqual(
+      { unexpected, missing },
+      { unexpected: [], missing: [] },
+      `Generated manifest permissions differ from ADR-0007. Unexpected: ${unexpected.join(', ') || 'none'}. Missing: ${missing.join(', ') || 'none'}.`
     );
   } finally {
     rmSync(projectDirectory, { recursive: true, force: true });
