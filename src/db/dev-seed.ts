@@ -14,13 +14,26 @@ import {
   type NewSet
 } from '@/src/db/schema';
 import { computeEstimated1RM } from '@/src/features/progress/progress.repository';
+import {
+  SETTINGS_KEYS,
+  type RestTimerPreset
+} from '@/src/features/settings/settings.repository';
 import { toLocalDateKey } from '@/src/lib/utils/date.utils';
+import { generateUuid } from '@/src/lib/utils/uuid.utils';
 import { eq, inArray } from 'drizzle-orm';
 
 const DEV_SEED_KEY = 'dev_mock_seed_version';
 const DEV_SEED_VERSION = '1';
 const MAX_WORKOUTS = 150;
 const DAY_MS = 24 * 60 * 60 * 1000;
+// 999 SQL variables per statement, as in step sync; 12 columns per row.
+const PERSONAL_RECORD_INSERT_CHUNK_SIZE = Math.floor(999 / 12);
+const REST_TIMER_PRESETS: Omit<RestTimerPreset, 'id'>[] = [
+  { name: 'Accessory', durationSeconds: 60 },
+  { name: 'Hypertrophy', durationSeconds: 90 },
+  { name: 'Compound', durationSeconds: 180 },
+  { name: 'Heavy', durationSeconds: 300 }
+];
 
 interface WorkoutPlan {
   name: string;
@@ -412,9 +425,30 @@ export function runDevSeedIfNeeded(db: DrizzleDb): void {
       }
     }
 
-    if (personalRecordRows.length > 0) {
-      tx.insert(personalRecords).values(personalRecordRows).run();
+    for (
+      let index = 0;
+      index < personalRecordRows.length;
+      index += PERSONAL_RECORD_INSERT_CHUNK_SIZE
+    ) {
+      tx.insert(personalRecords)
+        .values(
+          personalRecordRows.slice(
+            index,
+            index + PERSONAL_RECORD_INSERT_CHUNK_SIZE
+          )
+        )
+        .run();
     }
+
+    tx.insert(appMeta)
+      .values({
+        key: SETTINGS_KEYS.restTimerPresets,
+        value: JSON.stringify(
+          REST_TIMER_PRESETS.map(preset => ({ id: generateUuid(), ...preset }))
+        )
+      })
+      .onConflictDoNothing()
+      .run();
 
     tx.insert(appMeta)
       .values({

@@ -9,10 +9,12 @@ const moduleNameMapper = {
 };
 
 // The typography test compiles global.css, which loads nativewind's ESM Tailwind
-// plugin; the app project transforms it alongside the preset's packages.
+// plugin, and the dev seed test loads ESM-only @faker-js/faker; the app project
+// transforms both alongside the preset's packages.
 const appTransformIgnorePatterns =
   require('jest-expo/android/jest-preset').transformIgnorePatterns.map(
-    pattern => pattern.replace('(?!(.pnpm|', '(?!(.pnpm|nativewind|')
+    pattern =>
+      pattern.replace('(?!(.pnpm|', '(?!(.pnpm|nativewind|@faker-js/faker|')
   );
 
 /** @type {import('jest').Config['projects']} */
