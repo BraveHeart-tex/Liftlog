@@ -25,6 +25,7 @@
 - [Tickets](tickets.md)
 - [Triage labels](triage-labels.md)
 - [Verification](verification.md)
+- [Commit conventions](commits.md)
 - [Android release signing](android-release-signing.md)
 - [Bottom sheets](bottom-sheet.md)
 - [Data access](data-access.md)

@@ -97,7 +97,7 @@ Work **lean** throughout:
    verification cannot complete.
    _Done when_ the required final checks exit 0 on the final code or docs.
 
-8. **Ship.** Commit per [CONTRIBUTING.md](../../../CONTRIBUTING.md) with `Refs #<n>` and
+8. **Ship.** Commit per [commits](../../../docs/commits.md) with scope `#<n>` and
    push to main. Tick each criterion box in the issue body
    (`gh issue edit <n> --body-file`), post the
    [evidence](../../../docs/verification.md#evidence) comment, read both back, then close

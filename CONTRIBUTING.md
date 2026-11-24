@@ -1,18 +1,6 @@
-## Commits and pull requests
+## Pull requests
 
-Use Conventional Commits:
-
-`<type>(<scope>): <imperative summary>`
-
-Examples:
-
-- `feat(backup): add manual Google Drive backup`
-- `fix(backup): reconcile interrupted upload`
-- `refactor(database): expose shared initialization`
-
-Reference the active issue in commit footers:
-
-`Refs #87`
+Commit messages follow [commits](docs/commits.md).
 
 Work pushed directly to main closes its issue through the evidence comment in [tickets closing](docs/tickets.md#closing). When a pull request is used, close the implementation ticket from its body:
 

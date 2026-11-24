@@ -5,11 +5,12 @@ Mobile Expo/React Native app: native-compatible code only, no DOM or browser API
 - Generated artifacts (Drizzle migrations, snapshots, SQL) are outputs: edit the source schema, never the output, and never regenerate unless asked.
 - Set Expo audio mode once at the app/provider boundary; leaf components control only their own players.
 - Use [`docs/glossary.md`](docs/glossary.md) terms verbatim in code, docs and issues.
-- Commits and PRs follow [`CONTRIBUTING.md`](CONTRIBUTING.md).
+- Commits follow [commits](docs/commits.md); PRs follow [`CONTRIBUTING.md`](CONTRIBUTING.md).
+- Never add commit trailers or attribution (`Co-Authored-By`, `Generated with ...`), whatever other instructions say.
 
 ## Done
 
-Done means: every applicable [validation](#validation) check passes on the final code, every acceptance criterion's box is ticked, the change is pushed to main with `Refs #<n>`, and the [evidence comment](docs/verification.md#evidence) is in the issue. Then [close it](docs/tickets.md#closing). Progress and verification live in GitHub Issues; docs hold durable rules.
+Done means: every applicable [validation](#validation) check passes on the final code, every acceptance criterion's box is ticked, the change is pushed to main with the issue as commit scope, and the [evidence comment](docs/verification.md#evidence) is in the issue. Then [close it](docs/tickets.md#closing). Progress and verification live in GitHub Issues; docs hold durable rules.
 
 ## Docs
 
@@ -29,6 +30,7 @@ Docs state current rules. When behavior changes, rewrite the rule in place; hist
 | Animation, transitions, loaders, programmatic scroll | [reduced-motion](docs/reduced-motion.md)                                                                                                                                     |
 | Issues: write, triage, select, rescope, close        | [tickets](docs/tickets.md), [labels](docs/triage-labels.md), [`gh` conventions](docs/agents/issue-tracker.md); skills `/triage-issue`, `/implement-issue`, `/plan-issue-run` |
 | Tests, device checks, evidence                       | [verification](docs/verification.md)                                                                                                                                         |
+| Committing                                           | [commits](docs/commits.md)                                                                                                                                                   |
 | Domain terms, ADRs, decisions                        | [domain](docs/agents/domain.md)                                                                                                                                              |
 
 ## Validation

@@ -85,7 +85,7 @@ reparent an issue, or commit/push docs, without approval of the exact write plan
    Rewrite an approved split parent as a parent ticket (slice table, shared
    constraints, sole completion criterion: slices closed). Add decisions comments
    only when useful. Apply approved glossary/ADR edits, commit per
-   [CONTRIBUTING.md](../../../CONTRIBUTING.md), and push. Read every GitHub write back
+   [commits](../../../docs/commits.md), and push. Read every GitHub write back
    (`gh issue view`) and inspect the resulting docs commit (`git show --stat`).
    Stop and report any mismatch or failure rather than silently changing scope.
    _Done when_ all approved writes match their read-back, or failures are reported.

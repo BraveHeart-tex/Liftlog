@@ -112,4 +112,4 @@ Release signing credentials and recovery requirements are documented in [`docs/a
 
 ## Contributing
 
-Use Conventional Commits and reference the relevant GitHub issue. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the repository conventions.
+Use Conventional Commits scoped to the relevant GitHub issue. See [`docs/commits.md`](docs/commits.md) for the repository conventions.
