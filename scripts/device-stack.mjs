@@ -326,6 +326,36 @@ async function start({ fresh }) {
   state.session = true;
   saveState(state);
   run('agent-device', ['open', PACKAGE, DEV_CLIENT_LINK, '--relaunch']);
+
+  if (fresh) {
+    // The launch can return before either the onboarding or Workout is visible.
+    const screen = await waitFor(
+      'dev-client onboarding or Workout',
+      OPEN_TIMEOUT_MS,
+      () => {
+        const snapshot = tryRun('agent-device', [
+          'snapshot',
+          '--raw',
+          '--timeout',
+          '5000'
+        ]);
+
+        if (snapshot.includes('This is the developer menu.')) {
+          return 'onboarding';
+        }
+
+        return snapshot.includes(START_SCREEN_ID) ? 'workout' : null;
+      }
+    );
+
+    if (screen === 'onboarding') {
+      log('dev-client onboarding appeared; pressing Continue and Close');
+      run('agent-device', ['press', 'label="Continue"', '--settle']);
+      run('agent-device', ['press', 'label="Close"']);
+      log('dismissed dev-client onboarding');
+    }
+  }
+
   run('agent-device', [
     'wait',
     `id=${START_SCREEN_ID}`,

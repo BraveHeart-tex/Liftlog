@@ -57,6 +57,10 @@ if (name === 'emulator') {
     const listener = state.listeners.find(l => l.pid === pid)
     if (listener) process.stdout.write('p' + pid + '\\nfcwd\\nn' + listener.cwd + '\\n')
   }
+} else if (name === 'agent-device' && args[0] === 'snapshot') {
+  process.stdout.write(state.onboarding
+    ? 'This is the developer menu.\\nContinue'
+    : 'workout-start-screen')
 } else if (name === 'pnpm') {
   require(process.env.FAKE_METRO)
 }
@@ -79,6 +83,7 @@ type FakeState = {
   booted: boolean;
   build: 'dev' | 'release' | null;
   emulatorPid?: number;
+  onboarding?: boolean;
   listeners: Listener[];
 };
 type Call = { name: string; args: string[]; ci: string | null };
@@ -281,7 +286,7 @@ test('start boots the emulator, reverses the port, starts Metro and log capture,
   expect(readFileSync(state.jsLogs.log, 'utf8')).toContain('ReactNativeJS');
 });
 
-test('start --fresh clears app data before opening the app', async () => {
+test('start --fresh clears app data and waits for Workout without an onboarding timeout when the overlay is absent', async () => {
   const { port, stack } = await harness();
 
   const { status, calls } = await stack('start', '--fresh');
@@ -293,6 +298,29 @@ test('start --fresh clears app data before opening the app', async () => {
   expect(clear).toBeLessThan(
     order.indexOf(`agent-device open ${PACKAGE} ${link(port)} --relaunch`)
   );
+  expect(
+    calls
+      .filter(
+        call => call.name === 'agent-device' && call.args[0] !== 'snapshot'
+      )
+      .map(call => call.args[0])
+  ).toEqual(['open', 'wait']);
+  expect(order).toContain('agent-device wait id=workout-start-screen 180000');
+});
+
+test('start --fresh dismisses dev-client onboarding before waiting for Workout', async () => {
+  const { stack } = await harness({ onboarding: true });
+
+  const { status, calls } = await stack('start', '--fresh');
+
+  expect(status).toBe(0);
+  expect(
+    commands(calls.filter(call => call.name === 'agent-device')).slice(-3)
+  ).toEqual([
+    'agent-device press label="Continue" --settle',
+    'agent-device press label="Close"',
+    'agent-device wait id=workout-start-screen 180000'
+  ]);
 });
 
 test('start refuses a Metro from another project without stopping it or starting anything', async () => {

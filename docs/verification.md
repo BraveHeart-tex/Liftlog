@@ -123,8 +123,6 @@ coordinates read off a screenshot. In order:
    checkout's Metro, captures JS logs and waits for the Workout start screen. `--fresh`
    clears app data so the dev seed runs again (new random IDs). `status` prints the
    state; a failed `start` leaves its state recorded, so run `stop` before retrying.
-   - After `--fresh`, the dev-client onboarding can cover the start screen and `start`
-     fails its wait: press `label="Continue"`, then `label="Close"` on the dev menu.
    - A reused Metro (state shows `metro.log: null`, usually the maintainer's terminal)
      has no log. When you need Metro's output, do not stop it; run on another port.
      `DEVICE_STACK_PORT` sets the adb reverse port and dev-client link, so `start`
