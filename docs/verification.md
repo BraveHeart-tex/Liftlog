@@ -34,10 +34,7 @@ is required.
 Prove each behavior that needs a test at the cheapest level that can prove it.
 
 - **Unit tests** (`tests/{components,db,features,lib}`, Jest app project with Jest
-  globals and `node:assert`, `pnpm run test`) prove logic, stores and feature
-  services. Narrow a run by path (`pnpm run test <path>`) or by test name
-  (`pnpm run test -t <name>`). Mock modules with `jest.doMock` before a dynamic
-  `import()`.
+  globals, `pnpm run test`) prove logic, stores and feature services.
 - **Native configuration tests** (`tests/native`, Jest native project,
   `pnpm run test:native`) prove config plugins, release signing and the Android
   release build and verification scripts in Node.
@@ -59,6 +56,36 @@ tooling tests only when their inputs change, through the `paths` filters in
 `.github/workflows/ci-native.yml` and `ci-tooling.yml`. A file a native or tooling test
 depends on joins that filter. All three run in the reusable
 `.github/workflows/test.yml`, which the release preflight calls.
+
+## Writing tests
+
+Conventions for the levels above; read this and the nearest example before writing one.
+
+- **Path and suffix:** a test mirrors its source path under `tests/`
+  (`src/features/steps/steps.repository.ts` →
+  `tests/features/steps/steps.repository.db.test.ts`). Unit tests end in `.test.ts`,
+  database integration tests in `.db.test.ts`; native and tooling tests are
+  `tests/native/*.test.ts` and `tests/tooling/*.test.ts`.
+- **Support helpers:** `tests/support/db.ts` opens migrated real-SQLite databases
+  (`createMigratedTestDatabase`, `closeTestDatabases`), `tests/support/factories.ts`
+  builds rows with fixed IDs and timestamps, and `tests/support/sqlite-adapter.ts`
+  backs them with `node:sqlite`.
+- **Mocking:** pass fakes through a module's dependency parameters (a `harness()`
+  builder in the test file) when it takes them. Otherwise mock a module with
+  `jest.doMock` before a dynamic `import()`; shared native module mocks live in
+  `tests/mocks` and load through `moduleNameMapper` in `jest.config.js`. Never fake a
+  Drizzle query chain.
+- **Assertions:** new or substantially rewritten tests use Jest `expect` and React
+  Native Testing Library matchers; migrated tests keep `node:assert/strict` until
+  rewritten for another reason.
+- **Commands:** `pnpm run test <path>` or `pnpm run test -t <name>` (app project),
+  `pnpm run test:native`, `pnpm run test:tooling`.
+- **Examples:** unit
+  [`superset.utils.test.ts`](../tests/features/workouts/shared/superset.utils.test.ts),
+  real-SQLite
+  [`steps.repository.db.test.ts`](../tests/features/steps/steps.repository.db.test.ts),
+  harness
+  [`rest-timer-coordinator.test.ts`](../tests/features/rest-timer/rest-timer-coordinator.test.ts).
 
 ## Device checks
 
