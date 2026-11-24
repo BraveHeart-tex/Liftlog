@@ -4,7 +4,6 @@ import {
   formatRollingProgression
 } from '@/src/features/workouts/active/exercise-history-format.utils';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 test('describes the rolling comparison accurately', () => {
   assert.equal(

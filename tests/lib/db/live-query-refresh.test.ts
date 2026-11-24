@@ -4,7 +4,6 @@ import {
   subscribeToLiveQueryRefresh
 } from '@/src/lib/db/live-query-refresh';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 test('notifies mounted readers and advances the refresh version', () => {
   let notifications = 0;

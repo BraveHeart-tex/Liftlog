@@ -7,6 +7,27 @@ import {
 // expo-sqlite's synchronous client surface over node:sqlite, enough for Drizzle
 // and its migrator to run against real SQLite in tests.
 
+// Jest runs tests in a vm realm, but node:sqlite creates rows and errors in
+// Node's own realm. Copying them into this realm keeps deepStrictEqual and
+// instanceof Error behaving as they do with expo-sqlite on device.
+function toLocalRows<T extends object>(rows: T[]): T[] {
+  return Array.from(rows, row => ({ ...row }));
+}
+
+function withLocalErrors<T>(operation: () => T): T {
+  try {
+    return operation();
+  } catch (error) {
+    if (error instanceof Error || typeof error !== 'object' || error === null) {
+      throw error;
+    }
+
+    const { message, stack } = error as Error;
+
+    throw Object.assign(new Error(message), error, { stack });
+  }
+}
+
 class NodeSQLiteStatement {
   constructor(
     private readonly statement: StatementSync,
@@ -24,7 +45,9 @@ class NodeSQLiteStatement {
 
   private execute(params: SQLInputValue[], rawResult: boolean) {
     this.onExecute(params);
-    const rows = this.statement.all(...params);
+    const rows = toLocalRows(
+      withLocalErrors(() => this.statement.all(...params))
+    );
     const metadata = this.database
       .prepare(
         'SELECT changes() AS changes, last_insert_rowid() AS lastInsertRowId'
@@ -85,7 +108,7 @@ export class NodeSQLiteDatabase {
   }
 
   execSync(source: string) {
-    this.database.exec(source);
+    withLocalErrors(() => this.database.exec(source));
   }
 
   async execAsync(source: string) {
@@ -94,7 +117,7 @@ export class NodeSQLiteDatabase {
 
   prepareSync(source: string) {
     return new NodeSQLiteStatement(
-      this.database.prepare(source),
+      withLocalErrors(() => this.database.prepare(source)),
       this.database,
       params => {
         if (!/^\s*(begin|commit|rollback)\b/i.test(source)) {
@@ -110,11 +133,15 @@ export class NodeSQLiteDatabase {
   }
 
   getFirstSync<T>(source: string): T | null {
-    return (this.database.prepare(source).get() as T | undefined) ?? null;
+    const row = withLocalErrors(() => this.database.prepare(source).get());
+
+    return row ? ({ ...row } as T) : null;
   }
 
   getAllSync<T>(source: string, params: SQLInputValue[] = []): T[] {
-    return this.database.prepare(source).all(...params) as T[];
+    return toLocalRows(
+      withLocalErrors(() => this.database.prepare(source).all(...params))
+    ) as T[];
   }
 
   async getFirstAsync<T>(source: string): Promise<T | null> {

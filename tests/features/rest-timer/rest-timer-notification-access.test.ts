@@ -1,7 +1,6 @@
 import { createLatestRestTimerNotificationAccessReconciler } from '@/src/features/rest-timer/rest-timer-notification-access';
 import type { RestTimerNotificationAccess } from '@/src/features/rest-timer/rest-timer.coordinator';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;

@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
 import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import { matchesExercisePickerFilters } from '@/src/features/workouts/exercise-selection/exercise-picker-filter.utils';
 

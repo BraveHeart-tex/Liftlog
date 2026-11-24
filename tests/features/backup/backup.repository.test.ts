@@ -16,7 +16,6 @@ import { BackupValidationError } from '@/src/features/backup/backup.codec';
 import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 import { SETTINGS_KEYS } from '@/src/features/settings/settings.repository';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 function createSnapshotDatabase(
   settingsRows: { key: string; value: string }[]

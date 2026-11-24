@@ -6,7 +6,6 @@ import {
 } from '@/src/features/app-updates/update-announcement';
 import type { UpdateState } from '@/src/features/app-updates/update.types';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 const availableState: UpdateState = {
   status: 'available',

@@ -8,13 +8,25 @@ const moduleNameMapper = {
     '<rootDir>/tests/mocks/react-native-nitro-modules.ts'
 };
 
+// The typography test compiles global.css, which loads nativewind's ESM Tailwind
+// plugin; the app project transforms it alongside the preset's packages.
+const appTransformIgnorePatterns =
+  require('jest-expo/android/jest-preset').transformIgnorePatterns.map(
+    pattern => pattern.replace('(?!(.pnpm|', '(?!(.pnpm|nativewind|')
+  );
+
 /** @type {import('jest').Config['projects']} */
 const projects = [
   {
     displayName: 'app',
     preset: 'jest-expo/android',
     moduleNameMapper,
-    testMatch: ['<rootDir>/tests/compat/app/**/*.test.{ts,tsx}']
+    setupFiles: ['<rootDir>/tests/setup.ts'],
+    transformIgnorePatterns: appTransformIgnorePatterns,
+    testMatch: [
+      '<rootDir>/tests/compat/app/**/*.test.{ts,tsx}',
+      '<rootDir>/tests/{components,db,features,lib}/**/*.test.ts'
+    ]
   },
   {
     displayName: 'native',

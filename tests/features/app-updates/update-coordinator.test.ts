@@ -7,7 +7,6 @@ import type {
   UpdateCache
 } from '@/src/features/app-updates/update.types';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 const APK_NAME = 'liftlog-1.1.0-arm64-v8a.apk';
 const MANIFEST = {
@@ -84,7 +83,7 @@ test('manual discovery validates one stable same-release manifest and APK', asyn
   assert.equal(cache.value?.lastSuccessfulCheckAt, 1_000);
 });
 
-test('rejects unsupported schemas, manifest URLs, duplicate assets, and tag mismatches', async t => {
+describe('rejects unsupported schemas, manifest URLs, duplicate assets, and tag mismatches', () => {
   const cases: [string, GitHubRelease, unknown][] = [
     ['unsupported schema', release(), { ...MANIFEST, schemaVersion: 2 }],
     [
@@ -128,7 +127,7 @@ test('rejects unsupported schemas, manifest URLs, duplicate assets, and tag mism
   ];
 
   for (const [name, candidateRelease, manifest] of cases) {
-    await t.test(name, async () => {
+    test(name, async () => {
       const coordinator = createUpdateCoordinator({
         persistence: persistence(),
         installedBuild: () => ({ versionName: '1.0.3', versionCode: 4 }),
@@ -371,12 +370,12 @@ test('clock rollback permits an automatic check and concurrent checks deduplicat
   assert.equal(calls, 1);
 });
 
-test('rate limits and offline failures are actionable and never retried', async t => {
+describe('rate limits and offline failures are actionable and never retried', () => {
   for (const [name, error, code] of [
     ['rate limit', { status: 403, rateLimited: true }, 'rate_limited'],
     ['offline', new TypeError('Network request failed'), 'offline']
   ] as const) {
-    await t.test(name, async () => {
+    test(name, async () => {
       let calls = 0;
       const coordinator = createUpdateCoordinator({
         persistence: persistence(),

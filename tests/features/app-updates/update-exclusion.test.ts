@@ -8,7 +8,6 @@ import type {
   NativeUpdateState
 } from '@/modules/liftlog-updater/src/types';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 const REQUEST: BeginAttemptRequest = {
   attemptId: 'attempt-a',

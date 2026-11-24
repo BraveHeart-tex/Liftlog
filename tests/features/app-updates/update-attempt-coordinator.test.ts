@@ -6,7 +6,6 @@ import type { AvailableUpdate } from '@/src/features/app-updates/update.types';
 import type { NativeUpdateState } from '@/modules/liftlog-updater/src/types';
 import { createAppUpdateReporter } from '@/src/features/app-updates/update-reporter';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 const release: AvailableUpdate = {
   releaseId: 68,

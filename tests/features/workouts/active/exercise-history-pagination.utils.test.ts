@@ -4,7 +4,6 @@ import {
   getNextExerciseHistoryLimit
 } from '@/src/features/workouts/active/exercise-history-pagination.utils';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 test('prevents duplicate history page requests', () => {
   assert.equal(

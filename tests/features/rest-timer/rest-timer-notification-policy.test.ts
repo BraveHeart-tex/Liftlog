@@ -4,7 +4,6 @@ import {
   getRestTimerNotificationPreferenceState
 } from '@/src/features/rest-timer/rest-timer-notification-policy';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 test('presentation suppresses only active rest timer notifications', () => {
   assert.equal(

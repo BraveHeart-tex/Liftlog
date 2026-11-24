@@ -3,7 +3,6 @@ import {
   type RestTimerDiagnosticEnvironment
 } from '@/src/features/rest-timer/rest-timer-diagnostics';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 test('diagnostics expose only stable allowlisted metadata', () => {
   const environment: RestTimerDiagnosticEnvironment = {

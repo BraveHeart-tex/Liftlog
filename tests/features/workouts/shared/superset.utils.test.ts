@@ -3,7 +3,6 @@ import {
   getSupersetLetter
 } from '@/src/features/workouts/shared/superset.utils';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 test('derives the superset letter from its display label', () => {
   assert.equal(getSupersetLetter('Superset A'), 'A');

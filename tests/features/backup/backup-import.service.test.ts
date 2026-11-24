@@ -4,7 +4,6 @@ import {
 } from '@/src/features/backup/backup-preview';
 import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 const backup = {
   format: 'liftlog-backup',

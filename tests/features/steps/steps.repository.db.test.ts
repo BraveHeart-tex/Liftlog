@@ -3,7 +3,6 @@ import { SETTINGS_KEYS } from '@/src/features/settings/settings.repository';
 import { saveStepSyncResult } from '@/src/features/steps/steps.repository';
 import { eq } from 'drizzle-orm';
 import assert from 'node:assert/strict';
-import test, { afterEach } from 'node:test';
 import {
   closeTestDatabases,
   createMigratedTestDatabase
@@ -12,8 +11,8 @@ import { createStepDay } from '@/tests/support/factories';
 
 afterEach(closeTestDatabases);
 
-test('step sync results persist atomically in bulk', async t => {
-  await t.test('empty input performs no writes', async () => {
+describe('step sync results persist atomically in bulk', () => {
+  test('empty input performs no writes', async () => {
     const { db, nodeClient } = await createMigratedTestDatabase();
 
     nodeClient.resetPreparedStatementCount();
@@ -32,7 +31,7 @@ test('step sync results persist atomically in bulk', async t => {
     );
   });
 
-  await t.test('persists one day and sync metadata', async () => {
+  test('persists one day and sync metadata', async () => {
     const { db } = await createMigratedTestDatabase();
     const day = createStepDay(1);
 
@@ -49,7 +48,7 @@ test('step sync results persist atomically in bulk', async t => {
     );
   });
 
-  await t.test('persists multiple new days', async () => {
+  test('persists multiple new days', async () => {
     const { db } = await createMigratedTestDatabase();
     const days = [createStepDay(1), createStepDay(2), createStepDay(3)];
 
@@ -61,7 +60,7 @@ test('step sync results persist atomically in bulk', async t => {
     );
   });
 
-  await t.test('updates existing days from excluded values', async () => {
+  test('updates existing days from excluded values', async () => {
     const { db } = await createMigratedTestDatabase();
     const original = createStepDay(1);
     const updated = {
@@ -86,33 +85,28 @@ test('step sync results persist atomically in bulk', async t => {
     );
   });
 
-  await t.test(
-    'chunks only beyond the safe SQLite parameter count',
-    async () => {
-      const { db, nodeClient } = await createMigratedTestDatabase();
-      const days = Array.from({ length: 200 }, (_, index) =>
-        createStepDay(index)
-      );
+  test('chunks only beyond the safe SQLite parameter count', async () => {
+    const { db, nodeClient } = await createMigratedTestDatabase();
+    const days = Array.from({ length: 200 }, (_, index) =>
+      createStepDay(index)
+    );
 
-      nodeClient.resetPreparedStatementCount();
+    nodeClient.resetPreparedStatementCount();
 
-      saveStepSyncResult(db, { days, syncedAt: 20_200 });
+    saveStepSyncResult(db, { days, syncedAt: 20_200 });
 
-      assert.equal(nodeClient.getPreparedStatementCount(), 3);
-      assert.equal(db.select().from(healthStepDays).all().length, 200);
-    }
-  );
+    assert.equal(nodeClient.getPreparedStatementCount(), 3);
+    assert.equal(db.select().from(healthStepDays).all().length, 200);
+  });
 
-  await t.test(
-    'rolls back day writes when metadata persistence fails',
-    async () => {
-      const { db, nodeClient } = await createMigratedTestDatabase();
-      const original = createStepDay(1);
-      const updated = { ...original, steps: 9_999, syncedAt: 30_000 };
-      const newDay = createStepDay(2);
+  test('rolls back day writes when metadata persistence fails', async () => {
+    const { db, nodeClient } = await createMigratedTestDatabase();
+    const original = createStepDay(1);
+    const updated = { ...original, steps: 9_999, syncedAt: 30_000 };
+    const newDay = createStepDay(2);
 
-      saveStepSyncResult(db, { days: [original], syncedAt: 20_001 });
-      nodeClient.execSync(`
+    saveStepSyncResult(db, { days: [original], syncedAt: 20_001 });
+    nodeClient.execSync(`
       CREATE TRIGGER reject_step_sync_metadata
       BEFORE INSERT ON app_meta
       WHEN NEW.key = 'settings.steps_last_sync_at'
@@ -121,23 +115,22 @@ test('step sync results persist atomically in bulk', async t => {
       END;
       `);
 
-      assert.throws(
-        () =>
-          saveStepSyncResult(db, {
-            days: [updated, newDay],
-            syncedAt: 20_002
-          }),
-        /metadata persistence failed/
-      );
-      assert.deepEqual(db.select().from(healthStepDays).all(), [original]);
-      assert.equal(
-        db
-          .select({ value: appMeta.value })
-          .from(appMeta)
-          .where(eq(appMeta.key, SETTINGS_KEYS.stepsLastSyncAt))
-          .get()?.value,
-        '20001'
-      );
-    }
-  );
+    assert.throws(
+      () =>
+        saveStepSyncResult(db, {
+          days: [updated, newDay],
+          syncedAt: 20_002
+        }),
+      /metadata persistence failed/
+    );
+    assert.deepEqual(db.select().from(healthStepDays).all(), [original]);
+    assert.equal(
+      db
+        .select({ value: appMeta.value })
+        .from(appMeta)
+        .where(eq(appMeta.key, SETTINGS_KEYS.stepsLastSyncAt))
+        .get()?.value,
+      '20001'
+    );
+  });
 });

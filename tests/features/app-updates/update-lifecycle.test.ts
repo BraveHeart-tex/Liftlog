@@ -1,6 +1,5 @@
 import { createUpdateLifecycle } from '@/src/features/app-updates/update-lifecycle';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 test('startup reconciles once then drains diagnostics', async () => {
   const calls: string[] = [];

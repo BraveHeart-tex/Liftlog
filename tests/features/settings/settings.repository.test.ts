@@ -4,7 +4,6 @@ import {
   mapSettingsRows
 } from '@/src/features/settings/settings.repository';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 test('maps missing settings to defaults', () => {
   assert.deepEqual(mapSettingsRows([]), {

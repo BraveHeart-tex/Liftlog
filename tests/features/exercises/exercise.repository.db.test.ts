@@ -25,7 +25,6 @@ import {
 import { eq } from 'drizzle-orm';
 import assert from 'node:assert/strict';
 import type { SQLInputValue } from 'node:sqlite';
-import test, { afterEach } from 'node:test';
 import {
   closeTestDatabases,
   createMigratedTestDatabase,
@@ -38,7 +37,7 @@ import {
 
 afterEach(closeTestDatabases);
 
-test('exercise usage query checks workout and template references together', async t => {
+describe('exercise usage query checks workout and template references together', () => {
   const cases = [
     {
       name: 'no usage',
@@ -67,7 +66,7 @@ test('exercise usage query checks workout and template references together', asy
   ];
 
   for (const testCase of cases) {
-    await t.test(testCase.name, async () => {
+    test(testCase.name, async () => {
       const { db, nodeClient } = await createMigratedTestDatabase();
 
       db.insert(exercises)

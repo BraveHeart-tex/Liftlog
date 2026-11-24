@@ -33,8 +33,11 @@ is required.
 
 Prove each behavior that needs a test at the cheapest level that can prove it.
 
-- **Unit tests** (`tests/**`, `node:test`, `pnpm run test`) prove logic, stores and
-  feature services.
+- **Unit tests** (`tests/{components,db,features,lib}`, Jest app project with Jest
+  globals and `node:assert`, `pnpm run test`) prove logic, stores and feature
+  services. Narrow a run by path (`pnpm run test <path>`) or by test name
+  (`pnpm run test -t <name>`). Mock modules with `jest.doMock` before a dynamic
+  `import()`.
 - **Native configuration tests** (`tests/native`, Jest native project,
   `pnpm run test:native`) prove config plugins, release signing and the Android
   release build and verification scripts in Node.

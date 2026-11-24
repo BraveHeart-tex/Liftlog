@@ -11,7 +11,6 @@ import { eq } from 'drizzle-orm';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import assert from 'node:assert/strict';
 import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
-import test, { afterEach } from 'node:test';
 import {
   closeTestDatabases,
   createTestDatabase,

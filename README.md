@@ -71,7 +71,7 @@ Health Connect, exact-alarm handling, and in-app updates are Android-specific. C
 
 ```sh
 pnpm run ts-check         # TypeScript
-pnpm test                 # Node test suite
+pnpm test                 # Jest app test suite
 pnpm run lint             # ESLint
 pnpm run prettier:check   # Formatting
 pnpm exec knip            # Unused files and exports (advisory in CI)

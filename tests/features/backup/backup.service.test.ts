@@ -1,7 +1,6 @@
 import type { DrizzleDb } from '@/src/db/client';
 import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 import assert from 'node:assert/strict';
-import test, { mock } from 'node:test';
 
 const events: string[] = [];
 
@@ -29,72 +28,60 @@ const backup: LiftLogBackupV2 = {
   }
 };
 
-mock.module('expo-constants', {
-  namedExports: { default: { expoConfig: { version: '1.0.0' } } }
-});
-mock.module('expo-file-system', {
-  namedExports: {
-    File: class {},
-    Paths: {
-      cache: { uri: 'cache:' },
-      document: { uri: 'document:' }
-    }
+jest.doMock('expo-constants', () => ({
+  __esModule: true,
+  default: { expoConfig: { version: '1.0.0' } }
+}));
+jest.doMock('expo-file-system', () => ({
+  File: class {},
+  Paths: {
+    cache: { uri: 'cache:' },
+    document: { uri: 'document:' }
   }
-});
-mock.module('expo-file-system/legacy', {
-  namedExports: {
-    deleteAsync: async () => undefined,
-    moveAsync: async () => undefined,
-    writeAsStringAsync: async () => undefined
+}));
+jest.doMock('expo-file-system/legacy', () => ({
+  deleteAsync: async () => undefined,
+  moveAsync: async () => undefined,
+  writeAsStringAsync: async () => undefined
+}));
+jest.doMock('expo-sharing', () => ({
+  isAvailableAsync: async () => true,
+  shareAsync: async () => undefined
+}));
+jest.doMock('@/src/features/backup/backup.repository', () => ({
+  createBackupSnapshot: () => backup,
+  replaceBackupData: () => {
+    events.push('replace-data');
   }
-});
-mock.module('expo-sharing', {
-  namedExports: {
-    isAvailableAsync: async () => true,
-    shareAsync: async () => undefined
-  }
-});
-mock.module('@/src/features/backup/backup.repository', {
-  namedExports: {
-    createBackupSnapshot: () => backup,
-    replaceBackupData: () => {
-      events.push('replace-data');
-    }
-  }
-});
-mock.module('@/src/features/rest-timer/rest-timer-notifications.service', {
-  namedExports: {
+}));
+jest.doMock(
+  '@/src/features/rest-timer/rest-timer-notifications.service',
+  () => ({
     cancelRestTimerNotification: async () => {
       events.push('cancel-notification');
     }
+  })
+);
+jest.doMock('@/src/features/rest-timer/rest-timer.store', () => ({
+  useRestTimerStore: {
+    getState: () => ({
+      cancel: () => {
+        events.push('cancel-timer');
+      }
+    })
   }
-});
-mock.module('@/src/features/rest-timer/rest-timer.store', {
-  namedExports: {
-    useRestTimerStore: {
-      getState: () => ({
-        cancel: () => {
-          events.push('cancel-timer');
-        }
-      })
-    }
+}));
+jest.doMock('@/src/lib/db/live-query-refresh', () => ({
+  refreshLiveQueries: () => {
+    events.push('refresh');
   }
-});
-mock.module('@/src/lib/db/live-query-refresh', {
-  namedExports: {
-    refreshLiveQueries: () => {
-      events.push('refresh');
-    }
+}));
+jest.doMock('@/src/theme/theme-preference', () => ({
+  getThemePreference: () => 'system',
+  setThemePreference: () => {
+    events.push('set-theme');
   }
-});
-mock.module('@/src/theme/theme-preference', {
-  namedExports: {
-    getThemePreference: () => 'system',
-    setThemePreference: () => {
-      events.push('set-theme');
-    }
-  }
-});
+}));
 
 const servicePromise = import('@/src/features/backup/backup.service');
 

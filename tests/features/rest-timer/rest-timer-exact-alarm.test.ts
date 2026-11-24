@@ -1,18 +1,13 @@
 import assert from 'node:assert/strict';
-import test, { mock } from 'node:test';
 
-mock.module('react-native', {
-  namedExports: { Platform: { OS: 'android' } }
-});
+jest.doMock('react-native', () => ({ Platform: { OS: 'android' } }));
 
-mock.module('expo', {
-  namedExports: {
-    requireOptionalNativeModule: () => ({
-      getAccess: () => ({ supported: true, granted: false }),
-      openSettings: () => undefined
-    })
-  }
-});
+jest.doMock('expo', () => ({
+  requireOptionalNativeModule: () => ({
+    getAccess: () => ({ supported: true, granted: false }),
+    openSettings: () => undefined
+  })
+}));
 
 const exactAlarmPromise =
   import('@/src/features/rest-timer/rest-timer-exact-alarm');

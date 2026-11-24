@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { mock, test } from 'node:test';
 
 interface FakeSpan {
   status?: { code: number };
@@ -56,9 +55,7 @@ function startSpan<T>(
   }
 }
 
-mock.module('@sentry/react-native', {
-  namedExports: { startSpan }
-});
+jest.doMock('@sentry/react-native', () => ({ startSpan }));
 
 let withDatabaseSpan: WithDatabaseSpan;
 let withDomainFlowSpan: WithDomainFlowSpan;

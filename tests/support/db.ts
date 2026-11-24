@@ -9,10 +9,9 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { NodeSQLiteDatabase } from '@/tests/support/sqlite-adapter';
 
-// Runner-agnostic: each database test file registers
-// afterEach(closeTestDatabases) with its own runner. A root-level node:test
-// afterEach also runs after every subtest, so a database shared by subtests
-// must be created inside each subtest.
+// Each database test file registers afterEach(closeTestDatabases). A root-level
+// afterEach also runs after every test inside a describe block, so each test
+// creates its own database.
 
 interface MigrationJournalEntry {
   idx: number;

@@ -4,7 +4,6 @@ import {
   mapExerciseHistoryRows
 } from '@/src/features/progress/progress.repository';
 import assert from 'node:assert/strict';
-import test, { afterEach } from 'node:test';
 import type { SQLInputValue } from 'node:sqlite';
 import {
   closeTestDatabases,

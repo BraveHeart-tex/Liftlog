@@ -2,16 +2,18 @@ import { workouts } from '@/src/db/schema';
 import { completeWorkout } from '@/src/features/workouts/active/active.repository';
 import { eq } from 'drizzle-orm';
 import assert from 'node:assert/strict';
-import test, { afterEach } from 'node:test';
 import {
   closeTestDatabases,
   createMigratedTestDatabase
 } from '@/tests/support/db';
 
 afterEach(closeTestDatabases);
+afterEach(() => {
+  jest.restoreAllMocks();
+});
 
-test('completeWorkout conditionally completes in-progress workouts', async t => {
-  await t.test('completes an in-progress workout', async () => {
+describe('completeWorkout conditionally completes in-progress workouts', () => {
+  test('completes an in-progress workout', async () => {
     const { db } = await createMigratedTestDatabase();
 
     const completedAt = 2_000;
@@ -25,7 +27,7 @@ test('completeWorkout conditionally completes in-progress workouts', async t => 
         dateKey: '1970-01-01'
       })
       .run();
-    t.mock.method(Date, 'now', () => completedAt);
+    jest.spyOn(Date, 'now').mockImplementation(() => completedAt);
 
     completeWorkout(db, 'in-progress-workout');
 
@@ -39,7 +41,7 @@ test('completeWorkout conditionally completes in-progress workouts', async t => 
     assert.equal(completedWorkout?.completedAt, completedAt);
   });
 
-  await t.test('does nothing for a missing workout', async () => {
+  test('does nothing for a missing workout', async () => {
     const { db } = await createMigratedTestDatabase();
 
     assert.doesNotThrow(() => completeWorkout(db, 'missing-workout'));
@@ -53,7 +55,7 @@ test('completeWorkout conditionally completes in-progress workouts', async t => 
     );
   });
 
-  await t.test('does nothing for an already completed workout', async () => {
+  test('does nothing for an already completed workout', async () => {
     const { db } = await createMigratedTestDatabase();
 
     const existingWorkout = db
@@ -69,7 +71,7 @@ test('completeWorkout conditionally completes in-progress workouts', async t => 
       })
       .returning()
       .get();
-    t.mock.method(Date, 'now', () => 5_000);
+    jest.spyOn(Date, 'now').mockImplementation(() => 5_000);
 
     completeWorkout(db, 'completed-workout');
 
@@ -83,7 +85,7 @@ test('completeWorkout conditionally completes in-progress workouts', async t => 
     );
   });
 
-  await t.test('retains the persisted date key', async () => {
+  test('retains the persisted date key', async () => {
     const { db } = await createMigratedTestDatabase();
 
     const persistedDateKey = '2025-12-31';

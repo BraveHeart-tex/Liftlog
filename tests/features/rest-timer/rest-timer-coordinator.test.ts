@@ -10,7 +10,6 @@ import type {
   RestTimerSnapshotReadResult
 } from '@/src/features/rest-timer/rest-timer-runtime-snapshot';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 type CoordinatorDependencies = Parameters<typeof createRestTimerCoordinator>[0];
 

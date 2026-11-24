@@ -3,7 +3,7 @@
   "tags": ["-lintignore"],
   "ignoreBinaries": ["scripts/build-android-release-single-arch.sh"],
   "ignore": ["babel.config.js"],
-  "entry": ["tests/**/*.test.ts", "tests/mocks/**/*.ts"],
+  "entry": ["tests/mocks/**/*.ts", "tests/*.babel.js"],
   "expo": {
     "config": ["app.json", "app.config.{ts,js}"],
     "entry": ["app/**/*.{js,jsx,ts,tsx}", "src/app/**/*.{js,jsx,ts,tsx}"]

@@ -2,7 +2,6 @@ import { exercises, workoutExercises, workouts } from '@/src/db/schema';
 import { getRecentExerciseIdsQuery } from '@/src/features/workouts/exercise-selection/exercise-selection.repository';
 import { eq } from 'drizzle-orm';
 import assert from 'node:assert/strict';
-import test, { afterEach } from 'node:test';
 import {
   closeTestDatabases,
   createMigratedTestDatabase

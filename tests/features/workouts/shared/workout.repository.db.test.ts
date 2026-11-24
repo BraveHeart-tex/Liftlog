@@ -10,7 +10,6 @@ import {
   WorkoutCreationBlockedError
 } from '@/src/features/app-updates/update-exclusion';
 import assert from 'node:assert/strict';
-import test, { afterEach } from 'node:test';
 import {
   closeTestDatabases,
   createMigratedTestDatabase

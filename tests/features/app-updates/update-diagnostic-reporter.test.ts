@@ -4,7 +4,6 @@ import type {
 } from '@/modules/liftlog-updater/src/types';
 import { createUpdateDiagnosticReporter } from '@/src/features/app-updates/update-diagnostic-reporter';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 const diagnostic: UpdateDiagnostic = {
   kind: 'failure',

@@ -3,7 +3,6 @@ import {
   presentUpdateState
 } from '@/src/features/app-updates/update-presenter';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 const availableRelease = {
   releaseId: 65,

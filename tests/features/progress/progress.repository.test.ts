@@ -6,7 +6,6 @@ import {
 } from '@/src/features/progress/progress.repository';
 import { QueryBuilder } from 'drizzle-orm/sqlite-core';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 function createWorkout(id: string, startedAt: number): Workout {
   return {

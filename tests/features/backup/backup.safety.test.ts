@@ -5,7 +5,6 @@ import {
 import { serializeBackup } from '@/src/features/backup/backup.codec';
 import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 const safetyUri = 'safety-backup.json';
 

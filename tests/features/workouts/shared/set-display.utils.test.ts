@@ -4,7 +4,6 @@ import {
   getDisplaySetGroups
 } from '@/src/features/workouts/shared/set-display.utils';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 function createSet(id: string, weightKg: number, reps: number): Set {
   return {

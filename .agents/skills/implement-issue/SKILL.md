@@ -73,8 +73,7 @@ Work **lean** throughout:
    While iterating, run only the affected test files:
 
    ```sh
-   TSX_TSCONFIG_PATH=tests/tsconfig.json node --experimental-test-module-mocks \
-     --import tsx --import ./tests/setup.ts --test <test files>
+   pnpm run test <test files>
    ```
 
    plus `tsc` and `eslint <changed files>` as relevant. Native changes need a fresh

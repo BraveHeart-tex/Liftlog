@@ -8,8 +8,13 @@ module.exports = function (api) {
       'react-native-reanimated/plugin'
     ],
     env: {
-      // Jest sets NODE_ENV=test; app builds never load this plugin.
-      test: { plugins: ['./tests/import-meta.babel.js'] }
+      // Jest sets NODE_ENV=test; app builds never load these plugins.
+      test: {
+        plugins: [
+          './tests/import-meta.babel.js',
+          './tests/dynamic-import.babel.js'
+        ]
+      }
     }
   };
 };

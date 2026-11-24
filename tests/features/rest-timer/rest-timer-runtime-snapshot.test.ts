@@ -3,7 +3,6 @@ import {
   type RestTimerRuntimeSnapshot
 } from '@/src/features/rest-timer/rest-timer-runtime-snapshot';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
 function memoryStorage(initialValue?: string) {
   let value = initialValue;

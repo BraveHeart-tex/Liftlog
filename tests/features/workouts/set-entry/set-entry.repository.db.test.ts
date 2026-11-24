@@ -7,7 +7,6 @@ import {
 } from '@/src/features/workouts/set-entry/set-entry.repository';
 import { eq } from 'drizzle-orm';
 import assert from 'node:assert/strict';
-import test, { afterEach } from 'node:test';
 import {
   closeTestDatabases,
   createMigratedTestDatabase,
@@ -30,8 +29,8 @@ function getPersonalRecordSetIds(db: DrizzleDb) {
     .map(record => record.setId);
 }
 
-test('completed set commands maintain personal records atomically', async t => {
-  await t.test('creates a new personal record', async () => {
+describe('completed set commands maintain personal records atomically', () => {
+  test('creates a new personal record', async () => {
     const { db } = await createMigratedTestDatabase();
 
     seedTrackedExercise(db);
@@ -47,7 +46,7 @@ test('completed set commands maintain personal records atomically', async t => {
     ]);
   });
 
-  await t.test('creates a non-record set without rebuilding', async () => {
+  test('creates a non-record set without rebuilding', async () => {
     const { db, nodeClient } = await createMigratedTestDatabase();
 
     seedTrackedExercise(db);
@@ -61,49 +60,43 @@ test('completed set commands maintain personal records atomically', async t => {
     assert.deepEqual(getPersonalRecordSetIds(db), ['baseline-set']);
   });
 
-  await t.test(
-    'does not report a zero score as a personal record',
-    async () => {
-      const { db } = await createMigratedTestDatabase();
+  test('does not report a zero score as a personal record', async () => {
+    const { db } = await createMigratedTestDatabase();
 
-      seedTrackedExercise(db);
-      db.update(exercises)
-        .set({ trackingType: 'weight_reps' })
-        .where(eq(exercises.id, 'exercise-1'))
-        .run();
+    seedTrackedExercise(db);
+    db.update(exercises)
+      .set({ trackingType: 'weight_reps' })
+      .where(eq(exercises.id, 'exercise-1'))
+      .run();
 
-      const result = createCompletedSet(db, {
-        id: 'zero-score-set',
-        workoutExerciseId: 'workout-exercise-1',
-        order: 0,
-        weightKg: 0,
-        reps: 10,
-        completedAt: 1
-      });
+    const result = createCompletedSet(db, {
+      id: 'zero-score-set',
+      workoutExerciseId: 'workout-exercise-1',
+      order: 0,
+      weightKg: 0,
+      reps: 10,
+      completedAt: 1
+    });
 
-      assert.equal(result.isNewPersonalRecord, false);
-      assert.deepEqual(getPersonalRecordSetIds(db), []);
-    }
-  );
+    assert.equal(result.isNewPersonalRecord, false);
+    assert.deepEqual(getPersonalRecordSetIds(db), []);
+  });
 
-  await t.test(
-    'rebuilds after editing the current record downward',
-    async () => {
-      const { db } = await createMigratedTestDatabase();
+  test('rebuilds after editing the current record downward', async () => {
+    const { db } = await createMigratedTestDatabase();
 
-      seedTrackedExercise(db);
-      createTrackedSet(db, 'baseline-set', 10, 0);
-      createTrackedSet(db, 'record-set', 12, 1);
+    seedTrackedExercise(db);
+    createTrackedSet(db, 'baseline-set', 10, 0);
+    createTrackedSet(db, 'record-set', 12, 1);
 
-      const result = updateCompletedSet(db, 'record-set', { reps: 8 });
+    const result = updateCompletedSet(db, 'record-set', { reps: 8 });
 
-      assert.equal(result?.set.reps, 8);
-      assert.equal(result?.isNewPersonalRecord, false);
-      assert.deepEqual(getPersonalRecordSetIds(db), ['baseline-set']);
-    }
-  );
+    assert.equal(result?.set.reps, 8);
+    assert.equal(result?.isNewPersonalRecord, false);
+    assert.deepEqual(getPersonalRecordSetIds(db), ['baseline-set']);
+  });
 
-  await t.test('edits a non-record set without rebuilding', async () => {
+  test('edits a non-record set without rebuilding', async () => {
     const { db, nodeClient } = await createMigratedTestDatabase();
 
     seedTrackedExercise(db);
@@ -118,30 +111,27 @@ test('completed set commands maintain personal records atomically', async t => {
     assert.deepEqual(getPersonalRecordSetIds(db), ['baseline-set']);
   });
 
-  await t.test(
-    'rebuilds when editing a non-record into the historical record chain',
-    async () => {
-      const { db } = await createMigratedTestDatabase();
+  test('rebuilds when editing a non-record into the historical record chain', async () => {
+    const { db } = await createMigratedTestDatabase();
 
-      seedTrackedExercise(db);
-      createTrackedSet(db, 'baseline-set', 10, 0);
-      createTrackedSet(db, 'latest-record-set', 20, 2);
-      createTrackedSet(db, 'historical-non-record-set', 8, 1);
+    seedTrackedExercise(db);
+    createTrackedSet(db, 'baseline-set', 10, 0);
+    createTrackedSet(db, 'latest-record-set', 20, 2);
+    createTrackedSet(db, 'historical-non-record-set', 8, 1);
 
-      const result = updateCompletedSet(db, 'historical-non-record-set', {
-        reps: 15
-      });
+    const result = updateCompletedSet(db, 'historical-non-record-set', {
+      reps: 15
+    });
 
-      assert.equal(result?.isNewPersonalRecord, false);
-      assert.deepEqual(getPersonalRecordSetIds(db), [
-        'baseline-set',
-        'historical-non-record-set',
-        'latest-record-set'
-      ]);
-    }
-  );
+    assert.equal(result?.isNewPersonalRecord, false);
+    assert.deepEqual(getPersonalRecordSetIds(db), [
+      'baseline-set',
+      'historical-non-record-set',
+      'latest-record-set'
+    ]);
+  });
 
-  await t.test('rebuilds after deleting the current record', async () => {
+  test('rebuilds after deleting the current record', async () => {
     const { db } = await createMigratedTestDatabase();
 
     seedTrackedExercise(db);
@@ -158,7 +148,7 @@ test('completed set commands maintain personal records atomically', async t => {
     assert.deepEqual(getPersonalRecordSetIds(db), ['baseline-set']);
   });
 
-  await t.test('deletes a non-record set without rebuilding', async () => {
+  test('deletes a non-record set without rebuilding', async () => {
     const { db, nodeClient } = await createMigratedTestDatabase();
 
     seedTrackedExercise(db);
@@ -176,21 +166,18 @@ test('completed set commands maintain personal records atomically', async t => {
     assert.deepEqual(getPersonalRecordSetIds(db), ['baseline-set']);
   });
 
-  await t.test(
-    'rolls back the set mutation when rebuilding fails',
-    async () => {
-      const { db, nodeClient } = await createMigratedTestDatabase();
+  test('rolls back the set mutation when rebuilding fails', async () => {
+    const { db, nodeClient } = await createMigratedTestDatabase();
 
-      seedTrackedExercise(db);
-      createTrackedSet(db, 'baseline-set', 10, 0);
-      rejectPersonalRecordRebuilds(nodeClient);
+    seedTrackedExercise(db);
+    createTrackedSet(db, 'baseline-set', 10, 0);
+    rejectPersonalRecordRebuilds(nodeClient);
 
-      assert.throws(() => createTrackedSet(db, 'record-set', 12, 1));
-      assert.equal(
-        db.select().from(sets).where(eq(sets.id, 'record-set')).get(),
-        undefined
-      );
-      assert.deepEqual(getPersonalRecordSetIds(db), ['baseline-set']);
-    }
-  );
+    assert.throws(() => createTrackedSet(db, 'record-set', 12, 1));
+    assert.equal(
+      db.select().from(sets).where(eq(sets.id, 'record-set')).get(),
+      undefined
+    );
+    assert.deepEqual(getPersonalRecordSetIds(db), ['baseline-set']);
+  });
 });

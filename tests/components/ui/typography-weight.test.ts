@@ -2,14 +2,12 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
-import test from 'node:test';
-import { pathToFileURL } from 'node:url';
 import { compile } from 'tailwindcss';
 
 // Android cannot resolve a font weight against per-face runtime fonts, so a
 // weight anywhere but the Text weight prop renders in the system font.
 
-const require = createRequire(import.meta.url);
+const loadModule = createRequire(import.meta.url);
 const projectRoot = resolve(process.cwd());
 
 const textSizeUtilities = [
@@ -41,7 +39,7 @@ const weightUtilityPattern = new RegExp(
 function resolveFrom(id: string, base: string) {
   return id.startsWith('.')
     ? resolve(base, id)
-    : require.resolve(id, { paths: [base] });
+    : loadModule.resolve(id, { paths: [base] });
 }
 
 async function buildUtilities(candidates: string[]) {
@@ -51,7 +49,7 @@ async function buildUtilities(candidates: string[]) {
       base: projectRoot,
       loadModule: async (id, base) => {
         const path = resolveFrom(id, base);
-        const module = (await import(pathToFileURL(path).href)) as {
+        const module = loadModule(path) as {
           default: unknown;
         };
 
@@ -73,7 +71,8 @@ async function buildUtilities(candidates: string[]) {
 }
 
 function sourceFiles(dir: string): string[] {
-  return readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+  // Spread copies the node:fs array into the Jest realm for deepStrictEqual.
+  return [...readdirSync(dir, { withFileTypes: true })].flatMap(entry => {
     const path = join(dir, entry.name);
 
     if (entry.isDirectory()) {

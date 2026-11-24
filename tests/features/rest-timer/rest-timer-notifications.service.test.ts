@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import test, { mock } from 'node:test';
 
 let permission = { granted: false, canAskAgain: false };
 let permissionRequests = 0;
@@ -15,64 +14,60 @@ const configuredChannels: {
   options: Record<string, unknown>;
 }[] = [];
 
-mock.module('react-native', {
-  namedExports: {
-    AppState: { currentState: 'active' },
-    Linking: { openSettings: async () => undefined },
-    Platform: { OS: 'android' }
-  }
-});
+jest.doMock('react-native', () => ({
+  AppState: { currentState: 'active' },
+  Linking: { openSettings: async () => undefined },
+  Platform: { OS: 'android' }
+}));
 
-mock.module('expo-notifications', {
-  namedExports: {
-    AndroidImportance: { HIGH: 4 },
-    IosAuthorizationStatus: {},
-    SchedulableTriggerInputTypes: { DATE: 'date' },
-    cancelScheduledNotificationAsync: async (id: string) => {
-      cancelled.push(id);
-      scheduled = scheduled.filter(item => item.identifier !== id);
-    },
-    deleteNotificationChannelAsync: async (id: string) => {
-      channelOperations.push(`delete:${id}`);
-    },
-    dismissNotificationAsync: async (id: string) => {
-      dismissed.push(id);
-      presented = presented.filter(item => item.request.identifier !== id);
-    },
-    getAllScheduledNotificationsAsync: async () => scheduled,
-    getPresentedNotificationsAsync: async () => presented,
-    getPermissionsAsync: async () => permission,
-    requestPermissionsAsync: async () => {
-      permissionRequests += 1;
+jest.doMock('expo-notifications', () => ({
+  AndroidImportance: { HIGH: 4 },
+  IosAuthorizationStatus: {},
+  SchedulableTriggerInputTypes: { DATE: 'date' },
+  cancelScheduledNotificationAsync: async (id: string) => {
+    cancelled.push(id);
+    scheduled = scheduled.filter(item => item.identifier !== id);
+  },
+  deleteNotificationChannelAsync: async (id: string) => {
+    channelOperations.push(`delete:${id}`);
+  },
+  dismissNotificationAsync: async (id: string) => {
+    dismissed.push(id);
+    presented = presented.filter(item => item.request.identifier !== id);
+  },
+  getAllScheduledNotificationsAsync: async () => scheduled,
+  getPresentedNotificationsAsync: async () => presented,
+  getPermissionsAsync: async () => permission,
+  requestPermissionsAsync: async () => {
+    permissionRequests += 1;
 
-      return permission;
-    },
-    scheduleNotificationAsync: async (request: {
-      identifier: string;
-      content: Record<string, unknown>;
-      trigger: Record<string, unknown>;
-    }) => {
-      triggers.push(request.trigger);
-      scheduled.push(request);
+    return permission;
+  },
+  scheduleNotificationAsync: async (request: {
+    identifier: string;
+    content: Record<string, unknown>;
+    trigger: Record<string, unknown>;
+  }) => {
+    triggers.push(request.trigger);
+    scheduled.push(request);
 
-      return request.identifier;
-    },
-    setNotificationChannelAsync: async (
-      id: string,
-      options: Record<string, unknown>
-    ) => {
-      channelOperations.push(`set:${id}`);
-      configuredChannels.push({ id, options });
+    return request.identifier;
+  },
+  setNotificationChannelAsync: async (
+    id: string,
+    options: Record<string, unknown>
+  ) => {
+    channelOperations.push(`set:${id}`);
+    configuredChannels.push({ id, options });
 
-      if (channelFailuresRemaining > 0) {
-        channelFailuresRemaining -= 1;
+    if (channelFailuresRemaining > 0) {
+      channelFailuresRemaining -= 1;
 
-        throw new Error('transient channel failure');
-      }
-    },
-    setNotificationHandler: () => undefined
-  }
-});
+      throw new Error('transient channel failure');
+    }
+  },
+  setNotificationHandler: () => undefined
+}));
 
 const servicePromise =
   import('@/src/features/rest-timer/rest-timer-notifications.service');

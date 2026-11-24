@@ -6,9 +6,8 @@ import {
   useAlertDialogStore
 } from '@/src/components/ui/alert-dialog.store';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 
-test.afterEach(() => {
+afterEach(() => {
   dismissDialog();
   useAlertDialogStore.setState({ request: null });
 });
