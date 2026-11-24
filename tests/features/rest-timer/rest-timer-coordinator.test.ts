@@ -1,7 +1,9 @@
 import { createRestTimerStore } from '@/src/features/rest-timer/rest-timer.store';
 import {
   createRestTimerCoordinator,
-  type RestTimerAppState
+  type RestTimerAppState,
+  type RestTimerFeedbackPort,
+  type RestTimerNotificationPort
 } from '@/src/features/rest-timer/rest-timer.coordinator';
 import type {
   RestTimerRuntimeSnapshot,
@@ -9,6 +11,8 @@ import type {
 } from '@/src/features/rest-timer/rest-timer-runtime-snapshot';
 import assert from 'node:assert/strict';
 import test from 'node:test';
+
+type CoordinatorDependencies = Parameters<typeof createRestTimerCoordinator>[0];
 
 function deferred() {
   let resolve!: () => void;
@@ -77,6 +81,111 @@ function snapshotStore(
     },
     writes,
     clears: () => clears
+  };
+}
+
+interface HarnessOptions {
+  now?: number;
+  appState?: RestTimerAppState;
+  scheduler?: CoordinatorDependencies['scheduler'];
+  snapshot?: RestTimerSnapshotReadResult;
+  snapshots?: CoordinatorDependencies['snapshots'];
+  workoutActive?: boolean;
+  notificationsEnabled?: boolean;
+  delivered?: boolean | ((deadlineEpochMs: number) => boolean);
+  /** Adds a recording `cancelPending`; absent, the coordinator falls back to `cancel`. */
+  recordPendingCancellations?: boolean;
+  /** Adds a recording `acknowledge`; absent, the coordinator falls back to `stop`. */
+  recordAcknowledgements?: boolean;
+  notifications?: Partial<RestTimerNotificationPort>;
+  feedback?: Partial<RestTimerFeedbackPort>;
+}
+
+function harness(options: HarnessOptions = {}) {
+  let now = options.now ?? 1_000;
+  const record = {
+    deadlines: [] as number[],
+    cancellations: 0,
+    pendingCancellations: 0,
+    deliveredLookups: [] as number[],
+    completions: [] as { showMessage: boolean }[],
+    feedbackCancels: 0,
+    feedbackStops: 0,
+    acknowledgements: 0,
+    failureMessages: 0,
+    errors: [] as string[]
+  };
+  const delivered = options.delivered ?? false;
+  const timer = createRestTimerStore({ now: () => now });
+  const appState = appStateSource(options.appState);
+  const snapshots = snapshotStore(options.snapshot);
+  const coordinator = createRestTimerCoordinator({
+    timer,
+    clock: { now: () => now },
+    appState,
+    scheduler: options.scheduler ?? idleScheduler,
+    snapshots: options.snapshots ?? snapshots,
+    context: { isWorkoutActive: () => options.workoutActive ?? true },
+    notificationsEnabled: options.notificationsEnabled,
+    notifications: {
+      schedule: ({ deadlineEpochMs }) => {
+        record.deadlines.push(deadlineEpochMs);
+      },
+      cancel: () => {
+        record.cancellations += 1;
+      },
+      ...(options.recordPendingCancellations
+        ? {
+            cancelPending: () => {
+              record.pendingCancellations += 1;
+            }
+          }
+        : {}),
+      hasDelivered: deadlineEpochMs => {
+        record.deliveredLookups.push(deadlineEpochMs);
+
+        return typeof delivered === 'function'
+          ? delivered(deadlineEpochMs)
+          : delivered;
+      },
+      ...options.notifications
+    },
+    feedback: {
+      complete: completion => {
+        record.completions.push(completion);
+      },
+      cancel: () => {
+        record.feedbackCancels += 1;
+      },
+      stop: () => {
+        record.feedbackStops += 1;
+      },
+      ...(options.recordAcknowledgements
+        ? {
+            acknowledge: () => {
+              record.acknowledgements += 1;
+            }
+          }
+        : {}),
+      notificationFailure: () => {
+        record.failureMessages += 1;
+      },
+      ...options.feedback
+    },
+    onError: (_error, operation) => {
+      record.errors.push(operation);
+    }
+  });
+
+  return {
+    timer,
+    coordinator,
+    appState,
+    snapshots,
+    record,
+    setNow(next: number) {
+      now = next;
+    }
   };
 }
 
@@ -159,17 +268,11 @@ test('hydrating a timer publishes an explicit transition', () => {
 });
 
 test('coordinator serializes notification work and leaves the latest transition in control', async () => {
-  let now = 1_000;
   let concurrentOperations = 0;
   let maximumConcurrentOperations = 0;
   let notificationState = 'none';
   const pendingSchedule = deferred();
-  const timer = createRestTimerStore({ now: () => now });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => now },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
+  const { timer, coordinator, setNow } = harness({
     notifications: {
       async schedule() {
         concurrentOperations += 1;
@@ -190,18 +293,13 @@ test('coordinator serializes notification work and leaves the latest transition 
         notificationState = 'cancelled';
         concurrentOperations -= 1;
       }
-    },
-    feedback: {
-      complete: () => undefined,
-      cancel: () => undefined,
-      stop: () => undefined
     }
   });
 
   coordinator.start();
   timer.getState().start(90);
   await new Promise(resolve => setImmediate(resolve));
-  now = 2_000;
+  setNow(2_000);
   timer.getState().pause();
   pendingSchedule.resolve();
   await coordinator.settled();
@@ -212,236 +310,109 @@ test('coordinator serializes notification work and leaves the latest transition 
 });
 
 test('coordinator preserves foreground completion and cancellation feedback', async () => {
-  let now = 1_000;
-  let notificationCancels = 0;
-  let feedbackCancels = 0;
-  const completions: { showMessage: boolean }[] = [];
-  const timer = createRestTimerStore({ now: () => now });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => now },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => {
-        notificationCancels += 1;
-      }
-    },
-    feedback: {
-      complete: completion => {
-        completions.push(completion);
-      },
-      cancel: () => {
-        feedbackCancels += 1;
-      },
-      stop: () => undefined
-    }
-  });
+  const { timer, coordinator, record, setNow } = harness();
 
   coordinator.start();
   timer.getState().start(10);
   await coordinator.settled();
-  now = 11_000;
+  setNow(11_000);
   timer.getState().tick();
   await coordinator.settled();
 
-  assert.deepEqual(completions, [{ showMessage: true }]);
-  assert.equal(notificationCancels, 0);
+  assert.deepEqual(record.completions, [{ showMessage: true }]);
+  assert.equal(record.cancellations, 0);
 
-  now = 12_000;
+  setNow(12_000);
   timer.getState().start(10);
   await coordinator.settled();
   assert.equal(timer.getState().cancel(), true);
   await coordinator.settled();
 
-  assert.equal(notificationCancels, 1);
-  assert.equal(feedbackCancels, 1);
+  assert.equal(record.cancellations, 1);
+  assert.equal(record.feedbackCancels, 1);
   coordinator.stop();
 });
 
 test('coordinator gives background completion to native delivery', async () => {
-  let now = 1_000;
-  let completions = 0;
-  let feedbackStops = 0;
-  const appState = appStateSource();
-  const timer = createRestTimerStore({ now: () => now });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => now },
-    appState,
-    scheduler: idleScheduler,
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => undefined
-    },
-    feedback: {
-      complete: () => {
-        completions += 1;
-      },
-      cancel: () => undefined,
-      stop: () => {
-        feedbackStops += 1;
-      }
-    }
-  });
+  const { timer, coordinator, appState, record, setNow } = harness();
 
   coordinator.start();
   timer.getState().start(10);
   await coordinator.settled();
   appState.change('background');
-  now = 11_000;
+  setNow(11_000);
   timer.getState().tick();
   await coordinator.settled();
 
-  assert.equal(feedbackStops, 1);
-  assert.equal(completions, 0);
+  assert.equal(record.feedbackStops, 1);
+  assert.equal(record.completions.length, 0);
   coordinator.stop();
 });
 
 test('foreground reconciliation clears an old expiry without feedback', async () => {
-  let now = 1_000;
-  let completions = 0;
-  let deliveredLookups = 0;
-  const appState = appStateSource('background');
-  const timer = createRestTimerStore({ now: () => now });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => now },
-    appState,
-    scheduler: idleScheduler,
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => undefined,
-      hasDelivered: () => {
-        deliveredLookups += 1;
-
-        return false;
-      }
-    },
-    feedback: {
-      complete: () => {
-        completions += 1;
-      },
-      cancel: () => undefined,
-      stop: () => undefined
-    }
+  const { timer, coordinator, appState, record, setNow } = harness({
+    appState: 'background'
   });
 
   coordinator.start();
   timer.getState().start(10);
   await coordinator.settled();
-  now = 20_000;
+  setNow(20_000);
   appState.change('active');
   await coordinator.settled();
 
   assert.equal(timer.getState().status, 'idle');
-  assert.equal(deliveredLookups, 0);
-  assert.equal(completions, 0);
+  assert.equal(record.deliveredLookups.length, 0);
+  assert.equal(record.completions.length, 0);
   coordinator.stop();
 });
 
 test('foreground reconciliation gives recent expiry to delivered notification', async () => {
-  let now = 1_000;
-  let completions = 0;
-  const appState = appStateSource('background');
-  const timer = createRestTimerStore({ now: () => now });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => now },
-    appState,
-    scheduler: idleScheduler,
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => undefined,
-      hasDelivered: () => true
-    },
-    feedback: {
-      complete: () => {
-        completions += 1;
-      },
-      cancel: () => undefined,
-      stop: () => undefined
-    }
+  const { timer, coordinator, appState, record, setNow } = harness({
+    appState: 'background',
+    delivered: true
   });
 
   coordinator.start();
   timer.getState().start(10);
   await coordinator.settled();
-  now = 11_000;
+  setNow(11_000);
   appState.change('active');
   await coordinator.settled();
 
   assert.equal(timer.getState().status, 'idle');
-  assert.equal(completions, 0);
+  assert.equal(record.completions.length, 0);
   coordinator.stop();
 });
 
 test('foreground reconciliation gives recent unowned expiry feedback once', async () => {
-  let now = 1_000;
-  let completions = 0;
-  const appState = appStateSource('background');
-  const timer = createRestTimerStore({ now: () => now });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => now },
-    appState,
-    scheduler: idleScheduler,
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => undefined,
-      hasDelivered: () => false
-    },
-    feedback: {
-      complete: () => {
-        completions += 1;
-      },
-      cancel: () => undefined,
-      stop: () => undefined
-    }
+  const { timer, coordinator, appState, record, setNow } = harness({
+    appState: 'background'
   });
 
   coordinator.start();
   timer.getState().start(10);
   await coordinator.settled();
-  now = 11_000;
+  setNow(11_000);
   appState.change('active');
   await coordinator.settled();
 
   assert.equal(timer.getState().status, 'idle');
-  assert.equal(completions, 1);
+  assert.equal(record.completions.length, 1);
   coordinator.stop();
 });
 
 test('foreground reconciliation owns a recent expiry completed by a background tick', async () => {
-  let now = 1_000;
-  let completions = 0;
-  const appState = appStateSource('background');
   const scheduler = manualScheduler();
-  const timer = createRestTimerStore({ now: () => now });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => now },
-    appState,
-    scheduler,
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => undefined,
-      hasDelivered: () => false
-    },
-    feedback: {
-      complete: () => {
-        completions += 1;
-      },
-      cancel: () => undefined,
-      stop: () => undefined
-    }
+  const { timer, coordinator, appState, record, setNow } = harness({
+    appState: 'background',
+    scheduler
   });
 
   coordinator.start();
   timer.getState().start(10);
   await coordinator.settled();
-  now = 11_000;
+  setNow(11_000);
   scheduler.fire();
   assert.equal(timer.getState().status, 'idle');
 
@@ -451,13 +422,12 @@ test('foreground reconciliation owns a recent expiry completed by a background t
   appState.change('active');
   await coordinator.settled();
 
-  assert.equal(completions, 1);
+  assert.equal(record.completions.length, 1);
   coordinator.stop();
 });
 
 test('coordinator observes hydration that happened before it mounted', async () => {
-  const schedules: number[] = [];
-  const timer = createRestTimerStore({ now: () => 1_000 });
+  const { timer, coordinator, record } = harness();
 
   timer.getState().hydrate({
     status: 'running',
@@ -466,205 +436,86 @@ test('coordinator observes hydration that happened before it mounted', async () 
     activeDurationSeconds: 90
   });
 
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 1_000 },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    notifications: {
-      schedule: ({ deadlineEpochMs }) => {
-        schedules.push(deadlineEpochMs);
-      },
-      cancel: () => undefined
-    },
-    feedback: {
-      complete: () => undefined,
-      cancel: () => undefined,
-      stop: () => undefined
-    }
-  });
-
   coordinator.start();
   await coordinator.settled();
 
-  assert.deepEqual(schedules, [91_000]);
+  assert.deepEqual(record.deadlines, [91_000]);
   coordinator.stop();
 });
 
 test('notification acknowledgement reconciles expiry without cancellation feedback', async () => {
-  let now = 1_000;
-  let completions = 0;
-  let cancellations = 0;
-  let acknowledgements = 0;
-  const timer = createRestTimerStore({ now: () => now });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => now },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => undefined
-    },
-    feedback: {
-      complete: () => {
-        completions += 1;
-      },
-      cancel: () => {
-        cancellations += 1;
-      },
-      acknowledge: () => {
-        acknowledgements += 1;
-      },
-      stop: () => undefined
-    }
+  const { timer, coordinator, record, setNow } = harness({
+    recordAcknowledgements: true
   });
 
   coordinator.start();
   timer.getState().start(10);
   await coordinator.settled();
-  now = 11_000;
+  setNow(11_000);
   coordinator.acknowledgeNotificationCompletion();
   await coordinator.settled();
 
   assert.equal(timer.getState().transition?.kind, 'complete');
-  assert.equal(completions, 0);
-  assert.equal(cancellations, 0);
-  assert.equal(acknowledgements, 1);
+  assert.equal(record.completions.length, 0);
+  assert.equal(record.feedbackCancels, 0);
+  assert.equal(record.acknowledgements, 1);
   coordinator.stop();
 });
 
 test('reschedule, pause, and resume replace native delivery at current deadlines', async () => {
-  let now = 1_000;
-  let cancellations = 0;
-  const deadlines: number[] = [];
-  const timer = createRestTimerStore({ now: () => now });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => now },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    notifications: {
-      schedule: ({ deadlineEpochMs }) => {
-        deadlines.push(deadlineEpochMs);
-      },
-      cancel: () => {
-        cancellations += 1;
-      }
-    },
-    feedback: {
-      complete: () => undefined,
-      cancel: () => undefined,
-      stop: () => undefined
-    }
-  });
+  const { timer, coordinator, record, setNow } = harness();
 
   coordinator.start();
   timer.getState().start(90);
   await coordinator.settled();
-  now = 2_000;
+  setNow(2_000);
   timer.getState().addTime(30);
   await coordinator.settled();
-  now = 3_000;
+  setNow(3_000);
   timer.getState().pause();
   await coordinator.settled();
-  now = 4_000;
+  setNow(4_000);
   timer.getState().resume();
   await coordinator.settled();
 
-  assert.deepEqual(deadlines, [91_000, 121_000, 122_000]);
-  assert.equal(cancellations, 1);
+  assert.deepEqual(record.deadlines, [91_000, 121_000, 122_000]);
+  assert.equal(record.cancellations, 1);
   coordinator.stop();
 });
 
 test('open sheet completion keeps sound and haptics but suppresses its message', async () => {
-  let now = 1_000;
-  const completions: { showMessage: boolean }[] = [];
-  const timer = createRestTimerStore({ now: () => now });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => now },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => undefined
-    },
-    feedback: {
-      complete: completion => {
-        completions.push(completion);
-      },
-      cancel: () => undefined,
-      stop: () => undefined
-    }
-  });
+  const { timer, coordinator, record, setNow } = harness();
 
   coordinator.start();
   timer.getState().setSheetOpen(true);
   timer.getState().start(10);
   await coordinator.settled();
-  now = 11_000;
+  setNow(11_000);
   timer.getState().tick();
   await coordinator.settled();
 
-  assert.deepEqual(completions, [{ showMessage: false }]);
+  assert.deepEqual(record.completions, [{ showMessage: false }]);
   coordinator.stop();
 });
 
 test('mount does not replay a retained terminal transition', async () => {
-  let now = 1_000;
-  let completions = 0;
-  const timer = createRestTimerStore({ now: () => now });
+  const { timer, coordinator, record, setNow } = harness();
 
   timer.getState().start(10);
-  now = 11_000;
+  setNow(11_000);
   timer.getState().tick();
-
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => now },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => undefined
-    },
-    feedback: {
-      complete: () => {
-        completions += 1;
-      },
-      cancel: () => undefined,
-      stop: () => undefined
-    }
-  });
 
   coordinator.start();
   await coordinator.settled();
 
-  assert.equal(completions, 0);
+  assert.equal(record.completions.length, 0);
   coordinator.stop();
 });
 
 test('async cancellation cannot clear feedback after coordinator restart', async () => {
   const pendingCancellation = deferred();
-  let feedbackCancellations = 0;
-  const timer = createRestTimerStore({ now: () => 1_000 });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 1_000 },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => pendingCancellation.promise
-    },
-    feedback: {
-      complete: () => undefined,
-      cancel: () => {
-        feedbackCancellations += 1;
-      },
-      stop: () => undefined
-    }
+  const { timer, coordinator, record } = harness({
+    notifications: { cancel: () => pendingCancellation.promise }
   });
 
   coordinator.start();
@@ -677,32 +528,12 @@ test('async cancellation cannot clear feedback after coordinator restart', async
   pendingCancellation.resolve();
   await coordinator.settled();
 
-  assert.equal(feedbackCancellations, 0);
+  assert.equal(record.feedbackCancels, 0);
   coordinator.stop();
 });
 
 test('restart refreshes app state before deciding completion ownership', async () => {
-  let now = 1_000;
-  let completions = 0;
-  const appState = appStateSource();
-  const timer = createRestTimerStore({ now: () => now });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => now },
-    appState,
-    scheduler: idleScheduler,
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => undefined
-    },
-    feedback: {
-      complete: () => {
-        completions += 1;
-      },
-      cancel: () => undefined,
-      stop: () => undefined
-    }
-  });
+  const { timer, coordinator, appState, record, setNow } = harness();
 
   coordinator.start();
   coordinator.stop();
@@ -710,46 +541,27 @@ test('restart refreshes app state before deciding completion ownership', async (
   coordinator.start();
   timer.getState().start(10);
   await coordinator.settled();
-  now = 11_000;
+  setNow(11_000);
   timer.getState().tick();
   await coordinator.settled();
 
-  assert.equal(completions, 0);
+  assert.equal(record.completions.length, 0);
   coordinator.stop();
 });
 
 test('startup restores a running timer from its absolute deadline before scheduling', async () => {
-  const snapshots = snapshotStore({
-    kind: 'snapshot',
+  const { timer, coordinator, record } = harness({
+    now: 31_000,
     snapshot: {
-      version: 1,
-      status: 'running',
-      deadlineEpochMs: 91_000,
-      durationSeconds: 90,
-      activeDurationSeconds: 90,
-      context: { workoutId: 'workout-1' }
-    }
-  });
-  const deadlines: number[] = [];
-  const timer = createRestTimerStore({ now: () => 31_000 });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 31_000 },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    snapshots,
-    context: { isWorkoutActive: () => true },
-    notifications: {
-      schedule: ({ deadlineEpochMs }) => {
-        deadlines.push(deadlineEpochMs);
-      },
-      cancel: () => undefined,
-      hasDelivered: () => false
-    },
-    feedback: {
-      complete: () => undefined,
-      cancel: () => undefined,
-      stop: () => undefined
+      kind: 'snapshot',
+      snapshot: {
+        version: 1,
+        status: 'running',
+        deadlineEpochMs: 91_000,
+        durationSeconds: 90,
+        activeDurationSeconds: 90,
+        context: { workoutId: 'workout-1' }
+      }
     }
   });
 
@@ -759,42 +571,23 @@ test('startup restores a running timer from its absolute deadline before schedul
 
   assert.equal(timer.getState().status, 'running');
   assert.equal(timer.getState().secondsRemaining, 60);
-  assert.deepEqual(deadlines, [91_000]);
+  assert.deepEqual(record.deadlines, [91_000]);
   coordinator.stop();
 });
 
 test('startup restores a fresh paused timer and removes pending delivery', async () => {
-  let cancellations = 0;
-  const snapshots = snapshotStore({
-    kind: 'snapshot',
+  const { timer, coordinator, record } = harness({
+    now: 2_000,
     snapshot: {
-      version: 1,
-      status: 'paused',
-      remainingMs: 45_000,
-      durationSeconds: 90,
-      activeDurationSeconds: 120,
-      pausedAtEpochMs: 1_000
-    }
-  });
-  const timer = createRestTimerStore({ now: () => 2_000 });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 2_000 },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    snapshots,
-    context: { isWorkoutActive: () => true },
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => {
-        cancellations += 1;
-      },
-      hasDelivered: () => false
-    },
-    feedback: {
-      complete: () => undefined,
-      cancel: () => undefined,
-      stop: () => undefined
+      kind: 'snapshot',
+      snapshot: {
+        version: 1,
+        status: 'paused',
+        remainingMs: 45_000,
+        durationSeconds: 90,
+        activeDurationSeconds: 120,
+        pausedAtEpochMs: 1_000
+      }
     }
   });
 
@@ -804,45 +597,24 @@ test('startup restores a fresh paused timer and removes pending delivery', async
 
   assert.equal(timer.getState().status, 'paused');
   assert.equal(timer.getState().secondsRemaining, 45);
-  assert.equal(cancellations, 1);
+  assert.equal(record.cancellations, 1);
   coordinator.stop();
 });
 
 test('startup silently clears paused timers older than 24 hours', async () => {
-  let cancellations = 0;
   const pausedAtEpochMs = 1_000;
-  const snapshots = snapshotStore({
-    kind: 'snapshot',
+  const { timer, coordinator, snapshots, record } = harness({
+    now: pausedAtEpochMs + 24 * 60 * 60 * 1000 + 1,
     snapshot: {
-      version: 1,
-      status: 'paused',
-      remainingMs: 45_000,
-      durationSeconds: 90,
-      activeDurationSeconds: 90,
-      pausedAtEpochMs
-    }
-  });
-  const timer = createRestTimerStore({
-    now: () => pausedAtEpochMs + 24 * 60 * 60 * 1000 + 1
-  });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => pausedAtEpochMs + 24 * 60 * 60 * 1000 + 1 },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    snapshots,
-    context: { isWorkoutActive: () => true },
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => {
-        cancellations += 1;
-      },
-      hasDelivered: () => false
-    },
-    feedback: {
-      complete: () => undefined,
-      cancel: () => undefined,
-      stop: () => undefined
+      kind: 'snapshot',
+      snapshot: {
+        version: 1,
+        status: 'paused',
+        remainingMs: 45_000,
+        durationSeconds: 90,
+        activeDurationSeconds: 90,
+        pausedAtEpochMs
+      }
     }
   });
 
@@ -850,44 +622,24 @@ test('startup silently clears paused timers older than 24 hours', async () => {
 
   assert.equal(timer.getState().status, 'idle');
   assert.equal(snapshots.clears(), 1);
-  assert.equal(cancellations, 1);
+  assert.equal(record.cancellations, 1);
 });
 
+const recentExpirySnapshot: RestTimerSnapshotReadResult = {
+  kind: 'snapshot',
+  snapshot: {
+    version: 1,
+    status: 'running',
+    deadlineEpochMs: 10_000,
+    durationSeconds: 10,
+    activeDurationSeconds: 10
+  }
+};
+
 test('startup gives a recent unowned expiry foreground feedback only once', async () => {
-  let completions = 0;
-  let cancellations = 0;
-  const snapshots = snapshotStore({
-    kind: 'snapshot',
-    snapshot: {
-      version: 1,
-      status: 'running',
-      deadlineEpochMs: 10_000,
-      durationSeconds: 10,
-      activeDurationSeconds: 10
-    }
-  });
-  const timer = createRestTimerStore({ now: () => 14_999 });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 14_999 },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    snapshots,
-    context: { isWorkoutActive: () => true },
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => {
-        cancellations += 1;
-      },
-      hasDelivered: () => false
-    },
-    feedback: {
-      complete: () => {
-        completions += 1;
-      },
-      cancel: () => undefined,
-      stop: () => undefined
-    }
+  const { timer, coordinator, snapshots, record } = harness({
+    now: 14_999,
+    snapshot: recentExpirySnapshot
   });
 
   await coordinator.restore();
@@ -897,80 +649,39 @@ test('startup gives a recent unowned expiry foreground feedback only once', asyn
 
   assert.equal(timer.getState().status, 'idle');
   assert.equal(snapshots.clears(), 1);
-  assert.equal(cancellations, 1);
-  assert.equal(completions, 1);
+  assert.equal(record.cancellations, 1);
+  assert.equal(record.completions.length, 1);
   coordinator.stop();
 });
 
 test('recent startup expiry waits for the app to become active', async () => {
-  let completions = 0;
-  const appState = appStateSource('background');
-  const timer = createRestTimerStore({ now: () => 14_999 });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 14_999 },
-    appState,
-    scheduler: idleScheduler,
-    snapshots: snapshotStore({
-      kind: 'snapshot',
-      snapshot: {
-        version: 1,
-        status: 'running',
-        deadlineEpochMs: 10_000,
-        durationSeconds: 10,
-        activeDurationSeconds: 10
-      }
-    }),
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => undefined,
-      hasDelivered: () => false
-    },
-    feedback: {
-      complete: () => {
-        completions += 1;
-      },
-      cancel: () => undefined,
-      stop: () => undefined
-    }
+  const { coordinator, appState, record } = harness({
+    now: 14_999,
+    appState: 'background',
+    snapshot: recentExpirySnapshot
   });
 
   await coordinator.restore();
   coordinator.start();
   await coordinator.settled();
-  assert.equal(completions, 0);
+  assert.equal(record.completions.length, 0);
 
   appState.change('active');
   await coordinator.settled();
-  assert.equal(completions, 1);
+  assert.equal(record.completions.length, 1);
   coordinator.stop();
 });
 
 test('recent startup expiry rechecks notification ownership on activation', async () => {
-  let completions = 0;
   let deliveredLookups = 0;
   let delivered = false;
   let pendingCancellations = 0;
   let dismissingCancellations = 0;
-  const appState = appStateSource('background');
-  const timer = createRestTimerStore({ now: () => 14_999 });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 14_999 },
-    appState,
-    scheduler: idleScheduler,
-    snapshots: snapshotStore({
-      kind: 'snapshot',
-      snapshot: {
-        version: 1,
-        status: 'running',
-        deadlineEpochMs: 10_000,
-        durationSeconds: 10,
-        activeDurationSeconds: 10
-      }
-    }),
+  const { coordinator, appState, record } = harness({
+    now: 14_999,
+    appState: 'background',
+    snapshot: recentExpirySnapshot,
     notifications: {
-      schedule: () => undefined,
       cancel: () => {
         dismissingCancellations += 1;
         delivered = false;
@@ -984,20 +695,13 @@ test('recent startup expiry rechecks notification ownership on activation', asyn
 
         return delivered;
       }
-    },
-    feedback: {
-      complete: () => {
-        completions += 1;
-      },
-      cancel: () => undefined,
-      stop: () => undefined
     }
   });
 
   await coordinator.restore();
   coordinator.start();
   await coordinator.settled();
-  assert.equal(completions, 0);
+  assert.equal(record.completions.length, 0);
 
   appState.change('active');
   await coordinator.settled();
@@ -1005,86 +709,30 @@ test('recent startup expiry rechecks notification ownership on activation', asyn
   assert.equal(deliveredLookups, 2);
   assert.equal(pendingCancellations, 1);
   assert.equal(dismissingCancellations, 0);
-  assert.equal(completions, 0);
+  assert.equal(record.completions.length, 0);
   coordinator.stop();
 });
 
 test('startup checks delivered ownership for the restored deadline', async () => {
-  const deliveredDeadlineLookups: number[] = [];
-  let completions = 0;
-  const timer = createRestTimerStore({ now: () => 14_999 });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 14_999 },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    snapshots: snapshotStore({
-      kind: 'snapshot',
-      snapshot: {
-        version: 1,
-        status: 'running',
-        deadlineEpochMs: 10_000,
-        durationSeconds: 10,
-        activeDurationSeconds: 10
-      }
-    }),
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => undefined,
-      hasDelivered: deadlineEpochMs => {
-        deliveredDeadlineLookups.push(deadlineEpochMs);
-
-        return deadlineEpochMs === 10_000;
-      }
-    },
-    feedback: {
-      complete: () => {
-        completions += 1;
-      },
-      cancel: () => undefined,
-      stop: () => undefined
-    }
+  const { coordinator, record } = harness({
+    now: 14_999,
+    snapshot: recentExpirySnapshot,
+    delivered: deadlineEpochMs => deadlineEpochMs === 10_000
   });
 
   await coordinator.restore();
   coordinator.start();
   await coordinator.settled();
 
-  assert.deepEqual(deliveredDeadlineLookups, [10_000]);
-  assert.equal(completions, 0);
+  assert.deepEqual(record.deliveredLookups, [10_000]);
+  assert.equal(record.completions.length, 0);
   coordinator.stop();
 });
 
 test('coordinator restart does not lose queued startup completion feedback', async () => {
-  let completions = 0;
-  const timer = createRestTimerStore({ now: () => 14_999 });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 14_999 },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    snapshots: snapshotStore({
-      kind: 'snapshot',
-      snapshot: {
-        version: 1,
-        status: 'running',
-        deadlineEpochMs: 10_000,
-        durationSeconds: 10,
-        activeDurationSeconds: 10
-      }
-    }),
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => undefined,
-      hasDelivered: () => false
-    },
-    feedback: {
-      complete: () => {
-        completions += 1;
-      },
-      cancel: () => undefined,
-      stop: () => undefined
-    }
+  const { coordinator, record } = harness({
+    now: 14_999,
+    snapshot: recentExpirySnapshot
   });
 
   await coordinator.restore();
@@ -1093,89 +741,41 @@ test('coordinator restart does not lose queued startup completion feedback', asy
   coordinator.start();
   await coordinator.settled();
 
-  assert.equal(completions, 1);
+  assert.equal(record.completions.length, 1);
   coordinator.stop();
 });
 
 test('startup does not replay recent expiry when a delivered notification owns it', async () => {
-  let completions = 0;
-  let cancellations = 0;
-  const snapshots = snapshotStore({
-    kind: 'snapshot',
-    snapshot: {
-      version: 1,
-      status: 'running',
-      deadlineEpochMs: 10_000,
-      durationSeconds: 10,
-      activeDurationSeconds: 10
-    }
-  });
-  const timer = createRestTimerStore({ now: () => 15_000 });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 15_000 },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    snapshots,
-    context: { isWorkoutActive: () => true },
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => {
-        cancellations += 1;
-      },
-      hasDelivered: () => true
-    },
-    feedback: {
-      complete: () => {
-        completions += 1;
-      },
-      cancel: () => undefined,
-      stop: () => undefined
-    }
+  const { coordinator, snapshots, record } = harness({
+    now: 15_000,
+    snapshot: recentExpirySnapshot,
+    delivered: true
   });
 
   await coordinator.restore();
   coordinator.start();
   await coordinator.settled();
 
-  assert.equal(completions, 0);
+  assert.equal(record.completions.length, 0);
   assert.equal(snapshots.clears(), 1);
-  assert.equal(cancellations, 1);
+  assert.equal(record.cancellations, 1);
   coordinator.stop();
 });
 
 test('startup clears invalid workout context with pending delivery', async () => {
-  let cancellations = 0;
-  const snapshots = snapshotStore({
-    kind: 'snapshot',
+  const { timer, coordinator, snapshots, record } = harness({
+    now: 2_000,
+    workoutActive: false,
     snapshot: {
-      version: 1,
-      status: 'running',
-      deadlineEpochMs: 91_000,
-      durationSeconds: 90,
-      activeDurationSeconds: 90,
-      context: { workoutId: 'completed-workout' }
-    }
-  });
-  const timer = createRestTimerStore({ now: () => 2_000 });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 2_000 },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    snapshots,
-    context: { isWorkoutActive: () => false },
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => {
-        cancellations += 1;
-      },
-      hasDelivered: () => false
-    },
-    feedback: {
-      complete: () => undefined,
-      cancel: () => undefined,
-      stop: () => undefined
+      kind: 'snapshot',
+      snapshot: {
+        version: 1,
+        status: 'running',
+        deadlineEpochMs: 91_000,
+        durationSeconds: 90,
+        activeDurationSeconds: 90,
+        context: { workoutId: 'completed-workout' }
+      }
     }
   });
 
@@ -1183,67 +783,30 @@ test('startup clears invalid workout context with pending delivery', async () =>
 
   assert.equal(timer.getState().status, 'idle');
   assert.equal(snapshots.clears(), 1);
-  assert.equal(cancellations, 1);
+  assert.equal(record.cancellations, 1);
 });
 
 test('startup removes pending delivery for a corrupt snapshot', async () => {
-  let cancellations = 0;
-  const timer = createRestTimerStore({ now: () => 2_000 });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 2_000 },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    snapshots: snapshotStore({ kind: 'invalid' }),
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => {
-        cancellations += 1;
-      }
-    },
-    feedback: {
-      complete: () => undefined,
-      cancel: () => undefined,
-      stop: () => undefined
-    }
+  const { timer, coordinator, record } = harness({
+    now: 2_000,
+    snapshot: { kind: 'invalid' }
   });
 
   await coordinator.restore();
 
   assert.equal(timer.getState().status, 'idle');
-  assert.equal(cancellations, 1);
+  assert.equal(record.cancellations, 1);
 });
 
 test('snapshot write failure does not interrupt an in-session timer', async () => {
-  const deadlines: number[] = [];
-  const errors: string[] = [];
-  const timer = createRestTimerStore({ now: () => 1_000 });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 1_000 },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
+  const { timer, coordinator, record } = harness({
     snapshots: {
       read: () => ({ kind: 'empty' }),
       write: () => {
         throw new Error('disk unavailable');
       },
       clear: () => undefined
-    },
-    context: { isWorkoutActive: () => true },
-    notifications: {
-      schedule: ({ deadlineEpochMs }) => {
-        deadlines.push(deadlineEpochMs);
-      },
-      cancel: () => undefined,
-      hasDelivered: () => false
-    },
-    feedback: {
-      complete: () => undefined,
-      cancel: () => undefined,
-      stop: () => undefined
-    },
-    onError: (_error, operation) => errors.push(operation)
+    }
   });
 
   coordinator.start();
@@ -1251,39 +814,21 @@ test('snapshot write failure does not interrupt an in-session timer', async () =
   await coordinator.settled();
 
   assert.equal(timer.getState().status, 'running');
-  assert.deepEqual(deadlines, [91_000]);
-  assert.deepEqual(errors, ['persist']);
+  assert.deepEqual(record.deadlines, [91_000]);
+  assert.deepEqual(record.errors, ['persist']);
   coordinator.stop();
 });
 
 test('coordinator persists each new pause time for the 24-hour age', async () => {
-  let now = 1_000;
-  const snapshots = snapshotStore();
-  const timer = createRestTimerStore({ now: () => now });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => now },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    snapshots,
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => undefined
-    },
-    feedback: {
-      complete: () => undefined,
-      cancel: () => undefined,
-      stop: () => undefined
-    }
-  });
+  const { timer, coordinator, snapshots, setNow } = harness();
 
   coordinator.start();
   timer.getState().start(90);
-  now = 2_000;
+  setNow(2_000);
   timer.getState().pause();
-  now = 3_000;
+  setNow(3_000);
   timer.getState().resume();
-  now = 4_000;
+  setNow(4_000);
   timer.getState().pause();
   await coordinator.settled();
 
@@ -1300,44 +845,9 @@ test('coordinator persists each new pause time for the 24-hour age', async () =>
 });
 
 test('startup clears an old running expiry without delivered lookup or feedback', async () => {
-  let deliveredLookups = 0;
-  let completions = 0;
-  let cancellations = 0;
-  const snapshots = snapshotStore({
-    kind: 'snapshot',
-    snapshot: {
-      version: 1,
-      status: 'running',
-      deadlineEpochMs: 10_000,
-      durationSeconds: 10,
-      activeDurationSeconds: 10
-    }
-  });
-  const timer = createRestTimerStore({ now: () => 15_001 });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 15_001 },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    snapshots,
-    notifications: {
-      schedule: () => undefined,
-      cancel: () => {
-        cancellations += 1;
-      },
-      hasDelivered: () => {
-        deliveredLookups += 1;
-
-        return false;
-      }
-    },
-    feedback: {
-      complete: () => {
-        completions += 1;
-      },
-      cancel: () => undefined,
-      stop: () => undefined
-    }
+  const { coordinator, snapshots, record } = harness({
+    now: 15_001,
+    snapshot: recentExpirySnapshot
   });
 
   await coordinator.restore();
@@ -1345,80 +855,40 @@ test('startup clears an old running expiry without delivered lookup or feedback'
   await coordinator.settled();
 
   assert.equal(snapshots.clears(), 1);
-  assert.equal(deliveredLookups, 0);
-  assert.equal(cancellations, 1);
-  assert.equal(completions, 0);
+  assert.equal(record.deliveredLookups.length, 0);
+  assert.equal(record.cancellations, 1);
+  assert.equal(record.completions.length, 0);
   coordinator.stop();
 });
 
 test('notification preference schedules and cancels against the current deadline', async () => {
-  const deadlines: number[] = [];
-  let cancellations = 0;
-  const timer = createRestTimerStore({ now: () => 1_000 });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 1_000 },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    notificationsEnabled: false,
-    notifications: {
-      schedule: ({ deadlineEpochMs }) => {
-        deadlines.push(deadlineEpochMs);
-      },
-      cancel: () => {
-        cancellations += 1;
-      }
-    },
-    feedback: {
-      complete: () => undefined,
-      cancel: () => undefined,
-      stop: () => undefined
-    }
+  const { timer, coordinator, record } = harness({
+    notificationsEnabled: false
   });
 
   coordinator.start();
   timer.getState().start(90);
   await coordinator.settled();
-  assert.deepEqual(deadlines, []);
+  assert.deepEqual(record.deadlines, []);
 
   coordinator.setNotificationsEnabled(true);
   await coordinator.settled();
-  assert.deepEqual(deadlines, [91_000]);
+  assert.deepEqual(record.deadlines, [91_000]);
 
   coordinator.reconcileNotifications();
   await coordinator.settled();
-  assert.deepEqual(deadlines, [91_000, 91_000]);
+  assert.deepEqual(record.deadlines, [91_000, 91_000]);
 
   coordinator.setNotificationsEnabled(false);
   await coordinator.settled();
   assert.equal(timer.getState().status, 'running');
-  assert.equal(cancellations >= 2, true);
+  assert.equal(record.cancellations >= 2, true);
   coordinator.stop();
 });
 
 test('authorization revocation cancels pending delivery without disabling intent', async () => {
-  const deadlines: number[] = [];
-  let pendingCancellations = 0;
-  const timer = createRestTimerStore({ now: () => 1_000 });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 1_000 },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    notifications: {
-      schedule: ({ deadlineEpochMs }) => {
-        deadlines.push(deadlineEpochMs);
-      },
-      cancel: () => undefined,
-      cancelPending: () => {
-        pendingCancellations += 1;
-      }
-    },
-    feedback: {
-      complete: () => undefined,
-      cancel: () => undefined,
-      stop: () => undefined
-    }
+  const { timer, coordinator, record } = harness({
+    recordPendingCancellations: true
   });
 
   coordinator.start();
@@ -1439,31 +909,13 @@ test('authorization revocation cancels pending delivery without disabling intent
   await coordinator.settled();
 
   assert.equal(timer.getState().status, 'running');
-  assert.equal(pendingCancellations, 1);
-  assert.deepEqual(deadlines, [91_000, 121_000]);
+  assert.equal(record.pendingCancellations, 1);
+  assert.deepEqual(record.deadlines, [91_000, 121_000]);
   coordinator.stop();
 });
 
 test('exact-alarm revocation replaces delivery at the unchanged deadline', async () => {
-  const deadlines: number[] = [];
-  const timer = createRestTimerStore({ now: () => 1_000 });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 1_000 },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
-    notifications: {
-      schedule: ({ deadlineEpochMs }) => {
-        deadlines.push(deadlineEpochMs);
-      },
-      cancel: () => undefined
-    },
-    feedback: {
-      complete: () => undefined,
-      cancel: () => undefined,
-      stop: () => undefined
-    }
-  });
+  const { timer, coordinator, record } = harness();
 
   coordinator.start();
   timer.getState().start(90);
@@ -1479,7 +931,7 @@ test('exact-alarm revocation replaces delivery at the unchanged deadline', async
   await coordinator.settled();
 
   assert.equal(timer.getState().endTime, 91_000);
-  assert.deepEqual(deadlines, [91_000, 91_000]);
+  assert.deepEqual(record.deadlines, [91_000, 91_000]);
   coordinator.stop();
 });
 
@@ -1489,27 +941,12 @@ test('superseded reconciliation failure cannot surface stale feedback', async ()
     rejectSchedule = reject;
   });
   let schedules = 0;
-  let failureMessages = 0;
-  const timer = createRestTimerStore({ now: () => 1_000 });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 1_000 },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
+  const { timer, coordinator, record } = harness({
     notifications: {
       schedule: () => {
         schedules += 1;
 
         return schedules === 1 ? undefined : pendingSchedule;
-      },
-      cancel: () => undefined
-    },
-    feedback: {
-      complete: () => undefined,
-      cancel: () => undefined,
-      stop: () => undefined,
-      notificationFailure: () => {
-        failureMessages += 1;
       }
     }
   });
@@ -1526,34 +963,19 @@ test('superseded reconciliation failure cannot surface stale feedback', async ()
   rejectSchedule(new Error('late native failure'));
   await coordinator.settled();
 
-  assert.equal(failureMessages, 0);
+  assert.equal(record.failureMessages, 0);
   assert.equal(timer.getState().status, 'running');
   coordinator.stop();
 });
 
 test('schedule failure message is shown once per session and resets on success', async () => {
   let shouldFail = true;
-  let failureMessages = 0;
-  const timer = createRestTimerStore({ now: () => 1_000 });
-  const coordinator = createRestTimerCoordinator({
-    timer,
-    clock: { now: () => 1_000 },
-    appState: appStateSource(),
-    scheduler: idleScheduler,
+  const { timer, coordinator, record } = harness({
     notifications: {
       schedule: () => {
         if (shouldFail) {
           throw new Error('native detail must stay private');
         }
-      },
-      cancel: () => undefined
-    },
-    feedback: {
-      complete: () => undefined,
-      cancel: () => undefined,
-      stop: () => undefined,
-      notificationFailure: () => {
-        failureMessages += 1;
       }
     }
   });
@@ -1563,7 +985,7 @@ test('schedule failure message is shown once per session and resets on success',
   await coordinator.settled();
   coordinator.reconcileNotifications();
   await coordinator.settled();
-  assert.equal(failureMessages, 1);
+  assert.equal(record.failureMessages, 1);
 
   shouldFail = false;
   coordinator.reconcileNotifications();
@@ -1571,11 +993,11 @@ test('schedule failure message is shown once per session and resets on success',
   shouldFail = true;
   coordinator.reconcileNotifications();
   await coordinator.settled();
-  assert.equal(failureMessages, 2);
+  assert.equal(record.failureMessages, 2);
 
   timer.getState().cancel();
   timer.getState().start(90);
   await coordinator.settled();
-  assert.equal(failureMessages, 3);
+  assert.equal(record.failureMessages, 3);
   coordinator.stop();
 });
