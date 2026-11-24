@@ -4,7 +4,7 @@ How to write GitHub issues so an agent can finish them without guessing. The
 `/triage-issue` and `/implement-issue` skills follow these rules. Labels are defined in
 [triage labels](triage-labels.md); proof rules in [verification](verification.md).
 Durable behavior lives in [ADRs](adr/), [decisions](decisions/) and the subsystem docs
-in [AGENTS.md](../AGENTS.md#documentation-routing); an issue cites and narrows them,
+in [AGENTS.md](../AGENTS.md#docs); an issue cites and narrows them,
 never restates or changes them. A behavior change lands as a doc edit in the same
 change set. Name domain concepts with [glossary](glossary.md) terms.
 
