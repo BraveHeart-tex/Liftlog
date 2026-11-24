@@ -15,6 +15,7 @@
     "android:device": "EXPO_UNSTABLE_ATLAS=true expo run:android --device",
     "android": "expo run:android",
     "check:changed": "node scripts/check-changed.mjs",
+    "device:stack": "node scripts/device-stack.mjs",
     "format": "pnpm run prettier:fix",
     "ios": "expo run:ios",
     "lint:fix": "eslint --fix .",

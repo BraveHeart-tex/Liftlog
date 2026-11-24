@@ -73,3 +73,6 @@ app-example
 
 /modules/liftlog-updater/android/build/
 /modules/liftlog-exact-alarm/android/build/
+
+# Device stack state and logs (scripts/device-stack.mjs)
+.device-stack/
