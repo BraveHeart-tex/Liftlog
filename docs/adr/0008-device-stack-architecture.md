@@ -125,5 +125,5 @@ build. `device:stack build-key` prints the key and its inputs.
 - Tooling tests drive the stack with fake binaries and assert these invariants over every
   recorded call; they run in `validate:changed` and in tooling CI when device stack
   scripts change.
-- Sandboxed agents reach device stacks only through the access path recorded in its own
-  ADR.
+- Sandboxed agents reach device stacks only through a lease broker
+  ([ADR-0009](0009-sandboxed-agents-reach-device-stacks-through-a-lease-broker.md)).
