@@ -33,7 +33,7 @@
     "ts-check": "tsc --noEmit true --project ./tsconfig.json"
   },
   "engines": {
-    "node": ">=22.13.0",
+    "node": ">=22.15.0",
     "pnpm": "11.2.2"
   },
   "dependencies": {

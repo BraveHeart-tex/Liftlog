@@ -37,7 +37,7 @@ LiftLog is a local-first workout tracker for iOS and Android. It is designed for
 
 ## Requirements
 
-- Node.js 22.13.0 or newer (the repository includes `.nvmrc`)
+- Node.js 22.15.0 or newer (the repository includes `.nvmrc`)
 - pnpm 9.1.1
 - Xcode and CocoaPods for iOS development
 - Android Studio and the Android SDK for Android development
