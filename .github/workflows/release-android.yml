@@ -45,16 +45,22 @@ jobs:
         run: node scripts/prepare-android-release.mjs preflight
       - name: TypeScript
         run: pnpm run ts-check
-      - name: Tests
-        run: pnpm test
       - name: ESLint
         run: pnpm run lint
       - name: Prettier
         run: pnpm run prettier:check
 
+  tests:
+    name: Preflight tests
+    uses: ./.github/workflows/test.yml
+    with:
+      app: true
+      native: true
+      tooling: true
+
   publish:
     name: Build and publish signed APK
-    needs: preflight
+    needs: [preflight, tests]
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     environment:

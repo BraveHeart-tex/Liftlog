@@ -1,0 +1,61 @@
+name: Native tests
+
+on:
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.nvmrc'
+      - 'app.json'
+      - 'babel.config.js'
+      - 'metro.config.js'
+      - 'jest.config.js'
+      - 'config/**'
+      - 'plugins/**'
+      - 'modules/**'
+      - 'assets/sounds/**'
+      - 'scripts/build-android-release-single-arch.sh'
+      - 'scripts/verify-android-release.sh'
+      - 'scripts/prepare-android-release.mjs'
+      - 'scripts/prepare-release.mjs'
+      - 'tests/native/**'
+      - 'tests/support/**'
+      - '.github/workflows/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.nvmrc'
+      - 'app.json'
+      - 'babel.config.js'
+      - 'metro.config.js'
+      - 'jest.config.js'
+      - 'config/**'
+      - 'plugins/**'
+      - 'modules/**'
+      - 'assets/sounds/**'
+      - 'scripts/build-android-release-single-arch.sh'
+      - 'scripts/verify-android-release.sh'
+      - 'scripts/prepare-android-release.mjs'
+      - 'scripts/prepare-release.mjs'
+      - 'tests/native/**'
+      - 'tests/support/**'
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Tests
+    uses: ./.github/workflows/test.yml
+    with:
+      native: true

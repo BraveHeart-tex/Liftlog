@@ -54,6 +54,12 @@ Prove each behavior that needs a test at the cheapest level that can prove it.
 
 A purely visual change gets a device check with no test.
 
+CI runs the unit tests on every pull request and push to main, and the native and
+tooling tests only when their inputs change, through the `paths` filters in
+`.github/workflows/ci-native.yml` and `ci-tooling.yml`. A file a native or tooling test
+depends on joins that filter. All three run in the reusable
+`.github/workflows/test.yml`, which the release preflight calls.
+
 ## Device checks
 
 Run the app on an Android emulator or device with the `android-emulator` or

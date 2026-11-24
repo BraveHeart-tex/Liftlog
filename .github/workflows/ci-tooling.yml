@@ -1,0 +1,47 @@
+name: Tooling tests
+
+on:
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.nvmrc'
+      - 'jest.config.js'
+      - 'scripts/create-issue.mjs'
+      - 'scripts/publish-tickets.mjs'
+      - 'scripts/start-issue.mjs'
+      - 'scripts/ticket-lint.mjs'
+      - 'scripts/ticket-lint.d.mts'
+      - 'tests/tooling/**'
+      - '.github/workflows/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.nvmrc'
+      - 'jest.config.js'
+      - 'scripts/create-issue.mjs'
+      - 'scripts/publish-tickets.mjs'
+      - 'scripts/start-issue.mjs'
+      - 'scripts/ticket-lint.mjs'
+      - 'scripts/ticket-lint.d.mts'
+      - 'tests/tooling/**'
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Tests
+    uses: ./.github/workflows/test.yml
+    with:
+      tooling: true

@@ -44,9 +44,6 @@ jobs:
       - name: TypeScript
         run: pnpm run ts-check
 
-      - name: Tests
-        run: pnpm test
-
       - name: ESLint
         run: pnpm run lint
 
@@ -56,3 +53,9 @@ jobs:
       - name: Knip
         run: pnpm exec knip
         continue-on-error: true
+
+  tests:
+    name: Tests
+    uses: ./.github/workflows/test.yml
+    with:
+      app: true
