@@ -23,8 +23,7 @@ Work **lean** throughout:
 - Preflight environment requirements once before implementation when the issue needs an
   emulator, device, native build or external service.
 - On `EPERM`, `EACCES` or sandbox denial, follow
-  [agent-safe command execution](../../../AGENTS.md#agent-safe-command-execution) and the
-  [agent problem log](../../../docs/agent-problems.md). Never retry an unchanged blocked
+  [agent-safe command execution](../../../AGENTS.md#agent-safe-command-execution). Never retry an unchanged blocked
   command or modify application code to work around the execution environment. Never
   ship or close with required verification blocked.
 - For long-running commands, use a reasonable initial wait and subsequent waits of

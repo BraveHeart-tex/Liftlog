@@ -17,20 +17,19 @@ Open the row's doc before changing its subsystem, at the sections that govern th
 
 Docs state current rules. When behavior changes, rewrite the rule in place; history belongs in commits and issues.
 
-| Work                                                  | Open                                                                                                                                                                         |
-| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Gorhom sheets, keyboard behavior, sheet state         | [bottom-sheet](docs/bottom-sheet.md)                                                                                                                                         |
-| Queries, repositories, live reads, data ownership     | [data-access](docs/data-access.md)                                                                                                                                           |
-| SQLite lifecycle, Drizzle, schema, migrations         | [database](docs/database.md)                                                                                                                                                 |
-| `Screen`, safe areas, scrolling, keyboard, footers    | [layout](docs/layout.md)                                                                                                                                                     |
-| NativeWind, theme tokens, typography, inputs          | [styling](docs/styling.md)                                                                                                                                                   |
-| Workout logging UX, audio feedback, compact data      | [ux-display](docs/ux-display.md)                                                                                                                                             |
-| Expo Router navigation, route history                 | [expo-router](docs/expo-router.md)                                                                                                                                           |
-| Animation, transitions, loaders, programmatic scroll  | [reduced-motion](docs/reduced-motion.md)                                                                                                                                     |
-| Issues: write, triage, select, rescope, close         | [tickets](docs/tickets.md), [labels](docs/triage-labels.md), [`gh` conventions](docs/agents/issue-tracker.md); skills `/triage-issue`, `/implement-issue`, `/plan-issue-run` |
-| Tests, device checks, evidence                        | [verification](docs/verification.md)                                                                                                                                         |
-| Domain terms, ADRs, decisions                         | [domain](docs/agents/domain.md)                                                                                                                                              |
-| Tool or command forced a retry, workaround or blocker | [agent-problems](docs/agent-problems.md): append a sanitized entry once understood, before handoff                                                                           |
+| Work                                                 | Open                                                                                                                                                                         |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Gorhom sheets, keyboard behavior, sheet state        | [bottom-sheet](docs/bottom-sheet.md)                                                                                                                                         |
+| Queries, repositories, live reads, data ownership    | [data-access](docs/data-access.md)                                                                                                                                           |
+| SQLite lifecycle, Drizzle, schema, migrations        | [database](docs/database.md)                                                                                                                                                 |
+| `Screen`, safe areas, scrolling, keyboard, footers   | [layout](docs/layout.md)                                                                                                                                                     |
+| NativeWind, theme tokens, typography, inputs         | [styling](docs/styling.md)                                                                                                                                                   |
+| Workout logging UX, audio feedback, compact data     | [ux-display](docs/ux-display.md)                                                                                                                                             |
+| Expo Router navigation, route history                | [expo-router](docs/expo-router.md)                                                                                                                                           |
+| Animation, transitions, loaders, programmatic scroll | [reduced-motion](docs/reduced-motion.md)                                                                                                                                     |
+| Issues: write, triage, select, rescope, close        | [tickets](docs/tickets.md), [labels](docs/triage-labels.md), [`gh` conventions](docs/agents/issue-tracker.md); skills `/triage-issue`, `/implement-issue`, `/plan-issue-run` |
+| Tests, device checks, evidence                       | [verification](docs/verification.md)                                                                                                                                         |
+| Domain terms, ADRs, decisions                        | [domain](docs/agents/domain.md)                                                                                                                                              |
 
 ## Validation
 
@@ -46,6 +45,6 @@ After a code change, run every applicable check on the final code; pick the narr
 
 - Run builds, tests, Expo/native commands and anything spawning workers or daemons with inherited stdout/stderr, keeping the original exit code.
 - No result after a reasonable wait: run the equivalent direct command with live output; never repeat the same invocation.
-- `EPERM` from TSX IPC is a sandbox limit: retry with the approved elevated path and log it in agent-problems.
+- `EPERM` from TSX IPC is a sandbox limit: retry with the approved elevated path.
 - Quote paths with parentheses, spaces or globs (Expo Router).
 - Agent hooks set a host timeout and fail open.

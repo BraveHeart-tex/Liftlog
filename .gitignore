@@ -68,8 +68,6 @@ app-example
 
 .pnpm-store/
 
-docs/agent-problems.md
-
 *.jks
 *.keystore
 

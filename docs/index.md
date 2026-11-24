@@ -22,7 +22,6 @@
 
 ## Engineering rules
 
-- [Agent problem log](agent-problems.md)
 - [Tickets](tickets.md)
 - [Triage labels](triage-labels.md)
 - [Verification](verification.md)
