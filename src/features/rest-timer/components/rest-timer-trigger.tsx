@@ -29,7 +29,7 @@ export function RestTimerTrigger({ onPress }: RestTimerTriggerProps) {
         variant="ghost"
         size="icon"
         accessibilityLabel="Rest timer"
-        className="h-10 w-10"
+        className="h-[48px] w-[48px]"
         onPress={onPress}
       >
         <Icon as={TimerIcon} size="lg" tone="foreground" />
@@ -44,7 +44,7 @@ export function RestTimerTrigger({ onPress }: RestTimerTriggerProps) {
         isRestTimerPaused ? 'paused' : 'remaining'
       }`}
       className={cn(
-        'bg-info/15 border-info/30 min-h-9 rounded-full px-3 py-1.5',
+        'bg-info/15 border-info/30 min-h-[48px] rounded-full px-3 py-1.5',
         isRestTimerPaused && 'bg-accent/15 border-accent/30'
       )}
       onPress={onPress}

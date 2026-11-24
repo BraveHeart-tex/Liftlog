@@ -43,9 +43,8 @@ type ButtonVariant = NonNullable<ButtonVariants['variant']>;
 
 type ButtonSize = NonNullable<ButtonVariants['size']>;
 
-interface ButtonProps extends Omit<PressableSurfaceProps, 'children'> {
+type ButtonProps = Omit<PressableSurfaceProps, 'children'> & {
   variant?: ButtonVariant;
-  size?: ButtonSize;
   loading?: boolean;
   loadingLabel?: string;
   fullWidth?: boolean;
@@ -55,7 +54,10 @@ interface ButtonProps extends Omit<PressableSurfaceProps, 'children'> {
   spinnerClassName?: string;
   textStyle?: StyleProp<TextStyle>;
   children: ReactNode;
-}
+} & (
+    | { size: 'icon'; accessibilityLabel: string }
+    | { size?: Exclude<ButtonSize, 'icon'> }
+  );
 
 const buttonTextVariants = cva('text-body-medium', {
   variants: {

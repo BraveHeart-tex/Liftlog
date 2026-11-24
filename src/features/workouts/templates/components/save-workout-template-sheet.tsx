@@ -123,7 +123,12 @@ const SaveWorkoutTemplateSheetContent = memo(
               in one tap.
             </BottomSheetDescription>
           </View>
-          <Button variant="secondary" size="icon" onPress={handleClose}>
+          <Button
+            variant="secondary"
+            size="icon"
+            accessibilityLabel="Close save as template"
+            onPress={handleClose}
+          >
             <Icon as={XIcon} size="lg" tone="foreground" />
           </Button>
         </BottomSheetHeader>
