@@ -83,8 +83,9 @@ reparent an issue, or commit/push docs, without approval of the exact write plan
    exist, following [tickets creating](../../../docs/tickets.md#creating); new issues
    use `scripts/create-issue.mjs`, edits use a body file with `gh issue edit`.
    Rewrite an approved split parent as a parent ticket (slice table, shared
-   constraints, sole completion criterion: slices closed). Add decisions comments
-   only when useful. Apply approved glossary/ADR edits, commit per
+   constraints, sole completion criterion: slices closed). A scope change follows
+   [changing scope](../../../docs/tickets.md#changing-scope); other decisions
+   comments only when useful. Apply approved glossary/ADR edits, commit per
    [commits](../../../docs/commits.md), and push. Read every GitHub write back
    (`gh issue view`) and inspect the resulting docs commit (`git show --stat`).
    Stop and report any mismatch or failure rather than silently changing scope.
