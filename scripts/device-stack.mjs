@@ -1,4 +1,5 @@
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import {
   existsSync,
   mkdirSync,
@@ -8,6 +9,8 @@ import {
   rmSync,
   writeFileSync
 } from 'node:fs';
+import { createRequire } from 'node:module';
+import { homedir } from 'node:os';
 import { delimiter, join } from 'node:path';
 
 // Puts the Android test environment into a known state for a device check
@@ -18,14 +21,20 @@ import { delimiter, join } from 'node:path';
 // waits for the start screen. It never calls another emulator or a physical device: every
 // adb call names the harness serial and every agent-device call names it and this run's
 // session. `status` reports which recorded processes still pass their identity check;
-// `stop` stops only what `start` started and still passes that check.
+// `stop` stops only what `start` started and still passes that check. `build-key` prints the
+// dev build key of this checkout and the hash of each input behind it.
 // State and logs live in .device-stack/ at the checkout root (the working directory).
 const ROOT = realpathSync(process.cwd());
 const DIR = join(ROOT, '.device-stack');
 const STATE = join(DIR, 'state.json');
 const PORT = Number(process.env.DEVICE_STACK_PORT ?? 8081);
 const HARNESS_AVD = 'liftlog_harness_34';
-const HARNESS_IMAGE = `system-images;android-34;google_apis;${process.arch === 'arm64' ? 'arm64-v8a' : 'x86_64'}`;
+const HARNESS_ABI = process.arch === 'arm64' ? 'arm64-v8a' : 'x86_64';
+const HARNESS_IMAGE = `system-images;android-34;google_apis;${HARNESS_ABI}`;
+const DEV_BUILD_VARIANT = 'debug';
+// Environment variables the generated Gradle build reads; ORG_GRADLE_PROJECT_* variables
+// also set Gradle properties.
+const BUILD_ENV = ['EXPO_USE_COMMUNITY_AUTOLINKING'];
 // Emulator console ports; each instance also takes the next port for adb.
 const CONSOLE_PORTS = Array.from(
   { length: 16 },
@@ -203,6 +212,68 @@ function template() {
   process.stdout.write(
     `${JSON.stringify({ avd: HARNESS_AVD, image: HARNESS_IMAGE, created: true }, null, 2)}\n`
   );
+}
+
+const sha256 = value =>
+  createHash('sha256').update(JSON.stringify(value)).digest('hex');
+
+function jdkVersion() {
+  const java = process.env.JAVA_HOME
+    ? join(process.env.JAVA_HOME, 'bin', 'java')
+    : 'java';
+  // `java -version` prints to stderr.
+  const result = spawnSync(java, ['-version'], { encoding: 'utf8' });
+
+  if (result.error || result.status !== 0) {
+    throw new Error(
+      `${java} -version failed: ${String(result.error?.message ?? result.stderr).trim()}`
+    );
+  }
+
+  return `${result.stdout}${result.stderr}`.trim();
+}
+
+function userGradleProperties() {
+  const path = join(
+    process.env.GRADLE_USER_HOME ?? join(homedir(), '.gradle'),
+    'gradle.properties'
+  );
+
+  return existsSync(path) ? readFileSync(path, 'utf8') : null;
+}
+
+// docs/adr/0008-device-stack-architecture.md "Dev build key": every input that changes the
+// Android dev build, and nothing JS-only. fingerprint.config.js shapes the fingerprint.
+async function devBuildKey() {
+  const requireFromExpo = createRequire(
+    createRequire(join(ROOT, 'package.json')).resolve('expo/package.json')
+  );
+  const { createFingerprintAsync } = requireFromExpo('@expo/fingerprint');
+  const fingerprint = await createFingerprintAsync(ROOT, {
+    platforms: ['android'],
+    silent: true
+  });
+  const environment = Object.fromEntries(
+    Object.keys(process.env)
+      .filter(name => name.startsWith('ORG_GRADLE_PROJECT_'))
+      .concat(BUILD_ENV)
+      .sort()
+      .map(name => [name, process.env[name] ?? null])
+  );
+  const inputs = {
+    fingerprint: fingerprint.hash,
+    variant: sha256(DEV_BUILD_VARIANT),
+    abi: sha256(HARNESS_ABI),
+    jdk: sha256(jdkVersion()),
+    gradleProperties: sha256(userGradleProperties()),
+    environment: sha256(environment)
+  };
+
+  return { key: sha256(inputs), inputs };
+}
+
+async function buildKey() {
+  process.stdout.write(`${JSON.stringify(await devBuildKey(), null, 2)}\n`);
 }
 
 // The serial is fixed by the console port before boot, so no other device is ever listed
@@ -627,9 +698,11 @@ try {
     stop();
   } else if (command === 'template') {
     template();
+  } else if (command === 'build-key') {
+    await buildKey();
   } else {
     throw new Error(
-      'Usage: pnpm run device:stack template | start [--fresh] | status | stop'
+      'Usage: pnpm run device:stack template | start [--fresh] | status | stop | build-key'
     );
   }
 } catch (error) {
