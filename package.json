@@ -27,7 +27,7 @@
     "prettier:check": "prettier . --check",
     "prettier:fix": "prettier . --write",
     "start": "expo start",
-    "test": "TSX_TSCONFIG_PATH=tests/tsconfig.json node --experimental-test-module-mocks --import tsx --import ./tests/setup.ts --test \"tests/**/*.test.ts\"",
+    "test": "TSX_TSCONFIG_PATH=tests/tsconfig.json node --experimental-test-module-mocks --import tsx --import ./tests/setup.ts --test \"tests/!(compat)/**/*.test.ts\"",
     "ts-check": "tsc --noEmit true --project ./tsconfig.json"
   },
   "engines": {
@@ -91,6 +91,8 @@
     "@faker-js/faker": "10.4.0",
     "@stylistic/eslint-plugin": "5.10.0",
     "@tailwindcss/postcss": "^4.2.2",
+    "@testing-library/react-native": "13.3.3",
+    "@types/jest": "^29.5.14",
     "@types/node": "^25.6.0",
     "@types/react": "~19.1.0",
     "@typescript-eslint/eslint-plugin": "8.58.1",
@@ -103,11 +105,14 @@
     "eslint-plugin-unused-imports": "4.4.1",
     "expo-atlas": "^0.4.0",
     "husky": "9.1.7",
+    "jest": "^29.7.0",
+    "jest-expo": "~54.0.18",
     "knip": "^6.6.2",
     "lint-staged": "16.4.0",
     "postcss": "^8.5.8",
     "prettier": "3.8.1",
     "prettier-plugin-tailwindcss": "0.7.2",
+    "react-test-renderer": "19.1.0",
     "tailwindcss": "^4.2.2",
     "tsx": "4.21.0",
     "typescript": "~5.9.2"
