@@ -104,7 +104,9 @@ build. `device:stack build-key` prints the key and its inputs.
   host-wide build lock until it exits, so an interrupted `start` neither stops the build
   nor frees the lock.
 - A hit installs the cached APK only when the installed build differs. `--no-build` turns
-  a miss into `BUILD_MISSING`.
+  a miss into `BUILD_MISSING`; a failed or discarded build exits with `BUILD_FAILED` and
+  its log path.
+- The cache keeps the three most recently used APKs.
 
 ### Emulator instances
 

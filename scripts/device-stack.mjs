@@ -1,31 +1,49 @@
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
+  closeSync,
+  copyFileSync,
   existsSync,
+  linkSync,
   mkdirSync,
   openSync,
+  readdirSync,
   readFileSync,
   realpathSync,
+  renameSync,
   rmSync,
+  statSync,
+  utimesSync,
   writeFileSync
 } from 'node:fs';
 import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { delimiter, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // Puts the Android test environment into a known state for a device check
 // (docs/verification.md "Device checks"; docs/adr/0008-device-stack-architecture.md).
 // `template` creates the harness AVD once. `start [--fresh]` boots the harness emulator on a
-// free console port, reverses the Metro port, refuses a missing dev build, starts or reuses
-// this checkout's Metro, captures JS logs, opens the app through the dev-client link and
-// waits for the start screen. It never calls another emulator or a physical device: every
-// adb call names the harness serial and every agent-device call names it and this run's
-// session. `status` reports which recorded processes still pass their identity check;
+// free console port, reverses the Metro port, installs the dev build matching this checkout's
+// dev build key from the dev build cache (building it on a miss unless `--no-build`), starts
+// or reuses this checkout's Metro, captures JS logs, opens the app through the dev-client
+// link and waits for the start screen. `build` fills the dev build cache for this checkout.
+// It never calls another emulator or a physical device: every adb call names the harness
+// serial and every agent-device call names it and this run's session. `status` reports which recorded processes still pass their identity check;
 // `stop` stops only what `start` started and still passes that check. `build-key` prints the
 // dev build key of this checkout and the hash of each input behind it.
-// State and logs live in .device-stack/ at the checkout root (the working directory).
+// State and logs live in .device-stack/ at the checkout root (the working directory); the dev
+// build cache lives in the git common dir and the build lock in the host directory.
 const ROOT = realpathSync(process.cwd());
 const DIR = join(ROOT, '.device-stack');
+const SCRIPT = fileURLToPath(import.meta.url);
+const HOST_DIR = join(homedir(), '.liftlog-device-stack');
+const BUILD_LOCK = join(HOST_DIR, 'build.lock');
+const BUILD_WORKER = 'build-worker';
+// Build worker exit code when the dev build key changed during the build.
+const KEY_CHANGED = 3;
+// Cached dev builds kept, most recently used first.
+const RETAINED_BUILDS = 3;
 const STATE = join(DIR, 'state.json');
 const PORT = Number(process.env.DEVICE_STACK_PORT ?? 8081);
 const HARNESS_AVD = 'liftlog_harness_34';
@@ -276,6 +294,250 @@ async function buildKey() {
   process.stdout.write(`${JSON.stringify(await devBuildKey(), null, 2)}\n`);
 }
 
+// docs/adr/0008-device-stack-architecture.md "Dev build cache".
+function cacheDir() {
+  const common = run('git', [
+    'rev-parse',
+    '--path-format=absolute',
+    '--git-common-dir'
+  ]).trim();
+
+  return join(common, 'device-stack', 'dev-builds');
+}
+
+// The cached APK for a key, marked as just used, or null on a miss.
+function cachedBuild(key) {
+  const apk = join(cacheDir(), `${key}.apk`);
+
+  if (!existsSync(apk)) {
+    return null;
+  }
+
+  const now = new Date();
+
+  utimesSync(apk, now, now);
+
+  return apk;
+}
+
+const fileHash = path =>
+  createHash('sha256').update(readFileSync(path)).digest('hex');
+
+// Copies the APK beside its final name, then renames it, so a reader never sees a partial
+// file; then keeps only the most recently used builds.
+function publishBuild(key, apk) {
+  const dir = cacheDir();
+  const partial = join(dir, `.${key}.${process.pid}.apk`);
+
+  mkdirSync(dir, { recursive: true });
+  copyFileSync(apk, partial);
+  renameSync(partial, join(dir, `${key}.apk`));
+  readdirSync(dir)
+    .filter(name => /^[0-9a-f]{64}\.apk$/.test(name))
+    .map(name => ({
+      path: join(dir, name),
+      used: statSync(join(dir, name)).mtimeMs
+    }))
+    .sort((a, b) => b.used - a.used)
+    .slice(RETAINED_BUILDS)
+    .forEach(({ path }) => rmSync(path, { force: true }));
+}
+
+const readJson = path => {
+  try {
+    return JSON.parse(readFileSync(path, 'utf8'));
+  } catch {
+    return null;
+  }
+};
+
+// The build lock is a file linked into place atomically with its owner's identity. A lock
+// whose owner fails its identity check is stale and broken.
+async function acquireBuildLock(key) {
+  mkdirSync(HOST_DIR, { recursive: true });
+  const owner = {
+    ...processIdentity(process.pid, [SCRIPT, BUILD_WORKER, key]),
+    root: ROOT
+  };
+  const candidate = `${BUILD_LOCK}.${process.pid}`;
+
+  writeFileSync(candidate, JSON.stringify(owner));
+
+  try {
+    for (;;) {
+      try {
+        linkSync(candidate, BUILD_LOCK);
+
+        return;
+      } catch (error) {
+        if (error.code !== 'EEXIST') {
+          throw error;
+        }
+      }
+
+      const holder = readJson(BUILD_LOCK);
+
+      if (holder && !isSameProcess(holder)) {
+        log(`breaking the stale build lock of pid ${holder.pid}`);
+        rmSync(BUILD_LOCK, { force: true });
+        continue;
+      }
+
+      await sleep(500);
+    }
+  } finally {
+    rmSync(candidate, { force: true });
+  }
+}
+
+function releaseBuildLock() {
+  if (readJson(BUILD_LOCK)?.pid === process.pid) {
+    rmSync(BUILD_LOCK, { force: true });
+  }
+}
+
+function runLogged(command, args, cwd, env = process.env) {
+  log(`running ${command} ${args.join(' ')}`);
+  const result = spawnSync(command, args, { cwd, env, stdio: 'inherit' });
+
+  if (result.error || result.status !== 0) {
+    throw new Error(
+      `${command} ${args.join(' ')} failed (${result.error?.message ?? `exit ${result.status}`}).`
+    );
+  }
+}
+
+// The detached build process: it holds the build lock until it exits, builds only on a miss,
+// from a freshly regenerated android/, and publishes only while the key still matches.
+async function buildWorker(key) {
+  await acquireBuildLock(key);
+
+  try {
+    if (cachedBuild(key)) {
+      log(`dev build ${key} is already cached`);
+
+      return;
+    }
+
+    const android = join(ROOT, 'android');
+
+    log('regenerating android/');
+    rmSync(android, { recursive: true, force: true });
+    runLogged(
+      'pnpm',
+      ['exec', 'expo', 'prebuild', '--platform', 'android', '--no-install'],
+      ROOT,
+      { ...process.env, CI: '1' }
+    );
+    runLogged(
+      join(android, 'gradlew'),
+      [
+        `app:assemble${DEV_BUILD_VARIANT[0].toUpperCase()}${DEV_BUILD_VARIANT.slice(1)}`,
+        `-PreactNativeArchitectures=${HARNESS_ABI}`
+      ],
+      android
+    );
+
+    const { key: after } = await devBuildKey();
+
+    if (after !== key) {
+      log(
+        `the dev build key changed from ${key} to ${after} during the build; discarding it`
+      );
+      process.exitCode = KEY_CHANGED;
+
+      return;
+    }
+
+    publishBuild(
+      key,
+      join(
+        android,
+        'app',
+        'build',
+        'outputs',
+        'apk',
+        DEV_BUILD_VARIANT,
+        `app-${DEV_BUILD_VARIANT}.apk`
+      )
+    );
+    log(`published dev build ${key}`);
+  } finally {
+    releaseBuildLock();
+  }
+}
+
+// Returns the cached APK for a key, or starts the detached build process and returns a
+// promise of its APK. The build process is never stopped by this process ending.
+function devBuild(key, { noBuild }) {
+  const apk = cachedBuild(key);
+
+  if (apk) {
+    return { key, built: false, apk, done: Promise.resolve(apk) };
+  }
+
+  if (noBuild) {
+    throw new Error(
+      `BUILD_MISSING: no cached dev build for key ${key}. Run \`pnpm run device:stack build\` or start without --no-build.`
+    );
+  }
+
+  const buildLog = join(DIR, 'build.log');
+  const out = openSync(buildLog, 'a');
+
+  log(`building dev build ${key}; log: ${buildLog}`);
+  const child = spawn(process.execPath, [SCRIPT, BUILD_WORKER, key], {
+    cwd: ROOT,
+    detached: true,
+    stdio: ['ignore', out, out]
+  });
+
+  closeSync(out);
+  const done = new Promise(resolve => child.on('exit', resolve)).then(code => {
+    const built = cachedBuild(key);
+
+    if (built) {
+      return built;
+    }
+
+    throw new Error(
+      `BUILD_FAILED: ${code === KEY_CHANGED ? 'the dev build key changed during the build, so nothing was published' : 'the dev build failed'}; see ${buildLog}.`
+    );
+  });
+
+  // Awaited after boot; a failure until then is not unhandled.
+  done.catch(() => {});
+
+  return { key, built: true, pid: child.pid, log: buildLog, done };
+}
+
+async function build() {
+  mkdirSync(DIR, { recursive: true });
+  const { key } = await devBuildKey();
+  const { built, done } = devBuild(key, { noBuild: false });
+  const apk = await done;
+
+  process.stdout.write(`${JSON.stringify({ key, apk, built }, null, 2)}\n`);
+}
+
+// Installs the cached APK only when the installed APK differs from it.
+function installDevBuild(serial, apk) {
+  const path = tryAdb(serial, 'shell', 'pm', 'path', PACKAGE).match(
+    /^package:(\S*base\.apk)\s*$/m
+  )?.[1];
+  const installed =
+    path && tryAdb(serial, 'shell', 'sha256sum', path).trim().split(/\s+/)[0];
+
+  if (installed === fileHash(apk)) {
+    return false;
+  }
+
+  log(`installing ${apk} on ${serial}`);
+  adb(serial, 'install', '-r', '-d', apk);
+
+  return true;
+}
+
 // The serial is fixed by the console port before boot, so no other device is ever listed
 // or called to find it.
 function freeConsolePort() {
@@ -454,7 +716,7 @@ async function ownMetroReady(pid) {
   );
 }
 
-async function start({ fresh }) {
+async function start({ fresh, noBuild }) {
   if (readState()) {
     throw new Error(
       'A device stack is already recorded; run `pnpm run device:stack stop` first.'
@@ -463,8 +725,18 @@ async function start({ fresh }) {
 
   const reused = await existingMetro();
 
+  const { key } = await devBuildKey();
+
   mkdirSync(DIR, { recursive: true });
-  const state = { root: ROOT, port: PORT, package: PACKAGE, fresh };
+  // A miss starts the build now, so it runs while the emulator boots.
+  const { done, ...devBuildState } = devBuild(key, { noBuild });
+  const state = {
+    root: ROOT,
+    port: PORT,
+    package: PACKAGE,
+    fresh,
+    devBuild: devBuildState
+  };
 
   saveState(state);
   const serial = await bootEmulator(state);
@@ -473,23 +745,9 @@ async function start({ fresh }) {
   state.reverse = `tcp:${PORT}`;
   saveState(state);
 
-  // A dev build is debuggable; a release build of the same package runs its embedded
-  // bundle and never reaches Metro.
-  const packageFlags = adb(
-    serial,
-    'shell',
-    'dumpsys',
-    'package',
-    PACKAGE
-  ).match(/pkgFlags=\[([^\]]*)\]/);
-
-  if (!packageFlags?.[1].split(/\s+/).includes('DEBUGGABLE')) {
-    throw new Error(
-      `${packageFlags ? 'The installed build is not a dev build' : 'The dev build is not installed'} ` +
-        `(${PACKAGE} on ${serial}). Build and install it on the harness emulator with ` +
-        `\`pnpm exec expo run:android --device ${HARNESS_AVD} --no-bundler\`, then rerun.`
-    );
-  }
+  state.devBuild.apk = await done;
+  state.devBuild.installed = installDevBuild(serial, state.devBuild.apk);
+  saveState(state);
 
   const metroLog = join(DIR, 'metro.log');
 
@@ -691,7 +949,10 @@ const [command, ...flags] = process.argv.slice(2);
 
 try {
   if (command === 'start') {
-    await start({ fresh: flags.includes('--fresh') });
+    await start({
+      fresh: flags.includes('--fresh'),
+      noBuild: flags.includes('--no-build')
+    });
   } else if (command === 'status') {
     status();
   } else if (command === 'stop') {
@@ -700,9 +961,13 @@ try {
     template();
   } else if (command === 'build-key') {
     await buildKey();
+  } else if (command === 'build') {
+    await build();
+  } else if (command === BUILD_WORKER) {
+    await buildWorker(flags[0]);
   } else {
     throw new Error(
-      'Usage: pnpm run device:stack template | start [--fresh] | status | stop | build-key'
+      'Usage: pnpm run device:stack template | start [--fresh] [--no-build] | status | stop | build-key | build'
     );
   }
 } catch (error) {

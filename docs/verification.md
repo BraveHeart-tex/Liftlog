@@ -104,8 +104,8 @@ Conventions for the levels above; read this and the nearest example before writi
 
 ## Device checks
 
-Run the app on an Android emulator or device with the `android-emulator` or
-`agent-device` skill, or `pnpm run android:device`. A device check names the screen,
+Run the app on the harness emulator with the [recipe](#recipe) and the
+`android-emulator` or `agent-device` skill. A device check names the screen,
 the steps and what must be visible, and its evidence is a reviewed screenshot or a
 short written observation. Native changes need a fresh native build before the check.
 
@@ -126,8 +126,14 @@ coordinates read off a screenshot. In order:
    emulator or a phone, even when one is the only device online
    ([targeting invariants](adr/0008-device-stack-architecture.md#targeting-invariants)).
    Target every command you run at the serial and session that `status` prints:
-   `adb -s <serial>`, `agent-device ... --serial <serial> --session <session>`. A missing
-   dev build is refused with the install command for the harness emulator. `--fresh`
+   `adb -s <serial>`, `agent-device ... --serial <serial> --session <session>`. `start`
+   installs the dev build matching the checkout's dev build key from the dev build cache,
+   only when the installed build differs; on a miss it builds it first from a freshly
+   regenerated `android/` (log: `.device-stack/build.log`), so native changes need no
+   separate build. `pnpm run device:stack build` fills the cache without starting;
+   `--no-build` fails a miss with `BUILD_MISSING`, and a failed build exits with
+   `BUILD_FAILED` and the log path. Never install with `pnpm run android`: it targets the
+   first listed device and starts its own Metro. `--fresh`
    clears app data so the dev seed runs again (new random IDs). `status` reports each
    recorded process `running` only while its PID, start time and argv still match
    ([ownership evidence](adr/0008-device-stack-architecture.md#ownership-evidence)); a
