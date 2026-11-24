@@ -136,8 +136,13 @@ coordinates read off a screenshot. In order:
    first listed device and starts its own Metro. `--fresh`
    clears app data so the dev seed runs again (new random IDs). `status` reports each
    recorded process `running` only while its PID, start time and argv still match
-   ([ownership evidence](adr/0008-device-stack-architecture.md#ownership-evidence)); a
-   failed `start` leaves its state recorded, so run `stop` before retrying.
+   ([ownership evidence](adr/0008-device-stack-architecture.md#ownership-evidence)).
+   `start` leases an emulator slot first and fails with `CAPACITY`, naming the holders,
+   when every slot is taken; the limit is one unless `~/.liftlog-device-stack/config.json`
+   sets `{ "limit": 2 }`, and `DEVICE_STACK_LIMIT` can only lower it. Repeating `start`
+   returns the running lease. After a failed or killed `start`, the next `start` repairs
+   the lease and `stop` releases it; `LEASE_LOST` means another holder took the slot, so
+   run `stop` to clear the worktree's record.
    - Coordination between worktrees follows
      [ADR-0008](adr/0008-device-stack-architecture.md):
      [coordination scopes](adr/0008-device-stack-architecture.md#coordination-scopes),

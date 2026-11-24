@@ -31,14 +31,25 @@ const SERIAL = 'emulator-5556';
 // Gradle logs the android/ entries it builds from, waits while \`gradleHold\` names a missing
 // file, and writes an APK whose content is the fingerprint at the end of the build.
 const fakeImpl = `
-const { appendFileSync, chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } = require('node:fs')
+const { appendFileSync, chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmdirSync, writeFileSync } = require('node:fs')
 const { spawn } = require('node:child_process')
 const { join } = require('node:path')
 const name = require('node:path').basename(process.argv[1])
 const args = process.argv.slice(2)
 const statePath = process.env.FAKE_STATE
 const read = () => JSON.parse(readFileSync(statePath, 'utf8'))
-const write = s => writeFileSync(statePath, JSON.stringify(s))
+// Concurrent fakes edit the state under a directory lock and replace it whole.
+const update = edit => {
+  for (;;) {
+    try { mkdirSync(statePath + '.lock'); break } catch { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5) }
+  }
+  try {
+    const current = read()
+    edit(current)
+    writeFileSync(statePath + '.' + process.pid, JSON.stringify(current))
+    renameSync(statePath + '.' + process.pid, statePath)
+  } finally { rmdirSync(statePath + '.lock') }
+}
 appendFileSync(process.env.FAKE_LOG, JSON.stringify({
   name, args, ci: process.env.CI ?? null, cwd: process.cwd(),
   ...(name === 'gradlew' && { files: readdirSync('.') })
@@ -46,16 +57,16 @@ appendFileSync(process.env.FAKE_LOG, JSON.stringify({
 const stayAlive = () => setInterval(() => {}, 1000)
 const state = read()
 const avdOf = serial =>
-  serial === '${FOREIGN}' ? '${AUDIT_AVD}' : state.booted && serial === 'emulator-' + state.harnessPort ? state.harnessAvd : null
+  serial === '${FOREIGN}' ? '${AUDIT_AVD}' : state.emulators[serial?.slice('emulator-'.length)]?.avd ?? null
 if (name === 'emulator') {
   if (args[0] === '-list-avds') process.stdout.write(state.avds.join('\\n') + '\\n')
   else {
-    const port = Number(args[args.indexOf('-port') + 1])
-    write({ ...state, booted: true, harnessPort: port, harnessAvd: args[args.indexOf('-avd') + 1], emulatorPid: process.pid })
+    const port = args[args.indexOf('-port') + 1]
+    update(s => { s.emulators[port] = { avd: args[args.indexOf('-avd') + 1], pid: process.pid } })
     stayAlive()
   }
 } else if (name === 'avdmanager') {
-  write({ ...state, avds: [...state.avds, args[args.indexOf('--name') + 1]] })
+  update(s => { s.avds.push(args[args.indexOf('--name') + 1]) })
 } else if (name === 'adb') {
   const serial = args[0] === '-s' ? args[1] : null
   const rest = args[0] === '-s' ? args.slice(2) : args
@@ -74,12 +85,15 @@ if (name === 'emulator') {
     const hash = require('node:crypto').createHash('sha256').update(state.installed).digest('hex')
     process.stdout.write(hash + '  ' + rest[2] + '\\n')
   } else if (rest[0] === 'install') {
-    write({ ...state, installed: readFileSync(rest.at(-1), 'utf8') })
+    update(s => { s.installed = readFileSync(rest.at(-1), 'utf8') })
   } else if (rest[0] === 'logcat') {
     process.stdout.write('I ReactNativeJS: fake log line\\n'); stayAlive()
   } else if (command === 'emu kill') {
-    try { process.kill(state.emulatorPid) } catch {}
-    write({ ...state, booted: false })
+    update(s => {
+      const port = serial.slice('emulator-'.length)
+      try { process.kill(s.emulators[port].pid) } catch {}
+      delete s.emulators[port]
+    })
   }
 } else if (name === 'lsof') {
   if (args.includes('-sTCP:LISTEN')) {
@@ -103,7 +117,7 @@ if (name === 'emulator') {
   const finish = () => {
     const current = read()
     if (current.gradleFails) process.exit(1)
-    if (current.fingerprintAfterBuild) write({ ...current, fingerprint: current.fingerprintAfterBuild })
+    if (current.fingerprintAfterBuild) update(s => { s.fingerprint = current.fingerprintAfterBuild })
     const out = join('app', 'build', 'outputs', 'apk', 'debug')
     mkdirSync(out, { recursive: true })
     writeFileSync(join(out, 'app-debug.apk'), 'apk:' + current.fingerprint)
@@ -117,10 +131,10 @@ if (name === 'emulator') {
   if (state.foreignMetro) {
     const foreign = spawn(process.execPath, [process.env.FAKE_METRO], { detached: true, stdio: 'ignore' })
     foreign.unref()
-    write({ ...state, listeners: [...state.listeners, { pid: foreign.pid, cwd: '/', port }] })
+    update(s => { s.listeners.push({ pid: foreign.pid, cwd: '/', port }) })
     stayAlive()
   } else {
-    write({ ...state, listeners: [...state.listeners, { pid: process.pid, cwd: process.cwd(), port }] })
+    update(s => { s.listeners.push({ pid: process.pid, cwd: process.cwd(), port }) })
     require(process.env.FAKE_METRO)
   }
 }
@@ -140,17 +154,25 @@ createServer((request, response) => {
 type Listener = { pid: number; cwd: string; port: number };
 type FakeState = {
   avds: string[];
-  booted: boolean;
+  // Running harness emulators by console port.
+  emulators: Record<string, { avd: string; pid: number }>;
   // Content of the installed APK, null when the app is not installed.
   installed: string | null;
   fingerprint: string;
   fingerprintAfterBuild?: string;
   gradleFails?: boolean;
   gradleHold?: string;
-  emulatorPid?: number;
   onboarding?: boolean;
   foreignMetro?: boolean;
   listeners: Listener[];
+};
+type Lease = {
+  id: string;
+  slot: number;
+  serial: string;
+  consolePort: number;
+  root: string;
+  operation: { kind: string } | null;
 };
 type Call = {
   name: string;
@@ -213,9 +235,15 @@ const git = (cwd: string, ...args: string[]) =>
 
 // `seedBuild` fills the dev build cache with `build` and installs that APK, then clears the
 // call log, so a test starts from a cache hit with the matching build installed.
+// `hooks` is the source of a module the script loads to act at its check points, and
+// `limit` the host config's emulator limit.
 async function harness(
   seed: Partial<FakeState> = {},
-  { seedBuild = true } = {}
+  {
+    seedBuild = true,
+    hooks,
+    limit
+  }: { seedBuild?: boolean; hooks?: string; limit?: number } = {}
 ) {
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'device-stack-')));
   directories.push(dir);
@@ -240,6 +268,16 @@ async function harness(
   chmodSync(join(bin, 'java'), 0o755);
   writeFileSync(join(dir, 'fake.js'), fakeImpl);
   writeFileSync(join(dir, 'metro.js'), fakeMetro);
+  const hostDir = join(home, '.liftlog-device-stack');
+
+  if (limit !== undefined) {
+    mkdirSync(hostDir);
+    writeFileSync(join(hostDir, 'config.json'), JSON.stringify({ limit }));
+  }
+
+  if (hooks) {
+    writeFileSync(join(dir, 'hooks.mjs'), hooks);
+  }
 
   // Node itself runs each fake, so a process's argv never changes after it starts.
   for (const name of [
@@ -264,7 +302,7 @@ async function harness(
     statePath,
     JSON.stringify({
       avds: [AUDIT_AVD, AVD],
-      booted: false,
+      emulators: {},
       installed: null,
       fingerprint: 'fingerprint-1',
       // The maintainer's emulator holds its console and adb ports.
@@ -283,7 +321,9 @@ async function harness(
     DEVICE_STACK_PORT: String(port),
     FAKE_STATE: statePath,
     FAKE_LOG: logPath,
-    FAKE_METRO: join(dir, 'metro.js')
+    FAKE_METRO: join(dir, 'metro.js'),
+    HOOK_DIR: dir,
+    ...(hooks && { DEVICE_STACK_HOOKS: join(dir, 'hooks.mjs') })
   };
   const fakeState = (): FakeState =>
     JSON.parse(readFileSync(statePath, 'utf8'));
@@ -314,7 +354,8 @@ async function harness(
   function stackIn(
     cwd: string,
     args: string[],
-    onSpawn?: (child: ReturnType<typeof spawn>) => void
+    onSpawn?: (child: ReturnType<typeof spawn>) => void,
+    extraEnv: Record<string, string> = {}
   ) {
     return new Promise<{
       status: number | null;
@@ -323,7 +364,10 @@ async function harness(
       stderr: string;
       calls: Call[];
     }>(done => {
-      const child = spawn(process.execPath, [script, ...args], { cwd, env });
+      const child = spawn(process.execPath, [script, ...args], {
+        cwd,
+        env: { ...env, ...extraEnv }
+      });
       onSpawn?.(child);
       let stdout = '';
       let stderr = '';
@@ -336,7 +380,7 @@ async function harness(
           state?.metro?.pid,
           state?.jsLogs?.pid,
           state?.devBuild?.pid,
-          fakeState().emulatorPid,
+          ...Object.values(fakeState().emulators).map(({ pid }) => pid),
           ...fakeState()
             .listeners.map(listener => listener.pid)
             .filter(pid => pid !== 999_991)
@@ -367,7 +411,14 @@ async function harness(
     return path;
   }
 
-  const buildLock = join(home, '.liftlog-device-stack', 'build.lock');
+  const buildLock = join(hostDir, 'build.lock');
+  const registry = () => {
+    const path = join(hostDir, 'registry.json');
+
+    return existsSync(path)
+      ? (JSON.parse(readFileSync(path, 'utf8')) as { leases: Lease[] })
+      : { leases: [] };
+  };
 
   if (seedBuild) {
     const built = await stack('build');
@@ -401,6 +452,8 @@ async function harness(
     stackIn,
     worktree,
     buildLock,
+    hostDir,
+    registry,
     editFake,
     runningMetro,
     fakeState,
@@ -614,7 +667,7 @@ test('start fails before opening the app when a foreign server answers Metro sta
 });
 
 test('start refuses a Metro from another project without stopping it or starting anything', async () => {
-  const { root, stack, runningMetro, recorded } = await harness();
+  const { stack, runningMetro, recorded, registry } = await harness();
   const metro = await runningMetro({ slug: 'other-app' });
 
   const { status, stderr, calls } = await stack('start');
@@ -622,9 +675,9 @@ test('start refuses a Metro from another project without stopping it or starting
   expect(status).toBe(1);
   expect(stderr).toMatch(/not this project's Metro.*"other-app"/);
   expect(alive(metro)).toBe(true);
-  expect(calls.map(call => call.name)).toEqual(['lsof']);
+  expect(new Set(calls.map(call => call.name))).toEqual(new Set(['lsof']));
   expect(recorded()).toBeNull();
-  expect(existsSync(join(root, '.device-stack'))).toBe(false);
+  expect(registry().leases).toEqual([]);
 });
 
 test("start refuses this project's Metro from another checkout without stopping it", async () => {
@@ -767,7 +820,13 @@ test('two worktrees missing the same key run one build, and the second installs 
   const first = stack('build');
   await waitUntil(() => gradleCalls(logPath).length > 0);
   const second = stackIn(other, ['start']);
-  await waitUntil(() => existsSync(join(other, '.device-stack', 'state.json')));
+  // The second start records the build it waits for.
+  const otherState = join(other, '.device-stack', 'state.json');
+  await waitUntil(
+    () =>
+      existsSync(otherState) &&
+      readFileSync(otherState, 'utf8').includes('"devBuild"')
+  );
   writeFileSync(hold, '');
   const [built, started] = await Promise.all([first, second]);
 
@@ -842,7 +901,7 @@ test('stop leaves an already-running Metro alone and ends the harness emulator i
     stopped: ['session', 'jsLogs', 'emulator']
   });
   expect(alive(metro)).toBe(true);
-  expect(fakeState().booted).toBe(false);
+  expect(fakeState().emulators).toEqual({});
   await new Promise(done => setTimeout(done, 200));
   expect(alive(state.jsLogs.pid)).toBe(false);
   expect(existsSync(join(root, '.device-stack', 'state.json'))).toBe(false);
@@ -866,7 +925,7 @@ test('stop ends the emulator, Metro and log capture that start started', async (
       `adb -s ${SERIAL} emu kill`
     ])
   );
-  expect(fakeState().booted).toBe(false);
+  expect(fakeState().emulators).toEqual({});
   await new Promise(done => setTimeout(done, 200));
   expect(alive(started.metro.pid)).toBe(false);
   expect(alive(started.jsLogs.pid)).toBe(false);
@@ -917,4 +976,393 @@ test('status reports observed processes, or that nothing is running', async () =
     ...started,
     observed: { emulator: 'running', metro: 'running', jsLogs: 'running' }
   });
+});
+
+// Holds each process at a hook point until `count` processes reached it, so they continue
+// from it together.
+const barrier = (point: string, count: number, when = 'true') => `
+import { mkdirSync, readdirSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+export async function ${point}(context) {
+  if (!(${when})) return
+  const dir = join(process.env.HOOK_DIR, 'barrier-${point}')
+  mkdirSync(dir, { recursive: true })
+  writeFileSync(join(dir, String(process.pid)), '')
+  while (readdirSync(dir).length < ${count}) await new Promise(done => setTimeout(done, 20))
+}
+`;
+
+// HOOK_ACTION picks what happens at a check point: hand the lease's slot to another lease, as
+// a reclaiming process would (marking the call log), or SIGKILL the script. Every guarded
+// action logs who holds the registry lock between its check and the action.
+const testHooks = `
+import { appendFileSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+const action = process.env.HOOK_ACTION
+function reassign(registry, lease) {
+  const current = JSON.parse(readFileSync(registry, 'utf8'))
+  Object.assign(current.leases.find(entry => entry.id === lease), { id: 'other-lease', root: '/elsewhere', operation: null })
+  writeFileSync(registry + '.hook', JSON.stringify(current))
+  renameSync(registry + '.hook', registry)
+  appendFileSync(process.env.FAKE_LOG, JSON.stringify({ name: 'reassigned', args: [] }) + '\\n')
+}
+export function emulatorSpawned({ registry, lease }) {
+  if (action === 'reassign at spawn') reassign(registry, lease)
+  if (action === 'kill at spawn') process.kill(process.pid, 'SIGKILL')
+}
+export function beforeGuard({ action: guarded, registry, lease }) {
+  if (action === 'reassign before ' + guarded) reassign(registry, lease)
+}
+export function ownershipChecked({ action: guarded, lock }) {
+  const top = Math.max(...readdirSync(lock).filter(name => /^\\d+\\.json$/.test(name)).map(name => parseInt(name)))
+  const holder = JSON.parse(readFileSync(join(lock, top + '.json'), 'utf8')).pid
+  appendFileSync(join(process.env.HOOK_DIR, 'held.log'), JSON.stringify({ action: guarded, holder, pid: process.pid }) + '\\n')
+}
+`;
+
+const DEVICE_CALLS = ['adb', 'agent-device', 'emulator'];
+const deviceCallsAfterReassign = (calls: Call[]) => {
+  const marker = calls.findIndex(call => call.name === 'reassigned');
+  expect(marker).toBeGreaterThan(-1);
+
+  return calls.slice(marker).filter(call => DEVICE_CALLS.includes(call.name));
+};
+
+// A registry lock generation whose holder no longer exists.
+const deadHolder = {
+  pid: 99_999_999,
+  startTime: 'Mon Jan  1 00:00:00 2001',
+  markers: ['device-stack.mjs'],
+  root: '/gone'
+};
+
+test('with a limit of two, worktrees starting at the same moment lease different slots, and a repeated start or stop changes nothing', async () => {
+  const { root, stack, stackIn, worktree, registry, logPath } = await harness(
+    {},
+    { limit: 2, hooks: barrier('beforeAcquire', 2) }
+  );
+  const other = worktree();
+  const otherPort = String(await freePort());
+
+  // Two starts in one worktree and one in another, all at once.
+  const runs = await Promise.all([
+    stack('start'),
+    stack('start'),
+    stackIn(other, ['start'], undefined, { DEVICE_STACK_PORT: otherPort })
+  ]);
+
+  runs.forEach(run => expect(run.status).toBe(0));
+  const [first, repeated, second] = runs.map(run => JSON.parse(run.stdout));
+  expect(repeated.lease).toEqual(first.lease);
+  expect(second.lease.id).not.toBe(first.lease.id);
+  expect(new Set([first.lease.slot, second.lease.slot])).toEqual(
+    new Set([0, 1])
+  );
+  expect(new Set([first.emulator.serial, second.emulator.serial])).toEqual(
+    new Set(['emulator-5556', 'emulator-5558'])
+  );
+  expect(first.lease.consolePort).not.toBe(second.lease.consolePort);
+  expect(
+    registry()
+      .leases.map(lease => [lease.id, lease.root])
+      .sort()
+  ).toEqual(
+    [
+      [first.lease.id, root],
+      [second.lease.id, other]
+    ].sort()
+  );
+  const calls = allCalls(logPath);
+  // One boot per lease: the repeated start booted nothing.
+  expect(
+    commands(calls).filter(call => call.startsWith('emulator -avd'))
+  ).toHaveLength(2);
+
+  for (const { name, args } of calls) {
+    expect(args.join(' ')).not.toMatch(new RegExp(`${PHONE}|${FOREIGN}`));
+
+    if (name === 'adb') {
+      expect([first.emulator.serial, second.emulator.serial]).toContain(
+        args[1]
+      );
+    }
+  }
+
+  const stopped = await stack('stop');
+  expect(stopped.status).toBe(0);
+  expect(JSON.parse(stopped.stdout).stopped).toContain('emulator');
+  const before = allCalls(logPath).length;
+  const again = await stack('stop');
+  expect(again.status).toBe(0);
+  expect(JSON.parse(again.stdout)).toEqual({
+    running: false,
+    message: 'Nothing is running.'
+  });
+  expect(allCalls(logPath).slice(before)).toEqual([]);
+  expect(registry().leases.map(lease => lease.id)).toEqual([second.lease.id]);
+  await stackIn(other, ['stop'], undefined, { DEVICE_STACK_PORT: otherPort });
+});
+
+test('at the default limit a second worktree exits with CAPACITY naming the holder, and an environment limit above the host config has no effect', async () => {
+  const { root, hostDir, stack, stackIn, worktree, registry, logPath } =
+    await harness();
+  const holder = JSON.parse((await stack('start')).stdout);
+  const other = worktree();
+  const port = String(await freePort());
+
+  for (const [config, env] of [
+    [null, {}],
+    [null, { DEVICE_STACK_LIMIT: '2' }],
+    [2, { DEVICE_STACK_LIMIT: '1' }]
+  ] as const) {
+    if (config) {
+      writeFileSync(
+        join(hostDir, 'config.json'),
+        JSON.stringify({ limit: config })
+      );
+    }
+
+    const before = allCalls(logPath).length;
+    const { status, stderr } = await stackIn(other, ['start'], undefined, {
+      DEVICE_STACK_PORT: port,
+      ...env
+    });
+
+    expect(status).toBe(1);
+    expect(stderr).toContain(
+      `CAPACITY: the emulator limit is 1 and every slot is leased: slot 0 by lease ${holder.lease.id} from ${root}.`
+    );
+    expect(allCalls(logPath).slice(before)).toEqual([]);
+    expect(existsSync(join(other, '.device-stack', 'state.json'))).toBe(false);
+  }
+
+  expect(registry().leases.map(lease => lease.id)).toEqual([holder.lease.id]);
+  await stack('stop');
+});
+
+test('a start whose lease was replaced in the registry mid-start exits with LEASE_LOST without signaling or calling a device', async () => {
+  const { root, stackIn, fakeState, registry } = await harness(
+    {},
+    { hooks: testHooks }
+  );
+
+  const { status, stderr, calls } = await stackIn(root, ['start'], undefined, {
+    HOOK_ACTION: 'reassign at spawn'
+  });
+
+  expect(status).toBe(1);
+  expect(stderr).toMatch(
+    /LEASE_LOST: lease \S+ no longer holds its slot, so nothing was signaled or called/
+  );
+  expect(deviceCallsAfterReassign(calls)).toEqual([]);
+  expect(commands(calls)).not.toContain(`adb -s ${SERIAL} emu kill`);
+  await waitUntil(() => Boolean(fakeState().emulators['5556']));
+  expect(alive(fakeState().emulators['5556'].pid)).toBe(true);
+  expect(registry().leases.map(lease => lease.id)).toEqual(['other-lease']);
+});
+
+test.each([
+  ['signal', 'stop', 'signal jsLogs'],
+  ['kill', 'stop', 'kill emulator'],
+  ['install', 'start', 'install'],
+  ['data clear', 'start --fresh', 'clear data']
+])(
+  'a %s does not run when the slot is reassigned after its ownership check',
+  async (_, command, action) => {
+    const { root, stack, stackIn, fakeState, editFake } = await harness(
+      {},
+      { hooks: testHooks }
+    );
+    editFake(state => (state.installed = null));
+    const started =
+      command === 'stop' ? JSON.parse((await stack('start')).stdout) : null;
+
+    const { status, stderr, calls } = await stackIn(
+      root,
+      command.split(' '),
+      undefined,
+      { HOOK_ACTION: `reassign before ${action}` }
+    );
+
+    expect(status).toBe(1);
+    expect(stderr).toContain('LEASE_LOST: lease');
+    expect(deviceCallsAfterReassign(calls)).toEqual([]);
+    expect(alive(fakeState().emulators['5556'].pid)).toBe(true);
+
+    if (action === 'install') {
+      expect(fakeState().installed).toBeNull();
+    }
+
+    if (action === 'signal jsLogs') {
+      await new Promise(done => setTimeout(done, 200));
+      expect(alive(started.jsLogs.pid)).toBe(true);
+    }
+  }
+);
+
+test('every guarded signal and kill runs while its own process holds the registry lock it took for the ownership check', async () => {
+  const { dir, root, stack, stackIn } = await harness({}, { hooks: testHooks });
+  await stack('start');
+  let stopper: number | undefined;
+
+  const { status } = await stackIn(
+    root,
+    ['stop'],
+    child => (stopper = child.pid)
+  );
+
+  expect(status).toBe(0);
+  const held = readFileSync(join(dir, 'held.log'), 'utf8')
+    .split('\n')
+    .filter(Boolean)
+    .map(line => JSON.parse(line));
+  expect(held).toEqual(
+    ['signal jsLogs', 'signal metro', 'kill emulator'].map(action => ({
+      action,
+      holder: stopper,
+      pid: stopper
+    }))
+  );
+});
+
+test.each(['start', 'stop'])(
+  'after a start killed with SIGKILL mid-boot, the next %s completes or rolls back the lease',
+  async command => {
+    const { root, stack, stackIn, fakeState, registry, recorded, logPath } =
+      await harness({}, { hooks: testHooks });
+
+    const killed = await stackIn(root, ['start'], undefined, {
+      HOOK_ACTION: 'kill at spawn'
+    });
+
+    expect(killed.signal).toBe('SIGKILL');
+    const { lease } = recorded();
+    expect(registry().leases).toMatchObject([
+      { id: lease.id, operation: { kind: 'acquire' } }
+    ]);
+    await waitUntil(() => Boolean(fakeState().emulators['5556']));
+    const orphan = fakeState().emulators['5556'].pid;
+    const before = allCalls(logPath).length;
+
+    const next = await stack(command);
+
+    expect(next.status).toBe(0);
+    const calls = commands(allCalls(logPath).slice(before));
+    expect(calls).toContain(`adb -s ${SERIAL} emu kill`);
+    await waitUntil(() => !alive(orphan));
+
+    if (command === 'start') {
+      expect(JSON.parse(next.stdout)).toMatchObject({
+        running: true,
+        lease: { id: lease.id }
+      });
+      expect(registry().leases).toMatchObject([
+        { id: lease.id, operation: null }
+      ]);
+      expect(
+        calls.filter(call => call.startsWith('emulator -avd'))
+      ).toHaveLength(1);
+      await stack('stop');
+    } else {
+      expect(JSON.parse(next.stdout)).toEqual({
+        running: false,
+        stopped: ['emulator']
+      });
+      expect(registry().leases).toEqual([]);
+      expect(recorded()).toBeNull();
+    }
+  }
+);
+
+test('a registry lock whose holder is dead is broken by exactly one of two waiters', async () => {
+  const { hostDir, stack, stackIn, worktree, registry } = await harness(
+    {},
+    {
+      limit: 2,
+      hooks: barrier(
+        'lockChecked',
+        2,
+        "context.stale && context.lock.endsWith('registry.lock')"
+      )
+    }
+  );
+  const lock = join(hostDir, 'registry.lock');
+  mkdirSync(lock);
+  writeFileSync(join(lock, '1.json'), JSON.stringify(deadHolder));
+  const other = worktree();
+  const otherPort = String(await freePort());
+
+  // Both waiters pass the staleness check before either breaks the lock.
+  const [first, second] = await Promise.all([
+    stack('start'),
+    stackIn(other, ['start'], undefined, { DEVICE_STACK_PORT: otherPort })
+  ]);
+
+  expect(first.status).toBe(0);
+  expect(second.status).toBe(0);
+  expect(
+    `${first.stderr}${second.stderr}`.match(
+      new RegExp(`broke the stale registry lock of pid ${deadHolder.pid}`, 'g')
+    )
+  ).toHaveLength(1);
+  expect(registry().leases).toHaveLength(2);
+  await stack('stop');
+  await stackIn(other, ['stop'], undefined, { DEVICE_STACK_PORT: otherPort });
+});
+
+test('a registry lock another process replaced after the staleness check is left intact', async () => {
+  const { dir, root, hostDir, stack, stackIn, registry } = await harness(
+    {},
+    {
+      hooks: `
+import { linkSync } from 'node:fs'
+import { join } from 'node:path'
+export function lockChecked({ lock, generation, stale }) {
+  if (stale && lock.endsWith('registry.lock')) linkSync(join(process.env.HOOK_DIR, 'replacement.json'), join(lock, (generation + 1) + '.json'))
+}
+`
+    }
+  );
+  // A live device stack process that broke the stale lock first and now holds it.
+  const replacer = spawn(
+    process.execPath,
+    ['-e', 'setInterval(() => {}, 1000)', 'device-stack.mjs'],
+    { stdio: 'ignore' }
+  );
+  pids.push(replacer.pid!);
+  const replacement = {
+    pid: replacer.pid,
+    startTime: execFileSync(
+      'ps',
+      ['-o', 'lstart=', '-p', String(replacer.pid)],
+      {
+        encoding: 'utf8'
+      }
+    ).trim(),
+    markers: ['device-stack.mjs'],
+    root: '/other'
+  };
+  writeFileSync(join(dir, 'replacement.json'), JSON.stringify(replacement));
+  const lock = join(hostDir, 'registry.lock');
+  mkdirSync(lock);
+  writeFileSync(join(lock, '1.json'), JSON.stringify(deadHolder));
+  let stderr = '';
+
+  const started = stackIn(root, ['start'], child =>
+    child.stderr!.on('data', chunk => (stderr += chunk))
+  );
+  await waitUntil(() =>
+    stderr.includes(`waiting for the registry lock held by pid ${replacer.pid}`)
+  );
+
+  expect(JSON.parse(readFileSync(join(lock, '2.json'), 'utf8'))).toEqual(
+    replacement
+  );
+  expect(stderr).not.toContain('broke the stale registry lock');
+  // The replacing process releases the lock.
+  writeFileSync(join(lock, '3.json'), JSON.stringify({ free: true }));
+  const { status } = await started;
+  expect(status).toBe(0);
+  expect(registry().leases).toHaveLength(1);
+  await stack('stop');
 });
