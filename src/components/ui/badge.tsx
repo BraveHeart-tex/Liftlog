@@ -36,7 +36,7 @@ interface BadgeProps extends ComponentPropsWithoutRef<typeof View> {
   children: ReactNode;
 }
 
-const badgeTextVariants = cva('font-medium', {
+const badgeTextVariants = cva('', {
   variants: {
     variant: {
       default: 'text-secondary-foreground',
@@ -61,7 +61,11 @@ export function Badge({
   return (
     <View {...props} className={cn(badgeVariants({ variant }), className)}>
       {typeof children === 'string' ? (
-        <Text variant="caption" className={cn(badgeTextVariants({ variant }))}>
+        <Text
+          variant="caption"
+          weight="medium"
+          className={cn(badgeTextVariants({ variant }))}
+        >
           {children}
         </Text>
       ) : (

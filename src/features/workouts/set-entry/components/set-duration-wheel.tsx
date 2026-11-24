@@ -64,8 +64,9 @@ export function SetDurationWheel({
       </View>
       <Text
         variant="overline"
+        weight="bold"
         tone="muted"
-        className="mt-1 text-[9px] font-bold"
+        className="mt-1 text-[9px]"
       >
         {label}
       </Text>

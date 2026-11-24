@@ -436,8 +436,9 @@ const ExercisePickerSheetContent = memo(function ExercisePickerSheetContent({
           <View className="pt-5 pb-1">
             <Text
               variant="small"
+              weight="semiBold"
               tone="muted"
-              className="font-semibold tracking-widest uppercase"
+              className="tracking-widest uppercase"
             >
               {item.title}
             </Text>

@@ -30,7 +30,7 @@ export function RestTimerPresetList({
     <View className="gap-4">
       <View className="flex-row items-center justify-between gap-3">
         <View className="min-w-0 flex-1 gap-0.5">
-          <Text variant="bodyMedium" className="font-semibold">
+          <Text variant="bodyMedium" weight="semiBold">
             Presets
           </Text>
           <Text variant="caption" className="text-secondary-foreground">
@@ -80,16 +80,18 @@ export function RestTimerPresetList({
               </View>
               <Text
                 variant="bodyMedium"
+                weight="semiBold"
                 numberOfLines={1}
-                className="flex-1 font-semibold"
+                className="flex-1"
               >
                 {preset.name}
               </Text>
               <Text
                 variant="bodyMedium"
+                weight="semiBold"
                 tone={isSelected ? 'primary' : 'default'}
                 className={cn(
-                  'w-14 text-right font-semibold',
+                  'w-14 text-right',
                   !isSelected && 'text-secondary-foreground'
                 )}
                 style={{ fontVariant: ['tabular-nums'] }}

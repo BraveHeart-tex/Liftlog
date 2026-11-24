@@ -98,14 +98,19 @@ function SessionSets({
             <View className="min-w-0 flex-1 flex-row items-center justify-end gap-2">
               {isPr ? (
                 <View className="border-success bg-success/15 rounded-md border px-2 py-1">
-                  <Text variant="caption" className="text-success font-medium">
+                  <Text
+                    variant="caption"
+                    weight="medium"
+                    className="text-success"
+                  >
                     PR
                   </Text>
                 </View>
               ) : null}
               <Text
                 variant="small"
-                className="text-foreground font-medium"
+                weight="medium"
+                className="text-foreground"
                 style={tabularNumericStyle}
               >
                 {formatTrackingValue(
@@ -210,10 +215,8 @@ export function ExerciseHistoryList({
             </Text>
             <Text
               variant="small"
-              className={cn(
-                'mt-0.5 text-right font-medium',
-                isBestSetPr && 'text-success'
-              )}
+              weight="medium"
+              className={cn('mt-0.5 text-right', isBestSetPr && 'text-success')}
               numberOfLines={1}
               style={tabularNumericStyle}
             >

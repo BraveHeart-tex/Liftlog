@@ -5,7 +5,6 @@ import {
 } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn.utils';
-import { appFonts } from '@/src/theme/fonts';
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { ReactNode } from 'react';
 import { View, type StyleProp, type TextStyle } from 'react-native';
@@ -90,10 +89,6 @@ const buttonSpinnerVariants = cva('', {
   }
 });
 
-const buttonTextStyle: TextStyle = {
-  fontFamily: appFonts.faces.semiBold
-};
-
 export function Button({
   variant = 'primary',
   size = 'md',
@@ -143,8 +138,9 @@ export function Button({
           {isIconButton ? null : (
             <Text
               tone="inherit"
+              weight="semiBold"
               className={cn(buttonTextVariants({ variant }), textClassName)}
-              style={[buttonTextStyle, textStyle]}
+              style={textStyle}
             >
               {loadingLabel}
             </Text>
@@ -156,11 +152,12 @@ export function Button({
           {label !== null ? (
             <Text
               tone="inherit"
+              weight="semiBold"
               className={cn(
                 buttonTextVariants({ variant, icon: isIconButton }),
                 textClassName
               )}
-              style={[buttonTextStyle, textStyle]}
+              style={textStyle}
             >
               {label}
             </Text>

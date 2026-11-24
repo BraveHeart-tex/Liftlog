@@ -20,12 +20,6 @@ const textVariantConfig = cva('', {
       caption: 'text-caption',
       overline: 'text-caption uppercase tracking-wider'
     },
-    weight: {
-      regular: 'font-normal',
-      medium: 'font-medium',
-      semiBold: 'font-semibold',
-      bold: 'font-bold'
-    },
     tone: {
       default: 'text-foreground',
       primary: 'text-primary',
@@ -100,7 +94,7 @@ export const Text = forwardRef<ComponentRef<typeof NativeText>, TextProps>(
     return (
       <NativeText
         ref={ref}
-        className={cn(textVariants({ variant, tone, weight }), className)}
+        className={cn(textVariants({ variant, tone }), className)}
         style={[
           nativeTextDefaults,
           { fontFamily: appFonts.faces[resolvedWeight] },

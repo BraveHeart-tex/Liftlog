@@ -6,6 +6,7 @@ Read this when changing NativeWind classes, theme tokens, typography, inputs, or
 
 - Use NativeWind `className` with semantic tokens from `global.css` and the shared `cn` helper. Keep merge behavior centralized; do not add local merge helpers.
 - Use the shared text primitive and typography classes.
+- Choose a font weight only with the `Text` `weight` prop, or an explicit `appFonts.faces` font family where `Text` cannot be used. Android cannot resolve a font weight against the per-face fonts loaded at runtime, so text size tokens emit no font weight and weight utilities such as `font-bold` are not generated.
 - Keep colors, font sizes, radii, and theme values in tokens. Inline styles are for animation, native-only props, or layout edge cases.
 - Wrap third-party components with multiple style props in styled project wrappers. Do not bypass project styling with direct imports.
 - NativeWind is preview-versioned: use `styled(...)`; do not use `remapProps` or `cssInterop`.

@@ -18,6 +18,7 @@ import {
   STEP_GOAL_PRESETS
 } from '@/src/features/steps/steps.constants';
 import { isValidStepGoal } from '@/src/features/steps/steps.validation';
+import { appFonts } from '@/src/theme/fonts';
 import { nativeFontSizes } from '@/src/theme/sizes';
 import { SaveIcon, XIcon } from 'lucide-react-native';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
@@ -148,11 +149,12 @@ const StepGoalSheetContent = memo(function StepGoalSheetContent({
             placeholderClassName="text-muted-foreground"
             selectionClassName="text-primary"
             style={{
+              fontFamily: appFonts.faces.bold,
               fontSize: nativeFontSizes.stepGoalInput,
               fontVariant: ['tabular-nums'],
               textAlign: 'center'
             }}
-            className="text-foreground w-full font-bold"
+            className="text-foreground w-full"
             selectTextOnFocus
             maxLength={7}
             onSubmitEditing={handleSave}

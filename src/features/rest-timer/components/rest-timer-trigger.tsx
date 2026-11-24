@@ -56,10 +56,8 @@ export function RestTimerTrigger({ onPress }: RestTimerTriggerProps) {
         />
         <Text
           variant="small"
-          className={cn(
-            'text-info font-semibold',
-            isRestTimerPaused && 'text-accent'
-          )}
+          weight="semiBold"
+          className={cn('text-info', isRestTimerPaused && 'text-accent')}
           style={{ fontVariant: ['tabular-nums'] }}
         >
           {restTimerLabel}

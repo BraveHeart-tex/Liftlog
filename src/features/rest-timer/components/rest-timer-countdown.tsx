@@ -189,8 +189,9 @@ export function RestTimerCountdown({
         <View className="w-55 items-center gap-1 px-2">
           <Text
             variant="caption"
+            weight="bold"
             className={cn(
-              'font-bold tracking-wider',
+              'tracking-wider',
               status === 'paused' ? 'text-primary' : 'text-info'
             )}
           >
@@ -199,7 +200,8 @@ export function RestTimerCountdown({
 
           <Text
             variant="h2"
-            className="text-foreground text-center font-semibold tracking-[-0.04em]"
+            weight="semiBold"
+            className="text-foreground text-center tracking-[-0.04em]"
             numberOfLines={1}
             adjustsFontSizeToFit
             minimumFontScale={0.72}
@@ -213,7 +215,8 @@ export function RestTimerCountdown({
 
           <Text
             variant="small"
-            className="text-secondary-foreground text-center font-medium"
+            weight="medium"
+            className="text-secondary-foreground text-center"
             style={{ fontVariant: ['tabular-nums'] }}
           >
             of {formatTime(activeDuration)}

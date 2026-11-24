@@ -176,8 +176,9 @@ export function StopwatchContent({
           </Text>
           <Text
             variant="bodyMedium"
+            weight="semiBold"
             className={cn(
-              'text-center font-semibold uppercase',
+              'text-center uppercase',
               isRunning ? 'text-accent' : 'text-primary'
             )}
           >

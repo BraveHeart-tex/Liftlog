@@ -66,7 +66,11 @@ export function WorkoutExerciseSummary({
         </View>
 
         {latestSet ? (
-          <Text variant="small" className="text-foreground mt-6 font-medium">
+          <Text
+            variant="small"
+            weight="medium"
+            className="text-foreground mt-6"
+          >
             {formatTrackingValue(
               trackingType,
               getSetValues(latestSet),

@@ -90,7 +90,8 @@ export function WorkoutSetSummary({
                 ) : null}
                 <Text
                   variant="small"
-                  className="text-foreground min-w-0 text-right font-medium"
+                  weight="medium"
+                  className="text-foreground min-w-0 text-right"
                   style={tabularNumericStyle}
                 >
                   {formatTrackingValue(
@@ -115,7 +116,7 @@ export function WorkoutSetSummary({
 function PersonalRecordBadge() {
   return (
     <View className="border-success bg-success/15 rounded-md border px-2 py-1">
-      <Text variant="caption" className="text-success font-medium">
+      <Text variant="caption" weight="medium" className="text-success">
         PR
       </Text>
     </View>

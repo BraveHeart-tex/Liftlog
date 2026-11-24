@@ -120,8 +120,9 @@ const RestTimerSheetContent = memo(function RestTimerSheetContent({
           <Text variant="h2">Rest timer</Text>
           <Text
             variant="small"
+            weight="medium"
             numberOfLines={1}
-            className="text-secondary-foreground font-medium"
+            className="text-secondary-foreground"
           >
             {subtitle}
           </Text>

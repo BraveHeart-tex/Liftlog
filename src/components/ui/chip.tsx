@@ -1,10 +1,9 @@
 import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn.utils';
-import { appFonts } from '@/src/theme/fonts';
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
-import { View, type Pressable, type TextStyle } from 'react-native';
+import { View, type Pressable } from 'react-native';
 
 type NativePressableProps = ComponentPropsWithoutRef<typeof Pressable>;
 
@@ -71,10 +70,6 @@ const choiceChipContainerVariants = cva('', {
   }
 });
 
-const ChipTextStyle: TextStyle = {
-  fontFamily: appFonts.faces.medium
-};
-
 export function ChoiceChip({
   children,
   selected = false,
@@ -108,9 +103,9 @@ export function ChoiceChip({
           <Text
             variant="small"
             tone="inherit"
+            weight="medium"
             className={cn(choiceChipTextVariants({ selected }), textClassName)}
             numberOfLines={1}
-            style={ChipTextStyle}
           >
             {label}
           </Text>

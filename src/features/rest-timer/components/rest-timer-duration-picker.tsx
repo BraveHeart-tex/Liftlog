@@ -89,7 +89,8 @@ export function RestTimerDurationPicker({
         >
           <Text
             variant="caption"
-            className="text-secondary-foreground font-bold"
+            weight="bold"
+            className="text-secondary-foreground"
           >
             MIN
           </Text>
@@ -97,7 +98,12 @@ export function RestTimerDurationPicker({
       </View>
 
       <View className="w-8 shrink-0 items-center justify-center">
-        <Text variant="h2" tone="muted" className="text-center font-semibold">
+        <Text
+          variant="h2"
+          weight="semiBold"
+          tone="muted"
+          className="text-center"
+        >
           :
         </Text>
       </View>
@@ -123,7 +129,8 @@ export function RestTimerDurationPicker({
         >
           <Text
             variant="caption"
-            className="text-secondary-foreground font-bold"
+            weight="bold"
+            className="text-secondary-foreground"
           >
             SEC
           </Text>

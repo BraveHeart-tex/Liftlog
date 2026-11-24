@@ -174,8 +174,9 @@ const RestTimerSettingSheetContent = memo(
               >
                 <Text
                   variant="overline"
+                  weight="bold"
                   tone="muted"
-                  className="text-[10px] font-bold"
+                  className="text-[10px]"
                 >
                   MIN
                 </Text>
@@ -185,8 +186,9 @@ const RestTimerSettingSheetContent = memo(
             <View className="w-8 items-center justify-center">
               <Text
                 variant="h2"
+                weight="semiBold"
                 tone="muted"
-                className="pb-1 text-center font-semibold"
+                className="pb-1 text-center"
               >
                 :
               </Text>
@@ -217,8 +219,9 @@ const RestTimerSettingSheetContent = memo(
               >
                 <Text
                   variant="overline"
+                  weight="bold"
                   tone="muted"
-                  className="text-[10px] font-bold"
+                  className="text-[10px]"
                 >
                   SEC
                 </Text>
