@@ -116,9 +116,14 @@ export function Button({
       ? children
       : null;
 
+  const visibleLabel = loading && !isIconButton ? loadingLabel : label;
+  const accessibleLabel =
+    accessibilityLabel ??
+    (visibleLabel === null ? undefined : String(visibleLabel));
+
   return (
     <PressableSurface
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={accessibleLabel}
       accessibilityState={{ ...accessibilityState, busy: loading }}
       containerClassName={cn(fullWidth && 'w-full', containerClassName)}
       className={cn(buttonVariants({ variant, size }), className)}
