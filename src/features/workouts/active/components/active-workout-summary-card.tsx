@@ -40,6 +40,7 @@ export const ActiveWorkoutSummaryCard = ({
   return (
     <Animated.View style={scaleStyle}>
       <Pressable
+        accessibilityRole="button"
         onPress={onPress}
         onPressIn={onPressIn}
         onPressOut={onPressOut}

@@ -36,6 +36,7 @@ export function ExerciseRow({
   return (
     <Animated.View style={scaleStyle}>
       <Pressable
+        accessibilityRole="button"
         onPress={() => !disabled && onPress(exercise)}
         onPressIn={onPressIn}
         onPressOut={onPressOut}

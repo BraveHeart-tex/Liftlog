@@ -21,6 +21,7 @@ export function WorkoutLogRow({
   return (
     <Animated.View style={scaleStyle}>
       <Pressable
+        accessibilityRole="button"
         onPress={() => onPress(workout)}
         onPressIn={onPressIn}
         onPressOut={onPressOut}

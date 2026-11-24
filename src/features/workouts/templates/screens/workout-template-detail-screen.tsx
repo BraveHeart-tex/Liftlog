@@ -38,7 +38,12 @@ import {
   PlusIcon
 } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
-import { Keyboard, Pressable, View } from 'react-native';
+import {
+  Keyboard,
+  Pressable,
+  View,
+  type AccessibilityActionEvent
+} from 'react-native';
 
 export function WorkoutTemplateDetailScreen({
   templateId
@@ -245,8 +250,19 @@ function WorkoutTemplateDetailLoaded({
     setIsEditingExercises(true);
   };
 
-  const enterExerciseEditModeFromLongPress = () => {
+  const enterExerciseEditModeFromRow = () => {
     enterExerciseEditMode(true);
+  };
+
+  const exerciseEditRowProps = {
+    accessibilityRole: 'button' as const,
+    accessibilityActions: [{ name: 'editExercises', label: 'Edit exercises' }],
+    onAccessibilityAction: (event: AccessibilityActionEvent) => {
+      if (event.nativeEvent.actionName === 'editExercises') {
+        enterExerciseEditModeFromRow();
+      }
+    },
+    onLongPress: enterExerciseEditModeFromRow
   };
 
   const exitExerciseEditMode = () => {
@@ -515,7 +531,7 @@ function WorkoutTemplateDetailLoaded({
                 <Pressable
                   key={templateExercise.id}
                   className="flex-1"
-                  onLongPress={enterExerciseEditModeFromLongPress}
+                  {...exerciseEditRowProps}
                 >
                   <NewTemplateExerciseRow
                     exercise={exerciseById.get(templateExercise.exerciseId)}
@@ -565,7 +581,7 @@ function WorkoutTemplateDetailLoaded({
                       <Pressable
                         key={templateExercise.id}
                         className="w-full"
-                        onLongPress={enterExerciseEditModeFromLongPress}
+                        {...exerciseEditRowProps}
                       >
                         {({ pressed }) => (
                           <View
