@@ -10,7 +10,7 @@ Mobile Expo/React Native app: native-compatible code only, no DOM or browser API
 
 ## Done
 
-Done means: every applicable [validation](#validation) check passes on the final code, every acceptance criterion's box is ticked, the change is pushed to main with the issue as commit scope, and the [evidence comment](docs/verification.md#evidence) is in the issue. Then [close it](docs/tickets.md#closing). Progress and verification live in GitHub Issues; docs hold durable rules.
+Done means: `pnpm run validate:changed --base <base>` and every other applicable [validation](#validation) check pass on the final code, every acceptance criterion's box is ticked, the change is pushed straight to `main` with the issue as commit scope (the "Bypassed rule violations" notice from the maintainer's ruleset bypass is expected), and the [evidence comment](docs/verification.md#evidence) is in the issue. Then [close it](docs/tickets.md#closing). Progress and verification live in GitHub Issues; docs hold durable rules.
 
 ## Docs
 
@@ -37,8 +37,10 @@ Docs state current rules. When behavior changes, rewrite the rule in place; hist
 
 After a code change, run every applicable check on the final code; pick the narrowest test selection and report exact failures. Fix failures you caused; report unrelated or unavailable checks as such.
 
+The final check is `pnpm run validate:changed [--base <sha>]`: on files changed since `HEAD` (or `--base`) plus untracked files, deleted files excluded, it runs ts-check, eslint, prettier `--check` and `pnpm run test` in order, stops at the first failure with its exit code, and prints one `START`, `PASS` or `FAIL` line per stage with its log path, then a summary. A change without code files runs prettier alone. The checks below are for iterating and for the projects it does not cover.
+
 - Types: `pnpm run ts-check`
-- Lint and format: `pnpm run check:changed [base]` checks files changed since `base` (default: merge base with `origin/main`) plus untracked files; `pnpm run lint .` and `pnpm run prettier:check` for broad changes
+- Lint and format: `pnpm run lint .` and `pnpm run prettier:check` for broad changes
 - Logic or behavior (Jest app project): `pnpm run test`; narrow with `pnpm run test <path>` or `pnpm run test -t <name>`
 - Config plugins, release signing, Android release scripts (`tests/native`): `pnpm run test:native`
 - GitHub ticket tooling (`tests/tooling`): `pnpm run test:tooling`

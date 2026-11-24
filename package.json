@@ -14,7 +14,6 @@
     "android:release:single-arch": "dotenvx run -f .env.local -- scripts/build-android-release-single-arch.sh",
     "android:device": "EXPO_UNSTABLE_ATLAS=true expo run:android --device",
     "android": "expo run:android",
-    "check:changed": "node scripts/check-changed.mjs",
     "device:stack": "node scripts/device-stack.mjs",
     "format": "pnpm run prettier:fix",
     "ios": "expo run:ios",
@@ -34,7 +33,8 @@
     "test:native": "jest --selectProjects native",
     "test:tooling": "jest --selectProjects tooling",
     "ts-check": "tsc --noEmit true --project ./tsconfig.json",
-    "worktree": "node scripts/new-worktree.mjs"
+    "worktree": "node scripts/new-worktree.mjs",
+    "validate:changed": "node scripts/validate-changed.mjs"
   },
   "engines": {
     "node": ">=22.15.0",

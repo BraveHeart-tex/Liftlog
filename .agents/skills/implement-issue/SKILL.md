@@ -87,9 +87,10 @@ Work **lean** throughout:
    is fixed or rejected with a one-line reason.
 
 7. **Verify.** Start broad verification only after implementation, tests, device checks,
-   review fixes and targeted checks are complete, with no changes ongoing. Run every
-   applicable [validation](../../../AGENTS.md#validation) check once on the final code,
-   sending output to a log and reading the summary. On failure, fix the cause, rerun
+   review fixes and targeted checks are complete, with no changes ongoing. Run
+   `pnpm run validate:changed --base $base` and every other applicable
+   [validation](../../../AGENTS.md#validation) check once on the final code, sending
+   output to a log and reading the summary. On failure, fix the cause, rerun
    only the failed checks until they pass, then run the full set once more. An
    environment blocker is not a passing result; stop before shipping if required
    verification cannot complete.
