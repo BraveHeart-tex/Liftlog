@@ -21,7 +21,8 @@ Work **lean** throughout:
   the final summary.
 - Run the smallest relevant check while iterating.
 - Preflight environment requirements once before implementation when the issue needs an
-  emulator, device, native build or external service.
+  emulator, device, native build or external service; for the emulator, start the
+  [device-check recipe](../../../docs/verification.md#recipe).
 - On `EPERM`, `EACCES` or sandbox denial, change the command or ask for approval;
   leave application code as it is. Never retry an unchanged blocked command, and never
   ship or close with required verification blocked.
@@ -77,7 +78,8 @@ Work **lean** throughout:
 
    plus `tsc` and `eslint <changed files>` as relevant. Native changes need a fresh
    native build before any device check. Run device checks with the `android-emulator`
-   or `agent-device` skill.
+   or `agent-device` skill, following the
+   [device-check recipe](../../../docs/verification.md#recipe) and its route map.
    _Done when_ relevant tests and changed-file lint pass, and every device check is
    reviewed.
 

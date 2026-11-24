@@ -28,6 +28,7 @@ export function RestTimerTrigger({ onPress }: RestTimerTriggerProps) {
       <Button
         variant="ghost"
         size="icon"
+        accessibilityLabel="Rest timer"
         className="h-10 w-10"
         onPress={onPress}
       >

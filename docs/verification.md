@@ -114,6 +114,105 @@ account access the agent cannot reach is a `ready-for-human` item: it gets its o
 issue assigned to the maintainer, or is listed as an outstanding device check in the
 evidence.
 
+### Recipe
+
+Reach screens by deep link and act by accessibility label or `@ref`, never by
+coordinates read off a screenshot. In order:
+
+1. **Start.** `pnpm run device:stack start` boots the emulator, starts or reuses this
+   checkout's Metro, captures JS logs and waits for the Workout start screen. `--fresh`
+   clears app data so the dev seed runs again (new random IDs). `status` prints the
+   state; a failed `start` leaves its state recorded, so run `stop` before retrying.
+   - After `--fresh`, the dev-client onboarding can cover the start screen and `start`
+     fails its wait: press `label="Continue"`, then `label="Close"` on the dev menu.
+   - A reused Metro (state shows `metro.log: null`, usually the maintainer's terminal)
+     has no log. When you need Metro's output, do not stop it; run on another port.
+     `DEVICE_STACK_PORT` sets the adb reverse port and dev-client link, so `start`
+     launches its own Metro and writes `.device-stack/metro.log`:
+
+     ```sh
+     pnpm run device:stack stop
+     DEVICE_STACK_PORT=8082 pnpm run device:stack start
+     ```
+
+2. **Reach the screen** from the [route map](#route-map):
+   `adb shell am start -W -a android.intent.action.VIEW -d 'liftlog:///<path>' com.borakaraca94.liftlog`.
+   Pace links a few seconds apart; rapid `agent-device open <url>` calls drop the app to
+   the dev launcher. Confirm the screen with `agent-device snapshot -i`.
+3. **Prove style facts** through the React DevTools hook. A reviewed screenshot stays
+   the evidence; this read backs it up wherever a style fact is the claim.
+   `agent-device react-devtools get component` shows props but dehydrates nested
+   `style` (`"{…}"`), so read the host `Text` through CDP instead (see
+   `agent-device help cdp`; `<port>` is the stack port from `status`; pick the target where `runtime eval --expr '1+1'` answers):
+
+   ```sh
+   agent-device cdp target list --url http://127.0.0.1:<port>
+   agent-device cdp target select <target-id> --url http://127.0.0.1:<port>
+   agent-device cdp runtime eval --expr '(()=>{const T="Workout",h=globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__,flat=s=>Array.isArray(s)?Object.assign({},...s.map(flat)):(s||{}),txt=c=>typeof c==="string"?c:Array.isArray(c)?c.filter(x=>typeof x==="string").join(""):"";for(const id of h.renderers.keys())for(const r of h.getFiberRoots(id)){const st=[r.current];while(st.length){const f=st.pop();if(f.type==="RCTText"&&txt(f.memoizedProps.children)===T)return JSON.stringify(flat(f.memoizedProps.style));if(f.sibling)st.push(f.sibling);if(f.child)st.push(f.child)}}return "not found"})()'
+   ```
+
+   Set `T` to the visible text; the result includes `fontFamily`
+   (`InstrumentSans_700Bold` for the Workout heading).
+
+4. **Read the JS log** when an action has no visible effect: `.device-stack/js.log`
+   holds `ReactNativeJS` logcat output from `start` onward; read its tail for the
+   error or warning.
+5. **Red proof on the base commit** for a new test, in a throwaway worktree so the
+   checkout stays untouched. The worktree has no `node_modules`; link the checkout's
+   and skip pnpm's dependency check, which would otherwise try to reinstall:
+
+   ```sh
+   wt=$(mktemp -d)/base
+   git worktree add --detach "$wt" <base>
+   ln -s "$PWD/node_modules" "$wt/node_modules"
+   cp <new test file> "$wt/<new test file>"
+   (cd "$wt" && pnpm --config.verify-deps-before-run=false run test <new test file>)
+   git worktree remove --force "$wt"
+   ```
+
+   The test must fail there; `git status` in the checkout is unchanged afterwards.
+
+6. **Stop.** `pnpm run device:stack stop` stops only what `start` started.
+
+### Route map
+
+Paths from `src/app`; groups such as `(tabs)` drop out of the URL. Read IDs from the
+app database: `adb exec-out run-as com.borakaraca94.liftlog cat files/SQLite/<f>` for
+`workout.db`, `workout.db-wal` and `workout.db-shm` into one directory, then `sqlite3`.
+
+| Deep link path                                   | Screen                         | Needs                                                    |
+| ------------------------------------------------ | ------------------------------ | -------------------------------------------------------- |
+| `workout`                                        | Workout start screen           | -                                                        |
+| `workout/active`                                 | Active workout                 | active workout                                           |
+| `workout/active/edit-exercises`                  | Active workout exercise editor | active workout                                           |
+| `workout/exercise/<workoutExerciseId>`           | Active workout exercise        | exercise of the active workout                           |
+| `workout/exercise/<workoutExerciseId>/history`   | Exercise history               | exercise of the active workout                           |
+| `log`                                            | Log calendar                   | -                                                        |
+| `log/steps`                                      | Steps                          | -                                                        |
+| `exercises`                                      | Exercises                      | -                                                        |
+| `exercises/new`                                  | New exercise                   | -                                                        |
+| `exercises/<exerciseId>`                         | Exercise details               | seeded exercise                                          |
+| `exercises/edit/<exerciseId>`                    | Edit exercise                  | custom exercise (`is_custom = 1`)                        |
+| `settings`                                       | Settings                       | -                                                        |
+| `update-details`                                 | Update details                 | -                                                        |
+| `workouts/<workoutId>`                           | Workout details                | `completed` workout                                      |
+| `workouts/edit/<draftId>?sourceWorkoutId=<id>`   | Edit workout                   | `historical_edit_draft` (Workout actions → Edit workout) |
+| `workouts/edit/exercise/<workoutExerciseId>`     | Edit workout exercise          | exercise of the edit draft                               |
+| `workouts/backfill/<draftId>`                    | Historical draft               | `historical_draft` (Log → past day → Log workout)        |
+| `workouts/backfill/exercise/<workoutExerciseId>` | Historical workout exercise    | exercise of the historical draft                         |
+| `workouts/templates`                             | Templates                      | -                                                        |
+| `workouts/templates/new`                         | New template                   | -                                                        |
+| `workouts/templates/<templateId>`                | Template details               | seeded template                                          |
+
+Sheets have no route; reach them from their entry point by label:
+
+| Sheet      | Entry point                                             | Label                                                                    |
+| ---------- | ------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Rest timer | Active workout header button (`rest-timer-trigger.tsx`) | `Rest timer` (idle), `Rest timer <time> remaining` or `paused` (running) |
+
+The dev seed has no active workout: start one with `label="Start Workout"`, then
+`label="Start <template> workout"`.
+
 ## Evidence
 
 Record one evidence comment in the active GitHub issue:
