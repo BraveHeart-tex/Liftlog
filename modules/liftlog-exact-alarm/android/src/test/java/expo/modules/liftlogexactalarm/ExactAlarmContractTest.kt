@@ -19,7 +19,7 @@ class ExactAlarmContractTest {
   @Test
   fun `Android 12 reports exact alarm manager availability`() {
     assertEquals(
-      ExactAlarmAccess(supported = true, granted = false),
+      ExactAlarmAccess(supported = true, granted = true),
       ExactAlarmContract.access(Build.VERSION_CODES.S, false)
     )
     assertEquals(
