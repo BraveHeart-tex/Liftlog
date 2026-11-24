@@ -20,6 +20,7 @@ const projects = [
   {
     displayName: 'app',
     preset: 'jest-expo/android',
+    globalSetup: '<rootDir>/tests/support/time-zone.global-setup.js',
     moduleNameMapper,
     transformIgnorePatterns: appTransformIgnorePatterns,
     testMatch: [

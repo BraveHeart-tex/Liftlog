@@ -84,6 +84,9 @@ Conventions for the levels above; read this and the nearest example before writi
   SQL only in a test named `performance contract: <guarantee>`; otherwise assert
   returned values and stored rows. The test adapter rejects statements over 999
   variables, so a chunked write is proven by a row count over that limit.
+- **Time zone:** the app project pins `America/New_York`, which observes daylight
+  saving, through `tests/support/time-zone.global-setup.js`. Date tests build
+  instants with `Date.UTC` and fix "now" with `jest.useFakeTimers({ now })`.
 - **Commands:** `pnpm run test <path>` or `pnpm run test -t <name>` (app project),
   `pnpm run test:native`, `pnpm run test:tooling`, `pnpm run test:kotlin`.
 - **Examples:** unit
