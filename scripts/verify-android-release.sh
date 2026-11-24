@@ -70,7 +70,13 @@ CONFIGURED_IDENTITY="$(
 )"
 IFS=$'\t' read -r EXPECTED_PACKAGE EXPECTED_VERSION_NAME EXPECTED_VERSION_CODE EXPECTED_CERTIFICATE <<<"$CONFIGURED_IDENTITY"
 
-PACKAGE_LINE="$($AAPT_BIN dump badging "$APK_PATH" | sed -n '/^package: /p' | head -n 1)"
+EXPECTED_PERMISSIONS="$(
+  cd "$PROJECT_ROOT"
+  node -e 'process.stdout.write(require("./config/android-release.json").permissions.join("\n"))' | sort -u
+)"
+
+BADGING="$($AAPT_BIN dump badging "$APK_PATH")"
+PACKAGE_LINE="$(sed -n '/^package: /p' <<<"$BADGING" | head -n 1)"
 ACTUAL_PACKAGE="$(sed -n "s/^package: name='\([^']*\)'.*/\1/p" <<<"$PACKAGE_LINE")"
 ACTUAL_VERSION_NAME="$(sed -n "s/.*versionName='\([^']*\)'.*/\1/p" <<<"$PACKAGE_LINE")"
 ACTUAL_VERSION_CODE="$(sed -n "s/.*versionCode='\([^']*\)'.*/\1/p" <<<"$PACKAGE_LINE")"
@@ -93,6 +99,14 @@ if [[ "$ACTUAL_ABIS" != "arm64-v8a" ]]; then
   fail "Release APK must contain only the arm64-v8a ABI"
 fi
 
+ACTUAL_PERMISSIONS="$(sed -n "s/^uses-permission\(-sdk-23\)\{0,1\}: name='\([^']*\)'.*/\2/p" <<<"$BADGING" | sort -u)"
+UNEXPECTED_PERMISSIONS="$(comm -13 <(echo "$EXPECTED_PERMISSIONS") <(echo "$ACTUAL_PERMISSIONS") | paste -sd ',' - | sed 's/,/, /g')"
+MISSING_PERMISSIONS="$(comm -23 <(echo "$EXPECTED_PERMISSIONS") <(echo "$ACTUAL_PERMISSIONS") | paste -sd ',' - | sed 's/,/, /g')"
+
+if [[ -n "$UNEXPECTED_PERMISSIONS" ]] || [[ -n "$MISSING_PERMISSIONS" ]]; then
+  fail "Release APK permissions differ from config/android-release.json (ADR-0007). Unexpected: ${UNEXPECTED_PERMISSIONS:-none}. Missing: ${MISSING_PERMISSIONS:-none}."
+fi
+
 if ! APKSIGNER_OUTPUT="$($APKSIGNER_BIN verify --print-certs "$APK_PATH" 2>&1)"; then
   fail "Release APK signature verification failed: $APKSIGNER_OUTPUT"
 fi
@@ -110,3 +124,4 @@ echo "Package: $ACTUAL_PACKAGE"
 echo "Architecture: $ACTUAL_ABIS"
 echo "Version: $ACTUAL_VERSION_NAME ($ACTUAL_VERSION_CODE)"
 echo "Certificate SHA-256: $EXPECTED_CERTIFICATE"
+echo "Permissions: $(paste -sd ',' - <<<"$ACTUAL_PERMISSIONS" | sed 's/,/, /g')"

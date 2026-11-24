@@ -14,7 +14,7 @@ The build reads these secret environment variables:
 
 Keep the JKS and real values outside the repository. `.gitignore` rejects JKS and keystore files as a secondary guard. A release task stops before compilation when credentials are missing or the keystore path is not a file. Debug tasks do not require these values.
 
-Run `pnpm run android:release:single-arch`. It performs a clean Android prebuild, builds only `arm64-v8a`, then runs `scripts/verify-android-release.sh`. The verifier compares the APK with `app.json` and `config/android-release.json` for package, version name/code, ABI, and signer fingerprint.
+Run `pnpm run android:release:single-arch`. It performs a clean Android prebuild, builds only `arm64-v8a`, then runs `scripts/verify-android-release.sh`. The verifier compares the APK with `app.json` and `config/android-release.json` for package, version name/code, ABI, signer fingerprint, and permissions. `permissions` in `config/android-release.json` is the release allowlist: the Keep rows of [ADR-0007](adr/0007-set-an-explicit-android-permission-policy.md), including library-merged permissions. Update both together.
 
 ## Prepare a release
 

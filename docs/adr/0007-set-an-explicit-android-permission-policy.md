@@ -53,8 +53,9 @@ debug and debugOptimized.
 
 ## Consequences
 
-- Release APK permissions are checked against this table; automated checks are
-  tracked separately (#147, #148).
+- Release APK permissions are checked against this table: a native test checks
+  the generated manifest, and `scripts/verify-android-release.sh` checks the built
+  APK against the release allowlist in `config/android-release.json`.
 - Adding remote push, background audio, background step reads or recording
   requires amending this ADR and unblocking the permission first.
 - Template and library upgrades can add permissions silently; only the merged APK

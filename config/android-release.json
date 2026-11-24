@@ -1,3 +1,17 @@
 {
-  "certificateSha256": "9A:9F:C0:51:44:D0:78:56:BF:70:99:FB:E4:8E:02:78:DE:69:32:19:C1:CE:80:34:07:D1:0B:58:D4:77:6E:9B"
+  "certificateSha256": "9A:9F:C0:51:44:D0:78:56:BF:70:99:FB:E4:8E:02:78:DE:69:32:19:C1:CE:80:34:07:D1:0B:58:D4:77:6E:9B",
+  "permissions": [
+    "android.permission.ACCESS_NETWORK_STATE",
+    "android.permission.INTERNET",
+    "android.permission.MODIFY_AUDIO_SETTINGS",
+    "android.permission.POST_NOTIFICATIONS",
+    "android.permission.RECEIVE_BOOT_COMPLETED",
+    "android.permission.REQUEST_INSTALL_PACKAGES",
+    "android.permission.SCHEDULE_EXACT_ALARM",
+    "android.permission.VIBRATE",
+    "android.permission.WAKE_LOCK",
+    "android.permission.health.READ_HEALTH_DATA_HISTORY",
+    "android.permission.health.READ_STEPS",
+    "com.borakaraca94.liftlog.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+  ]
 }

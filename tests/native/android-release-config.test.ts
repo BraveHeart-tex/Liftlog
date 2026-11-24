@@ -69,10 +69,11 @@ const appConfig = loadModule(resolve(projectRoot, 'app.json')) as {
 };
 const releaseConfig = loadModule(
   resolve(projectRoot, 'config/android-release.json')
-) as { certificateSha256: string };
+) as { certificateSha256: string; permissions: string[] };
 
 // ADR-0007 Keep rows whose origin reaches the generated manifest (template,
-// app.json, config plugins). Library-merged rows appear only in the APK (#148).
+// app.json, config plugins). Library-merged rows appear only in the APK, which
+// the release verifier checks against config/android-release.json.
 const generatedPermissionAllowlist = [
   'android.permission.INTERNET',
   'android.permission.REQUEST_INSTALL_PACKAGES',
@@ -142,6 +143,16 @@ function createAndroidProject(): string {
 function writeExecutable(path: string, contents: string): void {
   writeFileSync(path, `#!/usr/bin/env bash\n${contents}`);
   chmodSync(path, 0o755);
+}
+
+function fakeAaptBadging(permissions = releaseConfig.permissions): string {
+  return [
+    `package: name='${appConfig.expo.android.package}' versionCode='${appConfig.expo.android.versionCode}' versionName='${appConfig.expo.version}'`,
+    ...permissions.map(permission => `uses-permission: name='${permission}'`),
+    "uses-implied-permission: name='android.permission.READ_EXTERNAL_STORAGE' reason='requested WRITE_EXTERNAL_STORAGE'"
+  ]
+    .map(line => `echo "${line}"\n`)
+    .join('');
 }
 
 test('source config declares a positive Android version code', () => {
@@ -488,10 +499,7 @@ test('APK verifier accepts current and legacy apksigner certificate output', () 
   const unzipPath = join(temporaryDirectory, 'unzip');
 
   writeFileSync(apkPath, 'controlled test artifact');
-  writeExecutable(
-    aaptPath,
-    `echo "package: name='${appConfig.expo.android.package}' versionCode='${appConfig.expo.android.versionCode}' versionName='${appConfig.expo.version}'"\n`
-  );
+  writeExecutable(aaptPath, fakeAaptBadging());
   writeExecutable(unzipPath, "echo 'lib/arm64-v8a/libliftlog.so'\n");
 
   const runVerifier = () =>
@@ -552,10 +560,7 @@ test('APK verifier uses the configured Android build-tools version', () => {
   mkdirSync(pinnedToolsPath, { recursive: true });
   mkdirSync(newerToolsPath, { recursive: true });
   writeFileSync(apkPath, 'controlled test artifact');
-  writeExecutable(
-    join(pinnedToolsPath, 'aapt'),
-    `echo "package: name='${appConfig.expo.android.package}' versionCode='${appConfig.expo.android.versionCode}' versionName='${appConfig.expo.version}'"\n`
-  );
+  writeExecutable(join(pinnedToolsPath, 'aapt'), fakeAaptBadging());
   writeExecutable(
     join(pinnedToolsPath, 'apksigner'),
     `echo 'Signer #1 certificate SHA-256 digest: ${releaseConfig.certificateSha256.replaceAll(':', '').toLowerCase()}'\n`
@@ -581,6 +586,68 @@ test('APK verifier uses the configured Android build-tools version', () => {
   try {
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /Verified production release APK/);
+  } finally {
+    rmSync(temporaryDirectory, { recursive: true, force: true });
+  }
+});
+
+test('APK verifier fails when APK permissions differ from the release allowlist', () => {
+  const temporaryDirectory = mkdtempSync(
+    join(tmpdir(), 'liftlog-release-permissions-')
+  );
+  const apkPath = join(temporaryDirectory, 'app-release.apk');
+  const aaptPath = join(temporaryDirectory, 'aapt');
+  const apksignerPath = join(temporaryDirectory, 'apksigner');
+  const unzipPath = join(temporaryDirectory, 'unzip');
+
+  writeFileSync(apkPath, 'controlled test artifact');
+  writeExecutable(
+    apksignerPath,
+    `echo 'Signer #1 certificate SHA-256 digest: ${releaseConfig.certificateSha256.replaceAll(':', '').toLowerCase()}'\n`
+  );
+  writeExecutable(unzipPath, "echo 'lib/arm64-v8a/libliftlog.so'\n");
+
+  const runVerifier = (permissions: string[]) => {
+    writeExecutable(aaptPath, fakeAaptBadging(permissions));
+
+    return spawnSync(verifyScriptPath, [apkPath], {
+      cwd: projectRoot,
+      env: {
+        ...process.env,
+        AAPT_BIN: aaptPath,
+        APKSIGNER_BIN: apksignerPath,
+        UNZIP_BIN: unzipPath
+      },
+      encoding: 'utf8'
+    });
+  };
+
+  const matchingResult = runVerifier([...releaseConfig.permissions].reverse());
+  const unexpectedResult = runVerifier([
+    ...releaseConfig.permissions,
+    'android.permission.RECORD_AUDIO'
+  ]);
+  const missingResult = runVerifier(
+    releaseConfig.permissions.filter(
+      permission => permission !== 'android.permission.INTERNET'
+    )
+  );
+
+  try {
+    assert.equal(matchingResult.status, 0, matchingResult.stderr);
+    assert.match(matchingResult.stdout, /Verified production release APK/);
+
+    assert.notEqual(unexpectedResult.status, 0);
+    assert.match(
+      unexpectedResult.stderr,
+      /Unexpected: android\.permission\.RECORD_AUDIO\. Missing: none\./
+    );
+
+    assert.notEqual(missingResult.status, 0);
+    assert.match(
+      missingResult.stderr,
+      /Unexpected: none\. Missing: android\.permission\.INTERNET\./
+    );
   } finally {
     rmSync(temporaryDirectory, { recursive: true, force: true });
   }
