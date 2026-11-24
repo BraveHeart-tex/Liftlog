@@ -3,7 +3,13 @@
 # dependencies
 node_modules/
 
-.agents
+# Agent skills: only repository-owned skills are tracked.
+.agents/*
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/triage-issue/
+!.agents/skills/implement-issue/
+!.agents/skills/plan-issue-run/
 
 # Expo
 .expo/

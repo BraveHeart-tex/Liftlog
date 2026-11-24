@@ -7,6 +7,11 @@
 - Generated artifacts are outputs, not edit targets. Change source schema and tooling inputs; never hand-edit Drizzle migrations, snapshots, generated SQL, or other generated files.
 - Configure Expo audio mode once at the app/provider boundary. Leaf components only control their own players; they do not call `setAudioModeAsync` or `setIsAudioActiveAsync`.
 - Follow the commit and pull-request conventions in `CONTRIBUTING.md`.
+- Use [`docs/glossary.md`](docs/glossary.md) terms verbatim in code, docs, and GitHub issues.
+
+## Done
+
+Done for an issue means: every applicable [validation](#validation) check passes on the final code, every acceptance criterion's box is ticked, the change is pushed to main with `Refs #<n>`, and the [evidence comment](docs/verification.md#evidence) is in the issue. Then close it per [`docs/tickets.md`](docs/tickets.md#closing). Progress and verification live in GitHub Issues; repo docs hold durable rules.
 
 ## Agent problem log
 
@@ -26,6 +31,8 @@ Read the applicable document before changing its subsystem. These documents are 
 | Workout logging UX, audio feedback, or compact data display                             | [`docs/ux-display.md`](docs/ux-display.md)         |
 | Expo Router navigation or route history                                                 | [`docs/expo-router.md`](docs/expo-router.md)       |
 | Any animation, transition, loading indicator, gesture animation, or programmatic scroll | [`docs/reduced-motion.md`](docs/reduced-motion.md) |
+| Writing, triaging, selecting, rescoping, or closing GitHub issues                       | [`docs/tickets.md`](docs/tickets.md)               |
+| Choosing a test, device check, or evidence for an acceptance criterion                  | [`docs/verification.md`](docs/verification.md)     |
 
 ## Validation
 
@@ -52,8 +59,8 @@ Use direct project-local commands for validation. Commands that can run longer t
 
 ### Issue tracker
 
-Issues and specs are tracked in GitHub Issues. See `docs/agents/issue-tracker.md`.
+Issues and specs are tracked in GitHub Issues and the LiftLog GitHub Project. Ticket rules: [`docs/tickets.md`](docs/tickets.md); `gh` conventions: [`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md). Repo skills: `/triage-issue`, `/implement-issue`, `/plan-issue-run`.
 
 ### Domain docs
 
-This repo uses a single-context domain-doc layout. See `docs/agents/domain.md`.
+This repo uses a single-context domain-doc layout with [`docs/glossary.md`](docs/glossary.md) as the term source. See [`docs/agents/domain.md`](docs/agents/domain.md).

@@ -14,9 +14,9 @@ Reference the active issue in commit footers:
 
 `Refs #87`
 
-Close the implementation ticket from the pull request body:
+Work pushed directly to main closes its issue through the evidence comment in [tickets closing](docs/tickets.md#closing). When a pull request is used, close the implementation ticket from its body:
 
 `Closes #87`
 `Part of #86`
 
-Do not close parent specification issues from implementation commits or pull requests.
+Do not close parent issues from implementation commits or pull requests.

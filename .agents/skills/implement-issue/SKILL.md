@@ -1,0 +1,111 @@
+---
+name: implement-issue
+description: Implement one LiftLog GitHub issue end to end, from reading it to the closing evidence comment.
+disable-model-invocation: true
+---
+
+Implement the GitHub issue the user passed with the invocation (a URL or `#n`). No issue
+given: ask for one. Done is the [AGENTS.md](../../../AGENTS.md#done) definition: every
+applicable validation check green, every criterion ticked, pushed to main, evidence
+posted, issue closed.
+
+Work **lean** throughout:
+
+- Discover unknown file paths with `rg --files`; read cited sections with `rg` and bounded
+  line ranges. Do not concatenate documentation files. Read complete source files only
+  when necessary to understand or modify them; never reread unchanged content already in
+  context, this skill included.
+- Batch independent read-only inspections when useful, but cap their combined output.
+- Scope large diffs by file or hunk so each read stays bounded.
+- Send verbose command output to a temp file (`log=$(mktemp)`); read only failures and
+  the final summary.
+- Run the smallest relevant check while iterating.
+- Preflight environment requirements once before implementation when the issue needs an
+  emulator, device, native build or external service.
+- On `EPERM`, `EACCES` or sandbox denial, follow
+  [agent-safe command execution](../../../AGENTS.md#agent-safe-command-execution) and the
+  [agent problem log](../../../docs/agent-problems.md). Never retry an unchanged blocked
+  command or modify application code to work around the execution environment. Never
+  ship or close with required verification blocked.
+- For long-running commands, use a reasonable initial wait and subsequent waits of
+  10-30 seconds instead of polling every second. Do independent work while a command
+  runs when safe; do not poll until its result is needed.
+- One review, done by you. Spawn parallel reviewers or subagents only when the user asks.
+
+## Steps
+
+1. **Load the issue.** Run `node scripts/start-issue.mjs <n|url>`
+   ([tickets](../../../docs/tickets.md#selecting-work)): it prints the issue, its relations
+   and the review baseline, and sets Project Status to In progress. Record
+   `base=<its base>`. State the issue title.
+   _Done when_ the script exits 0, the title is stated and `base` is recorded. A refusal
+   (closed issue or open blocker) stops the run: report it and ask. A `ready-for-human`
+   issue stops here: report what needs the human.
+
+2. **Check the size.** Before reading docs or code, count the issue against the
+   [size limits](../../../docs/tickets.md#size), from its Size line or from its body. Over
+   a limit, or a scope that will not fit one context window: stop, propose a split by
+   layer, and ask. On approval, rewrite the issue to the slice you will build and create
+   the follow-up ticket per [changing scope](../../../docs/tickets.md#changing-scope).
+   _Done when_ the issue is within every limit, or the user approved building it as it is.
+
+3. **Find the owner and its rules.** Start from the approved scope. First locate the
+   owning code: the files the issue's Ownership or Current state names, else find them
+   with `rg`, and read them. Then open the sections that govern it: every ADR, decision
+   and doc section the issue cites, plus the
+   [documentation routing](../../../AGENTS.md#documentation-routing) rows that apply to
+   the owner (sheets, data access, database, layout, styling, navigation, reduced
+   motion). Open sections, not whole docs; list them with `rg -n '^#' <file>`. Use
+   [glossary](../../../docs/glossary.md) terms in code, tests and the evidence.
+   _Done when_ the owner is read and each acceptance criterion maps to the rule that
+   governs it.
+
+4. **Name the proof.** Each acceptance criterion names its evidence: an existing test, a
+   new test where [one is required](../../../docs/verification.md#when-a-test-is-required),
+   or a [device check](../../../docs/verification.md#device-checks). A required test goes
+   at the [cheapest level](../../../docs/verification.md#cheapest-proof) and names the
+   regression it catches. Note any required preflight, test-first test or `before`
+   screenshot. Ask the user only when an ambiguity changes scope; otherwise pick the
+   reading that matches the cited docs and name it in the evidence.
+   _Done when_ every criterion names its evidence. Start building now. A further read
+   answers a named implementation or verification question.
+
+5. **Build.** Test-first only for the new tests step 4 requires (use the `tdd` skill).
+   While iterating, run only the affected test files:
+
+   ```sh
+   TSX_TSCONFIG_PATH=tests/tsconfig.json node --experimental-test-module-mocks \
+     --import tsx --import ./tests/setup.ts --test <test files>
+   ```
+
+   plus `tsc` and `eslint <changed files>` as relevant. Native changes need a fresh
+   native build before any device check. Run device checks with the `android-emulator`
+   or `agent-device` skill.
+   _Done when_ relevant tests and changed-file lint pass, and every device check is
+   reviewed.
+
+6. **Review.** Read `git diff $base` against two axes: the standards in AGENTS.md and the
+   docs from step 3, and each acceptance criterion. Fix what you accept.
+   _Done when_ every criterion points to code plus its named evidence, and every finding
+   is fixed or rejected with a one-line reason.
+
+7. **Verify.** Start broad verification only after implementation, tests, device checks,
+   review fixes and targeted checks are complete, with no changes ongoing. Run every
+   applicable [validation](../../../AGENTS.md#validation) check once on the final code,
+   sending output to a log and reading the summary. On failure, fix the cause, rerun
+   only the failed checks until they pass, then run the full set once more. An
+   environment blocker is not a passing result; stop before shipping if required
+   verification cannot complete.
+   _Done when_ the required final checks exit 0 on the final code or docs.
+
+8. **Ship.** Commit per [CONTRIBUTING.md](../../../CONTRIBUTING.md) with `Refs #<n>` and
+   push to main. Tick each criterion box in the issue body
+   (`gh issue edit <n> --body-file`), post the
+   [evidence](../../../docs/verification.md#evidence) comment, read both back, then close
+   per [tickets](../../../docs/tickets.md#closing). Attach reviewed
+   screenshots with `gh issue comment --attach` when device checks are evidence, and
+   read back their links.
+   _Done when_ the read-back shows every box ticked, the evidence comment cites the
+   pushed commit and includes any required screenshots, and the issue is closed.
+
+Report: what changed, what failed, what's next.
