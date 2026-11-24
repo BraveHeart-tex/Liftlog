@@ -34,7 +34,9 @@ is required.
 Prove each behavior that needs a test at the cheapest level that can prove it.
 
 - **Unit tests** (`tests/{components,db,features,lib}`, Jest app project with Jest
-  globals, `pnpm run test`) prove logic, stores and feature services.
+  globals, `pnpm run test`) prove logic, stores and feature services; component tests
+  there render a component with React Native Testing Library and query by visible text
+  and accessibility role, never by style.
 - **Native configuration tests** (`tests/native`, Jest native project,
   `pnpm run test:native`) prove config plugins, release signing and the Android
   release build and verification scripts in Node.
@@ -66,8 +68,8 @@ Conventions for the levels above; read this and the nearest example before writi
 - **Path and suffix:** a test mirrors its source path under `tests/`
   (`src/features/steps/steps.repository.ts` →
   `tests/features/steps/steps.repository.db.test.ts`). Unit tests end in `.test.ts`,
-  database integration tests in `.db.test.ts`; native and tooling tests are
-  `tests/native/*.test.ts` and `tests/tooling/*.test.ts`.
+  component tests in `.test.tsx`, database integration tests in `.db.test.ts`; native
+  and tooling tests are `tests/native/*.test.ts` and `tests/tooling/*.test.ts`.
 - **Support helpers:** `tests/support/db.ts` opens migrated real-SQLite databases
   (`createMigratedTestDatabase`, `closeTestDatabases`), `tests/support/factories.ts`
   builds rows with fixed IDs and timestamps, and `tests/support/sqlite-adapter.ts`
@@ -94,7 +96,9 @@ Conventions for the levels above; read this and the nearest example before writi
   real-SQLite
   [`steps.repository.db.test.ts`](../tests/features/steps/steps.repository.db.test.ts),
   harness
-  [`rest-timer-coordinator.test.ts`](../tests/features/rest-timer/rest-timer-coordinator.test.ts).
+  [`rest-timer-coordinator.test.ts`](../tests/features/rest-timer/rest-timer-coordinator.test.ts),
+  component
+  [`set-form.test.tsx`](../tests/features/workouts/set-entry/components/set-form/set-form.test.tsx).
 
 ## Device checks
 

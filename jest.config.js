@@ -25,7 +25,7 @@ const projects = [
     transformIgnorePatterns: appTransformIgnorePatterns,
     testMatch: [
       '<rootDir>/tests/compat/app/**/*.test.{ts,tsx}',
-      '<rootDir>/tests/{components,db,features,lib}/**/*.test.ts'
+      '<rootDir>/tests/{components,db,features,lib}/**/*.test.{ts,tsx}'
     ]
   },
   {
