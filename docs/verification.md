@@ -80,6 +80,10 @@ Conventions for the levels above; read this and the nearest example before writi
 - **Assertions:** new or substantially rewritten tests use Jest `expect` and React
   Native Testing Library matchers; migrated tests keep `node:assert/strict` until
   rewritten for another reason.
+- **Performance contracts:** assert statement counts, recorded statements or generated
+  SQL only in a test named `performance contract: <guarantee>`; otherwise assert
+  returned values and stored rows. The test adapter rejects statements over 999
+  variables, so a chunked write is proven by a row count over that limit.
 - **Commands:** `pnpm run test <path>` or `pnpm run test -t <name>` (app project),
   `pnpm run test:native`, `pnpm run test:tooling`, `pnpm run test:kotlin`.
 - **Examples:** unit

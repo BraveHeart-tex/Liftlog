@@ -1,10 +1,8 @@
 import type { Set as WorkoutSet, Workout } from '@/src/db/schema';
 import {
   buildExerciseHistory,
-  getExerciseHistoryQuery,
   mapExerciseHistoryRows
 } from '@/src/features/progress/progress.repository';
-import { QueryBuilder } from 'drizzle-orm/sqlite-core';
 import assert from 'node:assert/strict';
 
 function createWorkout(id: string, startedAt: number): Workout {
@@ -122,35 +120,5 @@ test('visible history can retain a limit-plus-one probe separately from the page
   assert.deepEqual(
     mapped.visibleWorkoutRows.slice(0, visibleLimit).map(row => row.workout.id),
     ['workout-1', 'workout-2']
-  );
-});
-
-test('limits workout IDs before joining sets and controls probe set loading', () => {
-  const query = getExerciseHistoryQuery(
-    new QueryBuilder() as never,
-    'exercise-1',
-    20,
-    { includeLimitProbe: true, includeProgression: true }
-  );
-  const generatedSql = query.toSQL().sql;
-  const outerSelectIndex = generatedSql.indexOf(' select "workouts"');
-
-  assert.match(
-    generatedSql,
-    /"visible_exercise_history_workouts"[\s\S]*limit \?/i
-  );
-  assert.notEqual(outerSelectIndex, -1);
-  assert.doesNotMatch(generatedSql.slice(outerSelectIndex), /\blimit\b/i);
-  assert.match(generatedSql, /max\("load_sets"\) as "load_sets"/i);
-  assert.match(
-    generatedSql,
-    /left join "sets" on \([\s\S]*"sets"\."workout_exercise_id"[\s\S]*"sets"\."status" = \?[\s\S]*"load_sets" = \?/i
-  );
-  assert.doesNotMatch(
-    generatedSql.slice(
-      outerSelectIndex,
-      generatedSql.indexOf(' from ', outerSelectIndex)
-    ),
-    /"workout_exercises"/i
   );
 });

@@ -12,7 +12,7 @@ import {
 
 afterEach(closeTestDatabases);
 
-test('exercise history selects workouts and sets by completed sets', async () => {
+test('performance contract: exercise history selects workouts and sets by completed sets through the exercise and set-status indexes', async () => {
   const { db, nodeClient } = await createMigratedTestDatabase();
 
   db.insert(exercises)
@@ -159,4 +159,79 @@ test('exercise history selects workouts and sets by completed sets', async () =>
     /workout_exercises_exercise_id_workout_id_idx/
   );
   assert.match(queryPlanDetails, /sets_workout_exercise_id_status_order_idx/);
+});
+
+test('exercise history limits workouts, not set rows, and loads no sets for the limit probe', async () => {
+  const { db, nodeClient } = await createMigratedTestDatabase();
+  const workoutIds = ['newest', 'middle', 'probe'];
+
+  db.insert(exercises)
+    .values({
+      id: 'exercise-history',
+      name: 'History exercise',
+      normalizedName: 'history exercise',
+      equipment: 'other'
+    })
+    .run();
+  db.insert(workouts)
+    .values(
+      workoutIds.map((id, index) => ({
+        id,
+        name: id,
+        status: 'completed' as const,
+        startedAt: 300 - index * 100,
+        dateKey: '1970-01-01'
+      }))
+    )
+    .run();
+  db.insert(workoutExercises)
+    .values(
+      workoutIds.map(workoutId => ({
+        id: `${workoutId}-exercise`,
+        workoutId,
+        exerciseId: 'exercise-history',
+        order: 0
+      }))
+    )
+    .run();
+  db.insert(sets)
+    .values(
+      workoutIds.flatMap(workoutId =>
+        [0, 1, 2, 3].map(order => ({
+          id: `${workoutId}-set-${order}`,
+          workoutExerciseId: `${workoutId}-exercise`,
+          order,
+          status: 'completed' as const
+        }))
+      )
+    )
+    .run();
+
+  const query = getExerciseHistoryQuery(db, 'exercise-history', 2, {
+    includeLimitProbe: true
+  });
+  // Node SQLite object rows collapse duplicate join column names.
+  nodeClient.execSync(`
+      PRAGMA short_column_names = OFF;
+      PRAGMA full_column_names = ON;
+    `);
+  const mapped = mapExerciseHistoryRows(query.all());
+  nodeClient.execSync(`
+      PRAGMA full_column_names = OFF;
+      PRAGMA short_column_names = ON;
+    `);
+
+  expect(mapped.visibleWorkoutRows.map(row => row.workout.id)).toEqual(
+    workoutIds
+  );
+  expect(mapped.setRows.map(row => row.set.id)).toEqual([
+    'newest-set-0',
+    'newest-set-1',
+    'newest-set-2',
+    'newest-set-3',
+    'middle-set-0',
+    'middle-set-1',
+    'middle-set-2',
+    'middle-set-3'
+  ]);
 });

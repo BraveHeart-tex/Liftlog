@@ -392,6 +392,8 @@ describe('historical saves rebuild records for all affected exercises', () => {
 
   test('chunks every historical edit mutation at the batch boundary', async () => {
     const { db, nodeClient } = await createMigratedTestDatabase();
+    // Draft creation inserts every row in one statement; #162 decides chunking.
+    nodeClient.allowStatementsAboveVariableLimit();
     const rowCount = 101;
 
     const exerciseRows = Array.from({ length: rowCount }, (_, index) => [

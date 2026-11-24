@@ -66,7 +66,7 @@ describe('exercise usage query checks workout and template references together',
   ];
 
   for (const testCase of cases) {
-    test(testCase.name, async () => {
+    test(`performance contract: ${testCase.name} reads in one indexed statement`, async () => {
       const { db, nodeClient } = await createMigratedTestDatabase();
 
       db.insert(exercises)
@@ -146,7 +146,7 @@ describe('exercise usage query checks workout and template references together',
   }
 });
 
-test('custom exercise updates use reduced statement paths', async () => {
+test('performance contract: custom exercise renames take one statement and detail updates two, or four with a tracking-type change', async () => {
   const { db, nodeClient } = await createMigratedTestDatabase();
 
   db.insert(exercises)
@@ -271,52 +271,37 @@ test('exercise name writes enforce and translate active normalized conflicts', a
   );
 });
 
-test('staged exercise saves scope name checks to staged names', async () => {
-  const { db, nodeClient } = await createMigratedTestDatabase();
+test('staged exercise saves reject duplicate and active catalog names and save the rest', async () => {
+  const { db } = await createMigratedTestDatabase();
 
   db.insert(exercises)
-    .values(
-      Array.from({ length: 1_000 }, (_, index) => ({
-        id: `catalog-exercise-${index}`,
-        name: `Catalog exercise ${index}`,
-        normalizedName: `catalog exercise ${index}`,
+    .values([
+      {
+        id: 'catalog-exercise',
+        name: 'Catalog exercise',
+        normalizedName: 'catalog exercise',
         equipment: 'other'
-      }))
-    )
+      },
+      {
+        id: 'archived-exercise',
+        name: 'Archived exercise',
+        normalizedName: 'archived exercise',
+        equipment: 'other',
+        isArchived: 1
+      }
+    ])
     .run();
   db.insert(workouts)
-    .values([
-      {
-        id: 'active-workout',
-        name: 'Active',
-        status: 'in_progress',
-        startedAt: 1,
-        dateKey: '1970-01-01'
-      },
-      {
-        id: 'conflicting-active-workout',
-        name: 'Conflicting active',
-        status: 'in_progress',
-        startedAt: 1,
-        dateKey: '1970-01-01'
-      }
-    ])
+    .values({
+      id: 'active-workout',
+      name: 'Active',
+      status: 'in_progress',
+      startedAt: 1,
+      dateKey: '1970-01-01'
+    })
     .run();
   db.insert(workoutTemplates)
-    .values([
-      {
-        id: 'template',
-        name: 'Template',
-        createdAt: 1,
-        updatedAt: 1
-      },
-      {
-        id: 'conflicting-template',
-        name: 'Conflicting template',
-        createdAt: 1,
-        updatedAt: 1
-      }
-    ])
+    .values({ id: 'template', name: 'Template', createdAt: 1, updatedAt: 1 })
     .run();
   const stagedExercise = (id: string, name: string) => ({
     id,
@@ -330,156 +315,94 @@ test('staged exercise saves scope name checks to staged names', async () => {
     isArchived: 0,
     createdAt: 1
   });
-  const stopRecordingActiveNameQueries = () =>
-    nodeClient
-      .stopRecordingPreparedStatements()
-      .filter(
-        statement =>
-          statement.source.includes('from "exercises"') &&
-          statement.source.includes('"is_archived" = ?')
-      );
-  const assertScopedNameQuery = (normalizedNames: string[]) => {
-    const activeNameQueries = stopRecordingActiveNameQueries();
+  const saveActive = (staged: ReturnType<typeof stagedExercise>[]) =>
+    saveActiveWorkoutExerciseDraft(db, {
+      workoutId: 'active-workout',
+      rows: staged.map(exercise => ({
+        id: `workout-exercise-${exercise.id}`,
+        exerciseId: exercise.id,
+        supersetId: null
+      })),
+      baselineRows: [],
+      stagedCustomExercises: staged
+    });
+  const saveTemplate = (staged: ReturnType<typeof stagedExercise>[]) =>
+    saveWorkoutTemplateExerciseDraft(db, {
+      templateId: 'template',
+      rows: staged.map(exercise => ({
+        id: `template-exercise-${exercise.id}`,
+        exerciseId: exercise.id,
+        supersetId: null
+      })),
+      baselineRows: [],
+      stagedCustomExercises: staged
+    });
+  const savedStagedNames = () =>
+    db
+      .select({ id: exercises.id, normalizedName: exercises.normalizedName })
+      .from(exercises)
+      .where(eq(exercises.isCustom, 1))
+      .orderBy(exercises.id)
+      .all();
+  const workoutExerciseIds = () =>
+    db
+      .select({ exerciseId: workoutExercises.exerciseId })
+      .from(workoutExercises)
+      .orderBy(workoutExercises.exerciseId)
+      .all()
+      .map(row => row.exerciseId);
+  const templateExerciseIds = () =>
+    db
+      .select({ exerciseId: workoutTemplateExercises.exerciseId })
+      .from(workoutTemplateExercises)
+      .orderBy(workoutTemplateExercises.exerciseId)
+      .all()
+      .map(row => row.exerciseId);
 
-    assert.equal(activeNameQueries.length, 1);
-    assert.match(activeNameQueries[0].source, /"normalized_name" in \(/);
-    assert.deepEqual(
-      activeNameQueries[0].params.filter(
-        (param): param is string => typeof param === 'string'
-      ),
-      normalizedNames
-    );
-  };
+  expect(() =>
+    saveActive([
+      stagedExercise('active-duplicate-1', 'Duplicate exercise'),
+      stagedExercise('active-duplicate-2', ' DUPLICATE EXERCISE ')
+    ])
+  ).toThrow(ActiveWorkoutExerciseDraftConflictError);
+  expect(() =>
+    saveTemplate([
+      stagedExercise('template-duplicate-1', 'Duplicate exercise'),
+      stagedExercise('template-duplicate-2', ' DUPLICATE EXERCISE ')
+    ])
+  ).toThrow(WorkoutTemplateExerciseDraftConflictError);
+  expect(() =>
+    saveActive([
+      stagedExercise('active-conflict', ' CATALOG EXERCISE '),
+      stagedExercise('active-unpersisted', 'Unpersisted exercise')
+    ])
+  ).toThrow(ActiveWorkoutExerciseDraftConflictError);
+  expect(() =>
+    saveTemplate([
+      stagedExercise('template-conflict', ' CATALOG EXERCISE '),
+      stagedExercise('template-unpersisted', 'Unpersisted exercise')
+    ])
+  ).toThrow(WorkoutTemplateExerciseDraftConflictError);
+  expect(savedStagedNames()).toEqual([]);
+  expect(workoutExerciseIds()).toEqual([]);
+  expect(templateExerciseIds()).toEqual([]);
 
-  const activeStagedExercises = [
-    stagedExercise('active-staged-1', ' New active exercise 1 '),
-    stagedExercise('active-staged-2', 'New active exercise 2')
-  ];
-
-  nodeClient.startRecordingPreparedStatements();
-  saveActiveWorkoutExerciseDraft(db, {
-    workoutId: 'active-workout',
-    rows: activeStagedExercises.map((exercise, index) => ({
-      id: `active-workout-exercise-${index}`,
-      exerciseId: exercise.id,
-      supersetId: null
-    })),
-    baselineRows: [],
-    stagedCustomExercises: activeStagedExercises
-  });
-  assertScopedNameQuery(['new active exercise 1', 'new active exercise 2']);
-
-  const templateStagedExercises = [
-    stagedExercise('template-staged-1', ' New template exercise 1 '),
-    stagedExercise('template-staged-2', 'New template exercise 2')
-  ];
-
-  nodeClient.startRecordingPreparedStatements();
-  saveWorkoutTemplateExerciseDraft(db, {
-    templateId: 'template',
-    rows: templateStagedExercises.map((exercise, index) => ({
-      id: `template-exercise-${index}`,
-      exerciseId: exercise.id,
-      supersetId: null
-    })),
-    baselineRows: [],
-    stagedCustomExercises: templateStagedExercises
-  });
-  assertScopedNameQuery(['new template exercise 1', 'new template exercise 2']);
-
-  const duplicateActiveExercises = [
-    stagedExercise('active-duplicate-1', 'Duplicate active exercise'),
-    stagedExercise('active-duplicate-2', ' DUPLICATE ACTIVE EXERCISE ')
-  ];
-
-  nodeClient.startRecordingPreparedStatements();
-  assert.throws(
-    () =>
-      saveActiveWorkoutExerciseDraft(db, {
-        workoutId: 'conflicting-active-workout',
-        rows: duplicateActiveExercises.map((exercise, index) => ({
-          id: `duplicate-active-workout-exercise-${index}`,
-          exerciseId: exercise.id,
-          supersetId: null
-        })),
-        baselineRows: [],
-        stagedCustomExercises: duplicateActiveExercises
-      }),
-    ActiveWorkoutExerciseDraftConflictError
-  );
-  assert.equal(stopRecordingActiveNameQueries().length, 0);
-
-  const duplicateTemplateExercises = [
-    stagedExercise('template-duplicate-1', 'Duplicate template exercise'),
-    stagedExercise('template-duplicate-2', ' DUPLICATE TEMPLATE EXERCISE ')
-  ];
-
-  nodeClient.startRecordingPreparedStatements();
-  assert.throws(
-    () =>
-      saveWorkoutTemplateExerciseDraft(db, {
-        templateId: 'conflicting-template',
-        rows: duplicateTemplateExercises.map((exercise, index) => ({
-          id: `duplicate-template-exercise-${index}`,
-          exerciseId: exercise.id,
-          supersetId: null
-        })),
-        baselineRows: [],
-        stagedCustomExercises: duplicateTemplateExercises
-      }),
-    WorkoutTemplateExerciseDraftConflictError
-  );
-  assert.equal(stopRecordingActiveNameQueries().length, 0);
-
-  const conflictingActiveExercises = [
-    stagedExercise('active-conflict-1', ' CATALOG EXERCISE 777 '),
-    stagedExercise('active-conflict-2', 'Unpersisted active exercise')
-  ];
-
-  nodeClient.startRecordingPreparedStatements();
-  assert.throws(
-    () =>
-      saveActiveWorkoutExerciseDraft(db, {
-        workoutId: 'conflicting-active-workout',
-        rows: conflictingActiveExercises.map((exercise, index) => ({
-          id: `conflicting-workout-exercise-${index}`,
-          exerciseId: exercise.id,
-          supersetId: null
-        })),
-        baselineRows: [],
-        stagedCustomExercises: conflictingActiveExercises
-      }),
-    ActiveWorkoutExerciseDraftConflictError
-  );
-  assertScopedNameQuery([
-    'catalog exercise 777',
-    'unpersisted active exercise'
+  saveActive([
+    stagedExercise('active-archived-name', ' ARCHIVED EXERCISE '),
+    stagedExercise('active-staged', 'New active exercise')
   ]);
+  saveTemplate([stagedExercise('template-staged', ' New template exercise ')]);
 
-  const conflictingTemplateExercises = [
-    stagedExercise('template-conflict-1', ' CATALOG EXERCISE 888 '),
-    stagedExercise('template-conflict-2', 'Unpersisted template exercise')
-  ];
-
-  nodeClient.startRecordingPreparedStatements();
-  assert.throws(
-    () =>
-      saveWorkoutTemplateExerciseDraft(db, {
-        templateId: 'conflicting-template',
-        rows: conflictingTemplateExercises.map((exercise, index) => ({
-          id: `conflicting-template-exercise-${index}`,
-          exerciseId: exercise.id,
-          supersetId: null
-        })),
-        baselineRows: [],
-        stagedCustomExercises: conflictingTemplateExercises
-      }),
-    WorkoutTemplateExerciseDraftConflictError
-  );
-  assertScopedNameQuery([
-    'catalog exercise 888',
-    'unpersisted template exercise'
+  expect(savedStagedNames()).toEqual([
+    { id: 'active-archived-name', normalizedName: 'archived exercise' },
+    { id: 'active-staged', normalizedName: 'new active exercise' },
+    { id: 'template-staged', normalizedName: 'new template exercise' }
   ]);
+  expect(workoutExerciseIds()).toEqual([
+    'active-archived-name',
+    'active-staged'
+  ]);
+  expect(templateExerciseIds()).toEqual(['template-staged']);
 });
 
 test('tracking-type update rolls back when personal-record rebuild fails', async () => {
@@ -517,7 +440,7 @@ test('tracking-type update rolls back when personal-record rebuild fails', async
   );
 });
 
-test('custom exercise removal preserves results with three-statement paths', async () => {
+test('performance contract: custom exercise removal takes one statement to reject and three to archive or delete', async () => {
   const { db, nodeClient } = await createMigratedTestDatabase();
 
   db.insert(exercises)
@@ -602,7 +525,6 @@ test('custom exercise removal archives after a defensive delete fallback', async
 
   const originalConsoleError = console.error;
   console.error = () => undefined;
-  nodeClient.resetPreparedStatementCount();
 
   try {
     assert.equal(removeCustomExercise(db, 'fallback-custom'), 'archived');
@@ -610,7 +532,6 @@ test('custom exercise removal archives after a defensive delete fallback', async
     console.error = originalConsoleError;
   }
 
-  assert.equal(nodeClient.getPreparedStatementCount(), 4);
   assert.equal(
     db
       .select({ isArchived: exercises.isArchived })

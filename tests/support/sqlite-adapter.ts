@@ -14,6 +14,11 @@ function toLocalRows<T extends object>(rows: T[]): T[] {
   return Array.from(rows, row => ({ ...row }));
 }
 
+// Repository bulk writes chunk to SQLite's historical 999-variable default,
+// the cap on older Android system SQLite builds; node:sqlite allows far more.
+// Rejecting larger statements proves that chunking instead of hiding its loss.
+const SQLITE_MAX_VARIABLE_NUMBER = 999;
+
 function withLocalErrors<T>(operation: () => T): T {
   try {
     return operation();
@@ -75,12 +80,18 @@ class NodeSQLiteStatement {
 export class NodeSQLiteDatabase {
   private readonly database = new DatabaseSync(':memory:');
   private executedPreparedStatementCount = 0;
+  private enforcesVariableLimit = true;
   private recordedPreparedStatements:
     | { source: string; params: SQLInputValue[] }[]
     | undefined;
 
   get isOpen() {
     return this.database.isOpen;
+  }
+
+  /** Lets statements exceed SQLITE_MAX_VARIABLE_NUMBER for this database. */
+  allowStatementsAboveVariableLimit() {
+    this.enforcesVariableLimit = false;
   }
 
   getPreparedStatementCount() {
@@ -103,6 +114,17 @@ export class NodeSQLiteDatabase {
     return recordedPreparedStatements;
   }
 
+  private assertWithinVariableLimit(params: SQLInputValue[]) {
+    if (
+      this.enforcesVariableLimit &&
+      params.length > SQLITE_MAX_VARIABLE_NUMBER
+    ) {
+      throw new Error(
+        `too many SQL variables: ${params.length} exceeds Android's limit of ${SQLITE_MAX_VARIABLE_NUMBER}`
+      );
+    }
+  }
+
   closeSync() {
     this.database.close();
   }
@@ -120,6 +142,8 @@ export class NodeSQLiteDatabase {
       withLocalErrors(() => this.database.prepare(source)),
       this.database,
       params => {
+        this.assertWithinVariableLimit(params);
+
         if (!/^\s*(begin|commit|rollback)\b/i.test(source)) {
           this.executedPreparedStatementCount += 1;
         }
@@ -139,6 +163,8 @@ export class NodeSQLiteDatabase {
   }
 
   getAllSync<T>(source: string, params: SQLInputValue[] = []): T[] {
+    this.assertWithinVariableLimit(params);
+
     return toLocalRows(
       withLocalErrors(() => this.database.prepare(source).all(...params))
     ) as T[];

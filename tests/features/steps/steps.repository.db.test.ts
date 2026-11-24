@@ -13,13 +13,10 @@ afterEach(closeTestDatabases);
 
 describe('step sync results persist atomically in bulk', () => {
   test('empty input performs no writes', async () => {
-    const { db, nodeClient } = await createMigratedTestDatabase();
-
-    nodeClient.resetPreparedStatementCount();
+    const { db } = await createMigratedTestDatabase();
 
     saveStepSyncResult(db, { days: [], syncedAt: 20_000 });
 
-    assert.equal(nodeClient.getPreparedStatementCount(), 0);
     assert.deepEqual(db.select().from(healthStepDays).all(), []);
     assert.equal(
       db
@@ -85,18 +82,26 @@ describe('step sync results persist atomically in bulk', () => {
     );
   });
 
-  test('chunks only beyond the safe SQLite parameter count', async () => {
-    const { db, nodeClient } = await createMigratedTestDatabase();
-    const days = Array.from({ length: 200 }, (_, index) =>
+  test('persists more days than fit in one statement under the SQLite variable limit', async () => {
+    const { db } = await createMigratedTestDatabase();
+    // Five columns per day: 450 days need 2,250 variables, over the adapter's
+    // 999-variable guard.
+    const days = Array.from({ length: 450 }, (_, index) =>
       createStepDay(index)
     );
 
-    nodeClient.resetPreparedStatementCount();
+    saveStepSyncResult(db, { days, syncedAt: 20_450 });
 
-    saveStepSyncResult(db, { days, syncedAt: 20_200 });
-
-    assert.equal(nodeClient.getPreparedStatementCount(), 3);
-    assert.equal(db.select().from(healthStepDays).all().length, 200);
+    expect(
+      db.select().from(healthStepDays).orderBy(healthStepDays.startAt).all()
+    ).toEqual(days);
+    expect(
+      db
+        .select({ value: appMeta.value })
+        .from(appMeta)
+        .where(eq(appMeta.key, SETTINGS_KEYS.stepsLastSyncAt))
+        .get()?.value
+    ).toBe('20450');
   });
 
   test('rolls back day writes when metadata persistence fails', async () => {
