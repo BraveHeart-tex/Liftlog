@@ -246,7 +246,7 @@ test('start boots the emulator, reverses the port, starts Metro and log capture,
       `pnpm exec expo start --dev-client --port ${port}`,
       `adb -s ${serial} logcat -T 1 -s ReactNativeJS:V`,
       `agent-device open ${PACKAGE} ${link(port)} --relaunch`,
-      'agent-device wait text Exercises 180000'
+      'agent-device wait id=workout-start-screen 180000'
     ])
   );
   const order = commands(calls);
@@ -354,7 +354,12 @@ test('stop leaves an already-running Metro and emulator alone', async () => {
   expect(started.status).toBe(0);
   expect(JSON.parse(started.stdout)).toMatchObject({
     emulator: { serial: 'emulator-5554', started: false },
-    metro: { pids: [metro], started: false }
+    metro: {
+      pids: [metro],
+      started: false,
+      log: null,
+      output: 'in the terminal that started this Metro'
+    }
   });
   const logPid = JSON.parse(started.stdout).jsLogs.pid;
 

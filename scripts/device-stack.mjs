@@ -20,7 +20,8 @@ const ROOT = realpathSync(process.cwd());
 const DIR = join(ROOT, '.device-stack');
 const STATE = join(DIR, 'state.json');
 const PORT = Number(process.env.DEVICE_STACK_PORT ?? 8081);
-const START_SCREEN_TEXT = 'Exercises';
+// testID on the Workout start screen heading (WorkoutStartScreen).
+const START_SCREEN_ID = 'workout-start-screen';
 const BOOT_TIMEOUT_MS = 180_000;
 const METRO_TIMEOUT_MS = 120_000;
 const OPEN_TIMEOUT_MS = 180_000;
@@ -280,7 +281,13 @@ async function start({ fresh }) {
   const metroLog = join(DIR, 'metro.log');
 
   if (reused) {
-    state.metro = { pids: reused, started: false };
+    // A running process's output cannot be redirected, so a reused Metro has no log file.
+    state.metro = {
+      pids: reused,
+      started: false,
+      log: null,
+      output: 'in the terminal that started this Metro'
+    };
     log(`reusing this checkout's Metro on port ${PORT}`);
   } else {
     log(`starting Metro on port ${PORT}`);
@@ -321,8 +328,7 @@ async function start({ fresh }) {
   run('agent-device', ['open', PACKAGE, DEV_CLIENT_LINK, '--relaunch']);
   run('agent-device', [
     'wait',
-    'text',
-    START_SCREEN_TEXT,
+    `id=${START_SCREEN_ID}`,
     String(OPEN_TIMEOUT_MS)
   ]);
   state.startScreen = true;

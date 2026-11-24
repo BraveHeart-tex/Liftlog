@@ -60,7 +60,9 @@ export function WorkoutStartScreen() {
 
   return (
     <Screen scroll keyboardShouldPersistTaps="handled">
-      <Text variant="h1">Workout</Text>
+      <Text variant="h1" testID="workout-start-screen">
+        Workout
+      </Text>
 
       {activeWorkout && !isStartingWorkout ? (
         <View>
