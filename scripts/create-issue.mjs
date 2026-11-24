@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 // Plain Node runs this script, so the @/ alias cannot resolve here.
 // eslint-disable-next-line no-restricted-imports
-import { lintTicket } from './ticket-lint.mjs';
+import { lintParent, lintTicket } from './ticket-lint.mjs';
 
 // Creates or resumes one issue under docs/tickets.md. All local inputs and Project
 // metadata are validated before writes. Resume reconciles the same expected specification;
@@ -147,12 +147,10 @@ try {
   const body = readFileSync(options['body-file'], 'utf8');
 
   // docs/tickets.md: parents have their own shape.
-  if (!options['parent-ticket']) {
-    const problems = lintTicket(body);
+  const problems = (options['parent-ticket'] ? lintParent : lintTicket)(body);
 
-    if (problems.length) {
-      throw new Error(`Ticket body:\n- ${problems.join('\n- ')}`);
-    }
+  if (problems.length) {
+    throw new Error(`Ticket body:\n- ${problems.join('\n- ')}`);
   }
 
   const labels = [options.category, ...areas, state];
@@ -250,6 +248,21 @@ try {
     issue = view(resume);
     verifyContent(issue);
   } else {
+    // A retry never creates a same-title duplicate. The REST list sees an issue created
+    // moments ago; the search index lags.
+    const duplicate = json(
+      'api',
+      `repos/${repo}/issues?state=open&sort=created&direction=desc&per_page=100`
+    ).find(i => !i.pull_request && i.title === options.title);
+
+    if (duplicate) {
+      issue = { number: duplicate.number, url: duplicate.html_url };
+
+      throw new Error(
+        `Open issue #${duplicate.number} already has this title; nothing was created`
+      );
+    }
+
     const url = run(
       'issue',
       'create',
@@ -302,17 +315,45 @@ try {
   }
 
   unfinished.shift();
-  const item = json(
-    'project',
-    'item-add',
-    String(project.number),
-    '--owner',
-    owner,
-    '--url',
-    issue.url,
-    '--format',
-    'json'
-  );
+  let item;
+
+  try {
+    item = json(
+      'project',
+      'item-add',
+      String(project.number),
+      '--owner',
+      owner,
+      '--url',
+      issue.url,
+      '--format',
+      'json'
+    );
+  } catch (error) {
+    // The Project's auto-add workflow can add the issue first; continue with its item.
+    if (!/Content already exists/.test(error.message)) {
+      throw error;
+    }
+
+    item = json(
+      'api',
+      'graphql',
+      '-f',
+      'query=query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name){issue(number:$number){projectItems(first:100){nodes{id project{id}}}}}}',
+      '-f',
+      `owner=${owner}`,
+      '-f',
+      `name=${repo.split('/')[1]}`,
+      '-F',
+      `number=${issue.number}`
+    ).data.repository.issue.projectItems.nodes.find(
+      n => n.project.id === project.id
+    );
+
+    if (!item) {
+      throw error;
+    }
+  }
 
   for (const selection of selections) {
     run(

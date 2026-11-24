@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { lintTicket } from '@/scripts/ticket-lint.mjs';
+import { lintParent, lintTicket } from '@/scripts/ticket-lint.mjs';
 
 // docs/tickets.md template, criteria and size rules; #107 packed eleven unproven criteria
 // across native, startup and copy work, which these checks refuse.
@@ -102,5 +102,39 @@ test('ownership names owners and What to build stays short', () => {
   assert.deepEqual(lintTicket(body), [
     'What to build has 154 words; the limit is 150',
     'Out of scope names the issue that owns each item, or reads "none"'
+  ]);
+});
+
+const parent = (criteria: string[], extra = '') =>
+  [
+    '## What to build',
+    'Log workouts.',
+    '## Ownership',
+    '- Log a set: #43',
+    extra,
+    '## Acceptance criteria',
+    ...criteria
+  ].join('\n');
+
+test('parents need their sections, no Size and one sub-issues-closed criterion', () => {
+  assert.deepEqual(lintParent(parent(['- [ ] Every sub-issue is closed'])), []);
+  assert.deepEqual(lintParent('## What to build\nx'), [
+    'Missing section: ## Ownership',
+    'Missing section: ## Acceptance criteria'
+  ]);
+  assert.deepEqual(
+    lintParent(
+      parent(['- [ ] Every sub-issue is closed'], '## Size\nProofs 1')
+    ),
+    ['A parent has no ## Size']
+  );
+  assert.deepEqual(
+    lintParent(
+      parent(['- [ ] Every sub-issue is closed', '- [ ] Logging works'])
+    ),
+    ['A parent has exactly one criterion; found 2']
+  );
+  assert.deepEqual(lintParent(parent(['- [ ] Logging works'])), [
+    'The parent criterion states that every sub-issue is closed'
   ]);
 });

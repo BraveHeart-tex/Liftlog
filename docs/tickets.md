@@ -131,6 +131,32 @@ A ticket with sub-issues is a parent. It holds the ownership list, the shared ru
 a breakdown of features by layer, and its only criterion is that the sub-issues are
 closed. It has no Size line and no Priority.
 
+```md
+## What to build
+
+<The outcome the sub-issues deliver together.>
+
+## Rules
+
+- <Shared rule or decision, linked>
+
+## Ownership
+
+- <Item>: #<owner>
+
+## Breakdown
+
+- <Layer>: #<n>, #<n>
+
+## Acceptance criteria
+
+- [ ] Every sub-issue is closed
+```
+
+What to build, Ownership and Acceptance criteria are required; Rules, Current state and
+Breakdown are optional. `node scripts/ticket-lint.mjs --parent <body-file>` checks a
+parent body.
+
 ## Ownership
 
 Every item has exactly one owner ticket, named everywhere the item is mentioned. An
@@ -155,24 +181,25 @@ node scripts/create-issue.mjs --title "..." --body-file "$body_file" \
 - `--triage-state` accepts a state label from [triage labels](triage-labels.md),
   defaulting to `needs-triage`. `ready-for-agent` requires `--approved-breakdown`, an
   explicit assertion that the user approved the breakdown.
-- Before any GitHub write, the command lints a non-parent body. Check a body for
-  `gh issue edit` with `node scripts/ticket-lint.mjs <file>`.
+- Before any GitHub write, the command lints the body, as a parent with
+  `--parent-ticket`. Check a body for `gh issue edit` with
+  `node scripts/ticket-lint.mjs [--parent] <file>`.
+- Without `--resume`, the command refuses to create an issue whose title matches an
+  open issue, writes nothing and reports that issue's number with its `--resume`
+  command.
+- When the Project's auto-add workflow adds the issue first, the command continues with
+  that Project item.
 - The command adds the issue to the LiftLog Project, sets Backlog and applicable
   Priority, then reads back title, exact body, labels, relationships and Project
   fields. Success prints compact JSON with the number, URL, Status, Priority, labels
   and verified relationships.
-- On partial failure, it exits non-zero with the existing issue URL, unfinished steps
-  and diagnostics. Fix the reported cause and rerun the same inputs with
-  `--resume <n>`. If creation itself fails without returning a URL, inspect GitHub for
-  a possibly created issue before retrying; use `--resume <n>` if it exists.
-- Add sibling references once numbers exist with a separate body-file edit, then read
-  back the final text:
-
-  ```sh
-  gh issue edit <n> --body-file "$body_file"
-  gh issue view <n> --json body
-  ```
-
+- On failure, it exits non-zero and prints one JSON line on stderr: `error`,
+  `unfinished` steps and, once the issue exists, `url` and `resume`. Read that line
+  whole; never filter it. Fix the reported cause and rerun the same inputs with
+  `--resume <n>`. If creation fails without a URL, rerun the same inputs: the
+  duplicate guard reports the issue if it was created.
+- Publish a parent with sub-issues through a [manifest](#publishing-a-breakdown), not
+  one call per ticket.
 - Use `ready-for-agent` only for tickets from a breakdown the user approved. Every
   other new ticket gets `needs-triage`.
 - Set Priority: Urgent for the head of the critical path, High for the rest of it,
@@ -180,6 +207,52 @@ node scripts/create-issue.mjs --title "..." --body-file "$body_file" \
   is startable; Priority only orders startable work.
 - Work that needs a human gets `ready-for-human` on the issue itself and is assigned to
   the maintainer; it blocks the issues that wait on it.
+
+## Publishing a breakdown
+
+Publish an approved breakdown with one command:
+
+```sh
+node scripts/publish-tickets.mjs "$dir/breakdown.json"
+```
+
+```json
+{
+  "triageState": "ready-for-agent",
+  "approvedBreakdown": true,
+  "parent": {
+    "key": "parent",
+    "title": "...",
+    "body": "parent.md",
+    "category": "enhancement",
+    "areas": ["ui"]
+  },
+  "tickets": [
+    {
+      "key": "schema",
+      "title": "...",
+      "body": "schema.md",
+      "category": "enhancement",
+      "areas": ["data"],
+      "priority": "Urgent",
+      "blockedBy": []
+    }
+  ]
+}
+```
+
+- Body paths are relative to the manifest. A body names a sibling as `{{key}}`; never
+  predict issue numbers.
+- Before any GitHub write, every body is linted with its placeholders filled.
+- Phase 1 creates the parent, then the tickets with blockers first, each through
+  `create-issue.mjs` as a native sub-issue with its blockers. Draft bodies show `#0`
+  for every placeholder.
+- Phase 2 writes the real numbers into each body and reads it back.
+- `breakdown.state.json` next to the manifest records each key's number and progress.
+  Success prints `{key: number}`.
+- On failure, the command prints one JSON line on stderr with `error`, `unfinished`
+  keys and `rerun`. Fix the cause and rerun the same command: it resumes unfinished
+  keys and never creates a key twice. Keep the state file until the run succeeds.
 
 ## Changing scope
 

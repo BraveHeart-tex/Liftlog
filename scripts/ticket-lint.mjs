@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-// Checks a non-parent ticket body against docs/tickets.md (template, criteria, size).
-// Returns problems as plain sentences; an empty list passes. Prose rules lose to an
-// author's pull toward completeness, so the size limits are enforced here.
+// Checks a ticket body against docs/tickets.md (template, criteria, size), or a parent
+// body against its parent template. Returns problems as plain sentences; an empty list
+// passes. Prose rules lose to an author's pull toward completeness, so the size limits
+// are enforced here.
 export const sizeLimits = {
   Migrations: 1,
   'New screens': 3,
@@ -16,8 +17,11 @@ const maxCriteria = 8;
 const doneDefinition =
   /validation checks? pass|tsc --noEmit|prettier --check|pnpm run test passes|push(ed)? to main|evidence comment|close (the|this) (issue|ticket)/i;
 
-export function lintTicket(body) {
-  const problems = [];
+const parentRequired = ['What to build', 'Ownership', 'Acceptance criteria'];
+const parentOptional = ['Rules', 'Current state', 'Breakdown'];
+const subIssuesClosed = /\b(every|all) sub-issues? (is|are) closed\b/i;
+
+function readSections(body, problems) {
   const sections = new Map();
   let current = null;
 
@@ -37,6 +41,10 @@ export function lintTicket(body) {
     }
   }
 
+  return sections;
+}
+
+function checkSections(sections, problems, required, optional) {
   for (const name of required) {
     if (!sections.has(name)) {
       problems.push(`Missing section: ## ${name}`);
@@ -48,6 +56,43 @@ export function lintTicket(body) {
       problems.push(`Unknown section: ## ${name}`);
     }
   }
+}
+
+const criteriaOf = sections =>
+  (sections.get('Acceptance criteria') ?? []).filter(l =>
+    /^- \[[ x]\] /.test(l)
+  );
+
+// docs/tickets.md#parents: no Size, and one criterion: every sub-issue is closed.
+export function lintParent(body) {
+  const problems = [];
+  const sections = readSections(body, problems);
+  checkSections(sections, problems, parentRequired, [
+    ...parentOptional,
+    'Size'
+  ]);
+
+  if (sections.has('Size')) {
+    problems.push('A parent has no ## Size');
+  }
+
+  const criteria = criteriaOf(sections);
+
+  if (sections.has('Acceptance criteria') && criteria.length !== 1) {
+    problems.push(
+      `A parent has exactly one criterion; found ${criteria.length}`
+    );
+  } else if (criteria.length === 1 && !subIssuesClosed.test(criteria[0])) {
+    problems.push('The parent criterion states that every sub-issue is closed');
+  }
+
+  return problems;
+}
+
+export function lintTicket(body) {
+  const problems = [];
+  const sections = readSections(body, problems);
+  checkSections(sections, problems, required, optional);
 
   const what = (sections.get('What to build') ?? [])
     .join(' ')
@@ -106,9 +151,7 @@ export function lintTicket(body) {
     }
   }
 
-  const criteria = (sections.get('Acceptance criteria') ?? []).filter(l =>
-    /^- \[[ x]\] /.test(l)
-  );
+  const criteria = criteriaOf(sections);
 
   if (sections.has('Acceptance criteria') && !criteria.length) {
     problems.push('Acceptance criteria need at least one "- [ ]" line');
@@ -143,14 +186,17 @@ export function lintTicket(body) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const file = process.argv[2];
+  const parent = process.argv[2] === '--parent';
+  const file = process.argv[parent ? 3 : 2];
 
   if (!file) {
-    console.error('Usage: node scripts/ticket-lint.mjs <body-file>');
+    console.error('Usage: node scripts/ticket-lint.mjs [--parent] <body-file>');
     process.exit(1);
   }
 
-  const problems = lintTicket(readFileSync(file, 'utf8'));
+  const problems = (parent ? lintParent : lintTicket)(
+    readFileSync(file, 'utf8')
+  );
 
   for (const problem of problems) {
     console.error(problem);
