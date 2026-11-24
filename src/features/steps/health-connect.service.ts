@@ -25,7 +25,6 @@ export type HealthConnectAvailability =
 
 export interface StepPermissionState {
   canReadSteps: boolean;
-  canReadBackground: boolean;
   canReadHistory: boolean;
 }
 
@@ -47,11 +46,6 @@ const STEP_PERMISSION: Permission = {
 const HISTORY_PERMISSION: ReadHealthDataHistoryPermission = {
   accessType: 'read',
   recordType: 'ReadHealthDataHistory'
-};
-
-const BACKGROUND_PERMISSION: BackgroundAccessPermission = {
-  accessType: 'read',
-  recordType: 'BackgroundAccessPermission'
 };
 
 const INITIAL_HISTORY_DAYS = 365;
@@ -79,7 +73,6 @@ function toStepPermissionState(
 ): StepPermissionState {
   return {
     canReadSteps: hasPermission(permissions, STEP_PERMISSION),
-    canReadBackground: hasPermission(permissions, BACKGROUND_PERMISSION),
     canReadHistory: hasPermission(permissions, HISTORY_PERMISSION)
   };
 }
@@ -128,7 +121,6 @@ export async function getStepPermissionState(): Promise<StepPermissionState> {
   if (availability !== 'available') {
     return {
       canReadSteps: false,
-      canReadBackground: false,
       canReadHistory: false
     };
   }
@@ -144,7 +136,6 @@ export async function getStepHealthConnectStatus(): Promise<StepHealthConnectSta
       availability,
       permissions: {
         canReadSteps: false,
-        canReadBackground: false,
         canReadHistory: false
       }
     };
@@ -162,15 +153,13 @@ export async function requestStepPermissions(): Promise<StepPermissionState> {
   if (availability !== 'available') {
     return {
       canReadSteps: false,
-      canReadBackground: false,
       canReadHistory: false
     };
   }
 
   const permissions = (await requestPermission([
     STEP_PERMISSION,
-    HISTORY_PERMISSION,
-    BACKGROUND_PERMISSION
+    HISTORY_PERMISSION
   ])) as GrantedPermission[];
 
   return toStepPermissionState(permissions);

@@ -34,7 +34,6 @@ const RECENT_DAY_LIMIT = 31;
 
 const EMPTY_PERMISSION_STATE: StepPermissionState = {
   canReadSteps: false,
-  canReadBackground: false,
   canReadHistory: false
 };
 
