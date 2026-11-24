@@ -1,18 +1,14 @@
 import assert from 'node:assert/strict';
-import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import { matchesExercisePickerFilters } from '@/src/features/workouts/exercise-selection/exercise-picker-filter.utils';
-
-function createExercise(
-  id: string,
-  equipment: ExerciseListItem['equipment'],
-  isCustom = 0
-): ExerciseListItem {
-  return { id, equipment, isCustom } as ExerciseListItem;
-}
+import { exerciseListItem } from '@/tests/support/factories';
 
 test('combines primary and equipment filters', () => {
-  const barbell = createExercise('barbell', 'barbell');
-  const customDumbbell = createExercise('custom-dumbbell', 'dumbbell', 1);
+  const barbell = exerciseListItem({ id: 'barbell', equipment: 'barbell' });
+  const customDumbbell = exerciseListItem({
+    id: 'custom-dumbbell',
+    equipment: 'dumbbell',
+    isCustom: 1
+  });
   const recentIds = new Set(['barbell']);
 
   assert.equal(
@@ -35,7 +31,7 @@ test('combines primary and equipment filters', () => {
 });
 
 test('null equipment leaves the primary filter unchanged', () => {
-  const exercise = createExercise('barbell', 'barbell');
+  const exercise = exerciseListItem({ id: 'barbell', equipment: 'barbell' });
 
   assert.equal(
     matchesExercisePickerFilters(exercise, 'all', null, new Set()),
@@ -48,7 +44,7 @@ test('null equipment leaves the primary filter unchanged', () => {
 });
 
 test('normalizes equipment values before matching', () => {
-  const exercise = createExercise('barbell', ' BarBell ');
+  const exercise = exerciseListItem({ id: 'barbell', equipment: ' BarBell ' });
 
   assert.equal(
     matchesExercisePickerFilters(exercise, 'all', 'barbell', new Set()),

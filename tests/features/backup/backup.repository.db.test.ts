@@ -3,6 +3,7 @@ import {
   createBackupSnapshot,
   replaceBackupData
 } from '@/src/features/backup/backup.repository';
+import { applicationUpdateExclusion } from '@/src/features/app-updates/update-exclusion';
 import { BackupValidationError } from '@/src/features/backup/backup.codec';
 import { SETTINGS_KEYS } from '@/src/features/settings/settings.repository';
 import {
@@ -58,6 +59,7 @@ test('a Backup snapshot exports user-owned data and settings in v2 order', async
 });
 
 test('replace-all restores a Backup snapshot into another database', async () => {
+  applicationUpdateExclusion.hydrate(false);
   const source = await createMigratedTestDatabase();
   seedTrackedExercise(source.db);
   createTrackedSet(source.db, 'set-1', 10, 0);

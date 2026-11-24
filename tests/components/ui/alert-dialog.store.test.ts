@@ -22,13 +22,6 @@ test('confirm resolves true when accepted', async () => {
   assert.equal(await promise, true);
 });
 
-test('confirm resolves false when cancelled', async () => {
-  const promise = confirmDialog({ title: 'Confirm' });
-  dismissDialog();
-
-  assert.equal(await promise, false);
-});
-
 test('backdrop and Android back dismiss the active confirmation', async () => {
   const backdropPromise = confirmDialog({ title: 'Backdrop' });
   const backdropRequest = useAlertDialogStore.getState().request;

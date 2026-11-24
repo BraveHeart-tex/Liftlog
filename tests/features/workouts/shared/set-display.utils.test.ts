@@ -1,26 +1,17 @@
-import type { Set } from '@/src/db';
 import {
   formatDisplaySetPosition,
   getDisplaySetGroups
 } from '@/src/features/workouts/shared/set-display.utils';
 import assert from 'node:assert/strict';
-
-function createSet(id: string, weightKg: number, reps: number): Set {
-  return {
-    id,
-    weightKg,
-    reps,
-    status: 'completed'
-  } as Set;
-}
+import { setRow } from '@/tests/support/factories';
 
 test('uses positional ranges for repeated sets and indexes for mixed sets', () => {
   const groups = getDisplaySetGroups([
-    createSet('1', 60, 8),
-    createSet('2', 70, 6),
-    createSet('3', 70, 6),
-    createSet('4', 70, 6),
-    createSet('5', 75, 5)
+    setRow({ id: '1', weightKg: 60, reps: 8 }),
+    setRow({ id: '2', weightKg: 70, reps: 6 }),
+    setRow({ id: '3', weightKg: 70, reps: 6 }),
+    setRow({ id: '4', weightKg: 70, reps: 6 }),
+    setRow({ id: '5', weightKg: 75, reps: 5 })
   ]);
 
   assert.deepEqual(groups.map(formatDisplaySetPosition), ['1', '2-4', '5']);
@@ -28,7 +19,11 @@ test('uses positional ranges for repeated sets and indexes for mixed sets', () =
 
 test('does not group identical sets across a PR boundary', () => {
   const groups = getDisplaySetGroups(
-    [createSet('1', 80, 5), createSet('2', 80, 5), createSet('3', 80, 5)],
+    [
+      setRow({ id: '1', weightKg: 80, reps: 5 }),
+      setRow({ id: '2', weightKg: 80, reps: 5 }),
+      setRow({ id: '3', weightKg: 80, reps: 5 })
+    ],
     { personalRecordSetIds: new Set(['2']) }
   );
 

@@ -1,51 +1,16 @@
-import type { Set as WorkoutSet, Workout } from '@/src/db/schema';
 import {
   buildExerciseHistory,
   mapExerciseHistoryRows
 } from '@/src/features/progress/progress.repository';
 import assert from 'node:assert/strict';
-
-function createWorkout(id: string, startedAt: number): Workout {
-  return {
-    id,
-    name: 'Workout',
-    status: 'completed',
-    startedAt,
-    dateKey: '2026-07-28',
-    completedAt: startedAt + 1,
-    notes: null,
-    sourceSnapshot: null,
-    sourceWorkoutId: null
-  };
-}
-
-function createSet(
-  id: string,
-  workoutExerciseId: string,
-  status: WorkoutSet['status'] = 'completed'
-): WorkoutSet {
-  return {
-    id,
-    workoutExerciseId,
-    order: 1,
-    weightKg: 50,
-    reps: 8,
-    distanceMeters: null,
-    durationMs: null,
-    durationSeconds: null,
-    rpe: null,
-    status,
-    completedAt: status === 'completed' ? 2 : null,
-    sourceSetId: null
-  };
-}
+import { setRow, workoutRow } from '@/tests/support/factories';
 
 test('maps joined history rows without dropping duplicate exercise sets', () => {
-  const workout1 = createWorkout('workout-1', 3);
-  const workout2 = createWorkout('workout-2', 2);
-  const workout3 = createWorkout('workout-3', 1);
-  const completedSet = createSet('set-1', 'workout-exercise-1');
-  const secondCompletedSet = createSet('set-2', 'workout-exercise-1');
+  const workout1 = workoutRow({ id: 'workout-1', startedAt: 3 });
+  const workout2 = workoutRow({ id: 'workout-2', startedAt: 2 });
+  const workout3 = workoutRow({ id: 'workout-3', startedAt: 1 });
+  const completedSet = setRow({ id: 'set-1' });
+  const secondCompletedSet = setRow({ id: 'set-2' });
 
   const rows: Parameters<typeof mapExerciseHistoryRows>[0] = [
     {
@@ -107,7 +72,7 @@ test('maps joined history rows without dropping duplicate exercise sets', () => 
 
 test('visible history can retain a limit-plus-one probe separately from the page', () => {
   const rows = [1, 2, 3].map(index => ({
-    workout: createWorkout(`workout-${index}`, 4 - index),
+    workout: workoutRow({ id: `workout-${index}`, startedAt: 4 - index }),
     set: null,
     isVisible: 1,
     isProgression: 0

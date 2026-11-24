@@ -21,7 +21,6 @@ const projects = [
     displayName: 'app',
     preset: 'jest-expo/android',
     moduleNameMapper,
-    setupFiles: ['<rootDir>/tests/setup.ts'],
     transformIgnorePatterns: appTransformIgnorePatterns,
     testMatch: [
       '<rootDir>/tests/compat/app/**/*.test.{ts,tsx}',

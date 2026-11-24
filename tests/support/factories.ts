@@ -2,9 +2,12 @@ import type { DrizzleDb } from '@/src/db/client';
 import {
   exercises,
   type NewHealthStepDay,
+  type Set as WorkoutSet,
+  type Workout,
   workoutExercises,
   workouts
 } from '@/src/db/schema';
+import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
 import type {
   BackupSettingsV2,
   LiftLogBackupV2
@@ -100,5 +103,62 @@ export function createBackup(
         ...overrides.settings
       }
     }
+  };
+}
+
+/** An exercise list row; overrides replace any field. */
+export function exerciseListItem(
+  overrides: Partial<ExerciseListItem> = {}
+): ExerciseListItem {
+  return {
+    id: 'exercise-1',
+    name: 'Push-up',
+    equipment: null,
+    trackingType: 'reps',
+    primaryMuscles: null,
+    secondaryMuscles: null,
+    isCustom: 0,
+    isArchived: 0,
+    createdAt: 1,
+    ...overrides
+  };
+}
+
+/** A completed workout row; overrides replace any field. */
+export function workoutRow(overrides: Partial<Workout> = {}): Workout {
+  const startedAt = overrides.startedAt ?? 1;
+
+  return {
+    id: 'workout-1',
+    name: 'Workout',
+    status: 'completed',
+    startedAt,
+    dateKey: '2026-07-28',
+    completedAt: startedAt + 1,
+    notes: null,
+    sourceSnapshot: null,
+    sourceWorkoutId: null,
+    ...overrides
+  };
+}
+
+/** A completed weight-reps set row on workout-exercise-1; overrides replace any field. */
+export function setRow(overrides: Partial<WorkoutSet> = {}): WorkoutSet {
+  const status = overrides.status ?? 'completed';
+
+  return {
+    id: 'set-1',
+    workoutExerciseId: 'workout-exercise-1',
+    order: 1,
+    weightKg: 50,
+    reps: 8,
+    distanceMeters: null,
+    durationMs: null,
+    durationSeconds: null,
+    rpe: null,
+    status,
+    completedAt: status === 'completed' ? 2 : null,
+    sourceSetId: null,
+    ...overrides
   };
 }
