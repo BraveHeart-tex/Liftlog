@@ -14,6 +14,7 @@
     "android:release:single-arch": "dotenvx run -f .env.local -- scripts/build-android-release-single-arch.sh",
     "android:device": "EXPO_UNSTABLE_ATLAS=true expo run:android --device",
     "android": "expo run:android",
+    "check:changed": "node scripts/check-changed.mjs",
     "format": "pnpm run prettier:fix",
     "ios": "expo run:ios",
     "lint:fix": "eslint --fix .",
@@ -31,7 +32,8 @@
     "test:kotlin": "cd android && ./gradlew :liftlog-updater:testDebugUnitTest :liftlog-exact-alarm:testDebugUnitTest",
     "test:native": "jest --selectProjects native",
     "test:tooling": "jest --selectProjects tooling",
-    "ts-check": "tsc --noEmit true --project ./tsconfig.json"
+    "ts-check": "tsc --noEmit true --project ./tsconfig.json",
+    "worktree": "node scripts/new-worktree.mjs"
   },
   "engines": {
     "node": ">=22.15.0",

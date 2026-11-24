@@ -38,8 +38,7 @@ Docs state current rules. When behavior changes, rewrite the rule in place; hist
 After a code change, run every applicable check on the final code; pick the narrowest test selection and report exact failures. Fix failures you caused; report unrelated or unavailable checks as such.
 
 - Types: `pnpm run ts-check`
-- Lint: `./node_modules/.bin/eslint <changed-files>`; `.` for broad changes
-- Format: `./node_modules/.bin/prettier --check <changed-files>`; `.` for broad changes
+- Lint and format: `pnpm run check:changed [base]` checks files changed since `base` (default: merge base with `origin/main`) plus untracked files; `pnpm run lint .` and `pnpm run prettier:check` for broad changes
 - Logic or behavior (Jest app project): `pnpm run test`; narrow with `pnpm run test <path>` or `pnpm run test -t <name>`
 - Config plugins, release signing, Android release scripts (`tests/native`): `pnpm run test:native`
 - GitHub ticket tooling (`tests/tooling`): `pnpm run test:tooling`
@@ -50,6 +49,6 @@ After a code change, run every applicable check on the final code; pick the narr
 
 - Run builds, tests, Expo/native commands and anything spawning workers or daemons with inherited stdout/stderr, keeping the original exit code.
 - No result after a reasonable wait: run the equivalent direct command with live output; never repeat the same invocation.
-- `EPERM` from TSX IPC is a sandbox limit: retry with the approved elevated path.
+- New worktree: `pnpm run worktree <n>` creates `../liftlog-<n>` on `issue-<n>` off `origin/main` and installs dependencies.
 - Quote paths with parentheses, spaces or globs (Expo Router).
 - Agent hooks set a host timeout and fail open.

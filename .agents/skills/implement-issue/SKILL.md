@@ -22,9 +22,8 @@ Work **lean** throughout:
 - Run the smallest relevant check while iterating.
 - Preflight environment requirements once before implementation when the issue needs an
   emulator, device, native build or external service.
-- On `EPERM`, `EACCES` or sandbox denial, follow
-  [agent-safe command execution](../../../AGENTS.md#agent-safe-command-execution). Never retry an unchanged blocked
-  command or modify application code to work around the execution environment. Never
+- On `EPERM`, `EACCES` or sandbox denial, change the command or ask for approval;
+  leave application code as it is. Never retry an unchanged blocked command, and never
   ship or close with required verification blocked.
 - For long-running commands, use a reasonable initial wait and subsequent waits of
   10-30 seconds instead of polling every second. Do independent work while a command
@@ -52,7 +51,7 @@ Work **lean** throughout:
    owning code: the files the issue's Ownership or Current state names, else find them
    with `rg`, and read them. Then open the sections that govern it: every ADR, decision
    and doc section the issue cites, plus the
-   [documentation routing](../../../AGENTS.md#documentation-routing) rows that apply to
+   [documentation routing](../../../AGENTS.md#docs) rows that apply to
    the owner (sheets, data access, database, layout, styling, navigation, reduced
    motion). Open sections, not whole docs; list them with `rg -n '^#' <file>`. Use
    [glossary](../../../docs/glossary.md) terms in code, tests and the evidence.
