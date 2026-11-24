@@ -34,8 +34,10 @@ is required.
 Prove each behavior that needs a test at the cheapest level that can prove it.
 
 - **Unit tests** (`tests/**`, `node:test`) prove logic, stores and feature services.
-- **Database integration tests** (`tests/db`) prove schema, migrations and
-  repositories against real SQLite through `node:sqlite`.
+- **Database integration tests** (`*.db.test.ts`: schema and migrations in `tests/db`,
+  repositories beside their feature's tests) prove them against real SQLite through
+  `tests/support`, never a faked Drizzle query chain. Each file registers
+  `afterEach(closeTestDatabases)`; factories use fixed IDs and timestamps.
 - **Native module tests** (`modules/<module>/android/src/test`) prove Kotlin logic that
   does not need a device.
 - **[Device checks](#device-checks)** prove what only a running app shows: rendering,

@@ -41,7 +41,7 @@ After a code change, run every applicable check on the final code; pick the narr
 - Lint: `./node_modules/.bin/eslint <changed-files>`; `.` for broad changes
 - Format: `./node_modules/.bin/prettier --check <changed-files>`; `.` for broad changes
 - Logic or behavior: `pnpm run test`
-- Database/schema: the existing database checks in `tests/db`
+- Database/schema: the database checks (`tests/db`, `*.db.test.ts`)
 
 ## Commands
 
