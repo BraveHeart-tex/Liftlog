@@ -1,0 +1,39 @@
+name: Kotlin tests
+
+on:
+  pull_request:
+    paths:
+      - 'modules/*/android/**'
+      - 'modules/*/expo-module.config.json'
+      - 'app.json'
+      - 'plugins/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'modules/*/android/**'
+      - 'modules/*/expo-module.config.json'
+      - 'app.json'
+      - 'plugins/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Tests
+    uses: ./.github/workflows/test.yml
+    with:
+      kotlin: true

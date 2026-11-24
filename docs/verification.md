@@ -44,18 +44,20 @@ Prove each behavior that needs a test at the cheapest level that can prove it.
   repositories beside their feature's tests) prove them against real SQLite through
   `tests/support`, never a faked Drizzle query chain. Each file registers
   `afterEach(closeTestDatabases)`; factories use fixed IDs and timestamps.
-- **Native module tests** (`modules/<module>/android/src/test`) prove Kotlin logic that
-  does not need a device.
+- **Native module tests** (`modules/<module>/android/src/test`, Gradle JVM unit tests,
+  `pnpm run test:kotlin` after `expo prebuild --platform android`) prove Kotlin logic
+  that does not need a device.
 - **[Device checks](#device-checks)** prove what only a running app shows: rendering,
   gestures, sheets, keyboard behavior, notifications, installer and OS integration.
 
 A purely visual change gets a device check with no test.
 
-CI runs the unit tests on every pull request and push to main, and the native and
-tooling tests only when their inputs change, through the `paths` filters in
-`.github/workflows/ci-native.yml` and `ci-tooling.yml`. A file a native or tooling test
-depends on joins that filter. All three run in the reusable
-`.github/workflows/test.yml`, which the release preflight calls.
+CI runs the unit tests on every pull request and push to main, and the native,
+tooling and native module tests only when their inputs change, through the `paths`
+filters in `.github/workflows/ci-native.yml`, `ci-tooling.yml` and `ci-kotlin.yml`. A
+file one of those tests depends on joins its filter. All four run in the reusable
+`.github/workflows/test.yml`, which the release preflight calls; the native module job
+generates `android/` with a fresh prebuild, never a committed or cached one.
 
 ## Writing tests
 
@@ -79,7 +81,7 @@ Conventions for the levels above; read this and the nearest example before writi
   Native Testing Library matchers; migrated tests keep `node:assert/strict` until
   rewritten for another reason.
 - **Commands:** `pnpm run test <path>` or `pnpm run test -t <name>` (app project),
-  `pnpm run test:native`, `pnpm run test:tooling`.
+  `pnpm run test:native`, `pnpm run test:tooling`, `pnpm run test:kotlin`.
 - **Examples:** unit
   [`superset.utils.test.ts`](../tests/features/workouts/shared/superset.utils.test.ts),
   real-SQLite

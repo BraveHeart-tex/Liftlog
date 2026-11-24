@@ -57,6 +57,7 @@ jobs:
       app: true
       native: true
       tooling: true
+      kotlin: true
 
   publish:
     name: Build and publish signed APK

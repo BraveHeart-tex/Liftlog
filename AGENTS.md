@@ -43,6 +43,7 @@ After a code change, run every applicable check on the final code; pick the narr
 - Logic or behavior (Jest app project): `pnpm run test`; narrow with `pnpm run test <path>` or `pnpm run test -t <name>`
 - Config plugins, release signing, Android release scripts (`tests/native`): `pnpm run test:native`
 - GitHub ticket tooling (`tests/tooling`): `pnpm run test:tooling`
+- Native module Kotlin (`modules/*/android`): `pnpm run test:kotlin` after `expo prebuild --platform android`
 - Database/schema: the database checks (`tests/db`, `*.db.test.ts`)
 
 ## Commands
