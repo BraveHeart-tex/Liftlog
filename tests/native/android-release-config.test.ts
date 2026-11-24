@@ -1,3 +1,7 @@
+/**
+ * Config plugins and release scripts run in Node, not on a device.
+ * @jest-environment node
+ */
 import { compileModsAsync } from 'expo/config-plugins';
 import assert from 'node:assert/strict';
 import {
@@ -12,10 +16,9 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import test from 'node:test';
 import { createRequire } from 'node:module';
 
-const require = createRequire(import.meta.url);
+const loadModule = createRequire(import.meta.url);
 const projectRoot = resolve(process.cwd());
 const pluginPath = resolve(
   projectRoot,
@@ -56,19 +59,19 @@ const signingEnvironmentVariables = [
   'LIFTLOG_ANDROID_STORE_PASSWORD',
   'LIFTLOG_ANDROID_KEY_PASSWORD'
 ] as const;
-const appConfig = require(resolve(projectRoot, 'app.json')) as {
+const appConfig = loadModule(resolve(projectRoot, 'app.json')) as {
   expo: {
     version: string;
     android: { package: string; versionCode: number; permissions: string[] };
     plugins: (string | [string, Record<string, unknown>])[];
   };
 };
-const releaseConfig = require(
+const releaseConfig = loadModule(
   resolve(projectRoot, 'config/android-release.json')
 ) as { certificateSha256: string };
 
 async function runPlugin(projectDirectory: string): Promise<void> {
-  const withAndroidReleaseSigning = require(pluginPath) as (
+  const withAndroidReleaseSigning = loadModule(pluginPath) as (
     config: Parameters<typeof compileModsAsync>[0]
   ) => Parameters<typeof compileModsAsync>[0];
   const config = withAndroidReleaseSigning({
@@ -85,7 +88,7 @@ async function runPlugin(projectDirectory: string): Promise<void> {
 async function runNotificationsProguardPlugin(
   projectDirectory: string
 ): Promise<void> {
-  const withAndroidNotificationsProguard = require(
+  const withAndroidNotificationsProguard = loadModule(
     notificationsProguardPluginPath
   ) as (
     config: Parameters<typeof compileModsAsync>[0]
@@ -265,112 +268,108 @@ test('release signing plugin generates an idempotent secret-free Gradle contract
   }
 });
 
-test(
-  'clean Expo SDK 54 prebuild generates release signing configuration',
-  { timeout: 60_000 },
-  () => {
-    const projectDirectory = mkdtempSync(
-      join(tmpdir(), 'liftlog-clean-prebuild-')
-    );
+test('clean Expo SDK 54 prebuild generates release signing configuration', () => {
+  const projectDirectory = mkdtempSync(
+    join(tmpdir(), 'liftlog-clean-prebuild-')
+  );
 
-    writeFileSync(
-      join(projectDirectory, 'package.json'),
-      JSON.stringify({
-        name: 'liftlog-release-plugin-fixture',
-        version: '1.0.0',
-        private: true,
-        dependencies: {
-          expo: '~54.0.36',
-          react: '19.1.0',
-          'react-native': '0.81.5'
-        }
-      })
-    );
-    writeFileSync(
-      join(projectDirectory, 'app.json'),
-      JSON.stringify({
-        expo: {
-          name: 'Liftlog',
-          slug: 'liftlog',
-          version: appConfig.expo.version,
-          android: {
-            package: appConfig.expo.android.package,
-            versionCode: appConfig.expo.android.versionCode,
-            permissions: appConfig.expo.android.permissions
-          },
-          plugins: [notificationsProguardPluginPath, pluginPath]
-        }
-      })
-    );
-    symlinkSync(
-      resolve(projectRoot, 'node_modules'),
-      join(projectDirectory, 'node_modules'),
-      'dir'
-    );
-
-    const result = spawnSync(
-      resolve(projectRoot, 'node_modules/.bin/expo'),
-      ['prebuild', '--clean', '--platform', 'android', '--no-install'],
-      {
-        cwd: projectDirectory,
-        env: { ...process.env, CI: 'true', EXPO_NO_GIT_STATUS: '1' },
-        encoding: 'utf8'
+  writeFileSync(
+    join(projectDirectory, 'package.json'),
+    JSON.stringify({
+      name: 'liftlog-release-plugin-fixture',
+      version: '1.0.0',
+      private: true,
+      dependencies: {
+        expo: '~54.0.36',
+        react: '19.1.0',
+        'react-native': '0.81.5'
       }
-    );
+    })
+  );
+  writeFileSync(
+    join(projectDirectory, 'app.json'),
+    JSON.stringify({
+      expo: {
+        name: 'Liftlog',
+        slug: 'liftlog',
+        version: appConfig.expo.version,
+        android: {
+          package: appConfig.expo.android.package,
+          versionCode: appConfig.expo.android.versionCode,
+          permissions: appConfig.expo.android.permissions
+        },
+        plugins: [notificationsProguardPluginPath, pluginPath]
+      }
+    })
+  );
+  symlinkSync(
+    resolve(projectRoot, 'node_modules'),
+    join(projectDirectory, 'node_modules'),
+    'dir'
+  );
 
-    try {
-      assert.equal(result.status, 0, result.stderr);
-      assert.match(
-        readFileSync(
-          join(projectDirectory, 'android', 'app', 'build.gradle'),
-          'utf8'
-        ),
-        /apply from: file\("liftlog-release-signing\.gradle"\)/
-      );
-      assert.match(
-        readFileSync(
-          join(
-            projectDirectory,
-            'android',
-            'app',
-            'liftlog-release-signing.gradle'
-          ),
-          'utf8'
-        ),
-        /gradle\.taskGraph\.whenReady/
-      );
-      assert.match(
-        readFileSync(
-          join(projectDirectory, 'android', 'app', 'proguard-rules.pro'),
-          'utf8'
-        ),
-        /-keep class expo\.modules\.notifications\.\*\* \{ \*; \}/
-      );
-      const generatedManifest = readFileSync(
+  const result = spawnSync(
+    resolve(projectRoot, 'node_modules/.bin/expo'),
+    ['prebuild', '--clean', '--platform', 'android', '--no-install'],
+    {
+      cwd: projectDirectory,
+      env: { ...process.env, CI: 'true', EXPO_NO_GIT_STATUS: '1' },
+      encoding: 'utf8'
+    }
+  );
+
+  try {
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(
+      readFileSync(
+        join(projectDirectory, 'android', 'app', 'build.gradle'),
+        'utf8'
+      ),
+      /apply from: file\("liftlog-release-signing\.gradle"\)/
+    );
+    assert.match(
+      readFileSync(
         join(
           projectDirectory,
           'android',
           'app',
-          'src',
-          'main',
-          'AndroidManifest.xml'
+          'liftlog-release-signing.gradle'
         ),
         'utf8'
-      );
+      ),
+      /gradle\.taskGraph\.whenReady/
+    );
+    assert.match(
+      readFileSync(
+        join(projectDirectory, 'android', 'app', 'proguard-rules.pro'),
+        'utf8'
+      ),
+      /-keep class expo\.modules\.notifications\.\*\* \{ \*; \}/
+    );
+    const generatedManifest = readFileSync(
+      join(
+        projectDirectory,
+        'android',
+        'app',
+        'src',
+        'main',
+        'AndroidManifest.xml'
+      ),
+      'utf8'
+    );
 
-      assert.match(
-        generatedManifest,
-        /android\.permission\.SCHEDULE_EXACT_ALARM/
-      );
-      assert.doesNotMatch(
-        generatedManifest,
-        /android\.permission\.USE_EXACT_ALARM/
-      );
-    } finally {
-      rmSync(projectDirectory, { recursive: true, force: true });
-    }
+    assert.match(
+      generatedManifest,
+      /android\.permission\.SCHEDULE_EXACT_ALARM/
+    );
+    assert.doesNotMatch(
+      generatedManifest,
+      /android\.permission\.USE_EXACT_ALARM/
+    );
+  } finally {
+    rmSync(projectDirectory, { recursive: true, force: true });
   }
-);
+}, 60_000);
 
 test('release command does not invoke desktop UI in CI', () => {
   const temporaryDirectory = mkdtempSync(

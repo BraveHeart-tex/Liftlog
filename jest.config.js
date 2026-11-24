@@ -20,7 +20,10 @@ const projects = [
     displayName: 'native',
     preset: 'jest-expo/android',
     moduleNameMapper,
-    testMatch: ['<rootDir>/tests/compat/native/**/*.test.{ts,tsx}']
+    testMatch: [
+      '<rootDir>/tests/compat/native/**/*.test.{ts,tsx}',
+      '<rootDir>/tests/native/**/*.test.ts'
+    ]
   },
   {
     displayName: 'tooling',
@@ -39,7 +42,10 @@ const projects = [
         }
       ]
     },
-    testMatch: ['<rootDir>/tests/compat/tooling/**/*.test.ts']
+    testMatch: [
+      '<rootDir>/tests/compat/tooling/**/*.test.ts',
+      '<rootDir>/tests/tooling/**/*.test.ts'
+    ]
   }
 ];
 

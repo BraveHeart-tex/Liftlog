@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
 import { lintParent, lintTicket } from '@/scripts/ticket-lint.mjs';
 
 // docs/tickets.md template, criteria and size rules; #107 packed eleven unproven criteria

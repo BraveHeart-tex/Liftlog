@@ -27,7 +27,9 @@
     "prettier:check": "prettier . --check",
     "prettier:fix": "prettier . --write",
     "start": "expo start",
-    "test": "TSX_TSCONFIG_PATH=tests/tsconfig.json node --experimental-test-module-mocks --import tsx --import ./tests/setup.ts --test \"tests/!(compat)/**/*.test.ts\"",
+    "test": "TSX_TSCONFIG_PATH=tests/tsconfig.json node --experimental-test-module-mocks --import tsx --import ./tests/setup.ts --test \"tests/!(compat|native|tooling)/**/*.test.ts\"",
+    "test:native": "jest --selectProjects native",
+    "test:tooling": "jest --selectProjects tooling",
     "ts-check": "tsc --noEmit true --project ./tsconfig.json"
   },
   "engines": {

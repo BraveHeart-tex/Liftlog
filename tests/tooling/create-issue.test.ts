@@ -9,7 +9,6 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { delimiter, join } from 'node:path';
-import test, { afterEach } from 'node:test';
 
 const repoUrl = 'https://github.com/BraveHeart-tex/Liftlog';
 const issueUrl = `${repoUrl}/issues/42`;

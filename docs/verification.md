@@ -33,7 +33,13 @@ is required.
 
 Prove each behavior that needs a test at the cheapest level that can prove it.
 
-- **Unit tests** (`tests/**`, `node:test`) prove logic, stores and feature services.
+- **Unit tests** (`tests/**`, `node:test`, `pnpm run test`) prove logic, stores and
+  feature services.
+- **Native configuration tests** (`tests/native`, Jest native project,
+  `pnpm run test:native`) prove config plugins, release signing and the Android
+  release build and verification scripts in Node.
+- **Tooling tests** (`tests/tooling`, Jest tooling project, `pnpm run test:tooling`)
+  prove the GitHub ticket scripts against a fake `gh`.
 - **Database integration tests** (`*.db.test.ts`: schema and migrations in `tests/db`,
   repositories beside their feature's tests) prove them against real SQLite through
   `tests/support`, never a faked Drizzle query chain. Each file registers

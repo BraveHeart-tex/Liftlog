@@ -9,7 +9,6 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { delimiter, join, resolve } from 'node:path';
-import test, { afterEach } from 'node:test';
 
 const script = resolve('scripts/start-issue.mjs');
 const directories: string[] = [];
