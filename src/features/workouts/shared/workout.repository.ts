@@ -58,17 +58,22 @@ export const HISTORICAL_WORKOUT_DRAFT_STATUS = 'historical_draft';
 export const HISTORICAL_WORKOUT_EDIT_DRAFT_STATUS = 'historical_edit_draft';
 const HISTORICAL_WORKOUT_DRAFT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const HISTORICAL_SET_INTERVAL_MS = 60_000;
-const HISTORICAL_EDIT_BATCH_SIZE = 100;
+// Per-statement SQL variable bound, matching step sync's 999 chunking.
+const HISTORICAL_EDIT_MAX_VARIABLES = 999;
+// Variables each row binds in a historical edit statement.
+const DELETE_VARIABLES_PER_ROW = 1;
+const WORKOUT_EXERCISE_INSERT_VARIABLES_PER_ROW = 7;
+const SET_INSERT_VARIABLES_PER_ROW = 12;
+// Two per CASE column (WHEN and THEN) plus one for the IN list.
+const WORKOUT_EXERCISE_UPDATE_VARIABLES_PER_ROW = 4 * 2 + 1;
+const SET_UPDATE_VARIABLES_PER_ROW = 9 * 2 + 1;
 
-function chunkRows<T>(rows: T[]): T[][] {
+function chunkRows<T>(rows: T[], variablesPerRow: number): T[][] {
+  const batchSize = Math.floor(HISTORICAL_EDIT_MAX_VARIABLES / variablesPerRow);
   const chunks: T[][] = [];
 
-  for (
-    let index = 0;
-    index < rows.length;
-    index += HISTORICAL_EDIT_BATCH_SIZE
-  ) {
-    chunks.push(rows.slice(index, index + HISTORICAL_EDIT_BATCH_SIZE));
+  for (let index = 0; index < rows.length; index += batchSize) {
+    chunks.push(rows.slice(index, index + batchSize));
   }
 
   return chunks;
@@ -947,7 +952,13 @@ export function createHistoricalWorkoutEditDraft(
           })
         );
 
-        tx.insert(workoutExercises).values(draftWorkoutExercises).run();
+        for (const rows of chunkRows(
+          draftWorkoutExercises,
+          WORKOUT_EXERCISE_INSERT_VARIABLES_PER_ROW
+        )) {
+          tx.insert(workoutExercises).values(rows).run();
+        }
+
         const draftWorkoutExerciseIdBySourceId = new Map<
           WorkoutExercise['id'],
           WorkoutExercise['id']
@@ -988,8 +999,8 @@ export function createHistoricalWorkoutEditDraft(
           }
         }
 
-        if (draftSets.length > 0) {
-          tx.insert(sets).values(draftSets).run();
+        for (const rows of chunkRows(draftSets, SET_INSERT_VARIABLES_PER_ROW)) {
+          tx.insert(sets).values(rows).run();
         }
       });
 
@@ -1418,7 +1429,7 @@ export function saveHistoricalWorkoutEditDraft(
           }
         }
 
-        for (const rows of chunkRows(removedSets)) {
+        for (const rows of chunkRows(removedSets, DELETE_VARIABLES_PER_ROW)) {
           tx.delete(sets)
             .where(
               inArray(
@@ -1429,7 +1440,10 @@ export function saveHistoricalWorkoutEditDraft(
             .run();
         }
 
-        for (const rows of chunkRows(removedWorkoutExercises)) {
+        for (const rows of chunkRows(
+          removedWorkoutExercises,
+          DELETE_VARIABLES_PER_ROW
+        )) {
           tx.delete(workoutExercises)
             .where(
               inArray(
@@ -1440,7 +1454,10 @@ export function saveHistoricalWorkoutEditDraft(
             .run();
         }
 
-        for (const rows of chunkRows(addedDraftExercises)) {
+        for (const rows of chunkRows(
+          addedDraftExercises,
+          WORKOUT_EXERCISE_INSERT_VARIABLES_PER_ROW
+        )) {
           tx.insert(workoutExercises)
             .values(
               rows.map(row => ({
@@ -1455,7 +1472,10 @@ export function saveHistoricalWorkoutEditDraft(
             .run();
         }
 
-        for (const rows of chunkRows(updatedDraftExercises)) {
+        for (const rows of chunkRows(
+          updatedDraftExercises,
+          WORKOUT_EXERCISE_UPDATE_VARIABLES_PER_ROW
+        )) {
           tx.update(workoutExercises)
             .set({
               exerciseId: sql`CASE ${workoutExercises.id} ${sql.join(
@@ -1496,7 +1516,10 @@ export function saveHistoricalWorkoutEditDraft(
             .run();
         }
 
-        for (const rows of chunkRows(addedDraftSets)) {
+        for (const rows of chunkRows(
+          addedDraftSets,
+          SET_INSERT_VARIABLES_PER_ROW
+        )) {
           tx.insert(sets)
             .values(
               rows.map(row => ({
@@ -1518,7 +1541,10 @@ export function saveHistoricalWorkoutEditDraft(
             .run();
         }
 
-        for (const rows of chunkRows(updatedDraftSets)) {
+        for (const rows of chunkRows(
+          updatedDraftSets,
+          SET_UPDATE_VARIABLES_PER_ROW
+        )) {
           tx.update(sets)
             .set({
               order: sql`CASE ${sets.id} ${sql.join(

@@ -437,6 +437,9 @@ export function rebuildPersonalRecordsForExerciseInTransaction(
   rebuildPersonalRecordsForExercisesInTransaction(db, [exerciseId]);
 }
 
+// 999 SQL variables per statement, as in step sync; 12 columns per row.
+const PERSONAL_RECORD_INSERT_CHUNK_SIZE = Math.floor(999 / 12);
+
 export function rebuildPersonalRecordsForExercisesInTransaction(
   db: DrizzleDb,
   exerciseIds: Exercise['id'][]
@@ -480,8 +483,16 @@ export function rebuildPersonalRecordsForExercisesInTransaction(
     .where(inArray(personalRecords.exerciseId, uniqueExerciseIds))
     .run();
 
-  if (newRecords.length > 0) {
-    db.insert(personalRecords).values(newRecords).run();
+  for (
+    let index = 0;
+    index < newRecords.length;
+    index += PERSONAL_RECORD_INSERT_CHUNK_SIZE
+  ) {
+    db.insert(personalRecords)
+      .values(
+        newRecords.slice(index, index + PERSONAL_RECORD_INSERT_CHUNK_SIZE)
+      )
+      .run();
   }
 }
 

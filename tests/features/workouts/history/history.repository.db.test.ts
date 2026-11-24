@@ -390,11 +390,12 @@ describe('historical saves rebuild records for all affected exercises', () => {
     );
   });
 
-  test('chunks every historical edit mutation at the batch boundary', async () => {
-    const { db, nodeClient } = await createMigratedTestDatabase();
-    // Draft creation inserts every row in one statement; #162 decides chunking.
-    nodeClient.allowStatementsAboveVariableLimit();
-    const rowCount = 101;
+  test('chunks every historical edit write to the variable limit', async () => {
+    const { db } = await createMigratedTestDatabase();
+    // Past every per-statement row bound (floor(999 / variables per row))
+    // except save's deletes and workout exercise insert; the guard is active.
+    const rowCount = 112;
+    const seedChunkSize = 50;
 
     const exerciseRows = Array.from({ length: rowCount }, (_, index) => [
       {
@@ -420,9 +421,9 @@ describe('historical saves rebuild records for all affected exercises', () => {
       }
     ]).flat();
 
-    for (let index = 0; index < exerciseRows.length; index += 100) {
+    for (let index = 0; index < exerciseRows.length; index += seedChunkSize) {
       db.insert(exercises)
-        .values(exerciseRows.slice(index, index + 100))
+        .values(exerciseRows.slice(index, index + seedChunkSize))
         .run();
     }
 
@@ -451,9 +452,13 @@ describe('historical saves rebuild records for all affected exercises', () => {
       }
     ]).flat();
 
-    for (let index = 0; index < sourceExerciseRows.length; index += 100) {
+    for (
+      let index = 0;
+      index < sourceExerciseRows.length;
+      index += seedChunkSize
+    ) {
       db.insert(workoutExercises)
-        .values(sourceExerciseRows.slice(index, index + 100))
+        .values(sourceExerciseRows.slice(index, index + seedChunkSize))
         .run();
     }
 
@@ -484,9 +489,9 @@ describe('historical saves rebuild records for all affected exercises', () => {
       }
     ]).flat();
 
-    for (let index = 0; index < sourceSetRows.length; index += 100) {
+    for (let index = 0; index < sourceSetRows.length; index += seedChunkSize) {
       db.insert(sets)
-        .values(sourceSetRows.slice(index, index + 100))
+        .values(sourceSetRows.slice(index, index + seedChunkSize))
         .run();
     }
 
@@ -496,6 +501,19 @@ describe('historical saves rebuild records for all affected exercises', () => {
       .from(workoutExercises)
       .where(eq(workoutExercises.workoutId, draft.id))
       .all();
+    const draftSetCount = db
+      .select()
+      .from(sets)
+      .where(
+        inArray(
+          sets.workoutExerciseId,
+          draftExerciseRows.map(row => row.id)
+        )
+      )
+      .all().length;
+
+    assert.equal(draftExerciseRows.length, rowCount * 2);
+    assert.equal(draftSetCount, rowCount * 3);
     const draftExerciseBySourceId = new Map(
       draftExerciseRows.map(row => [row.sourceWorkoutExerciseId, row])
     );
@@ -549,35 +567,62 @@ describe('historical saves rebuild records for all affected exercises', () => {
         }))
       )
       .run();
-    db.insert(sets)
-      .values(
-        Array.from({ length: rowCount }, (_, index) => ({
-          id: `draft-add-set-${index}`,
-          workoutExerciseId: `draft-add-${index}`,
-          order: 0,
-          reps: 3,
-          status: 'completed',
-          completedAt: 5_000 + index
-        }))
-      )
-      .run();
+    const addedDraftSetRows = Array.from({ length: rowCount }, (_, index) => ({
+      id: `draft-add-set-${index}`,
+      workoutExerciseId: `draft-add-${index}`,
+      order: 0,
+      reps: 3,
+      status: 'completed',
+      completedAt: 5_000 + index
+    }));
 
-    nodeClient.startRecordingPreparedStatements();
+    for (let index = 0; index < rowCount; index += seedChunkSize) {
+      db.insert(sets)
+        .values(addedDraftSetRows.slice(index, index + seedChunkSize))
+        .run();
+    }
+
     const result = saveHistoricalWorkoutEditDraft(db, {
       sourceWorkoutId: 'source-workout',
       draftWorkoutId: draft.id
     });
-    const statements = nodeClient.stopRecordingPreparedStatements();
-    const countStatements = (pattern: RegExp) =>
-      statements.filter(statement => pattern.test(statement.source)).length;
 
     assert.equal(result?.affectedExerciseIds.length, rowCount * 3);
-    assert.equal(countStatements(/^delete from "sets"/), 2);
-    assert.equal(countStatements(/^delete from "workout_exercises"/), 2);
-    assert.equal(countStatements(/^insert into "workout_exercises"/), 2);
-    assert.equal(countStatements(/^update "workout_exercises"/), 2);
-    assert.equal(countStatements(/^insert into "sets"/), 2);
-    assert.equal(countStatements(/^update "sets"/), 2);
+
+    const savedExerciseRows = db
+      .select()
+      .from(workoutExercises)
+      .where(eq(workoutExercises.workoutId, 'source-workout'))
+      .all();
+    const savedSetRows = db
+      .select()
+      .from(sets)
+      .where(
+        inArray(
+          sets.workoutExerciseId,
+          savedExerciseRows.map(row => row.id)
+        )
+      )
+      .all();
+
+    assert.equal(savedExerciseRows.length, rowCount * 2);
+    assert.equal(
+      savedExerciseRows.filter(row => row.notes === 'Updated in draft').length,
+      rowCount
+    );
+    assert.equal(
+      savedExerciseRows.filter(row => row.id.startsWith('source-remove-'))
+        .length,
+      0
+    );
+    assert.equal(savedSetRows.length, rowCount * 2);
+    assert.equal(
+      savedSetRows.filter(
+        row => row.id.startsWith('source-update-set-') && row.reps === 2
+      ).length,
+      rowCount
+    );
+    assert.equal(savedSetRows.filter(row => row.reps === 3).length, rowCount);
   });
 
   test('updates and deletes sets while retaining changed set IDs', async () => {
