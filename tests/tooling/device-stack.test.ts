@@ -98,16 +98,22 @@ if (name === 'emulator') {
 } else if (name === 'lsof') {
   if (args.includes('-sTCP:LISTEN')) {
     const port = Number(args.find(arg => arg.startsWith('-iTCP:')).slice(6))
-    process.stdout.write(state.listeners.filter(l => l.port === port).map(l => l.pid).join('\\n'))
+    // Only live listeners, and the maintainer's emulator, which has no real process.
+    const live = l => { try { return l.pid === 999991 || process.kill(l.pid, 0) } catch { return false } }
+    process.stdout.write(state.listeners.filter(l => l.port === port && live(l)).map(l => l.pid).join('\\n'))
   } else {
     const pid = Number(args[args.indexOf('-p') + 1])
     const listener = state.listeners.find(l => l.pid === pid)
     if (listener) process.stdout.write('p' + pid + '\\nfcwd\\nn' + listener.cwd + '\\n')
   }
+} else if (name === 'agent-device' && args[0] === 'press' && args[1] === 'label="Close"') {
+  update(s => { s.onboarding = false })
 } else if (name === 'agent-device' && args[0] === 'snapshot') {
-  process.stdout.write(state.onboarding
-    ? 'This is the developer menu.\\nContinue'
-    : 'workout-start-screen')
+  process.stdout.write(state.redbox
+    ? 'Render Error\\nThis error is located at:'
+    : state.onboarding
+      ? 'This is the developer menu.\\nContinue'
+      : 'workout-start-screen')
 } else if (name === 'pnpm' && args.includes('prebuild')) {
   const android = join(process.cwd(), 'android')
   mkdirSync(android, { recursive: true })
@@ -127,7 +133,8 @@ if (name === 'emulator') {
   wait()
 } else if (name === 'pnpm') {
   // The listener lsof reports: this Metro, or another process that took the port first.
-  const port = Number(process.env.DEVICE_STACK_PORT)
+  const port = Number(args[args.indexOf('--port') + 1])
+  process.env.FAKE_METRO_PORT = String(port)
   if (state.foreignMetro) {
     const foreign = spawn(process.execPath, [process.env.FAKE_METRO], { detached: true, stdio: 'ignore' })
     foreign.unref()
@@ -140,15 +147,22 @@ if (name === 'emulator') {
 }
 `;
 
-// A fake Metro: answers /status and the manifest with the slug and name it is given.
+// A fake Metro: answers /status and the manifest with the slug and name it is given, on
+// FAKE_METRO_PORT, and logs a bundling error when the fake state asks for one.
 const fakeMetro = `
 const { createServer } = require('node:http')
-const { FAKE_SLUG = 'liftlog', FAKE_NAME = 'Liftlog', DEVICE_STACK_PORT } = process.env
+const { FAKE_SLUG = 'liftlog', FAKE_NAME = 'Liftlog', FAKE_METRO_PORT, FAKE_STATE } = process.env
 createServer((request, response) => {
   if (request.url === '/status') return response.end('packager-status:running')
   response.setHeader('content-type', 'application/json')
   response.end(JSON.stringify({ extra: { expoClient: { slug: FAKE_SLUG, name: FAKE_NAME } } }))
-}).listen(Number(DEVICE_STACK_PORT), '127.0.0.1', () => console.log('fake metro listening'))
+}).listen(Number(FAKE_METRO_PORT), '127.0.0.1', () => {
+  console.log('fake metro listening')
+  if (JSON.parse(require('node:fs').readFileSync(FAKE_STATE, 'utf8')).bundlingError) {
+    console.log('\\x1b[31mAndroid Bundling failed \\x1b[39m12ms index.js (1 module)')
+    console.log('SyntaxError: src/app/index.tsx: Unexpected token (3:7)')
+  }
+})
 `;
 
 type Listener = { pid: number; cwd: string; port: number };
@@ -163,6 +177,8 @@ type FakeState = {
   gradleFails?: boolean;
   gradleHold?: string;
   onboarding?: boolean;
+  redbox?: boolean;
+  bundlingError?: boolean;
   foreignMetro?: boolean;
   listeners: Listener[];
 };
@@ -250,7 +266,9 @@ async function harness(
   const bin = join(dir, 'bin');
   const root = join(dir, 'checkout');
   const home = join(dir, 'home');
-  const port = await freePort();
+  // The Metro port of slot 0 and slot 1.
+  const ports = [await freePort(), await freePort()];
+  const [port] = ports;
 
   mkdirSync(bin);
   mkdirSync(root);
@@ -270,10 +288,14 @@ async function harness(
   writeFileSync(join(dir, 'metro.js'), fakeMetro);
   const hostDir = join(home, '.liftlog-device-stack');
 
-  if (limit !== undefined) {
-    mkdirSync(hostDir);
-    writeFileSync(join(hostDir, 'config.json'), JSON.stringify({ limit }));
-  }
+  const writeConfig = (config: { limit?: number } = {}) =>
+    writeFileSync(
+      join(hostDir, 'config.json'),
+      JSON.stringify({ metroPorts: ports, ...config })
+    );
+
+  mkdirSync(hostDir);
+  writeConfig(limit === undefined ? {} : { limit });
 
   if (hooks) {
     writeFileSync(join(dir, 'hooks.mjs'), hooks);
@@ -318,7 +340,6 @@ async function harness(
     HOME: home,
     CI: '1',
     PATH: `${bin}${delimiter}${process.env.PATH}`,
-    DEVICE_STACK_PORT: String(port),
     FAKE_STATE: statePath,
     FAKE_LOG: logPath,
     FAKE_METRO: join(dir, 'metro.js'),
@@ -334,15 +355,19 @@ async function harness(
   };
 
   // Starts a Metro that `start` did not start, as another process would have.
-  async function runningMetro({ cwd = root, slug = 'liftlog' } = {}) {
+  async function runningMetro({
+    cwd = root,
+    slug = 'liftlog',
+    on = port
+  } = {}) {
     const child = spawn(process.execPath, [join(dir, 'metro.js')], {
-      env: { ...env, FAKE_SLUG: slug },
+      env: { ...env, FAKE_SLUG: slug, FAKE_METRO_PORT: String(on) },
       stdio: ['ignore', 'pipe', 'ignore']
     });
     pids.push(child.pid!);
     await new Promise(done => child.stdout!.once('data', done));
     const state = fakeState();
-    state.listeners.push({ pid: child.pid!, cwd, port });
+    state.listeners.push({ pid: child.pid!, cwd, port: on });
     writeFileSync(statePath, JSON.stringify(state));
 
     return child.pid!;
@@ -448,6 +473,8 @@ async function harness(
     root,
     dir,
     port,
+    ports,
+    writeConfig,
     stack,
     stackIn,
     worktree,
@@ -527,15 +554,16 @@ test('start boots the harness emulator beside a phone and a foreign emulator, op
       'emulator -list-avds',
       `emulator -avd ${AVD} -port 5556 -no-snapshot-save`,
       `adb -s ${SERIAL} emu avd name`,
-      `adb -s ${SERIAL} reverse tcp:${port} tcp:${port}`,
       `adb -s ${SERIAL} shell pm path ${PACKAGE}`,
       `pnpm exec expo start --dev-client --port ${port}`,
       `adb -s ${SERIAL} logcat -T 1 -s ReactNativeJS:V`,
       `agent-device open ${PACKAGE} ${link(port)} --relaunch --metro-port ${port} ${target(session)}`,
-      `agent-device wait id=workout-start-screen 180000 ${target(session)}`
+      `agent-device snapshot --raw --timeout 5000 ${target(session)}`
     ])
   );
   expect(commands(calls)).not.toContain('adb devices');
+  // The dev client reaches Metro through 10.0.2.2, not adb reverse.
+  expect(commands(calls).some(call => call.includes(' reverse '))).toBe(false);
   expectTargeted(allCalls(logPath), session);
   const order = commands(calls);
   expect(
@@ -564,7 +592,6 @@ test('start boots the harness emulator beside a phone and a foreign emulator, op
       started: true,
       process: { markers: ['-avd', AVD, '-port', '5556'] }
     },
-    reverse: `tcp:${port}`,
     metro: { started: true, log: join(dir, 'metro.log') },
     jsLogs: { started: true, log: join(dir, 'js.log') }
   });
@@ -633,7 +660,7 @@ test('start --fresh clears app data and waits for Workout without an onboarding 
         call => call.name === 'agent-device' && call.args[0] !== 'snapshot'
       )
       .map(call => call.args[0])
-  ).toEqual(['open', 'wait']);
+  ).toEqual(['open']);
   expectTargeted(allCalls(logPath));
 });
 
@@ -649,7 +676,7 @@ test('start --fresh dismisses dev-client onboarding before waiting for Workout',
   ).toEqual([
     `agent-device press label="Continue" --settle ${target(session)}`,
     `agent-device press label="Close" ${target(session)}`,
-    `agent-device wait id=workout-start-screen 180000 ${target(session)}`
+    `agent-device snapshot --raw --timeout 5000 ${target(session)}`
   ]);
   expectTargeted(allCalls(logPath), session);
 });
@@ -660,40 +687,50 @@ test('start fails before opening the app when a foreign server answers Metro sta
   const { status, stderr, calls } = await stack('start');
 
   expect(status).toBe(1);
-  expect(stderr).toMatch(/not the Metro this run started/);
+  expect(stderr).toMatch(/not the Metro this lease started/);
   expect(calls.map(call => call.name)).not.toContain('agent-device');
   expectTargeted(allCalls(logPath));
   await stack('stop');
 });
 
-test('start refuses a Metro from another project without stopping it or starting anything', async () => {
-  const { stack, runningMetro, recorded, registry } = await harness();
-  const metro = await runningMetro({ slug: 'other-app' });
-
-  const { status, stderr, calls } = await stack('start');
-
-  expect(status).toBe(1);
-  expect(stderr).toMatch(/not this project's Metro.*"other-app"/);
-  expect(alive(metro)).toBe(true);
-  expect(new Set(calls.map(call => call.name))).toEqual(new Set(['lsof']));
-  expect(recorded()).toBeNull();
-  expect(registry().leases).toEqual([]);
-});
-
-test("start refuses this project's Metro from another checkout without stopping it", async () => {
-  const { stack, runningMetro } = await harness();
+test('a server this lease did not start on a slot Metro port blocks that slot and is never signaled', async () => {
+  const { root, ports, stack, runningMetro, registry, logPath } =
+    await harness();
   const other = realpathSync(mkdtempSync(join(tmpdir(), 'liftlog-worktree-')));
   directories.push(other);
   const metro = await runningMetro({ cwd: other });
 
-  const { status, stderr, calls } = await stack('start');
+  const started = await stack('start');
 
-  expect(status).toBe(1);
-  expect(stderr).toContain(
-    `Metro from another checkout (pid ${metro} in ${other})`
+  expect(started.status).toBe(0);
+  const state = JSON.parse(started.stdout);
+  expect(state).toMatchObject({
+    port: ports[1],
+    lease: { slot: 1, serial: 'emulator-5558', metroPort: ports[1] }
+  });
+  expect(commands(started.calls)).toContain(
+    `pnpm exec expo start --dev-client --port ${ports[1]}`
   );
+  await stack('stop');
+  await waitUntil(() => !alive(state.metro.pid));
+  const blocker = await runningMetro({ slug: 'other-app', on: ports[1] });
+  const before = allCalls(logPath).length;
+
+  const refused = await stack('start');
+
+  expect(refused.status).toBe(1);
+  expect(refused.stderr).toContain(
+    `CAPACITY: no emulator slot is free: slot 0 ports 5556/5557/${ports[0]} are held by pid ${metro}; slot 1 ports 5558/5559/${ports[1]} are held by pid ${blocker}.`
+  );
+  expect(
+    allCalls(logPath)
+      .slice(before)
+      .map(call => call.name)
+  ).toEqual(['lsof', 'lsof', 'lsof', 'lsof', 'lsof', 'lsof']);
+  expect(registry().leases).toEqual([]);
+  expect(existsSync(join(root, '.device-stack', 'state.json'))).toBe(false);
   expect(alive(metro)).toBe(true);
-  expect(new Set(calls.map(call => call.name))).toEqual(new Set(['lsof']));
+  expect(alive(blocker)).toBe(true);
 });
 
 const gradleCalls = (logPath: string) =>
@@ -877,37 +914,6 @@ test('killing start leaves the build lock with the build process, and the next s
   await stack('stop');
 });
 
-test('stop leaves an already-running Metro alone and ends the harness emulator it started', async () => {
-  const { root, stack, runningMetro, fakeState, logPath } = await harness();
-  const metro = await runningMetro();
-
-  const started = await stack('start');
-  expect(started.status).toBe(0);
-  const state = JSON.parse(started.stdout);
-  expect(state).toMatchObject({
-    metro: {
-      pids: [metro],
-      started: false,
-      log: null,
-      output: 'in the terminal that started this Metro'
-    }
-  });
-
-  const { status, stdout } = await stack('stop');
-
-  expect(status).toBe(0);
-  expect(JSON.parse(stdout)).toEqual({
-    running: false,
-    stopped: ['session', 'jsLogs', 'emulator']
-  });
-  expect(alive(metro)).toBe(true);
-  expect(fakeState().emulators).toEqual({});
-  await new Promise(done => setTimeout(done, 200));
-  expect(alive(state.jsLogs.pid)).toBe(false);
-  expect(existsSync(join(root, '.device-stack', 'state.json'))).toBe(false);
-  expectTargeted(allCalls(logPath), state.session);
-});
-
 test('stop ends the emulator, Metro and log capture that start started', async () => {
   const { stack, fakeState, logPath } = await harness();
   const started = JSON.parse((await stack('start')).stdout);
@@ -1042,13 +1048,12 @@ test('with a limit of two, worktrees starting at the same moment lease different
     { limit: 2, hooks: barrier('beforeAcquire', 2) }
   );
   const other = worktree();
-  const otherPort = String(await freePort());
 
   // Two starts in one worktree and one in another, all at once.
   const runs = await Promise.all([
     stack('start'),
     stack('start'),
-    stackIn(other, ['start'], undefined, { DEVICE_STACK_PORT: otherPort })
+    stackIn(other, ['start'])
   ]);
 
   runs.forEach(run => expect(run.status).toBe(0));
@@ -1100,15 +1105,14 @@ test('with a limit of two, worktrees starting at the same moment lease different
   });
   expect(allCalls(logPath).slice(before)).toEqual([]);
   expect(registry().leases.map(lease => lease.id)).toEqual([second.lease.id]);
-  await stackIn(other, ['stop'], undefined, { DEVICE_STACK_PORT: otherPort });
+  await stackIn(other, ['stop']);
 });
 
 test('at the default limit a second worktree exits with CAPACITY naming the holder, and an environment limit above the host config has no effect', async () => {
-  const { root, hostDir, stack, stackIn, worktree, registry, logPath } =
+  const { root, writeConfig, stack, stackIn, worktree, registry, logPath } =
     await harness();
   const holder = JSON.parse((await stack('start')).stdout);
   const other = worktree();
-  const port = String(await freePort());
 
   for (const [config, env] of [
     [null, {}],
@@ -1116,17 +1120,11 @@ test('at the default limit a second worktree exits with CAPACITY naming the hold
     [2, { DEVICE_STACK_LIMIT: '1' }]
   ] as const) {
     if (config) {
-      writeFileSync(
-        join(hostDir, 'config.json'),
-        JSON.stringify({ limit: config })
-      );
+      writeConfig({ limit: config });
     }
 
     const before = allCalls(logPath).length;
-    const { status, stderr } = await stackIn(other, ['start'], undefined, {
-      DEVICE_STACK_PORT: port,
-      ...env
-    });
+    const { status, stderr } = await stackIn(other, ['start'], undefined, env);
 
     expect(status).toBe(1);
     expect(stderr).toContain(
@@ -1266,7 +1264,7 @@ test.each(['start', 'stop'])(
     } else {
       expect(JSON.parse(next.stdout)).toEqual({
         running: false,
-        stopped: ['emulator']
+        stopped: ['metro', 'emulator']
       });
       expect(registry().leases).toEqual([]);
       expect(recorded()).toBeNull();
@@ -1290,12 +1288,11 @@ test('a registry lock whose holder is dead is broken by exactly one of two waite
   mkdirSync(lock);
   writeFileSync(join(lock, '1.json'), JSON.stringify(deadHolder));
   const other = worktree();
-  const otherPort = String(await freePort());
 
   // Both waiters pass the staleness check before either breaks the lock.
   const [first, second] = await Promise.all([
     stack('start'),
-    stackIn(other, ['start'], undefined, { DEVICE_STACK_PORT: otherPort })
+    stackIn(other, ['start'])
   ]);
 
   expect(first.status).toBe(0);
@@ -1307,7 +1304,7 @@ test('a registry lock whose holder is dead is broken by exactly one of two waite
   ).toHaveLength(1);
   expect(registry().leases).toHaveLength(2);
   await stack('stop');
-  await stackIn(other, ['stop'], undefined, { DEVICE_STACK_PORT: otherPort });
+  await stackIn(other, ['stop']);
 });
 
 test('a registry lock another process replaced after the staleness check is left intact', async () => {
@@ -1366,3 +1363,95 @@ export function lockChecked({ lock, generation, stale }) {
   expect(registry().leases).toHaveLength(1);
   await stack('stop');
 });
+
+test('two leases each serve their own worktree on their own slot Metro port', async () => {
+  const { root, ports, stack, stackIn, worktree, fakeState, logPath } =
+    await harness({}, { limit: 2 });
+  const other = worktree();
+
+  const first = await stack('start');
+  const second = await stackIn(other, ['start']);
+
+  expect(first.status).toBe(0);
+  expect(second.status).toBe(0);
+  const leases = [
+    { root, ...JSON.parse(first.stdout) },
+    { root: other, ...JSON.parse(second.stdout) }
+  ];
+  const calls = allCalls(logPath);
+
+  leases.forEach(({ root: cwd, port, emulator, session }, slot) => {
+    expect(port).toBe(ports[slot]);
+    expect(
+      calls
+        .filter(call => call.name === 'pnpm' && call.args.includes('start'))
+        .find(call => call.cwd === cwd)?.args
+    ).toEqual([
+      'exec',
+      'expo',
+      'start',
+      '--dev-client',
+      '--port',
+      String(port)
+    ]);
+    expect(
+      commands(calls).filter(
+        call =>
+          call.startsWith('agent-device open') && call.includes(emulator.serial)
+      )
+    ).toEqual([
+      `agent-device open ${PACKAGE} ${link(port)} --relaunch --metro-port ${port} --serial ${emulator.serial} --session ${session}`
+    ]);
+    expect(
+      fakeState().listeners.find(listener => listener.port === port)?.cwd
+    ).toBe(cwd);
+  });
+  await stack('stop');
+  await stackIn(other, ['stop']);
+});
+
+test('Metro starts before the emulator finishes booting', async () => {
+  const { stack } = await harness();
+
+  const { status, calls } = await stack('start');
+
+  expect(status).toBe(0);
+  const order = commands(calls);
+  expect(
+    order.findIndex(call => call.startsWith('pnpm exec expo start'))
+  ).toBeLessThan(
+    order.indexOf(`adb -s ${SERIAL} shell getprop sys.boot_completed`)
+  );
+  await stack('stop');
+});
+
+test.each([
+  [
+    'a bundling error',
+    { bundlingError: true },
+    'Metro failed to bundle the app'
+  ],
+  ['a redbox', { redbox: true }, 'The app shows a redbox (Render Error)']
+])(
+  '%s fails start within seconds and prints the last Metro log lines',
+  async (_, seed, reason) => {
+    const { root, stack } = await harness(seed);
+    const startedAt = Date.now();
+
+    const { status, stderr } = await stack('start');
+
+    expect(status).toBe(1);
+    expect(Date.now() - startedAt).toBeLessThan(15_000);
+    expect(stderr).toContain(
+      `${reason}; last lines of ${join(root, '.device-stack', 'metro.log')}:\nfake metro listening`
+    );
+
+    if ('bundlingError' in seed) {
+      expect(stderr).toContain(
+        'Android Bundling failed 12ms index.js (1 module)\nSyntaxError: src/app/index.tsx: Unexpected token (3:7)'
+      );
+    }
+
+    await stack('stop');
+  }
+);

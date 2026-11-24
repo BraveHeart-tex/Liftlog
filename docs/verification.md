@@ -120,7 +120,7 @@ Reach screens by deep link and act by accessibility label or `@ref`, never by
 coordinates read off a screenshot. In order:
 
 1. **Start.** `pnpm run device:stack start` boots the harness emulator
-   (`liftlog_harness_34`), starts or reuses this checkout's Metro, captures JS logs and
+   (`liftlog_harness_34`) while it starts the lease's own Metro, captures JS logs and
    waits for the Workout start screen. Create the harness AVD once with
    `pnpm run device:stack template`. `start` never calls `liftlog_audit_34`, another
    emulator or a phone, even when one is the only device online
@@ -150,15 +150,13 @@ coordinates read off a screenshot. In order:
      [dev build key](adr/0008-device-stack-architecture.md#dev-build-key),
      [dev build cache](adr/0008-device-stack-architecture.md#dev-build-cache) and
      [emulator instances](adr/0008-device-stack-architecture.md#emulator-instances).
-   - A reused Metro (state shows `metro.log: null`, usually the maintainer's terminal)
-     has no log. When you need Metro's output, do not stop it; run on another port.
-     `DEVICE_STACK_PORT` sets the adb reverse port and dev-client link, so `start`
-     launches its own Metro and writes `.device-stack/metro.log`:
-
-     ```sh
-     pnpm run device:stack stop
-     DEVICE_STACK_PORT=8082 pnpm run device:stack start
-     ```
+   - Each lease runs its own Metro from its worktree on the slot's Metro port (`port` in
+     `status`; 8090 for slot 0 and 8091 for slot 1, or `metroPorts` in the host config),
+     so 8081 and the maintainer's Metro stay untouched. Its output goes to a fresh
+     `.device-stack/metro.log` per lease. The dev client opens on that port through
+     `10.0.2.2`, so `start` adds no `adb reverse`. A server the lease did not start on a
+     slot's ports blocks that slot and is never signaled. A bundling error or redbox
+     fails `start` at once with the last Metro log lines.
 
 2. **Reach the screen** from the [route map](#route-map):
    `adb -s <serial> shell am start -W -a android.intent.action.VIEW -d 'liftlog:///<path>' com.borakaraca94.liftlog`.

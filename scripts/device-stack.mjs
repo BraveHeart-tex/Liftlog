@@ -24,11 +24,12 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 // Puts the Android test environment into a known state for a device check
 // (docs/verification.md "Device checks"; docs/adr/0008-device-stack-architecture.md).
 // `template` creates the harness AVD once. `start [--fresh]` leases an emulator slot from the
-// host registry (repeating it returns the same lease), boots the harness emulator on the
-// slot's console port, reverses the Metro port, installs the dev build matching this checkout's
-// dev build key from the dev build cache (building it on a miss unless `--no-build`), starts
-// or reuses this checkout's Metro, captures JS logs, opens the app through the dev-client
-// link and waits for the start screen. `build` fills the dev build cache for this checkout.
+// host registry (repeating it returns the same lease), starts this lease's Metro on the slot's
+// Metro port while it boots the harness emulator on the slot's console port, installs the dev
+// build matching this checkout's dev build key from the dev build cache (building it on a miss
+// unless `--no-build`), captures JS logs, opens the app through the dev-client link on
+// 10.0.2.2 and waits for the start screen, failing at once on a bundling error or redbox.
+// `build` fills the dev build cache for this checkout.
 // It never calls another emulator or a physical device: every adb call names the harness
 // serial and every agent-device call names it and this run's session. `status` reports which
 // recorded processes still pass their identity check; `stop` stops only what `start` started
@@ -51,13 +52,13 @@ const STATE = join(DIR, 'state.json');
 const OPERATION_LOCK = join(DIR, 'operation.lock');
 const REGISTRY = join(HOST_DIR, 'registry.json');
 const REGISTRY_LOCK = join(HOST_DIR, 'registry.lock');
-// `{ "limit": 2 }` raises the emulator limit up to MAX_LIMIT; DEVICE_STACK_LIMIT can only lower it.
+// `{ "limit": 2 }` raises the emulator limit up to MAX_LIMIT; DEVICE_STACK_LIMIT can only lower
+// it. `metroPorts` replaces the Metro port of each slot.
 const HOST_CONFIG = join(HOST_DIR, 'config.json');
 const DEFAULT_LIMIT = 1;
 const MAX_LIMIT = 2;
 // Argv marker of a device stack process holding a lock or running a lease operation.
 const SELF_MARKERS = ['device-stack.mjs'];
-const PORT = Number(process.env.DEVICE_STACK_PORT ?? 8081);
 const HARNESS_AVD = 'liftlog_harness_34';
 const HARNESS_ABI = process.arch === 'arm64' ? 'arm64-v8a' : 'x86_64';
 const HARNESS_IMAGE = `system-images;android-34;google_apis;${HARNESS_ABI}`;
@@ -65,12 +66,17 @@ const DEV_BUILD_VARIANT = 'debug';
 // Environment variables the generated Gradle build reads; ORG_GRADLE_PROJECT_* variables
 // also set Gradle properties.
 const BUILD_ENV = ['EXPO_USE_COMMUNITY_AUTOLINKING'];
-// Slot n fixes the emulator console port 5556 + 2n and the adb port above it; 5554 stays free
-// for the maintainer's emulator.
+// Slot n fixes the emulator console port 5556 + 2n and the adb port above it, and its Metro
+// port; 5554 and 8081 stay free for the maintainer's emulator and Metro.
+const DEFAULT_METRO_PORTS = [8090, 8091];
 const slotPorts = slot => ({
   consolePort: 5556 + slot * 2,
-  adbPort: 5557 + slot * 2
+  adbPort: 5557 + slot * 2,
+  metroPort: metroPorts()[slot]
 });
+// LogBox inspector titles of the errors that open a redbox.
+const REDBOX_TITLES = ['Uncaught Error', 'Syntax Error', 'Render Error'];
+const METRO_TAIL_LINES = 20;
 // testID on the Workout start screen heading (WorkoutStartScreen).
 const START_SCREEN_ID = 'workout-start-screen';
 const BOOT_TIMEOUT_MS = 180_000;
@@ -85,7 +91,9 @@ const hook = async (point, context) => hooks[point]?.(context);
 
 const { expo } = JSON.parse(readFileSync(join(ROOT, 'app.json'), 'utf8'));
 const PACKAGE = expo.android.package;
-const DEV_CLIENT_LINK = `${expo.scheme}://expo-development-client/?url=${encodeURIComponent(`http://10.0.2.2:${PORT}`)}`;
+// 10.0.2.2 is the host's loopback seen from the emulator, so no adb reverse is needed.
+const devClientLink = port =>
+  `${expo.scheme}://expo-development-client/?url=${encodeURIComponent(`http://10.0.2.2:${port}`)}`;
 
 function run(command, args, input) {
   try {
@@ -550,6 +558,23 @@ function emulatorLimit() {
   return Math.min(configured, Number(lowered));
 }
 
+function metroPorts() {
+  const ports = readJson(HOST_CONFIG)?.metroPorts ?? DEFAULT_METRO_PORTS;
+
+  if (
+    !Array.isArray(ports) ||
+    ports.length !== MAX_LIMIT ||
+    new Set(ports).size !== MAX_LIMIT ||
+    !ports.every(port => Number.isInteger(port) && port > 1023 && port < 65536)
+  ) {
+    throw new Error(
+      `${HOST_CONFIG}: metroPorts must list ${MAX_LIMIT} distinct ports from 1024 to 65535.`
+    );
+  }
+
+  return ports;
+}
+
 const readRegistry = () => readJson(REGISTRY) ?? { leases: [] };
 
 // Replaced whole, so a reader without the lock sees one complete version.
@@ -651,16 +676,18 @@ async function acquireLease(id) {
       }
 
       const ports = slotPorts(slot);
+      // A server this lease did not start blocks the slot and is left alone.
       const listeners = [
         ...new Set([
           ...listeningPids(ports.consolePort),
-          ...listeningPids(ports.adbPort)
+          ...listeningPids(ports.adbPort),
+          ...listeningPids(ports.metroPort)
         ])
       ];
 
       if (listeners.length) {
         blocked.push(
-          `slot ${slot} ports ${ports.consolePort}/${ports.adbPort} are held by pid ${listeners.join(', ')}`
+          `slot ${slot} ports ${ports.consolePort}/${ports.adbPort}/${ports.metroPort} are held by pid ${listeners.join(', ')}`
         );
         continue;
       }
@@ -889,12 +916,6 @@ async function installDevBuild(state, apk) {
 }
 
 async function bootEmulator(state) {
-  if (!listAvds().includes(HARNESS_AVD)) {
-    throw new Error(
-      `The harness emulator ${HARNESS_AVD} does not exist. Create it with \`pnpm run device:stack template\`, then rerun.`
-    );
-  }
-
   // The serial is fixed by the slot's console port before boot, so no other device is ever
   // listed or called to find it.
   const { consolePort, serial } = state.lease;
@@ -950,7 +971,7 @@ async function bootEmulator(state) {
   return serial;
 }
 
-function listeningPids(port = PORT) {
+function listeningPids(port) {
   return tryRun('lsof', ['-nP', `-iTCP:${port}`, '-sTCP:LISTEN', '-t'])
     .split('\n')
     .filter(Boolean)
@@ -973,9 +994,9 @@ function workingDirectory(pid) {
   }
 }
 
-async function metroManifest() {
+async function metroManifest(port) {
   try {
-    const response = await fetch(`http://127.0.0.1:${PORT}/`, {
+    const response = await fetch(`http://127.0.0.1:${port}/`, {
       headers: {
         accept: 'application/expo+json,application/json',
         'expo-platform': 'android'
@@ -990,42 +1011,9 @@ async function metroManifest() {
   }
 }
 
-// Returns the listening Metro's pids when it provably belongs to this checkout, null when
-// nothing listens, and refuses anything else without touching it.
-async function existingMetro() {
-  const pids = listeningPids();
-
-  if (!pids.length) {
-    return null;
-  }
-
-  const manifest = await metroManifest();
-
-  if (manifest?.slug !== expo.slug || manifest?.name !== expo.name) {
-    throw new Error(
-      `Port ${PORT} is held by a server that is not this project's Metro (pid ${pids.join(', ')}, ` +
-        `slug ${JSON.stringify(manifest?.slug ?? null)}). Stop it yourself, then rerun.`
-    );
-  }
-
-  const foreign = pids
-    .map(pid => ({ pid, cwd: workingDirectory(pid) }))
-    .filter(({ cwd }) => cwd !== ROOT);
-
-  if (foreign.length) {
-    throw new Error(
-      `Port ${PORT} is held by Metro from another checkout ` +
-        `(${foreign.map(({ pid, cwd }) => `pid ${pid} in ${cwd}`).join(', ')}). ` +
-        'Stop it yourself, then rerun.'
-    );
-  }
-
-  return pids;
-}
-
-async function metroRunning() {
+async function metroRunning(port) {
   try {
-    const response = await fetch(`http://127.0.0.1:${PORT}/status`, {
+    const response = await fetch(`http://127.0.0.1:${port}/status`, {
       signal: AbortSignal.timeout(5_000)
     });
 
@@ -1035,21 +1023,91 @@ async function metroRunning() {
   }
 }
 
-// Ready only when /status answers and the listener is in the process group this run started,
-// so a foreign server on the port can never stand in for this run's Metro.
-async function ownMetroReady(pid) {
-  const listeners = listeningPids();
+// Ready only when /status answers, the listener is in the process group this lease started
+// and runs in this worktree, and it serves this project, so a foreign server on the port can
+// never stand in for this lease's Metro.
+async function ownMetroReady(pid, port) {
+  const listeners = listeningPids(port);
 
-  if (!listeners.length || !(await metroRunning())) {
+  if (!listeners.length || !(await metroRunning(port))) {
     return false;
   }
 
-  if (listeners.some(listener => processGroup(listener) === pid)) {
-    return true;
+  const own = listeners.find(listener => processGroup(listener) === pid);
+
+  if (!own) {
+    throw new Error(
+      `Port ${port} answers as Metro from pid ${listeners.join(', ')}, not the Metro this lease started (pid ${pid}).`
+    );
   }
 
+  const manifest = await metroManifest(port);
+  const cwd = workingDirectory(own);
+
+  if (
+    manifest?.slug !== expo.slug ||
+    manifest?.name !== expo.name ||
+    cwd !== ROOT
+  ) {
+    throw new Error(
+      `The Metro on port ${port} serves ${JSON.stringify(manifest?.slug ?? null)} from ${cwd}, not this worktree's project.`
+    );
+  }
+
+  return true;
+}
+
+// Each lease runs its own Metro, with a fresh log, on its slot's Metro port.
+function startMetro(state) {
+  const { port } = state;
+  const metroLog = join(DIR, 'metro.log');
+
+  log(`starting Metro on port ${port}`);
+  // Without CI, so reloads stay on.
+  const env = { ...process.env };
+
+  delete env.CI;
+  const args = [
+    'exec',
+    'expo',
+    'start',
+    '--dev-client',
+    '--port',
+    String(port)
+  ];
+
+  writeFileSync(metroLog, '');
+  const pid = startDetached('pnpm', args, metroLog, env);
+
+  state.metro = {
+    pid,
+    started: true,
+    log: metroLog,
+    process: processIdentity(pid, args)
+  };
+  saveState(state);
+
+  return waitFor('Metro to start', METRO_TIMEOUT_MS, () =>
+    ownMetroReady(pid, port)
+  );
+}
+
+// A bundling error in this lease's Metro log or a redbox on screen fails start at once.
+function failOnAppError(state, snapshot) {
+  const output = readFileSync(state.metro.log, 'utf8').replace(
+    /\x1b\[[\d;]*m/g,
+    ''
+  );
+  const redbox = REDBOX_TITLES.find(title => snapshot.includes(title));
+
+  if (!redbox && !output.includes('Bundling failed')) {
+    return;
+  }
+
+  const tail = output.trimEnd().split('\n').slice(-METRO_TAIL_LINES).join('\n');
+
   throw new Error(
-    `Port ${PORT} answers as Metro from pid ${listeners.join(', ')}, not the Metro this run started (pid ${pid}).`
+    `${redbox ? `The app shows a redbox (${redbox})` : 'Metro failed to bundle the app'}; last lines of ${state.metro.log}:\n${tail}`
   );
 }
 
@@ -1131,11 +1189,11 @@ async function startLease({ fresh, noBuild }) {
     activeLease = id;
   }
 
-  const { id, slot, serial, consolePort, adbPort } = lease;
+  const { id, slot, serial, consolePort, adbPort, metroPort } = lease;
   const state = {
-    lease: { id, slot, serial, consolePort, adbPort },
+    lease: { id, slot, serial, consolePort, adbPort, metroPort },
     root: ROOT,
-    port: PORT,
+    port: metroPort,
     package: PACKAGE,
     fresh
   };
@@ -1146,7 +1204,11 @@ async function startLease({ fresh, noBuild }) {
     await bringUp(state, { fresh, noBuild });
   } catch (error) {
     // Nothing of this lease runs yet, so the slot is freed at once.
-    if (!state.emulator && !error.message.startsWith('LEASE_LOST')) {
+    if (
+      !state.emulator &&
+      !state.metro &&
+      !error.message.startsWith('LEASE_LOST')
+    ) {
       await releaseLease(id);
       rmSync(STATE, { force: true });
     }
@@ -1156,59 +1218,26 @@ async function startLease({ fresh, noBuild }) {
 }
 
 async function bringUp(state, { fresh, noBuild }) {
-  const reused = await existingMetro();
   const { key } = await devBuildKey();
   // A miss starts the build now, so it runs while the emulator boots.
   const { done, ...devBuildState } = devBuild(key, { noBuild });
 
   state.devBuild = devBuildState;
   saveState(state);
-  const serial = await bootEmulator(state);
 
-  adb(serial, 'reverse', `tcp:${PORT}`, `tcp:${PORT}`);
-  state.reverse = `tcp:${PORT}`;
-  saveState(state);
+  if (!listAvds().includes(HARNESS_AVD)) {
+    throw new Error(
+      `The harness emulator ${HARNESS_AVD} does not exist. Create it with \`pnpm run device:stack template\`, then rerun.`
+    );
+  }
+
+  // Metro starts while the emulator boots.
+  const metroReady = startMetro(state);
+  const [serial] = await Promise.all([bootEmulator(state), metroReady]);
 
   state.devBuild.apk = await done;
   state.devBuild.installed = await installDevBuild(state, state.devBuild.apk);
   saveState(state);
-
-  const metroLog = join(DIR, 'metro.log');
-
-  if (reused) {
-    // A running process's output cannot be redirected, so a reused Metro has no log file.
-    state.metro = {
-      pids: reused,
-      started: false,
-      log: null,
-      output: 'in the terminal that started this Metro'
-    };
-    log(`reusing this checkout's Metro on port ${PORT}`);
-  } else {
-    log(`starting Metro on port ${PORT}`);
-    // Without CI, so reloads stay on.
-    const env = { ...process.env };
-
-    delete env.CI;
-    const args = [
-      'exec',
-      'expo',
-      'start',
-      '--dev-client',
-      '--port',
-      String(PORT)
-    ];
-    const pid = startDetached('pnpm', args, metroLog, env);
-
-    state.metro = {
-      pid,
-      started: true,
-      log: metroLog,
-      process: processIdentity(pid, args)
-    };
-    saveState(state);
-    await waitFor('Metro to start', METRO_TIMEOUT_MS, () => ownMetroReady(pid));
-  }
 
   const jsLog = join(DIR, 'js.log');
   const logArgs = ['-s', serial, 'logcat', '-T', '1', '-s', 'ReactNativeJS:V'];
@@ -1260,10 +1289,10 @@ async function bringUp(state, { fresh, noBuild }) {
   device(
     'open',
     PACKAGE,
-    DEV_CLIENT_LINK,
+    devClientLink(state.port),
     '--relaunch',
     '--metro-port',
-    String(PORT)
+    String(state.port)
   );
 
   if (fresh) {
@@ -1273,6 +1302,8 @@ async function bringUp(state, { fresh, noBuild }) {
       OPEN_TIMEOUT_MS,
       () => {
         const snapshot = tryDevice('snapshot', '--raw', '--timeout', '5000');
+
+        failOnAppError(state, snapshot);
 
         if (snapshot.includes('This is the developer menu.')) {
           return 'onboarding';
@@ -1290,7 +1321,13 @@ async function bringUp(state, { fresh, noBuild }) {
     }
   }
 
-  device('wait', `id=${START_SCREEN_ID}`, String(OPEN_TIMEOUT_MS));
+  await waitFor('the Workout start screen', OPEN_TIMEOUT_MS, () => {
+    const snapshot = tryDevice('snapshot', '--raw', '--timeout', '5000');
+
+    failOnAppError(state, snapshot);
+
+    return snapshot.includes(START_SCREEN_ID);
+  });
   await updateLease(state.lease.id, lease => {
     if (!ownOperation(lease)) {
       throw leaseLost(lease.id);
@@ -1478,5 +1515,6 @@ try {
     );
   }
 
-  process.exitCode = 1;
+  // Ends waits still running beside the one that failed, such as the emulator boot.
+  process.exit(1);
 }
