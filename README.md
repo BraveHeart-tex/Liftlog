@@ -18,11 +18,11 @@ LiftLog is a local-first workout tracker for iOS and Android. It is designed for
 ## Screenshots
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/80c7d4f6-b3f5-4dc0-ae04-f090b59b3db6" width="180" />
-  <img src="https://github.com/user-attachments/assets/e77d24d9-63ea-42a4-8e06-580c45fa0219" width="180" />
-  <img src="https://github.com/user-attachments/assets/df5e5da0-6a4d-41f1-9a4b-289feab4f8fb" width="180" />
-  <img src="https://github.com/user-attachments/assets/3b50cb9b-866f-4199-8bc1-25040d7fe4fe" width="180" />
-  <img src="https://github.com/user-attachments/assets/c52f65fa-0213-45e2-9809-f0f73e088f80" width="180" />
+  <img src=".github/assets/workout-home.webp" width="180" />
+  <img src=".github/assets/exercise-logging.webp" width="180" />
+  <img src=".github/assets/add-exercise-sheet.webp" width="180" />
+  <img src=".github/assets/exercise-history.webp" width="180" />
+  <img src=".github/assets/workout-log-calendar.webp" width="180" />
 </p>
 
 ## Stack
