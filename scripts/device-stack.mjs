@@ -8,18 +8,29 @@ import {
   rmSync,
   writeFileSync
 } from 'node:fs';
-import { join } from 'node:path';
+import { delimiter, join } from 'node:path';
 
 // Puts the Android test environment into a known state for a device check
-// (docs/verification.md "Device checks"). `start [--fresh]` boots the emulator if needed,
-// reverses the Metro port, refuses a missing dev build, starts or reuses this checkout's
-// Metro, captures JS logs, opens the app through the dev-client link and waits for the start
-// screen. `status` prints the recorded state; `stop` stops only what `start` recorded.
+// (docs/verification.md "Device checks"; docs/adr/0008-device-stack-architecture.md).
+// `template` creates the harness AVD once. `start [--fresh]` boots the harness emulator on a
+// free console port, reverses the Metro port, refuses a missing dev build, starts or reuses
+// this checkout's Metro, captures JS logs, opens the app through the dev-client link and
+// waits for the start screen. It never calls another emulator or a physical device: every
+// adb call names the harness serial and every agent-device call names it and this run's
+// session. `status` reports which recorded processes still pass their identity check;
+// `stop` stops only what `start` started and still passes that check.
 // State and logs live in .device-stack/ at the checkout root (the working directory).
 const ROOT = realpathSync(process.cwd());
 const DIR = join(ROOT, '.device-stack');
 const STATE = join(DIR, 'state.json');
 const PORT = Number(process.env.DEVICE_STACK_PORT ?? 8081);
+const HARNESS_AVD = 'liftlog_harness_34';
+const HARNESS_IMAGE = `system-images;android-34;google_apis;${process.arch === 'arm64' ? 'arm64-v8a' : 'x86_64'}`;
+// Emulator console ports; each instance also takes the next port for adb.
+const CONSOLE_PORTS = Array.from(
+  { length: 16 },
+  (_, index) => 5554 + index * 2
+);
 // testID on the Workout start screen heading (WorkoutStartScreen).
 const START_SCREEN_ID = 'workout-start-screen';
 const BOOT_TIMEOUT_MS = 180_000;
@@ -30,12 +41,13 @@ const { expo } = JSON.parse(readFileSync(join(ROOT, 'app.json'), 'utf8'));
 const PACKAGE = expo.android.package;
 const DEV_CLIENT_LINK = `${expo.scheme}://expo-development-client/?url=${encodeURIComponent(`http://10.0.2.2:${PORT}`)}`;
 
-function run(command, args) {
+function run(command, args, input) {
   try {
     return execFileSync(command, args, {
       encoding: 'utf8',
+      input,
       maxBuffer: 64 << 20,
-      stdio: ['ignore', 'pipe', 'pipe']
+      stdio: [input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe']
     });
   } catch (error) {
     throw new Error(
@@ -87,6 +99,37 @@ function startDetached(command, args, logFile, env = process.env) {
   return child.pid;
 }
 
+// A recorded process is trusted only while its PID, start time and argv markers match, so a
+// PID the system reused for another process is never signalled.
+function processIdentity(pid, markers) {
+  const startTime = tryRun('ps', ['-o', 'lstart=', '-p', String(pid)]).trim();
+
+  return startTime ? { pid, startTime, markers } : null;
+}
+
+function isSameProcess(recorded) {
+  if (!recorded?.pid || !recorded.startTime) {
+    return false;
+  }
+
+  const startTime = tryRun('ps', [
+    '-o',
+    'lstart=',
+    '-p',
+    String(recorded.pid)
+  ]).trim();
+  const command = tryRun('ps', ['-o', 'command=', '-p', String(recorded.pid)]);
+
+  return (
+    startTime === recorded.startTime &&
+    recorded.markers.every(marker => command.includes(marker))
+  );
+}
+
+function processGroup(pid) {
+  return Number(tryRun('ps', ['-o', 'pgid=', '-p', String(pid)]).trim());
+}
+
 function stopGroup(pid) {
   try {
     process.kill(-pid, 'SIGTERM');
@@ -103,62 +146,142 @@ const saveState = state =>
   writeFileSync(STATE, `${JSON.stringify(state, null, 2)}\n`);
 
 const adb = (serial, ...args) => run('adb', ['-s', serial, ...args]);
-
-function onlineDevices() {
-  return tryRun('adb', ['devices'])
+const tryAdb = (serial, ...args) => tryRun('adb', ['-s', serial, ...args]);
+const listAvds = () =>
+  run('emulator', ['-list-avds'])
     .split('\n')
-    .slice(1)
-    .map(line => line.trim().split(/\s+/))
-    .filter(([serial, status]) => serial && status === 'device')
-    .map(([serial]) => serial);
+    .map(line => line.trim())
+    .filter(Boolean);
+// The AVD name the emulator console reports for a serial (`OK` follows it).
+const avdName = serial =>
+  tryAdb(serial, 'emu', 'avd', 'name').split(/\r?\n/)[0].trim();
+
+function findOnPath(command) {
+  const directory = (process.env.PATH ?? '')
+    .split(delimiter)
+    .find(entry => entry && existsSync(join(entry, command)));
+
+  return directory ? join(directory, command) : null;
+}
+
+function avdmanager() {
+  const sdk = process.env.ANDROID_HOME ?? process.env.ANDROID_SDK_ROOT;
+  const bundled =
+    sdk && join(sdk, 'cmdline-tools', 'latest', 'bin', 'avdmanager');
+
+  return (
+    findOnPath('avdmanager') ??
+    (bundled && existsSync(bundled) ? bundled : 'avdmanager')
+  );
+}
+
+function template() {
+  if (listAvds().includes(HARNESS_AVD)) {
+    process.stdout.write(
+      `${JSON.stringify({ avd: HARNESS_AVD, created: false }, null, 2)}\n`
+    );
+
+    return;
+  }
+
+  log(`creating ${HARNESS_AVD} from ${HARNESS_IMAGE}`);
+  // `no` answers the custom hardware profile prompt.
+  run(
+    avdmanager(),
+    [
+      'create',
+      'avd',
+      '--name',
+      HARNESS_AVD,
+      '--package',
+      HARNESS_IMAGE,
+      '--device',
+      'pixel_7'
+    ],
+    'no\n'
+  );
+  process.stdout.write(
+    `${JSON.stringify({ avd: HARNESS_AVD, image: HARNESS_IMAGE, created: true }, null, 2)}\n`
+  );
+}
+
+// The serial is fixed by the console port before boot, so no other device is ever listed
+// or called to find it.
+function freeConsolePort() {
+  const port = CONSOLE_PORTS.find(
+    candidate =>
+      !listeningPids(candidate).length && !listeningPids(candidate + 1).length
+  );
+
+  if (!port) {
+    throw new Error('No free emulator console port between 5554 and 5584.');
+  }
+
+  return port;
 }
 
 async function bootEmulator(state) {
-  const [running] = onlineDevices();
-
-  if (running) {
-    state.emulator = { serial: running, started: false };
-    log(`reusing device ${running}`);
-
-    return running;
+  if (!listAvds().includes(HARNESS_AVD)) {
+    throw new Error(
+      `The harness emulator ${HARNESS_AVD} does not exist. Create it with \`pnpm run device:stack template\`, then rerun.`
+    );
   }
 
-  const [avd] = run('emulator', ['-list-avds']).split('\n').filter(Boolean);
+  const consolePort = freeConsolePort();
+  const serial = `emulator-${consolePort}`;
+  const args = [
+    '-avd',
+    HARNESS_AVD,
+    '-port',
+    String(consolePort),
+    '-no-snapshot-save'
+  ];
 
-  if (!avd) {
-    throw new Error('No Android Virtual Device found (`emulator -list-avds`).');
-  }
+  log(`booting ${HARNESS_AVD} as ${serial}`);
+  const pid = startDetached('emulator', args, join(DIR, 'emulator.log'));
 
-  log(`booting emulator ${avd}`);
-  startDetached(
-    'emulator',
-    ['-avd', avd, '-no-snapshot-save'],
-    join(DIR, 'emulator.log')
-  );
-  const serial = await waitFor('the emulator to connect', BOOT_TIMEOUT_MS, () =>
-    onlineDevices().find(id => id.startsWith('emulator-'))
-  );
-
-  state.emulator = { serial, avd, started: true };
+  state.emulator = {
+    serial,
+    avd: HARNESS_AVD,
+    started: true,
+    process: processIdentity(pid, [
+      '-avd',
+      HARNESS_AVD,
+      '-port',
+      String(consolePort)
+    ])
+  };
   saveState(state);
+  await waitFor('the emulator to connect', BOOT_TIMEOUT_MS, () => {
+    if (!isSameProcess(state.emulator.process)) {
+      throw new Error(
+        `The ${HARNESS_AVD} emulator exited during boot; see ${join(DIR, 'emulator.log')}.`
+      );
+    }
+
+    return tryAdb(serial, 'get-state').trim() === 'device';
+  });
+
+  const reported = avdName(serial);
+
+  if (reported !== HARNESS_AVD) {
+    throw new Error(
+      `${serial} reports AVD ${JSON.stringify(reported)}, not ${HARNESS_AVD}; it is left untouched.`
+    );
+  }
+
   await waitFor(
     'the emulator to finish booting',
     BOOT_TIMEOUT_MS,
     () =>
-      tryRun('adb', [
-        '-s',
-        serial,
-        'shell',
-        'getprop',
-        'sys.boot_completed'
-      ]).trim() === '1'
+      tryAdb(serial, 'shell', 'getprop', 'sys.boot_completed').trim() === '1'
   );
 
   return serial;
 }
 
-function listeningPids() {
-  return tryRun('lsof', ['-nP', `-iTCP:${PORT}`, '-sTCP:LISTEN', '-t'])
+function listeningPids(port = PORT) {
+  return tryRun('lsof', ['-nP', `-iTCP:${port}`, '-sTCP:LISTEN', '-t'])
     .split('\n')
     .filter(Boolean)
     .map(Number);
@@ -242,6 +365,24 @@ async function metroRunning() {
   }
 }
 
+// Ready only when /status answers and the listener is in the process group this run started,
+// so a foreign server on the port can never stand in for this run's Metro.
+async function ownMetroReady(pid) {
+  const listeners = listeningPids();
+
+  if (!listeners.length || !(await metroRunning())) {
+    return false;
+  }
+
+  if (listeners.some(listener => processGroup(listener) === pid)) {
+    return true;
+  }
+
+  throw new Error(
+    `Port ${PORT} answers as Metro from pid ${listeners.join(', ')}, not the Metro this run started (pid ${pid}).`
+  );
+}
+
 async function start({ fresh }) {
   if (readState()) {
     throw new Error(
@@ -274,7 +415,8 @@ async function start({ fresh }) {
   if (!packageFlags?.[1].split(/\s+/).includes('DEBUGGABLE')) {
     throw new Error(
       `${packageFlags ? 'The installed build is not a dev build' : 'The dev build is not installed'} ` +
-        `(${PACKAGE} on ${serial}). Build and install it with \`pnpm run android\`, then rerun.`
+        `(${PACKAGE} on ${serial}). Build and install it on the harness emulator with ` +
+        `\`pnpm exec expo run:android --device ${HARNESS_AVD} --no-bundler\`, then rerun.`
     );
   }
 
@@ -295,26 +437,36 @@ async function start({ fresh }) {
     const env = { ...process.env };
 
     delete env.CI;
-    const pid = startDetached(
-      'pnpm',
-      ['exec', 'expo', 'start', '--dev-client', '--port', String(PORT)],
-      metroLog,
-      env
-    );
+    const args = [
+      'exec',
+      'expo',
+      'start',
+      '--dev-client',
+      '--port',
+      String(PORT)
+    ];
+    const pid = startDetached('pnpm', args, metroLog, env);
 
-    state.metro = { pid, started: true, log: metroLog };
+    state.metro = {
+      pid,
+      started: true,
+      log: metroLog,
+      process: processIdentity(pid, args)
+    };
     saveState(state);
-    await waitFor('Metro to start', METRO_TIMEOUT_MS, metroRunning);
+    await waitFor('Metro to start', METRO_TIMEOUT_MS, () => ownMetroReady(pid));
   }
 
   const jsLog = join(DIR, 'js.log');
-  const logPid = startDetached(
-    'adb',
-    ['-s', serial, 'logcat', '-T', '1', '-s', 'ReactNativeJS:V'],
-    jsLog
-  );
+  const logArgs = ['-s', serial, 'logcat', '-T', '1', '-s', 'ReactNativeJS:V'];
+  const logPid = startDetached('adb', logArgs, jsLog);
 
-  state.jsLogs = { pid: logPid, started: true, log: jsLog };
+  state.jsLogs = {
+    pid: logPid,
+    started: true,
+    log: jsLog,
+    process: processIdentity(logPid, logArgs)
+  };
   saveState(state);
 
   if (fresh) {
@@ -323,9 +475,22 @@ async function start({ fresh }) {
   }
 
   log('opening the app on the bundle');
-  state.session = true;
+  const session = `liftlog-${process.pid}-${Date.now().toString(36)}`;
+  const device = (...args) =>
+    run('agent-device', [...args, '--serial', serial, '--session', session]);
+  const tryDevice = (...args) =>
+    tryRun('agent-device', [...args, '--serial', serial, '--session', session]);
+
+  state.session = session;
   saveState(state);
-  run('agent-device', ['open', PACKAGE, DEV_CLIENT_LINK, '--relaunch']);
+  device(
+    'open',
+    PACKAGE,
+    DEV_CLIENT_LINK,
+    '--relaunch',
+    '--metro-port',
+    String(PORT)
+  );
 
   if (fresh) {
     // The launch can return before either the onboarding or Workout is visible.
@@ -333,12 +498,7 @@ async function start({ fresh }) {
       'dev-client onboarding or Workout',
       OPEN_TIMEOUT_MS,
       () => {
-        const snapshot = tryRun('agent-device', [
-          'snapshot',
-          '--raw',
-          '--timeout',
-          '5000'
-        ]);
+        const snapshot = tryDevice('snapshot', '--raw', '--timeout', '5000');
 
         if (snapshot.includes('This is the developer menu.')) {
           return 'onboarding';
@@ -350,28 +510,52 @@ async function start({ fresh }) {
 
     if (screen === 'onboarding') {
       log('dev-client onboarding appeared; pressing Continue and Close');
-      run('agent-device', ['press', 'label="Continue"', '--settle']);
-      run('agent-device', ['press', 'label="Close"']);
+      device('press', 'label="Continue"', '--settle');
+      device('press', 'label="Close"');
       log('dismissed dev-client onboarding');
     }
   }
 
-  run('agent-device', [
-    'wait',
-    `id=${START_SCREEN_ID}`,
-    String(OPEN_TIMEOUT_MS)
-  ]);
+  device('wait', `id=${START_SCREEN_ID}`, String(OPEN_TIMEOUT_MS));
   state.startScreen = true;
   state.running = true;
   saveState(state);
   process.stdout.write(`${JSON.stringify(state, null, 2)}\n`);
 }
 
+// What still runs, judged by identity checks rather than by the record alone.
+function observe(state) {
+  const observed = {};
+
+  for (const name of ['emulator', 'metro', 'jsLogs']) {
+    if (state[name]?.started) {
+      observed[name] = isSameProcess(state[name].process)
+        ? 'running'
+        : 'stopped';
+    }
+  }
+
+  return observed;
+}
+
 function status() {
   const state = readState();
 
+  if (!state) {
+    process.stdout.write(
+      `${JSON.stringify({ running: false, message: 'Nothing is running.' }, null, 2)}\n`
+    );
+
+    return;
+  }
+
+  const observed = observe(state);
+  const running =
+    Boolean(state.running) &&
+    Object.values(observed).every(value => value === 'running');
+
   process.stdout.write(
-    `${JSON.stringify(state ?? { running: false, message: 'Nothing is running.' }, null, 2)}\n`
+    `${JSON.stringify({ ...state, running, observed }, null, 2)}\n`
   );
 }
 
@@ -387,30 +571,48 @@ function stop() {
   }
 
   const stopped = [];
+  const untrusted = [];
+  const serial = state.emulator?.serial;
 
-  if (state.session) {
-    tryRun('agent-device', ['close']);
+  if (state.session && serial) {
+    tryRun('agent-device', [
+      'close',
+      '--serial',
+      serial,
+      '--session',
+      state.session
+    ]);
     stopped.push('session');
   }
 
-  if (state.jsLogs?.started) {
-    stopGroup(state.jsLogs.pid);
-    stopped.push('jsLogs');
-  }
+  for (const name of ['jsLogs', 'metro']) {
+    if (!state[name]?.started) {
+      continue;
+    }
 
-  if (state.metro?.started) {
-    stopGroup(state.metro.pid);
-    stopped.push('metro');
+    if (isSameProcess(state[name].process)) {
+      stopGroup(state[name].pid);
+      stopped.push(name);
+    } else {
+      untrusted.push(name);
+    }
   }
 
   if (state.emulator?.started) {
-    tryRun('adb', ['-s', state.emulator.serial, 'emu', 'kill']);
-    stopped.push('emulator');
+    if (
+      isSameProcess(state.emulator.process) &&
+      avdName(serial) === HARNESS_AVD
+    ) {
+      tryAdb(serial, 'emu', 'kill');
+      stopped.push('emulator');
+    } else {
+      untrusted.push('emulator');
+    }
   }
 
   rmSync(STATE);
   process.stdout.write(
-    `${JSON.stringify({ running: false, stopped }, null, 2)}\n`
+    `${JSON.stringify({ running: false, stopped, ...(untrusted.length && { untrusted }) }, null, 2)}\n`
   );
 }
 
@@ -423,9 +625,11 @@ try {
     status();
   } else if (command === 'stop') {
     stop();
+  } else if (command === 'template') {
+    template();
   } else {
     throw new Error(
-      'Usage: pnpm run device:stack start [--fresh] | status | stop'
+      'Usage: pnpm run device:stack template | start [--fresh] | status | stop'
     );
   }
 } catch (error) {

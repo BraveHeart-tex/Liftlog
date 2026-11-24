@@ -104,6 +104,7 @@ const prettier = (...files: string[]) => [
   ...files
 ];
 const appTests = ['run', 'test'];
+const toolingTests = ['run', 'test:tooling'];
 
 afterEach(() => {
   for (const dir of directories.splice(0)) {
@@ -197,4 +198,24 @@ test('prints START and PASS or FAIL with a log per stage, then a summary', () =>
     lines.at(-1) as string,
     /^Summary: FAIL - ts-check PASS, eslint PASS, prettier PASS, test FAIL \(exit 1\)$/
   );
+});
+
+// Tooling tests live in their own Jest project, so `pnpm run test` alone let a broken
+// device stack or ticket script pass the done gate.
+test.each([
+  ['scripts/device-stack.mjs', true],
+  ['tests/tooling/device-stack.test.ts', true],
+  ['scripts/notes.md', true],
+  ['src/a.ts', false]
+])('a change to %s runs the tooling stage: %s', (file, tooling) => {
+  const setup = repo();
+  const dir = file.split('/').slice(0, -1).join('/');
+  mkdirSync(join(setup.work, dir), { recursive: true });
+  setup.write(file);
+
+  const { status, calls, stdout } = validate(setup);
+
+  assert.equal(status, 0, stdout);
+  assert.equal(calls.at(-1)?.join(' ') === toolingTests.join(' '), tooling);
+  assert.equal(/^START tooling$/m.test(stdout), tooling);
 });

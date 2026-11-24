@@ -119,10 +119,26 @@ evidence.
 Reach screens by deep link and act by accessibility label or `@ref`, never by
 coordinates read off a screenshot. In order:
 
-1. **Start.** `pnpm run device:stack start` boots the emulator, starts or reuses this
-   checkout's Metro, captures JS logs and waits for the Workout start screen. `--fresh`
-   clears app data so the dev seed runs again (new random IDs). `status` prints the
-   state; a failed `start` leaves its state recorded, so run `stop` before retrying.
+1. **Start.** `pnpm run device:stack start` boots the harness emulator
+   (`liftlog_harness_34`), starts or reuses this checkout's Metro, captures JS logs and
+   waits for the Workout start screen. Create the harness AVD once with
+   `pnpm run device:stack template`. `start` never calls `liftlog_audit_34`, another
+   emulator or a phone, even when one is the only device online
+   ([targeting invariants](adr/0008-device-stack-architecture.md#targeting-invariants)).
+   Target every command you run at the serial and session that `status` prints:
+   `adb -s <serial>`, `agent-device ... --serial <serial> --session <session>`. A missing
+   dev build is refused with the install command for the harness emulator. `--fresh`
+   clears app data so the dev seed runs again (new random IDs). `status` reports each
+   recorded process `running` only while its PID, start time and argv still match
+   ([ownership evidence](adr/0008-device-stack-architecture.md#ownership-evidence)); a
+   failed `start` leaves its state recorded, so run `stop` before retrying.
+   - Coordination between worktrees follows
+     [ADR-0008](adr/0008-device-stack-architecture.md):
+     [coordination scopes](adr/0008-device-stack-architecture.md#coordination-scopes),
+     [lease protocol](adr/0008-device-stack-architecture.md#lease-protocol),
+     [dev build key](adr/0008-device-stack-architecture.md#dev-build-key),
+     [dev build cache](adr/0008-device-stack-architecture.md#dev-build-cache) and
+     [emulator instances](adr/0008-device-stack-architecture.md#emulator-instances).
    - A reused Metro (state shows `metro.log: null`, usually the maintainer's terminal)
      has no log. When you need Metro's output, do not stop it; run on another port.
      `DEVICE_STACK_PORT` sets the adb reverse port and dev-client link, so `start`
@@ -134,7 +150,7 @@ coordinates read off a screenshot. In order:
      ```
 
 2. **Reach the screen** from the [route map](#route-map):
-   `adb shell am start -W -a android.intent.action.VIEW -d 'liftlog:///<path>' com.borakaraca94.liftlog`.
+   `adb -s <serial> shell am start -W -a android.intent.action.VIEW -d 'liftlog:///<path>' com.borakaraca94.liftlog`.
    Pace links a few seconds apart; rapid `agent-device open <url>` calls drop the app to
    the dev launcher. Confirm the screen with `agent-device snapshot -i`.
 3. **Prove style facts** through the React DevTools hook. A reviewed screenshot stays
@@ -170,7 +186,9 @@ coordinates read off a screenshot. In order:
 
    The test must fail there; `git status` in the checkout is unchanged afterwards.
 
-6. **Stop.** `pnpm run device:stack stop` stops only what `start` started.
+6. **Stop.** `pnpm run device:stack stop` closes the session and stops only what `start`
+   started and still passes its identity check; anything that fails it is listed as
+   `untrusted` and left running.
 
 ### Route map
 

@@ -4,7 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 // The done gate: runs every validation stage on the files changed since a base (default
-// HEAD), committed or not, plus untracked files. Each stage's output goes to its own log,
+// HEAD), committed or not, plus untracked files. Changes under scripts/ or tests/tooling/
+// add the tooling Jest project. Each stage's output goes to its own log,
 // so the agent reads one line per stage instead of raw tool output.
 const git = (...args) =>
   execFileSync('git', args, { encoding: 'utf8' }).split('\n').filter(Boolean);
@@ -26,11 +27,14 @@ if (files.length === 0) {
 }
 
 const code = files.filter(file => /\.(ts|tsx|js|mjs|cjs)$/.test(file));
+// Repo tooling has its own Jest project, which `pnpm run test` does not run.
+const tooling = files.filter(file => /^(scripts|tests\/tooling)\//.test(file));
 const stages = [
   code.length && ['ts-check', ['run', 'ts-check']],
   code.length && ['eslint', ['exec', 'eslint', '--no-warn-ignored', ...code]],
   ['prettier', ['exec', 'prettier', '--check', '--ignore-unknown', ...files]],
-  code.length && ['test', ['run', 'test']]
+  code.length && ['test', ['run', 'test']],
+  tooling.length && ['tooling', ['run', 'test:tooling']]
 ].filter(Boolean);
 
 const logs = mkdtempSync(join(tmpdir(), 'validate-changed-'));
