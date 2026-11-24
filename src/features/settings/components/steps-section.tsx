@@ -53,6 +53,7 @@ export const StepsSection = () => {
                 </Text>
               </View>
               <Switch
+                accessibilityLabel="Health Connect steps"
                 checked={healthConnectStepsEnabled}
                 onCheckedChange={handleHealthConnectToggle}
               />

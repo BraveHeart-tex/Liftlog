@@ -118,6 +118,7 @@ export const WorkoutPreferencesSection = () => {
                     </Text>
                   </View>
                   <Switch
+                    accessibilityLabel="Rest timer notifications"
                     checked={notificationPreference.enabled}
                     disabled={notificationPreference.isEnabling}
                     onCheckedChange={value => {

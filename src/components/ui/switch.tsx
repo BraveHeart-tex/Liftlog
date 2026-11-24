@@ -3,7 +3,7 @@ import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
 import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { useEffect } from 'react';
-import { Pressable, type ViewStyle } from 'react-native';
+import { Pressable, type PressableProps, type ViewStyle } from 'react-native';
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
@@ -11,11 +11,10 @@ import Animated, {
   withTiming
 } from 'react-native-reanimated';
 
-interface SwitchProps {
+interface SwitchProps extends Omit<PressableProps, 'children'> {
+  accessibilityLabel: string;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
-  disabled?: boolean;
-  className?: string;
 }
 
 const thumbTranslateX = 24;
@@ -24,7 +23,12 @@ export function Switch({
   checked,
   onCheckedChange,
   disabled = false,
-  className
+  className,
+  accessibilityState,
+  onPress,
+  onPressIn,
+  onPressOut,
+  ...props
 }: SwitchProps) {
   const { colors } = useAppTheme();
   const reduceMotion = useReducedMotion();
@@ -66,30 +70,38 @@ export function Switch({
     ]
   }));
 
-  const handlePress = () => {
+  const handlePress: PressableProps['onPress'] = event => {
     onCheckedChange(!checked);
+    onPress?.(event);
   };
 
-  const handlePressIn = () => {
+  const handlePressIn: PressableProps['onPressIn'] = event => {
     pressProgress.value = reduceMotion
       ? 0
       : withTiming(1, {
           duration: MOTION_DURATION_MS.pressIn
         });
+    onPressIn?.(event);
   };
 
-  const handlePressOut = () => {
+  const handlePressOut: PressableProps['onPressOut'] = event => {
     pressProgress.value = reduceMotion
       ? 0
       : withTiming(0, {
           duration: MOTION_DURATION_MS.pressOut
         });
+    onPressOut?.(event);
   };
 
   return (
     <Pressable
+      {...props}
       accessibilityRole="switch"
-      accessibilityState={{ checked, disabled }}
+      accessibilityState={{
+        ...accessibilityState,
+        checked,
+        disabled: !!disabled
+      }}
       className={cn(
         'h-12 w-16 items-center justify-center rounded-full',
         disabled && 'opacity-50',
