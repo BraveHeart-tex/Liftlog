@@ -6,32 +6,19 @@ How engineering skills should consume this repo's domain documentation when expl
 
 This is a single-context repo:
 
-- `CONTEXT.md` at the repo root
-- System-wide ADRs under `docs/adr/`
+- [`docs/glossary.md`](../glossary.md): the only source for domain terms
+- System-wide ADRs under `docs/adr/`, product decisions under `docs/decisions/`
 
-These files are created lazily when domain terms or decisions are resolved.
+There is no root `GLOSSARY.md` or `CONTEXT.md`. When a skill such as `/domain-modeling` refers to `GLOSSARY.md`, use `docs/glossary.md` and its format: terms as `**Term**:` entries under topic subheadings, with `_Avoid_:` lines for rejected synonyms.
 
 ## Before exploring, read these
 
-- `CONTEXT.md` at the repo root
-- Relevant ADRs under `docs/adr/`
-
-If these files don't exist, proceed silently. Don't flag their absence or suggest creating them upfront. The `/domain-modeling` skill, reached through `/grill-with-docs` and `/improve-codebase-architecture`, creates them lazily when terms or decisions are resolved.
-
-## File structure
-
-```text
-/
-├── CONTEXT.md
-├── docs/adr/
-│   ├── 0001-example-decision.md
-│   └── 0002-another-decision.md
-└── src/
-```
+- The relevant sections of `docs/glossary.md` (list them with `rg -n '^#' docs/glossary.md`)
+- Relevant ADRs under `docs/adr/` and decisions under `docs/decisions/`
 
 ## Use the glossary's vocabulary
 
-When output names a domain concept, such as in an issue title, refactor proposal, hypothesis, or test name, use the term defined in `CONTEXT.md`. Don't drift to synonyms the glossary explicitly avoids.
+When output names a domain concept, such as in an issue title, refactor proposal, hypothesis, or test name, use the term defined in `docs/glossary.md`. Don't drift to synonyms the glossary explicitly avoids.
 
 If the needed concept isn't in the glossary, reconsider whether the language belongs to the project or note the gap for `/domain-modeling`.
 

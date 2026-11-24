@@ -13,7 +13,6 @@
 
 ## Domain
 
-- [Domain context](../CONTEXT.md)
 - [Glossary](glossary.md)
 
 ## Plans
@@ -24,6 +23,9 @@
 ## Engineering rules
 
 - [Agent problem log](agent-problems.md)
+- [Tickets](tickets.md)
+- [Triage labels](triage-labels.md)
+- [Verification](verification.md)
 - [Android release signing](android-release-signing.md)
 - [Bottom sheets](bottom-sheet.md)
 - [Data access](data-access.md)
