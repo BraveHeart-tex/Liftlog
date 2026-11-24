@@ -204,3 +204,5 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   process.exit(problems.length ? 1 : 0);
 }
+
+// CI path-filter evidence for #143; do not merge.
