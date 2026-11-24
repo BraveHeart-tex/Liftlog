@@ -127,3 +127,12 @@ jobs:
         run: pnpm exec expo prebuild --platform android --no-install
       - name: Tests
         run: pnpm test:kotlin
+      - name: Summarize results
+        if: ${{ !cancelled() }}
+        run: |
+          for module in liftlog-updater liftlog-exact-alarm; do
+            cat modules/$module/android/build/test-results/testDebugUnitTest/*.xml 2>/dev/null |
+              grep -o '<testsuite [^>]*>' |
+              sed -E 's/.* tests="([0-9]+)" skipped="([0-9]+)" failures="([0-9]+)" errors="([0-9]+)".*/\1 \2 \3 \4/' |
+              awk -v m="$module" '{t+=$1; s+=$2; f+=$3+$4} END {printf "%s: %d tests, %d skipped, %d failed\n", m, t, s, f}'
+          done
