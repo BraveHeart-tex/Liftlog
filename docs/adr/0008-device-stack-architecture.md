@@ -76,6 +76,9 @@ stopped.
   `--metro-port`.
 - Commands printed for agents, such as the dev build install command, target only the
   harness emulator.
+- Agents run agent-device through `device:stack device`, which passes the lease's
+  serial, session (`liftlog-<lease ID>`) and Metro and refuses flags that select another
+  target. It prevents accidental misuse, not a hostile caller.
 
 ### Dev build key
 

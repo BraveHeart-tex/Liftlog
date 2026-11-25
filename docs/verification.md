@@ -128,8 +128,16 @@ coordinates read off a screenshot. In order:
    starts with fresh app data. `start` never calls `liftlog_audit_34`, another
    emulator or a phone, even when one is the only device online
    ([targeting invariants](adr/0008-device-stack-architecture.md#targeting-invariants)).
-   Target every command you run at the serial and session that `status` prints:
-   `adb -s <serial>`, `agent-device ... --serial <serial> --session <session>`. `start`
+   Run agent-device through `pnpm run device:stack device <command> [args]`: it adds the
+   lease's platform, serial, session and an empty explicit config (plus the slot Metro for
+   `open`, `metro reload` and `cdp target list|select`), strips `AGENT_DEVICE_*`
+   variables, and refuses commands outside its allowlist, `close --shutdown`, `--`, and
+   any flag that selects a device, app, session, Metro, config, daemon or remote
+   endpoint, in both `--flag value` and `--flag=value` spellings. `open` takes only the
+   app package and `liftlog://` app links, not dev-client links. Without a ready lease it
+   exits with `NO_LEASE`. It guards against misuse and is not a security boundary
+   ([ADR-0009](adr/0009-sandboxed-agents-reach-device-stacks-through-a-lease-broker.md)).
+   Target adb at the serial that `status` prints: `adb -s <serial>`. `start`
    installs the dev build matching the checkout's dev build key from the dev build cache,
    only when the installed build differs; on a miss it builds it first from a freshly
    regenerated `android/` (log: `.device-stack/build.log`), so native changes need no
@@ -163,18 +171,19 @@ coordinates read off a screenshot. In order:
 
 2. **Reach the screen** from the [route map](#route-map):
    `adb -s <serial> shell am start -W -a android.intent.action.VIEW -d 'liftlog:///<path>' com.borakaraca94.liftlog`.
-   Pace links a few seconds apart; rapid `agent-device open <url>` calls drop the app to
-   the dev launcher. Confirm the screen with `agent-device snapshot -i`.
+   Pace links a few seconds apart; rapid `open <url>` calls drop the app to the dev
+   launcher. Confirm the screen with `pnpm run device:stack device snapshot -i`.
 3. **Prove style facts** through the React DevTools hook. A reviewed screenshot stays
    the evidence; this read backs it up wherever a style fact is the claim.
-   `agent-device react-devtools get component` shows props but dehydrates nested
-   `style` (`"{…}"`), so read the host `Text` through CDP instead (see
-   `agent-device help cdp`; `<port>` is the stack port from `status`; pick the target where `runtime eval --expr '1+1'` answers):
+   `react-devtools get component` shows props but dehydrates nested `style` (`"{…}"`),
+   so read the host `Text` through CDP instead (see `agent-device help cdp`; the wrapper
+   points target discovery at the lease's Metro; pick the target where
+   `runtime eval --expr '1+1'` answers):
 
    ```sh
-   agent-device cdp target list --url http://127.0.0.1:<port>
-   agent-device cdp target select <target-id> --url http://127.0.0.1:<port>
-   agent-device cdp runtime eval --expr '(()=>{const T="Workout",h=globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__,flat=s=>Array.isArray(s)?Object.assign({},...s.map(flat)):(s||{}),txt=c=>typeof c==="string"?c:Array.isArray(c)?c.filter(x=>typeof x==="string").join(""):"";for(const id of h.renderers.keys())for(const r of h.getFiberRoots(id)){const st=[r.current];while(st.length){const f=st.pop();if(f.type==="RCTText"&&txt(f.memoizedProps.children)===T)return JSON.stringify(flat(f.memoizedProps.style));if(f.sibling)st.push(f.sibling);if(f.child)st.push(f.child)}}return "not found"})()'
+   pnpm run device:stack device cdp target list
+   pnpm run device:stack device cdp target select <target-id>
+   pnpm run device:stack device cdp runtime eval --expr '(()=>{const T="Workout",h=globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__,flat=s=>Array.isArray(s)?Object.assign({},...s.map(flat)):(s||{}),txt=c=>typeof c==="string"?c:Array.isArray(c)?c.filter(x=>typeof x==="string").join(""):"";for(const id of h.renderers.keys())for(const r of h.getFiberRoots(id)){const st=[r.current];while(st.length){const f=st.pop();if(f.type==="RCTText"&&txt(f.memoizedProps.children)===T)return JSON.stringify(flat(f.memoizedProps.style));if(f.sibling)st.push(f.sibling);if(f.child)st.push(f.child)}}return "not found"})()'
    ```
 
    Set `T` to the visible text; the result includes `fontFamily`

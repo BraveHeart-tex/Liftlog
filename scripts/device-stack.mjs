@@ -34,8 +34,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 // It never calls another emulator or a physical device: every adb call names the harness
 // serial and every agent-device call names it and this run's session. `status` reports which
 // recorded processes still pass their identity check; `stop` stops only what `start` started
-// and still passes that check, then releases the lease. `build-key` prints the dev build key
-// of this checkout and the hash of each input behind it.
+// and still passes that check, then releases the lease. `device <command> [args]` runs an
+// allowlisted agent-device command on this worktree's ready lease only. `build-key` prints
+// the dev build key of this checkout and the hash of each input behind it.
 // The lease pointer, run state, logs and operation lock live in .device-stack/ at the checkout
 // root (the working directory); the dev build cache lives in the git common dir; the lease
 // registry, its lock, the host config and the build lock live in the host directory.
@@ -1280,6 +1281,13 @@ async function underOperationLock(operation) {
 
 const start = options => underOperationLock(() => startLease(options));
 
+// A lease no operation holds, whose start finished and whose processes all still run.
+const leaseReady = (state, held) =>
+  Boolean(held) &&
+  !held.operation &&
+  Boolean(state.running) &&
+  Object.values(observe(state)).every(value => value === 'running');
+
 async function startLease({ fresh, noBuild }) {
   const recorded = readState();
 
@@ -1291,12 +1299,7 @@ async function startLease({ fresh, noBuild }) {
 
   const held = recorded && findLease(readRegistry(), recorded.lease.id);
 
-  if (
-    held &&
-    !held.operation &&
-    recorded.running &&
-    Object.values(observe(recorded)).every(value => value === 'running')
-  ) {
+  if (leaseReady(recorded, held)) {
     if (fresh) {
       await freshen(recorded);
     }
@@ -1437,7 +1440,8 @@ async function openApp(state) {
   const { serial } = state.emulator;
 
   log('opening the app on the bundle');
-  state.session ??= `liftlog-${process.pid}-${Date.now().toString(36)}`;
+  // One agent-device session per lease.
+  state.session ??= `liftlog-${state.lease.id}`;
   saveState(state);
   const { session } = state;
   const device = (...args) => {
@@ -1651,6 +1655,231 @@ async function stop() {
   });
 }
 
+// `device <command> [args]` runs agent-device on this worktree's lease and nothing else. It
+// guards host agents against accidental misuse; it is not a security boundary
+// (docs/adr/0009-sandboxed-agents-reach-device-stacks-through-a-lease-broker.md).
+const DEVICE_COMMANDS = new Set([
+  'alert',
+  'appstate',
+  'back',
+  'cdp',
+  'click',
+  'clipboard',
+  'close',
+  'diff',
+  'fill',
+  'find',
+  'focus',
+  'gesture',
+  'get',
+  'home',
+  'is',
+  'keyboard',
+  'longpress',
+  'metro',
+  'open',
+  'orientation',
+  'press',
+  'react-devtools',
+  'react-native',
+  'record',
+  'screenshot',
+  'scroll',
+  'settings',
+  'snapshot',
+  'swipe',
+  'type',
+  'wait'
+]);
+// Every spelling of the agent-device flags that select a device, app, session, Metro,
+// config, daemon or remote endpoint; the wrapper passes the lease's own.
+const TARGETING_FLAGS = [
+  '--platform',
+  '--target',
+  '--device',
+  '--udid',
+  '--serial',
+  '--ios-simulator-device-set',
+  '--android-device-allowlist',
+  '--app',
+  '--target-app',
+  '--activity',
+  '--launch-args',
+  '--session',
+  '--session-lock',
+  '--session-isolation',
+  '--metro-host',
+  '--metro-port',
+  '--bundle-url',
+  '--launch-url',
+  '--url',
+  '--config',
+  '--remote-config',
+  '--state-dir',
+  '--daemon-base-url',
+  '--daemon-auth-token',
+  '--daemon-transport',
+  '--daemon-server-mode',
+  '--remote',
+  '--tenant',
+  '--run-id',
+  '--lease-id',
+  '--lease-backend',
+  '--provider',
+  '--provider-session',
+  '--header'
+];
+// The only flags `open` takes beside its targets.
+const OPEN_FLAGS = [
+  '--relaunch',
+  '--foreground',
+  '--no-record',
+  '--test-ime',
+  '--no-test-ime',
+  '--json',
+  '--cost',
+  '--debug',
+  '--verbose',
+  '-v'
+];
+const OPEN_VALUE_FLAGS = ['--timeout', '--wait', '--level'];
+
+const refused = reason => new Error(`REFUSED: ${reason}; nothing was run.`);
+const spells = (arg, flag) => arg === flag || arg.startsWith(`${flag}=`);
+
+// `open` targets the app package or app links; a dev-client link would pick another Metro.
+function checkOpen(args) {
+  const targets = [];
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+
+    if (OPEN_VALUE_FLAGS.includes(arg)) {
+      index += 1;
+    } else if (
+      !OPEN_FLAGS.includes(arg) &&
+      !OPEN_VALUE_FLAGS.some(flag => arg.startsWith(`${flag}=`))
+    ) {
+      if (arg.startsWith('-')) {
+        throw refused(`open does not take ${arg}`);
+      }
+
+      targets.push(arg);
+    }
+  }
+
+  const appLink = target => {
+    const lower = target.toLowerCase();
+
+    return (
+      lower.startsWith(`${expo.scheme}://`) &&
+      !lower.startsWith(`${expo.scheme}://expo-development-client`)
+    );
+  };
+
+  const valid =
+    targets.length > 0 &&
+    targets.length <= 2 &&
+    (targets[0] === PACKAGE || appLink(targets[0])) &&
+    targets.slice(1).every(appLink);
+
+  if (!valid) {
+    throw refused(
+      `open takes ${PACKAGE} and ${expo.scheme}:// app links only, not ${JSON.stringify(targets)}`
+    );
+  }
+}
+
+function checkDeviceCommand(command, args) {
+  if (!DEVICE_COMMANDS.has(command)) {
+    throw refused(
+      `${command ? `\`${command}\`` : 'no command'} is not a lease command; the allowed commands are ${[...DEVICE_COMMANDS].join(', ')}`
+    );
+  }
+
+  for (const arg of args) {
+    if (arg === '--') {
+      throw refused('`--` is not accepted');
+    }
+
+    const flag = TARGETING_FLAGS.find(name => spells(arg, name));
+
+    if (flag) {
+      throw refused(`${flag} selects a target, and the lease sets its own`);
+    }
+  }
+
+  if (command === 'close' && args.some(arg => spells(arg, '--shutdown'))) {
+    throw refused(
+      'close --shutdown stops the emulator; run `pnpm run device:stack stop`'
+    );
+  }
+
+  if (command === 'metro' && args[0] !== 'reload') {
+    throw refused('metro takes only reload');
+  }
+
+  if (command === 'open') {
+    checkOpen(args);
+  }
+}
+
+function device(command, args) {
+  checkDeviceCommand(command, args);
+  const state = readState();
+  const held = state?.lease && findLease(readRegistry(), state.lease.id);
+
+  if (!state?.session || !leaseReady(state, held)) {
+    throw new Error(
+      'NO_LEASE: this worktree has no ready lease; run `pnpm run device:stack start` first.'
+    );
+  }
+
+  // An explicit empty config, so neither the user nor the project config applies.
+  const config = join(DIR, 'agent-device.json');
+
+  writeFileSync(config, '{}\n');
+  const cdpTarget =
+    command === 'cdp' &&
+    args[0] === 'target' &&
+    ['list', 'select'].includes(args[1]);
+  const metro =
+    command === 'open' || command === 'metro'
+      ? ['--metro-port', String(state.port)]
+      : cdpTarget
+        ? ['--url', `http://127.0.0.1:${state.port}`]
+        : [];
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(
+      ([name]) => !name.startsWith('AGENT_DEVICE_')
+    )
+  );
+  // Lease flags precede the command: cdp passes every argument after it to its helper.
+  const { status, error } = spawnSync(
+    'agent-device',
+    [
+      '--platform',
+      'android',
+      '--serial',
+      state.lease.serial,
+      '--session',
+      state.session,
+      '--config',
+      config,
+      command,
+      ...args,
+      ...metro
+    ],
+    { stdio: 'inherit', env }
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  process.exitCode = status ?? 1;
+}
+
 const [command, ...flags] = process.argv.slice(2);
 
 try {
@@ -1669,11 +1898,13 @@ try {
     await buildKey();
   } else if (command === 'build') {
     await build();
+  } else if (command === 'device') {
+    device(flags[0], flags.slice(1));
   } else if (command === BUILD_WORKER) {
     await buildWorker(flags[0]);
   } else {
     throw new Error(
-      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | build-key | build'
+      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | build-key | build'
     );
   }
 } catch (error) {
