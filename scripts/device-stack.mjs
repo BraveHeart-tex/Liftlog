@@ -96,6 +96,8 @@ const START_SCREEN_ID = 'workout-start-screen';
 const BOOT_TIMEOUT_MS = 180_000;
 const METRO_TIMEOUT_MS = 120_000;
 const OPEN_TIMEOUT_MS = 180_000;
+// Gap between retried checks in `waitFor` and the build lock wait; tooling tests shorten it.
+const POLL_MS = Number(process.env.DEVICE_STACK_POLL_MS) || 500;
 
 // Tooling tests inject a module here to act between a check and the action it guards.
 const hooks = process.env.DEVICE_STACK_HOOKS
@@ -145,7 +147,7 @@ async function waitFor(what, timeoutMs, check) {
       return value;
     }
 
-    await sleep(500);
+    await sleep(POLL_MS);
   }
 
   throw new Error(`Timed out after ${timeoutMs / 1000} s waiting for ${what}.`);
@@ -537,7 +539,7 @@ async function acquireBuildLock(key) {
         continue;
       }
 
-      await sleep(500);
+      await sleep(POLL_MS);
     }
   } finally {
     rmSync(candidate, { force: true });

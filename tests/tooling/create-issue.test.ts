@@ -114,15 +114,30 @@ type State = {
   issues: Record<string, Issue>;
 };
 
+// macOS scans each new executable on its first run, for about 300 ms, so the fake `gh` is
+// written once per test file.
+let bin: string | undefined;
+
+function fakeBin() {
+  if (!bin) {
+    bin = mkdtempSync(join(tmpdir(), 'create-issue-bin-'));
+    writeFileSync(join(bin, 'gh'), fake);
+    chmodSync(join(bin, 'gh'), 0o755);
+  }
+
+  return bin;
+}
+
+afterAll(() => bin && rmSync(bin, { recursive: true, force: true }));
+
 function harness() {
   const dir = mkdtempSync(join(tmpdir(), 'create-issue-'));
   dirs.push(dir);
+  const gh = fakeBin();
   const statePath = join(dir, 'state.json');
   const bodyPath = join(dir, 'body.md');
   const body = `  Exact body\r\n\nUnicode: İ 🏋️\n${validTicket}`;
   writeFileSync(bodyPath, body);
-  writeFileSync(join(dir, 'gh'), fake);
-  chmodSync(join(dir, 'gh'), 0o755);
   writeFileSync(
     statePath,
     JSON.stringify({
@@ -154,7 +169,7 @@ function harness() {
       encoding: 'utf8',
       env: {
         ...process.env,
-        PATH: `${dir}${delimiter}${process.env.PATH}`,
+        PATH: `${gh}${delimiter}${process.env.PATH}`,
         NODE_NO_WARNINGS: '1',
         FAKE_STATE: statePath
       }
