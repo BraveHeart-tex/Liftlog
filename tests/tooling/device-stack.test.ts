@@ -23,6 +23,12 @@ const AUDIT_AVD = 'liftlog_audit_34';
 const PHONE = 'R5CT3000ABC';
 const FOREIGN = 'emulator-5554';
 const SERIAL = 'emulator-5556';
+const TEMPLATE = {
+  snapshot: 'liftlog_template',
+  version: '2026-11-25T00:00:00.000Z'
+};
+const instanceBoot = (lease: string, port = 5556) =>
+  `emulator -avd ${AVD} -port ${port} -read-only -snapshot liftlog_template -no-snapshot-save -no-boot-anim -prop debug.liftlog.lease=${lease}`;
 
 // One fake implementation behind every binary the script calls (`adb`, `emulator`, `lsof`,
 // `agent-device`, `pnpm`, `avdmanager`, and the `gradlew` the fake prebuild writes). Each call
@@ -78,6 +84,12 @@ if (name === 'emulator') {
     if (!avdOf(serial)) process.exit(1)
     process.stdout.write(avdOf(serial) + '\\r\\nOK\\r\\n')
   } else if (command === 'shell getprop sys.boot_completed') process.stdout.write('1\\n')
+  else if (command === 'shell ping -c 1 -W 1 10.0.2.2') process.stdout.write('1 packets transmitted, 1 received, 0% packet loss, time 0ms\\n')
+  else if (command.startsWith('shell setprop debug.liftlog.lease ')) {
+    update(s => { s.emulators[serial.slice('emulator-'.length)].token = rest.at(-1) })
+  } else if (command === 'shell getprop debug.liftlog.lease') {
+    process.stdout.write((state.tokenOverride ?? state.emulators[serial.slice('emulator-'.length)]?.token ?? '') + '\\n')
+  }
   else if (command === 'shell pm path ${PACKAGE}') {
     if (state.installed === null) process.exit(1)
     process.stdout.write('package:/data/app/~~x/${PACKAGE}-y/base.apk\\n')
@@ -169,7 +181,9 @@ type Listener = { pid: number; cwd: string; port: number };
 type FakeState = {
   avds: string[];
   // Running harness emulators by console port.
-  emulators: Record<string, { avd: string; pid: number }>;
+  emulators: Record<string, { avd: string; pid: number; token?: string }>;
+  // What every device reports as its lease token, whatever was set.
+  tokenOverride?: string;
   // Content of the installed APK, null when the app is not installed.
   installed: string | null;
   fingerprint: string;
@@ -257,9 +271,15 @@ async function harness(
   seed: Partial<FakeState> = {},
   {
     seedBuild = true,
+    seedTemplate = true,
     hooks,
     limit
-  }: { seedBuild?: boolean; hooks?: string; limit?: number } = {}
+  }: {
+    seedBuild?: boolean;
+    seedTemplate?: boolean;
+    hooks?: string;
+    limit?: number;
+  } = {}
 ) {
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'device-stack-')));
   directories.push(dir);
@@ -296,6 +316,10 @@ async function harness(
 
   mkdirSync(hostDir);
   writeConfig(limit === undefined ? {} : { limit });
+
+  if (seedTemplate) {
+    writeFileSync(join(hostDir, 'template.json'), JSON.stringify(TEMPLATE));
+  }
 
   if (hooks) {
     writeFileSync(join(dir, 'hooks.mjs'), hooks);
@@ -552,7 +576,9 @@ test('start boots the harness emulator beside a phone and a foreign emulator, op
   expect(commands(calls)).toEqual(
     expect.arrayContaining([
       'emulator -list-avds',
-      `emulator -avd ${AVD} -port 5556 -no-snapshot-save`,
+      instanceBoot(state.lease.id),
+      `adb -s ${SERIAL} shell setprop debug.liftlog.lease ${state.lease.id}`,
+      `adb -s ${SERIAL} shell ping -c 1 -W 1 10.0.2.2`,
       `adb -s ${SERIAL} emu avd name`,
       `adb -s ${SERIAL} shell pm path ${PACKAGE}`,
       `pnpm exec expo start --dev-client --port ${port}`,
@@ -577,7 +603,7 @@ test('start boots the harness emulator beside a phone and a foreign emulator, op
   // The installed build matches the cached one, so nothing is built or installed.
   expect(order.some(call => call.includes(' install '))).toBe(false);
   expect(calls.map(call => call.name)).not.toContain('gradlew');
-  expect(stderr).toContain(`booting ${AVD} as ${SERIAL}`);
+  expect(stderr).toContain(`booting a read-only ${AVD} instance as ${SERIAL}`);
 
   const dir = join(root, '.device-stack');
   expect(state).toMatchObject({
@@ -590,8 +616,18 @@ test('start boots the harness emulator beside a phone and a foreign emulator, op
       serial: SERIAL,
       avd: AVD,
       started: true,
-      process: { markers: ['-avd', AVD, '-port', '5556'] }
+      process: {
+        markers: [
+          '-avd',
+          AVD,
+          '-port',
+          '5556',
+          `debug.liftlog.lease=${state.lease.id}`
+        ]
+      }
     },
+    lease: { templateVersion: TEMPLATE.version },
+    devBuild: { foundInstalled: true },
     metro: { started: true, log: join(dir, 'metro.log') },
     jsLogs: { started: true, log: join(dir, 'js.log') }
   });
@@ -613,55 +649,115 @@ test('start refuses a missing harness AVD and names the template command without
 
   expect(status).toBe(1);
   expect(stderr).toContain(
-    `${AVD} does not exist. Create it with \`pnpm run device:stack template\``
+    `${AVD} or its template snapshot does not exist. Create them with \`pnpm run device:stack template\``
   );
   expect(commands(calls).filter(call => !call.startsWith('lsof'))).toEqual([
     'emulator -list-avds'
   ]);
 });
 
-test('template creates the harness AVD once', async () => {
-  const { stack, fakeState } = await harness({ avds: [AUDIT_AVD] });
+test('template creates the harness AVD and a clean template snapshot once', async () => {
+  const { stack, fakeState, editFake, hostDir } = await harness(
+    { avds: [AUDIT_AVD] },
+    { seedTemplate: false }
+  );
+  editFake(state => (state.installed = null));
 
   const created = await stack('template');
+
   expect(created.status).toBe(0);
-  expect(JSON.parse(created.stdout)).toMatchObject({ avd: AVD, created: true });
-  expect(
-    commands(created.calls).find(call => call.startsWith('avdmanager'))
-  ).toMatch(
+  const output = JSON.parse(created.stdout);
+  expect(output).toMatchObject({
+    avd: AVD,
+    created: true,
+    template: { snapshot: 'liftlog_template', version: expect.any(String) }
+  });
+  const order = commands(created.calls).filter(
+    call => !call.startsWith('lsof')
+  );
+  expect(order.find(call => call.startsWith('avdmanager'))).toMatch(
     new RegExp(
       `^avdmanager create avd --name ${AVD} --package system-images;android-34;google_apis;(arm64-v8a|x86_64) --device pixel_7$`
     )
   );
+  expect(order).toEqual(
+    expect.arrayContaining([
+      `emulator -avd ${AVD} -port 5556 -wipe-data -no-snapshot-load -no-boot-anim`,
+      `adb -s ${SERIAL} shell settings put global window_animation_scale 0`,
+      `adb -s ${SERIAL} shell settings put global transition_animation_scale 0`,
+      `adb -s ${SERIAL} shell settings put global animator_duration_scale 0`,
+      `adb -s ${SERIAL} shell pm path ${PACKAGE}`,
+      `adb -s ${SERIAL} emu avd snapshot save liftlog_template`,
+      `adb -s ${SERIAL} emu kill`
+    ])
+  );
+  expect(
+    order.indexOf(`adb -s ${SERIAL} emu avd snapshot save liftlog_template`)
+  ).toBeGreaterThan(order.indexOf(`adb -s ${SERIAL} shell pm path ${PACKAGE}`));
+  expectTargeted(created.calls);
   expect(fakeState().avds).toEqual([AUDIT_AVD, AVD]);
+  expect(
+    JSON.parse(readFileSync(join(hostDir, 'template.json'), 'utf8'))
+  ).toEqual(output.template);
 
   const again = await stack('template');
-  expect(JSON.parse(again.stdout)).toEqual({ avd: AVD, created: false });
+  expect(JSON.parse(again.stdout)).toEqual({
+    avd: AVD,
+    created: false,
+    template: output.template
+  });
   expect(commands(again.calls.slice(created.calls.length))).toEqual([
     'emulator -list-avds'
   ]);
 });
 
-test('start --fresh clears app data and waits for Workout without an onboarding timeout when the overlay is absent', async () => {
+test('template --recreate refuses while any lease is live', async () => {
+  const { root, hostDir, stack, logPath } = await harness();
+  const { lease } = JSON.parse((await stack('start')).stdout);
+  const before = allCalls(logPath).length;
+
+  const { status, stderr } = await stack('template', '--recreate');
+
+  expect(status).toBe(1);
+  expect(stderr).toContain(
+    `TEMPLATE_BUSY: the template cannot be rebuilt while leases are live: slot 0 by lease ${lease.id} from ${root}.`
+  );
+  expect(commands(allCalls(logPath).slice(before))).toEqual([
+    'emulator -list-avds'
+  ]);
+  expect(
+    JSON.parse(readFileSync(join(hostDir, 'template.json'), 'utf8'))
+  ).toEqual(TEMPLATE);
+  await stack('stop');
+});
+
+test('a new lease starts from the template without clearing data, and start --fresh on a running lease clears it and reopens the app', async () => {
   const { stack, logPath } = await harness();
 
-  const { status, calls } = await stack('start', '--fresh');
+  const first = await stack('start', '--fresh');
 
-  expect(status).toBe(0);
-  const order = commands(calls);
-  const clear = order.indexOf(`adb -s ${SERIAL} shell pm clear ${PACKAGE}`);
-  expect(clear).toBeGreaterThan(-1);
-  expect(clear).toBeLessThan(
-    order.findIndex(call => call.startsWith('agent-device open'))
+  expect(first.status).toBe(0);
+  expect(commands(first.calls)).not.toContain(
+    `adb -s ${SERIAL} shell pm clear ${PACKAGE}`
   );
-  expect(
-    calls
-      .filter(
-        call => call.name === 'agent-device' && call.args[0] !== 'snapshot'
-      )
-      .map(call => call.args[0])
-  ).toEqual(['open']);
-  expectTargeted(allCalls(logPath));
+  const { lease, session, port } = JSON.parse(first.stdout);
+  const before = allCalls(logPath).length;
+
+  const again = await stack('start', '--fresh');
+
+  expect(again.status).toBe(0);
+  expect(JSON.parse(again.stdout).lease).toEqual(lease);
+  const order = commands(allCalls(logPath).slice(before)).filter(
+    call => !call.startsWith('lsof') && !call.includes(' snapshot ')
+  );
+  expect(order).toEqual([
+    `adb -s ${SERIAL} emu avd name`,
+    `adb -s ${SERIAL} shell getprop debug.liftlog.lease`,
+    `adb -s ${SERIAL} shell pm clear ${PACKAGE}`,
+    `agent-device open ${PACKAGE} ${link(port)} --relaunch --metro-port ${port} ${target(session)}`
+  ]);
+  expectTargeted(allCalls(logPath), session);
+  await stack('stop');
 });
 
 test('start --fresh dismisses dev-client onboarding before waiting for Workout', async () => {
@@ -1172,8 +1268,11 @@ test.each([
       { hooks: testHooks }
     );
     editFake(state => (state.installed = null));
+    // Data clear runs only on a running lease.
     const started =
-      command === 'stop' ? JSON.parse((await stack('start')).stdout) : null;
+      command === 'stop' || action === 'clear data'
+        ? JSON.parse((await stack('start')).stdout)
+        : null;
 
     const { status, stderr, calls } = await stackIn(
       root,
@@ -1246,7 +1345,8 @@ test.each(['start', 'stop'])(
 
     expect(next.status).toBe(0);
     const calls = commands(allCalls(logPath).slice(before));
-    expect(calls).toContain(`adb -s ${SERIAL} emu kill`);
+    // The orphan never set its lease token, so its verified process is signalled.
+    expect(calls).not.toContain(`adb -s ${SERIAL} emu kill`);
     await waitUntil(() => !alive(orphan));
 
     if (command === 'start') {
@@ -1453,5 +1553,49 @@ test.each([
     }
 
     await stack('stop');
+  }
+);
+
+test.each([
+  ['install', 'start'],
+  ['data clear', 'start --fresh'],
+  ['kill', 'stop']
+])(
+  'a %s does not run when the device lease token does not match the lease',
+  async (action, command) => {
+    const { root, stack, stackIn, editFake, fakeState, logPath } =
+      await harness();
+
+    if (action === 'install') {
+      editFake(state => {
+        state.installed = null;
+        state.tokenOverride = 'other-lease';
+      });
+    } else {
+      await stack('start');
+      editFake(state => (state.tokenOverride = 'other-lease'));
+    }
+
+    const before = allCalls(logPath).length;
+
+    const run = await stackIn(root, command.split(' '));
+
+    const order = commands(allCalls(logPath).slice(before));
+    expect(order.some(call => call.includes(' install '))).toBe(false);
+    expect(order).not.toContain(`adb -s ${SERIAL} shell pm clear ${PACKAGE}`);
+    expect(order).not.toContain(`adb -s ${SERIAL} emu kill`);
+    await new Promise(done => setTimeout(done, 200));
+    expect(alive(fakeState().emulators['5556'].pid)).toBe(true);
+
+    if (action === 'kill') {
+      expect(JSON.parse(run.stdout)).toMatchObject({ untrusted: ['emulator'] });
+    } else {
+      expect(run.status).toBe(1);
+      expect(run.stderr).toContain(
+        `${SERIAL} no longer passes its identity check, so ${action === 'data clear' ? 'clear data' : action} did not run.`
+      );
+      editFake(state => delete state.tokenOverride);
+      await stack('stop');
+    }
   }
 );

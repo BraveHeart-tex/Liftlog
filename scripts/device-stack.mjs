@@ -23,9 +23,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 // Puts the Android test environment into a known state for a device check
 // (docs/verification.md "Device checks"; docs/adr/0008-device-stack-architecture.md).
-// `template` creates the harness AVD once. `start [--fresh]` leases an emulator slot from the
-// host registry (repeating it returns the same lease), starts this lease's Metro on the slot's
-// Metro port while it boots the harness emulator on the slot's console port, installs the dev
+// `template [--recreate]` creates the harness AVD once and its clean template snapshot.
+// `start [--fresh]` leases an emulator slot from the host registry (repeating it returns the
+// same lease; `--fresh` then clears its app data), starts this lease's Metro on the slot's
+// Metro port while it boots a read-only template instance on the slot's ports, installs the dev
 // build matching this checkout's dev build key from the dev build cache (building it on a miss
 // unless `--no-build`), captures JS logs, opens the app through the dev-client link on
 // 10.0.2.2 and waits for the start screen, failing at once on a bundling error or redbox.
@@ -60,6 +61,18 @@ const MAX_LIMIT = 2;
 // Argv marker of a device stack process holding a lock or running a lease operation.
 const SELF_MARKERS = ['device-stack.mjs'];
 const HARNESS_AVD = 'liftlog_harness_34';
+// docs/adr/0008-device-stack-architecture.md "Emulator instances": the clean boot snapshot
+// every leased instance boots from, and its version.
+const TEMPLATE_SNAPSHOT = 'liftlog_template';
+const TEMPLATE = join(HOST_DIR, 'template.json');
+// Device property and argv marker carrying a leased instance's lease ID. `-prop` values are
+// lost on snapshot boot, so the property is set with `setprop` once the device connects.
+const LEASE_PROP = 'debug.liftlog.lease';
+const ANIMATION_SCALES = [
+  'window_animation_scale',
+  'transition_animation_scale',
+  'animator_duration_scale'
+];
 const HARNESS_ABI = process.arch === 'arm64' ? 'arm64-v8a' : 'x86_64';
 const HARNESS_IMAGE = `system-images;android-34;google_apis;${HARNESS_ABI}`;
 const DEV_BUILD_VARIANT = 'debug';
@@ -240,13 +253,9 @@ function avdmanager() {
   );
 }
 
-function template() {
+function createAvd() {
   if (listAvds().includes(HARNESS_AVD)) {
-    process.stdout.write(
-      `${JSON.stringify({ avd: HARNESS_AVD, created: false }, null, 2)}\n`
-    );
-
-    return;
+    return false;
   }
 
   log(`creating ${HARNESS_AVD} from ${HARNESS_IMAGE}`);
@@ -265,9 +274,115 @@ function template() {
     ],
     'no\n'
   );
+
+  return true;
+}
+
+// Boots the harness AVD writable from wiped data, turns animations off, checks no app is
+// installed and saves the template snapshot. It holds the registry lock throughout and
+// refuses while any lease is live, so no instance runs from the AVD meanwhile.
+async function template({ recreate }) {
+  const created = createAvd();
+  const current = readJson(TEMPLATE);
+
+  if (current && !recreate) {
+    process.stdout.write(
+      `${JSON.stringify({ avd: HARNESS_AVD, created, template: current }, null, 2)}\n`
+    );
+
+    return;
+  }
+
+  mkdirSync(HOST_DIR, { recursive: true });
+  const snapshot = await withRegistry(async registry => {
+    if (registry.leases.length) {
+      throw new Error(
+        `TEMPLATE_BUSY: the template cannot be rebuilt while leases are live: ${registry.leases
+          .map(
+            lease =>
+              `slot ${lease.slot} by lease ${lease.id} from ${lease.root}`
+          )
+          .join('; ')}.`
+      );
+    }
+
+    return snapshotTemplate();
+  });
+
   process.stdout.write(
-    `${JSON.stringify({ avd: HARNESS_AVD, image: HARNESS_IMAGE, created: true }, null, 2)}\n`
+    `${JSON.stringify({ avd: HARNESS_AVD, image: HARNESS_IMAGE, created, template: snapshot }, null, 2)}\n`
   );
+}
+
+async function snapshotTemplate() {
+  const { consolePort, adbPort } = slotPorts(0);
+  const serial = `emulator-${consolePort}`;
+  const holders = [...listeningPids(consolePort), ...listeningPids(adbPort)];
+
+  if (holders.length) {
+    throw new Error(
+      `Ports ${consolePort}/${adbPort} are held by pid ${holders.join(', ')}; the template boots there.`
+    );
+  }
+
+  const args = [
+    '-avd',
+    HARNESS_AVD,
+    '-port',
+    String(consolePort),
+    '-wipe-data',
+    '-no-snapshot-load',
+    '-no-boot-anim'
+  ];
+
+  log(`booting ${HARNESS_AVD} writable as ${serial} to snapshot the template`);
+  const emulator = processIdentity(
+    startDetached('emulator', args, join(HOST_DIR, 'template.log')),
+    args
+  );
+
+  try {
+    await waitFor('the template emulator to boot', BOOT_TIMEOUT_MS, () => {
+      if (!isSameProcess(emulator)) {
+        throw new Error(
+          `The template emulator exited; see ${join(HOST_DIR, 'template.log')}.`
+        );
+      }
+
+      return (
+        avdName(serial) === HARNESS_AVD &&
+        tryAdb(serial, 'shell', 'getprop', 'sys.boot_completed').trim() === '1'
+      );
+    });
+
+    for (const scale of ANIMATION_SCALES) {
+      adb(serial, 'shell', 'settings', 'put', 'global', scale, '0');
+    }
+
+    if (tryAdb(serial, 'shell', 'pm', 'path', PACKAGE).trim()) {
+      throw new Error(`${PACKAGE} is installed on the wiped template.`);
+    }
+
+    adb(serial, 'emu', 'avd', 'snapshot', 'save', TEMPLATE_SNAPSHOT);
+  } finally {
+    if (isSameProcess(emulator) && avdName(serial) === HARNESS_AVD) {
+      tryAdb(serial, 'emu', 'kill');
+    }
+  }
+
+  await waitFor(
+    'the template emulator to exit',
+    BOOT_TIMEOUT_MS,
+    () => !isSameProcess(emulator)
+  );
+  const snapshot = {
+    snapshot: TEMPLATE_SNAPSHOT,
+    version: new Date().toISOString()
+  };
+
+  writeFileSync(TEMPLATE, `${JSON.stringify(snapshot, null, 2)}\n`);
+
+  return snapshot;
 }
 
 const sha256 = value =>
@@ -758,9 +873,22 @@ async function guarded(state, action, evidence, act) {
   });
 }
 
+const leaseToken = serial =>
+  tryAdb(serial, 'shell', 'getprop', LEASE_PROP).trim();
+
+// The emulator this lease launched: its process, the AVD its console reports and, for a
+// leased instance, the device lease token.
 const emulatorOwned = state =>
   isSameProcess(state.emulator?.process) &&
-  avdName(state.emulator.serial) === HARNESS_AVD;
+  avdName(state.emulator.serial) === HARNESS_AVD &&
+  (!state.lease || leaseToken(state.emulator.serial) === state.lease.id);
+
+// An instance whose start died before it set the token: its process, with the lease's argv
+// marker, still passes its identity check and no other lease's token is on the device.
+const untokenedEmulator = state =>
+  Boolean(state.lease) &&
+  isSameProcess(state.emulator?.process) &&
+  leaseToken(state.emulator.serial) === '';
 
 async function onOwnedEmulator(state, action, act) {
   if (!(await guarded(state, action, () => emulatorOwned(state), act))) {
@@ -897,6 +1025,10 @@ async function build() {
 // Installs the cached APK only when the installed APK differs from it.
 async function installDevBuild(state, apk) {
   const { serial } = state.emulator;
+
+  state.devBuild.foundInstalled = Boolean(
+    tryAdb(serial, 'shell', 'pm', 'path', PACKAGE).trim()
+  );
   const path = tryAdb(serial, 'shell', 'pm', 'path', PACKAGE).match(
     /^package:(\S*base\.apk)\s*$/m
   )?.[1];
@@ -918,16 +1050,25 @@ async function installDevBuild(state, apk) {
 async function bootEmulator(state) {
   // The serial is fixed by the slot's console port before boot, so no other device is ever
   // listed or called to find it.
-  const { consolePort, serial } = state.lease;
+  const { consolePort, serial, id } = state.lease;
+  // A read-only instance of the template, so leases never share writable data and each
+  // starts with fresh app data.
+  const marker = `${LEASE_PROP}=${id}`;
   const args = [
     '-avd',
     HARNESS_AVD,
     '-port',
     String(consolePort),
-    '-no-snapshot-save'
+    '-read-only',
+    '-snapshot',
+    TEMPLATE_SNAPSHOT,
+    '-no-snapshot-save',
+    '-no-boot-anim',
+    '-prop',
+    marker
   ];
 
-  log(`booting ${HARNESS_AVD} as ${serial}`);
+  log(`booting a read-only ${HARNESS_AVD} instance as ${serial}`);
   const pid = startDetached('emulator', args, join(DIR, 'emulator.log'));
 
   state.emulator = {
@@ -938,7 +1079,8 @@ async function bootEmulator(state) {
       '-avd',
       HARNESS_AVD,
       '-port',
-      String(consolePort)
+      String(consolePort),
+      marker
     ])
   };
   saveState(state);
@@ -961,11 +1103,21 @@ async function bootEmulator(state) {
     );
   }
 
+  // The device lease token, checked before any install, data clear or kill.
+  adb(serial, 'shell', 'setprop', LEASE_PROP, id);
+
   await waitFor(
     'the emulator to finish booting',
     BOOT_TIMEOUT_MS,
     () =>
       tryAdb(serial, 'shell', 'getprop', 'sys.boot_completed').trim() === '1'
+  );
+  // A snapshot boot reports boot completed before its network is up, and the dev client
+  // gives up on a host it cannot reach.
+  await waitFor('the emulator network to reach the host', BOOT_TIMEOUT_MS, () =>
+    tryAdb(serial, 'shell', 'ping', '-c', '1', '-W', '1', '10.0.2.2').includes(
+      ' 0% packet loss'
+    )
   );
 
   return serial;
@@ -1145,6 +1297,10 @@ async function startLease({ fresh, noBuild }) {
     recorded.running &&
     Object.values(observe(recorded)).every(value => value === 'running')
   ) {
+    if (fresh) {
+      await freshen(recorded);
+    }
+
     process.stdout.write(`${JSON.stringify(recorded, null, 2)}\n`);
 
     return;
@@ -1201,7 +1357,7 @@ async function startLease({ fresh, noBuild }) {
   saveState(state);
 
   try {
-    await bringUp(state, { fresh, noBuild });
+    await bringUp(state, { noBuild });
   } catch (error) {
     // Nothing of this lease runs yet, so the slot is freed at once.
     if (
@@ -1217,7 +1373,7 @@ async function startLease({ fresh, noBuild }) {
   }
 }
 
-async function bringUp(state, { fresh, noBuild }) {
+async function bringUp(state, { noBuild }) {
   const { key } = await devBuildKey();
   // A miss starts the build now, so it runs while the emulator boots.
   const { done, ...devBuildState } = devBuild(key, { noBuild });
@@ -1225,12 +1381,19 @@ async function bringUp(state, { fresh, noBuild }) {
   state.devBuild = devBuildState;
   saveState(state);
 
-  if (!listAvds().includes(HARNESS_AVD)) {
+  const template = readJson(TEMPLATE);
+
+  if (!listAvds().includes(HARNESS_AVD) || !template) {
     throw new Error(
-      `The harness emulator ${HARNESS_AVD} does not exist. Create it with \`pnpm run device:stack template\`, then rerun.`
+      `The harness emulator ${HARNESS_AVD} or its template snapshot does not exist. Create them with \`pnpm run device:stack template\`, then rerun.`
     );
   }
 
+  state.lease.templateVersion = template.version;
+  await updateLease(state.lease.id, lease => {
+    lease.templateVersion = template.version;
+  });
+  saveState(state);
   // Metro starts while the emulator boots.
   const metroReady = startMetro(state);
   const [serial] = await Promise.all([bootEmulator(state), metroReady]);
@@ -1251,15 +1414,32 @@ async function bringUp(state, { fresh, noBuild }) {
   };
   saveState(state);
 
-  if (fresh) {
-    log(`clearing app data for ${PACKAGE}`);
-    await onOwnedEmulator(state, 'clear data', () =>
-      adb(serial, 'shell', 'pm', 'clear', PACKAGE)
-    );
-  }
+  await openApp(state);
+  await finishOperation(state);
+  state.startScreen = true;
+  state.running = true;
+  saveState(state);
+  process.stdout.write(`${JSON.stringify(state, null, 2)}\n`);
+}
+
+const finishOperation = state =>
+  updateLease(state.lease.id, lease => {
+    if (!ownOperation(lease)) {
+      throw leaseLost(lease.id);
+    }
+
+    lease.operation = null;
+  });
+
+// Opens the app on the lease's Metro through the dev-client link, dismisses the dev-client
+// onboarding a fresh install shows, and waits for the Workout start screen.
+async function openApp(state) {
+  const { serial } = state.emulator;
 
   log('opening the app on the bundle');
-  const session = `liftlog-${process.pid}-${Date.now().toString(36)}`;
+  state.session ??= `liftlog-${process.pid}-${Date.now().toString(36)}`;
+  saveState(state);
+  const { session } = state;
   const device = (...args) => {
     assertLease();
 
@@ -1284,8 +1464,6 @@ async function bringUp(state, { fresh, noBuild }) {
     ]);
   };
 
-  state.session = session;
-  saveState(state);
   device(
     'open',
     PACKAGE,
@@ -1294,51 +1472,36 @@ async function bringUp(state, { fresh, noBuild }) {
     '--metro-port',
     String(state.port)
   );
-
-  if (fresh) {
-    // The launch can return before either the onboarding or Workout is visible.
-    const screen = await waitFor(
-      'dev-client onboarding or Workout',
-      OPEN_TIMEOUT_MS,
-      () => {
-        const snapshot = tryDevice('snapshot', '--raw', '--timeout', '5000');
-
-        failOnAppError(state, snapshot);
-
-        if (snapshot.includes('This is the developer menu.')) {
-          return 'onboarding';
-        }
-
-        return snapshot.includes(START_SCREEN_ID) ? 'workout' : null;
-      }
-    );
-
-    if (screen === 'onboarding') {
-      log('dev-client onboarding appeared; pressing Continue and Close');
-      device('press', 'label="Continue"', '--settle');
-      device('press', 'label="Close"');
-      log('dismissed dev-client onboarding');
-    }
-  }
+  let onboarded = false;
 
   await waitFor('the Workout start screen', OPEN_TIMEOUT_MS, () => {
     const snapshot = tryDevice('snapshot', '--raw', '--timeout', '5000');
 
     failOnAppError(state, snapshot);
 
-    return snapshot.includes(START_SCREEN_ID);
-  });
-  await updateLease(state.lease.id, lease => {
-    if (!ownOperation(lease)) {
-      throw leaseLost(lease.id);
+    if (!onboarded && snapshot.includes('This is the developer menu.')) {
+      log('dev-client onboarding appeared; pressing Continue and Close');
+      device('press', 'label="Continue"', '--settle');
+      device('press', 'label="Close"');
+      onboarded = true;
+
+      return false;
     }
 
-    lease.operation = null;
+    return snapshot.includes(START_SCREEN_ID);
   });
-  state.startScreen = true;
-  state.running = true;
-  saveState(state);
-  process.stdout.write(`${JSON.stringify(state, null, 2)}\n`);
+}
+
+// `start --fresh` on a running lease clears its app data and opens the app again.
+async function freshen(state) {
+  await claimOperation(state.lease.id, 'repair');
+  activeLease = state.lease.id;
+  log(`clearing app data for ${PACKAGE}`);
+  await onOwnedEmulator(state, 'clear data', () =>
+    adb(state.emulator.serial, 'shell', 'pm', 'clear', PACKAGE)
+  );
+  await openApp(state);
+  await finishOperation(state);
 }
 
 // What still runs, judged by identity checks rather than by the record alone.
@@ -1413,12 +1576,19 @@ async function stopComponents(state) {
   }
 
   if (state.emulator?.started) {
-    const killed = await guarded(
-      state,
-      'kill emulator',
-      () => emulatorOwned(state),
-      () => tryAdb(serial, 'emu', 'kill')
-    );
+    const killed =
+      (await guarded(
+        state,
+        'kill emulator',
+        () => emulatorOwned(state),
+        () => tryAdb(serial, 'emu', 'kill')
+      )) ||
+      (await guarded(
+        state,
+        'signal emulator',
+        () => untokenedEmulator(state),
+        () => stopGroup(state.emulator.process.pid)
+      ));
 
     (killed ? stopped : untrusted).push('emulator');
   }
@@ -1494,7 +1664,7 @@ try {
   } else if (command === 'stop') {
     await stop();
   } else if (command === 'template') {
-    template();
+    await template({ recreate: flags.includes('--recreate') });
   } else if (command === 'build-key') {
     await buildKey();
   } else if (command === 'build') {
@@ -1503,7 +1673,7 @@ try {
     await buildWorker(flags[0]);
   } else {
     throw new Error(
-      'Usage: pnpm run device:stack template | start [--fresh] [--no-build] | status | stop | build-key | build'
+      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | build-key | build'
     );
   }
 } catch (error) {

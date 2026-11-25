@@ -121,8 +121,11 @@ coordinates read off a screenshot. In order:
 
 1. **Start.** `pnpm run device:stack start` boots the harness emulator
    (`liftlog_harness_34`) while it starts the lease's own Metro, captures JS logs and
-   waits for the Workout start screen. Create the harness AVD once with
-   `pnpm run device:stack template`. `start` never calls `liftlog_audit_34`, another
+   waits for the Workout start screen. Create the harness AVD and its clean template
+   snapshot (no app, animations off) once with `pnpm run device:stack template`;
+   `template --recreate` rebuilds the snapshot and refuses while any lease is live. Each
+   lease boots a read-only instance of the template on its slot's ports, so a new lease
+   starts with fresh app data. `start` never calls `liftlog_audit_34`, another
    emulator or a phone, even when one is the only device online
    ([targeting invariants](adr/0008-device-stack-architecture.md#targeting-invariants)).
    Target every command you run at the serial and session that `status` prints:
@@ -133,8 +136,8 @@ coordinates read off a screenshot. In order:
    separate build. `pnpm run device:stack build` fills the cache without starting;
    `--no-build` fails a miss with `BUILD_MISSING`, and a failed build exits with
    `BUILD_FAILED` and the log path. Never install with `pnpm run android`: it targets the
-   first listed device and starts its own Metro. `--fresh`
-   clears app data so the dev seed runs again (new random IDs). `status` reports each
+   first listed device and starts its own Metro. `--fresh` on a running lease clears its
+   app data and reopens the app, so the dev seed runs again (new random IDs). `status` reports each
    recorded process `running` only while its PID, start time and argv still match
    ([ownership evidence](adr/0008-device-stack-architecture.md#ownership-evidence)).
    `start` leases an emulator slot first and fails with `CAPACITY`, naming the holders,
