@@ -35,7 +35,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 // serial and every agent-device call names it and this run's session. `status` reports which
 // recorded processes still pass their identity check; `stop` stops only what `start` started
 // and still passes that check, then releases the lease. `device <command> [args]` runs an
-// allowlisted agent-device command on this worktree's ready lease only. `build-key` prints
+// allowlisted agent-device command on this worktree's ready lease only; `open <path>` opens a
+// liftlog:// deep link there, `adb` runs an allowlisted adb subcommand on its serial and
+// `logs` prints a bounded tail of its JS or Metro log. `build-key` prints
 // the dev build key of this checkout and the hash of each input behind it.
 // The lease pointer, run state, logs and operation lock live in .device-stack/ at the checkout
 // root (the working directory); the dev build cache lives in the git common dir; the lease
@@ -91,6 +93,12 @@ const slotPorts = slot => ({
 // LogBox inspector titles of the errors that open a redbox.
 const REDBOX_TITLES = ['Uncaught Error', 'Syntax Error', 'Render Error'];
 const METRO_TAIL_LINES = 20;
+// The logcat tags the JS log keeps: JS output and native crashes.
+const JS_LOG_FILTER = ['ReactNativeJS:V', 'AndroidRuntime:E'];
+const DEFAULT_LOG_LINES = 50;
+const MAX_LOG_LINES = 500;
+// Deep links opened closer together drop the app to the dev launcher.
+const OPEN_INTERVAL_MS = 3000;
 // testID on the Workout start screen heading (WorkoutStartScreen).
 const START_SCREEN_ID = 'workout-start-screen';
 const BOOT_TIMEOUT_MS = 180_000;
@@ -1407,8 +1415,11 @@ async function bringUp(state, { noBuild }) {
   state.devBuild.installed = await installDevBuild(state, state.devBuild.apk);
   saveState(state);
 
+  // A fresh JS log per lease: JS output and native crashes from `start` onward.
   const jsLog = join(DIR, 'js.log');
-  const logArgs = ['-s', serial, 'logcat', '-T', '1', '-s', 'ReactNativeJS:V'];
+  const logArgs = ['-s', serial, 'logcat', '-T', '1', '-s', ...JS_LOG_FILTER];
+
+  writeFileSync(jsLog, '');
   const logPid = startDetached('adb', logArgs, jsLog);
 
   state.jsLogs = {
@@ -1826,8 +1837,7 @@ function checkDeviceCommand(command, args) {
   }
 }
 
-function device(command, args) {
-  checkDeviceCommand(command, args);
+function readyState() {
   const state = readState();
   const held = state?.lease && findLease(readRegistry(), state.lease.id);
 
@@ -1836,6 +1846,13 @@ function device(command, args) {
       'NO_LEASE: this worktree has no ready lease; run `pnpm run device:stack start` first.'
     );
   }
+
+  return state;
+}
+
+function device(command, args) {
+  checkDeviceCommand(command, args);
+  const state = readyState();
 
   // An explicit empty config, so neither the user nor the project config applies.
   const config = join(DIR, 'agent-device.json');
@@ -1882,6 +1899,157 @@ function device(command, args) {
   process.exitCode = status ?? 1;
 }
 
+// `open <path>` opens a liftlog:// deep link on the lease's emulator, waits for its activity
+// and spaces consecutive links by OPEN_INTERVAL_MS. The adb shell runs the command through
+// the device shell, so the link is single-quoted and a path with a quote or space refused.
+const LAST_OPEN = join(DIR, 'last-open');
+
+async function openLink(args) {
+  const [path] = args;
+
+  if (
+    args.length !== 1 ||
+    /[\s'\\]/.test(path) ||
+    /^[a-z][a-z0-9+.-]*:/i.test(path) ||
+    path.replace(/^\/+/, '').startsWith('expo-development-client')
+  ) {
+    throw refused(
+      `open takes a route map path such as workout/active, not ${JSON.stringify(path ?? '')}`
+    );
+  }
+
+  const state = readyState();
+  const link = `${expo.scheme}:///${path.replace(/^\/+/, '')}`;
+  const last = Number(existsSync(LAST_OPEN) && readFileSync(LAST_OPEN, 'utf8'));
+  const wait = last + OPEN_INTERVAL_MS - Date.now();
+
+  if (wait > 0) {
+    await sleep(wait);
+  }
+
+  const output = run('adb', [
+    '-s',
+    state.lease.serial,
+    'shell',
+    'am',
+    'start',
+    '-W',
+    '-a',
+    'android.intent.action.VIEW',
+    '-d',
+    `'${link}'`,
+    PACKAGE
+  ]);
+
+  // The next link waits from the moment this one finished opening.
+  writeFileSync(LAST_OPEN, String(Date.now()));
+
+  if (/^Error/m.test(output)) {
+    throw new Error(`opening ${link} failed: ${output.trim()}`);
+  }
+
+  log(`opened ${link}`);
+}
+
+// `adb <subcommand> [args]` runs adb on the lease's serial for reading the device only. It is
+// host-only and, like `device`, guards against misuse rather than being a security boundary.
+const ADB_COMMANDS = ['shell', 'exec-out', 'pull'];
+// Device commands that change what the lease is, run through shell or exec-out.
+const REFUSED_SHELL = [
+  /^reboot\b/,
+  /^su\b/,
+  /^setprop\b/,
+  /^svc\s+power\b/,
+  /^(pm|cmd\s+package)\s+(install|uninstall)/
+];
+
+function checkAdb(args) {
+  const [subcommand, ...rest] = args;
+
+  if (!ADB_COMMANDS.includes(subcommand)) {
+    throw refused(
+      `adb ${subcommand ?? ''} is not allowed; the allowed subcommands are ${ADB_COMMANDS.join(', ')}, and the lease selects the device`
+    );
+  }
+
+  if (subcommand === 'pull') {
+    return;
+  }
+
+  const shellCommands = rest
+    .join(' ')
+    .split(/;|&&|\|\||\||&|\n/)
+    .map(part => part.trim());
+  const blocked = shellCommands.find(part =>
+    REFUSED_SHELL.some(pattern => pattern.test(part))
+  );
+
+  if (blocked) {
+    throw refused(`adb ${subcommand} ${blocked} changes the lease's device`);
+  }
+}
+
+function adbCommand(args) {
+  checkAdb(args);
+  const state = readyState();
+  const { status, error } = spawnSync(
+    'adb',
+    ['-s', state.lease.serial, ...args],
+    { stdio: 'inherit' }
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  process.exitCode = status ?? 1;
+}
+
+// `logs [js|metro] [--lines N] [--grep re]` prints the last N matching lines of a lease log.
+function logs(args) {
+  let name = 'js';
+  let lines = DEFAULT_LOG_LINES;
+  let grep = null;
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+
+    if (arg === 'js' || arg === 'metro') {
+      name = arg;
+    } else if (arg === '--lines') {
+      lines = Number(args[(index += 1)]);
+    } else if (arg === '--grep') {
+      grep = new RegExp(args[(index += 1)] ?? '');
+    } else {
+      throw new Error(
+        'Usage: pnpm run device:stack logs [js|metro] [--lines N] [--grep re]'
+      );
+    }
+  }
+
+  if (!Number.isInteger(lines) || lines < 1 || lines > MAX_LOG_LINES) {
+    throw new Error(`--lines takes a whole number from 1 to ${MAX_LOG_LINES}.`);
+  }
+
+  const state = readState();
+  const path = state?.[name === 'js' ? 'jsLogs' : 'metro']?.log;
+
+  if (!state?.lease || !path) {
+    throw new Error(
+      'NO_LEASE: this worktree has no lease logs; run `pnpm run device:stack start` first.'
+    );
+  }
+
+  const matching = (existsSync(path) ? readFileSync(path, 'utf8') : '')
+    .split('\n')
+    .filter(Boolean)
+    .filter(line => !grep || grep.test(line));
+
+  for (const line of matching.slice(-lines)) {
+    process.stdout.write(`${line}\n`);
+  }
+}
+
 const [command, ...flags] = process.argv.slice(2);
 
 try {
@@ -1902,11 +2070,17 @@ try {
     await build();
   } else if (command === 'device') {
     device(flags[0], flags.slice(1));
+  } else if (command === 'open') {
+    await openLink(flags);
+  } else if (command === 'adb') {
+    adbCommand(flags);
+  } else if (command === 'logs') {
+    logs(flags);
   } else if (command === BUILD_WORKER) {
     await buildWorker(flags[0]);
   } else {
     throw new Error(
-      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | build-key | build'
+      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | open <path> | adb shell|exec-out|pull [args] | logs [js|metro] [--lines N] [--grep re] | build-key | build'
     );
   }
 } catch (error) {

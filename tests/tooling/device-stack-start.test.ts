@@ -37,7 +37,7 @@ test('start boots the harness emulator beside a phone and a foreign emulator, op
       `adb -s ${SERIAL} emu avd name`,
       `adb -s ${SERIAL} shell pm path ${PACKAGE}`,
       `pnpm exec expo start --dev-client --port ${port}`,
-      `adb -s ${SERIAL} logcat -T 1 -s ReactNativeJS:V`,
+      `adb -s ${SERIAL} logcat -T 1 -s ReactNativeJS:V AndroidRuntime:E`,
       `agent-device open ${PACKAGE} ${link(port)} --relaunch --metro-port ${port} ${target(session)}`,
       `agent-device snapshot --raw --timeout 5000 ${target(session)}`
     ])
@@ -50,7 +50,9 @@ test('start boots the harness emulator beside a phone and a foreign emulator, op
   expect(
     order.findIndex(call => call.startsWith('agent-device open'))
   ).toBeGreaterThan(
-    order.indexOf(`adb -s ${SERIAL} logcat -T 1 -s ReactNativeJS:V`)
+    order.indexOf(
+      `adb -s ${SERIAL} logcat -T 1 -s ReactNativeJS:V AndroidRuntime:E`
+    )
   );
   // Metro starts without CI, so reloads stay on.
   expect(calls.find(call => call.name === 'pnpm')?.ci).toBeNull();
@@ -94,6 +96,7 @@ test('start boots the harness emulator beside a phone and a foreign emulator, op
   expect(readFileSync(state.metro.log, 'utf8')).toContain(
     'fake metro listening'
   );
+  // Native crashes reach the JS log only through the AndroidRuntime tag in the filter above.
   expect(readFileSync(state.jsLogs.log, 'utf8')).toContain('ReactNativeJS');
 });
 

@@ -26,8 +26,10 @@ pastes into implementation sessions.
 3. **Find overlap.** Name the files and areas each issue touches from its body, the docs
    it cites, and `rg` for the components, repositories and strings it names. Issues
    sharing files, tests, native modules or docs run in one session, one after another.
-   Issues with no overlap may run in parallel sessions in separate git worktrees. Issues
-   that need a native rebuild or device checks share one session per device.
+   Issues with no overlap may run in parallel sessions in separate git worktrees. Each
+   session with device checks leases an emulator through `pnpm run device:stack start`
+   and reaches it only through `device:stack` commands; run no more such sessions at once
+   than the lease limit (one unless `~/.liftlog-device-stack/config.json` raises it).
 
 4. **Order each session.** Blockers first; then broken tests and bugs that would fail other
    issues' verification; then features, smallest first.

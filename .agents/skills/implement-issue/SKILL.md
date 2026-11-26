@@ -77,8 +77,8 @@ Work **lean** throughout:
    ```
 
    plus `tsc` and `eslint <changed files>` as relevant. Native changes need a fresh
-   native build before any device check. Run device checks with the `android-emulator`
-   or `agent-device` skill, following the
+   native build before any device check. Run device checks only through the
+   `pnpm run device:stack` commands (`device`, `open`, `adb`, `logs`) of the
    [device-check recipe](../../../docs/verification.md#recipe) and its route map.
    _Done when_ relevant tests and changed-file lint pass, and every device check is
    reviewed.
@@ -104,8 +104,10 @@ Work **lean** throughout:
    [evidence](../../../docs/verification.md#evidence) comment, read both back, then close
    per [tickets](../../../docs/tickets.md#closing). Attach reviewed
    screenshots with `gh issue comment --attach` when device checks are evidence, and
-   read back their links.
+   read back their links. If this run started a lease, release it with
+   `pnpm run device:stack stop`.
    _Done when_ the read-back shows every box ticked, the evidence comment cites the
-   pushed commit and includes any required screenshots, and the issue is closed.
+   pushed commit and includes any required screenshots, the issue is closed, and
+   `stop` has released any lease this run started.
 
 Report: what changed, what failed, what's next.

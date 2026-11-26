@@ -104,8 +104,8 @@ Conventions for the levels above; read this and the nearest example before writi
 
 ## Device checks
 
-Run the app on the harness emulator with the [recipe](#recipe) and the
-`android-emulator` or `agent-device` skill. A device check names the screen,
+Run the app on the harness emulator with the [recipe](#recipe), reaching the device
+only through its `pnpm run device:stack` commands. A device check names the screen,
 the steps and what must be visible, and its evidence is a reviewed screenshot or a
 short written observation. Native changes need a fresh native build before the check.
 
@@ -137,7 +137,11 @@ coordinates read off a screenshot. In order:
    app package and `liftlog://` app links, not dev-client links. Without a ready lease it
    exits with `NO_LEASE`. It guards against misuse and is not a security boundary
    ([ADR-0009](adr/0009-sandboxed-agents-reach-device-stacks-through-a-lease-broker.md)).
-   Target adb at the serial that `status` prints: `adb -s <serial>`. `start`
+   Run adb through `pnpm run device:stack adb <subcommand> [args]`: it runs only `shell`,
+   `exec-out` and `pull` on the lease's serial, and refuses device selection, install,
+   root, reboot, port forwarding, `emu` and server commands, plus `reboot`, `su`,
+   `setprop`, `svc power` and package install or uninstall inside `shell` and `exec-out`.
+   It is host-only. Never call `adb` or `agent-device` directly. `start`
    installs the dev build matching the checkout's dev build key from the dev build cache,
    only when the installed build differs; on a miss it builds it first from a freshly
    regenerated `android/` (log: `.device-stack/build.log`), so native changes need no
@@ -170,14 +174,16 @@ coordinates read off a screenshot. In order:
      fails `start` at once with the last Metro log lines.
 
 2. **Reach the screen** from the [route map](#route-map):
-   `adb -s <serial> shell am start -W -a android.intent.action.VIEW -d 'liftlog:///<path>' com.borakaraca94.liftlog`.
-   Pace links a few seconds apart; rapid `open <url>` calls drop the app to the dev
-   launcher. Confirm the screen with `pnpm run device:stack device snapshot -i`.
+   `pnpm run device:stack open <path>` opens `liftlog:///<path>` on the lease's emulator
+   and waits for its activity. It spaces consecutive links at least 3 s apart, since
+   rapid links drop the app to the dev launcher, and refuses full URLs, dev-client links,
+   quotes and spaces. The route renders shortly after the activity, so confirm the screen
+   with `pnpm run device:stack device wait text <title>` or `device snapshot -i`.
 3. **Prove style facts** through the React DevTools hook. A reviewed screenshot stays
    the evidence; this read backs it up wherever a style fact is the claim.
    `react-devtools get component` shows props but dehydrates nested `style` (`"{…}"`),
-   so read the host `Text` through CDP instead (see `agent-device help cdp`; the wrapper
-   points target discovery at the lease's Metro; pick the target where
+   so read the host `Text` through CDP instead (the wrapper points target discovery at
+   the lease's Metro; pick the target where
    `runtime eval --expr '1+1'` answers):
 
    ```sh
@@ -189,9 +195,11 @@ coordinates read off a screenshot. In order:
    Set `T` to the visible text; the result includes `fontFamily`
    (`InstrumentSans_700Bold` for the Workout heading).
 
-4. **Read the JS log** when an action has no visible effect: `.device-stack/js.log`
-   holds `ReactNativeJS` logcat output from `start` onward; read its tail for the
-   error or warning.
+4. **Read the logs** when an action has no visible effect or the app closes:
+   `pnpm run device:stack logs [js|metro] [--lines N] [--grep re]` prints the last N
+   matching lines (default 50, at most 500) of the lease's JS log, the default, or its
+   Metro log. The JS log holds `ReactNativeJS` output and `AndroidRuntime` native crashes
+   from `start` onward; each lease starts both logs empty.
 5. **Red proof on the base commit** for a new test, in a throwaway worktree so the
    checkout stays untouched. The worktree has no `node_modules`; link the checkout's
    and skip pnpm's dependency check, which would otherwise try to reinstall:
@@ -214,8 +222,9 @@ coordinates read off a screenshot. In order:
 ### Route map
 
 Paths from `src/app`; groups such as `(tabs)` drop out of the URL. Read IDs from the
-app database: `adb exec-out run-as com.borakaraca94.liftlog cat files/SQLite/<f>` for
-`workout.db`, `workout.db-wal` and `workout.db-shm` into one directory, then `sqlite3`.
+app database:
+`pnpm run -s device:stack adb exec-out run-as com.borakaraca94.liftlog cat files/SQLite/<f> > <dir>/<f>`
+for `workout.db`, `workout.db-wal` and `workout.db-shm`, then `sqlite3 <dir>/workout.db`.
 
 | Deep link path                                   | Screen                         | Needs                                                    |
 | ------------------------------------------------ | ------------------------------ | -------------------------------------------------------- |
