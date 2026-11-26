@@ -4,6 +4,7 @@ import {
   type InputProps
 } from '@/src/components/ui/input.shared';
 import { StyledBottomSheetTextInput } from '@/src/components/styled/bottom-sheet';
+import { appFonts } from '@/src/theme/fonts';
 import { forwardRef, type ComponentRef } from 'react';
 import type { TextInputProps } from 'react-native';
 
@@ -48,7 +49,11 @@ export const BottomSheetInput = forwardRef<
         invalid,
         multiline
       })}
-      style={[props.style, { includeFontPadding: false }]}
+      style={[
+        { fontFamily: appFonts.faces.regular },
+        props.style,
+        { includeFontPadding: false }
+      ]}
       textAlignVertical={multiline ? 'top' : 'center'}
       editable={behavior.editable}
       accessibilityState={behavior.accessibilityState}

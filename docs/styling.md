@@ -17,7 +17,7 @@ Read this when changing NativeWind classes, theme tokens, typography, inputs, or
 
 ## Inputs
 
-`Input` is a primitive. Its `className` styles the native text input directly, so give its size explicitly. Defaults are 12px horizontal and 4px vertical padding:
+`Input` and `BottomSheetInput` are primitives and own the default face, `appFonts.faces.regular`; pass another face through `style` `fontFamily`. Their `className` styles the native text input directly, so give its size explicitly. Defaults are 12px horizontal and 4px vertical padding:
 
 ```tsx
 <Input className="h-14" accessibilityLabel="Name" />
