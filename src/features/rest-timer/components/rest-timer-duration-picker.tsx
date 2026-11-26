@@ -17,9 +17,9 @@ interface RestTimerDurationPickerProps {
   minutes: number;
   seconds: number;
   className?: string;
-  onMinutesChanging: (value: number) => void;
+  onMinutesChanging?: (value: number) => void;
   onMinutesChange: (value: number) => void;
-  onSecondsChanging: (value: number) => void;
+  onSecondsChanging?: (value: number) => void;
   onSecondsChange: (value: number) => void;
 }
 
@@ -32,11 +32,11 @@ export function RestTimerDurationPicker({
   onSecondsChanging,
   onSecondsChange
 }: RestTimerDurationPickerProps) {
-  const handleMinuteChanging: NonNullable<
-    DrumPickerProps['onValueChanging']
-  > = ({ nativeEvent }) => {
-    onMinutesChanging(nativeEvent.index);
-  };
+  const handleMinuteChanging: DrumPickerProps['onValueChanging'] =
+    onMinutesChanging &&
+    (({ nativeEvent }) => {
+      onMinutesChanging(nativeEvent.index);
+    });
 
   const handleMinuteChange: NonNullable<DrumPickerProps['onChange']> = ({
     nativeEvent
@@ -44,11 +44,11 @@ export function RestTimerDurationPicker({
     onMinutesChange(nativeEvent.index);
   };
 
-  const handleSecondChanging: NonNullable<
-    DrumPickerProps['onValueChanging']
-  > = ({ nativeEvent }) => {
-    onSecondsChanging(nativeEvent.index);
-  };
+  const handleSecondChanging: DrumPickerProps['onValueChanging'] =
+    onSecondsChanging &&
+    (({ nativeEvent }) => {
+      onSecondsChanging(nativeEvent.index);
+    });
 
   const handleSecondChange: NonNullable<DrumPickerProps['onChange']> = ({
     nativeEvent

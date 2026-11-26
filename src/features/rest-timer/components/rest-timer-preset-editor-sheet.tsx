@@ -18,7 +18,7 @@ import {
 } from '@/src/features/rest-timer/rest-timer.store';
 import { getTimerParts } from '@/src/lib/utils/date.utils';
 import { SaveIcon, Trash2Icon, XIcon } from 'lucide-react-native';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 interface RestTimerPresetEditorSheetProps {
@@ -72,8 +72,6 @@ const RestTimerPresetEditorSheetContent = memo(
     const [name, setName] = useState('');
     const [minutes, setMinutes] = useState(0);
     const [seconds, setSeconds] = useState(0);
-    const minutesRef = useRef(0);
-    const secondsRef = useRef(0);
 
     useEffect(() => {
       if (!isOpen) {
@@ -84,8 +82,6 @@ const RestTimerPresetEditorSheetContent = memo(
       const nextTimerParts = getTimerParts(nextDuration);
 
       setName(preset?.name ?? '');
-      minutesRef.current = nextTimerParts.minutes;
-      secondsRef.current = nextTimerParts.seconds;
       setMinutes(nextTimerParts.minutes);
       setSeconds(nextTimerParts.seconds);
     }, [defaultDuration, isOpen, preset]);
@@ -103,23 +99,18 @@ const RestTimerPresetEditorSheetContent = memo(
       setName(nextName.slice(0, REST_TIMER_PRESET_NAME_MAX_LENGTH));
     }, []);
 
+    // Save reads the settled values that enable it. The native wheel reports a
+    // scroll to index 0 after its first layout, so live values are unreliable.
     const handleSave = useCallback(() => {
-      const selectedTotalSeconds = minutesRef.current * 60 + secondsRef.current;
-      const selectedName = name.trim();
-
-      if (
-        !selectedName ||
-        selectedTotalSeconds < MIN_REST_TIMER_SECONDS ||
-        selectedTotalSeconds > MAX_REST_TIMER_SECONDS
-      ) {
+      if (!canSave) {
         return;
       }
 
       onSave({
-        name: selectedName,
-        durationSeconds: selectedTotalSeconds
+        name: trimmedName,
+        durationSeconds: totalSeconds
       });
-    }, [name, onSave]);
+    }, [canSave, onSave, totalSeconds, trimmedName]);
 
     const handleDelete = useCallback(() => {
       if (!preset) {
@@ -129,21 +120,11 @@ const RestTimerPresetEditorSheetContent = memo(
       onDelete(preset);
     }, [onDelete, preset]);
 
-    const handleMinutesChanging = useCallback((value: number) => {
-      minutesRef.current = value;
-    }, []);
-
     const handleMinutesChange = useCallback((value: number) => {
-      minutesRef.current = value;
       setMinutes(value);
     }, []);
 
-    const handleSecondsChanging = useCallback((value: number) => {
-      secondsRef.current = value;
-    }, []);
-
     const handleSecondsChange = useCallback((value: number) => {
-      secondsRef.current = value;
       setSeconds(value);
     }, []);
 
@@ -184,9 +165,7 @@ const RestTimerPresetEditorSheetContent = memo(
             minutes={minutes}
             seconds={seconds}
             className="-mt-2"
-            onMinutesChanging={handleMinutesChanging}
             onMinutesChange={handleMinutesChange}
-            onSecondsChanging={handleSecondsChanging}
             onSecondsChange={handleSecondsChange}
           />
 
