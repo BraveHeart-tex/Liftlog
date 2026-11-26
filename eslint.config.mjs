@@ -4,6 +4,14 @@ import expoConfig from 'eslint-config-expo/flat.js';
 import unusedImports from 'eslint-plugin-unused-imports';
 import { defineConfig } from 'eslint/config';
 
+// react-native-css remounts a component whose active: rules appear or disappear.
+const conditionalActiveClass = {
+  selector:
+    "LogicalExpression[operator='&&'] > Literal.right[value=/(^|\\s)active:/]",
+  message:
+    "Give every branch an active: class, e.g. cond ? 'active:opacity-70' : 'active:opacity-100'; react-native-css remounts a component whose active: rules appear or disappear."
+};
+
 export default defineConfig([
   expoConfig,
   {
@@ -110,7 +118,8 @@ export default defineConfig([
         {
           selector: 'ImportNamespaceSpecifier',
           message: 'Use named imports instead of namespace imports.'
-        }
+        },
+        conditionalActiveClass
       ]
     }
   },
@@ -214,7 +223,8 @@ export default defineConfig([
           selector: 'ExportDefaultDeclaration',
           message:
             'Use named exports. Default exports are reserved for Expo Router screens, layouts, config files, and generated framework files.'
-        }
+        },
+        conditionalActiveClass
       ]
     }
   }
