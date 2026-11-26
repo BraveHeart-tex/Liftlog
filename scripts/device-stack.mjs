@@ -1939,6 +1939,112 @@ async function motion(args) {
   await finishOperation(state);
 }
 
+// `capture-press <label>` screenshots the one control with that accessibility label at rest
+// and while held, before the long press fires, and measures its width in both with
+// ImageMagick. The hold is shorter than the 500 ms long press and the screen is captured
+// after the press-in animation ends.
+const PRESS_HOLD_MS = 300;
+const PRESS_CAPTURE_S = '0.22';
+const DEVICE_SCREENSHOT = '/data/local/tmp/liftlog-capture-press.png';
+
+async function capturePress(args) {
+  const [label] = args;
+
+  if (args.length !== 1 || !label || label.startsWith('-')) {
+    throw new Error('Usage: pnpm run device:stack capture-press <label>');
+  }
+
+  const magick = findOnPath('magick');
+
+  if (!magick) {
+    throw new Error(
+      'capture-press measures widths with ImageMagick; install it (`brew install imagemagick`) so `magick` is on PATH.'
+    );
+  }
+
+  const state = await readyState();
+  const { serial } = state.lease;
+  const snapshot = run('agent-device', [
+    'snapshot',
+    '-i',
+    '--json',
+    '--platform',
+    'android',
+    '--serial',
+    serial,
+    '--session',
+    state.session
+  ]);
+  // A control is a hittable node; the text inside a button repeats its label but is not one.
+  const matches = JSON.parse(snapshot).data.nodes.filter(
+    node => node.hittable === true && node.label === label
+  );
+
+  if (matches.length !== 1) {
+    throw refused(
+      `capture-press needs exactly one control labeled ${JSON.stringify(label)}, and the snapshot has ${matches.length}`
+    );
+  }
+
+  const { x, y, width, height } = matches[0].rect;
+  const centerX = Math.round(x + width / 2);
+  const centerY = Math.round(y + height / 2);
+  const name = label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .slice(0, 48);
+  const stamp = Date.now();
+  const paths = {
+    rest: join(SCREENSHOTS, `press-${name}-${stamp}-rest.png`),
+    pressed: join(SCREENSHOTS, `press-${name}-${stamp}-pressed.png`)
+  };
+
+  mkdirSync(SCREENSHOTS, { recursive: true });
+  const capture = (shell, path) => {
+    run('adb', ['-s', serial, 'shell', shell]);
+    run('adb', ['-s', serial, 'pull', DEVICE_SCREENSHOT, path]);
+  };
+
+  capture(`screencap -p ${DEVICE_SCREENSHOT}`, paths.rest);
+  capture(
+    `input swipe ${centerX} ${centerY} ${centerX} ${centerY} ${PRESS_HOLD_MS} & sleep ${PRESS_CAPTURE_S}; screencap -p ${DEVICE_SCREENSHOT}; wait`,
+    paths.pressed
+  );
+  // The control's rect cropped and trimmed of its background: the width of what it draws.
+  const measure = path =>
+    Number(
+      run(magick, [
+        path,
+        '-crop',
+        `${Math.round(width)}x${Math.round(height)}+${Math.round(x)}+${Math.round(y)}`,
+        '+repage',
+        '-fuzz',
+        '6%',
+        '-trim',
+        '-format',
+        '%w',
+        'info:'
+      ]).trim()
+    );
+  const restWidth = measure(paths.rest);
+  const pressedWidth = measure(paths.pressed);
+
+  process.stdout.write(
+    `${JSON.stringify(
+      {
+        label,
+        rest: paths.rest,
+        pressed: paths.pressed,
+        restWidth,
+        pressedWidth,
+        ratio: Number((pressedWidth / restWidth).toFixed(3))
+      },
+      null,
+      2
+    )}\n`
+  );
+}
+
 // What still runs, judged by identity checks rather than by the record alone.
 function observe(state) {
   const observed = {};
@@ -2860,11 +2966,13 @@ try {
     logs(flags);
   } else if (command === 'motion') {
     await motion(flags);
+  } else if (command === 'capture-press') {
+    await capturePress(flags);
   } else if (command === BUILD_WORKER) {
     await buildWorker(flags[0]);
   } else {
     throw new Error(
-      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | open <path> | adb shell|exec-out|pull [args] | motion on|off | logs [js|metro] [--lines N] [--grep re] | gc [--dry-run] [--idle <minutes>] | list | broker | build-key | build'
+      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | open <path> | adb shell|exec-out|pull [args] | motion on|off | capture-press <label> | logs [js|metro] [--lines N] [--grep re] | gc [--dry-run] [--idle <minutes>] | list | broker | build-key | build'
     );
   }
 } catch (error) {

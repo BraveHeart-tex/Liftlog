@@ -124,6 +124,8 @@ if (name === 'emulator') {
   } else if (rest[0] === 'shell' && rest[1] === 'sha256sum') {
     const hash = require('node:crypto').createHash('sha256').update(state.installed).digest('hex')
     process.stdout.write(hash + '  ' + rest[2] + '\\n')
+  } else if (rest[0] === 'pull') {
+    writeFileSync(rest.at(-1), 'png')
   } else if (rest[0] === 'install') {
     update(s => { s.installed = readFileSync(rest.at(-1), 'utf8') })
   } else if (rest[0] === 'logcat') {
@@ -148,12 +150,17 @@ if (name === 'emulator') {
   }
 } else if (name === 'agent-device' && args[0] === 'press' && args[1] === 'label="Close"') {
   update(s => { s.onboarding = false })
+} else if (name === 'agent-device' && args[0] === 'snapshot' && args.includes('--json')) {
+  process.stdout.write(JSON.stringify({ success: true, data: { nodes: state.snapshotNodes ?? [] } }))
 } else if (name === 'agent-device' && args[0] === 'snapshot') {
   process.stdout.write(state.redbox
     ? 'Render Error\\nThis error is located at:'
     : state.onboarding
       ? 'This is the developer menu.\\nContinue'
       : 'workout-start-screen')
+} else if (name === 'magick') {
+  // The width of the control in the screenshot it measures.
+  process.stdout.write(String(state.widths[args[0].endsWith('-pressed.png') ? 'pressed' : 'rest']))
 } else if (name === 'pnpm' && args.includes('prebuild')) {
   const android = join(process.cwd(), 'android')
   mkdirSync(android, { recursive: true })
@@ -223,6 +230,13 @@ type FakeState = {
   // Boot completed checks that report a device still booting.
   bootChecks?: number;
   foreignMetro?: boolean;
+  // The nodes `snapshot -i --json` lists, and the widths the fake magick measures.
+  snapshotNodes?: {
+    label?: string;
+    hittable?: boolean | null;
+    rect: { x: number; y: number; width: number; height: number };
+  }[];
+  widths?: { rest: number; pressed: number };
   listeners: Listener[];
 };
 type Lease = {
@@ -315,6 +329,7 @@ function sharedFakes() {
 
   mkdirSync(bin);
   mkdirSync(join(fakes, 'gradle'));
+  mkdirSync(join(fakes, 'magick'));
   writeFileSync(fake, fakeImpl);
   writeFileSync(
     join(bin, 'java'),
@@ -333,7 +348,8 @@ function sharedFakes() {
       'avdmanager',
       'sbx'
     ].map(name => join(bin, name)),
-    join(fakes, 'gradle', 'gradlew')
+    join(fakes, 'gradle', 'gradlew'),
+    join(fakes, 'magick', 'magick')
   ]) {
     writeFileSync(
       path,
@@ -428,7 +444,9 @@ export async function harness(
     ...process.env,
     HOME: home,
     CI: '1',
-    PATH: `${join(fakes, 'bin')}${delimiter}${process.env.PATH}`,
+    PATH: [join(fakes, 'bin'), join(fakes, 'magick'), process.env.PATH].join(
+      delimiter
+    ),
     FAKE_STATE: statePath,
     FAKE_LOG: logPath,
     FAKE_METRO: join(dir, 'metro.js'),

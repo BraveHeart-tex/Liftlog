@@ -145,7 +145,15 @@ coordinates read off a screenshot. In order:
    `pnpm run device:stack motion on` first: the template turns animations off, which
    Reanimated reads as reduced motion. `motion on|off` sets the three animation scales to
    `1` or `0` on the lease's emulator and reopens the app on the lease's Metro, so the app
-   reads the new preference. Never call `adb` or `agent-device` directly; a sandboxed agent
+   reads the new preference. A check of a pressed state runs
+   `pnpm run device:stack capture-press <label>`: it finds the one hittable control with
+   that accessibility label in `device snapshot -i --json`, screenshots it at rest, holds
+   it 300 ms (under the 500 ms long press) and screenshots it mid-press, all on the lease's
+   serial, then prints both paths under `.device-stack/screenshots/` with the control's
+   rest and pressed widths in px and their ratio. The hold ends as a tap, so the control's
+   press action runs afterwards. It refuses a label matching no control or several, and
+   fails without ImageMagick: install it on the host (`brew install imagemagick`) so
+   `magick` is on PATH. Never call `adb` or `agent-device` directly; a sandboxed agent
    follows [sandboxed agents](#sandboxed-agents) instead. `start`
    installs the dev build matching the checkout's dev build key from the dev build cache,
    only when the installed build differs; on a miss it builds it first from a freshly

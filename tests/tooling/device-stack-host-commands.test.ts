@@ -1,4 +1,10 @@
-import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  appendFileSync,
+  existsSync,
+  readFileSync,
+  writeFileSync
+} from 'node:fs';
+import { delimiter, dirname, join } from 'node:path';
 import {
   PACKAGE,
   FOREIGN,
@@ -224,4 +230,90 @@ test('motion sets the three animation scales on the lease serial only and reopen
 
   runs.forEach(run => expect(run.status).toBe(1));
   expect(allCalls(logPath).slice(before)).toEqual([]);
+}, 30_000);
+
+// A screenshot after a held press landed after the long press had navigated, so no check
+// could see or measure a pressed state.
+test('capture-press holds the one control with the label and captures it on the lease serial only', async () => {
+  const rect = { x: 25, y: 743, width: 671, height: 115 };
+  const { stack, stackIn, root, env, logPath } = await harness({
+    snapshotNodes: [
+      { label: 'Bench Press, Chest', hittable: true, rect },
+      { label: 'Bench Press, Chest', hittable: null, rect },
+      { label: 'Go back', hittable: true, rect },
+      { label: 'Go back', hittable: true, rect }
+    ],
+    widths: { rest: 671, pressed: 651 }
+  });
+  const { session } = JSON.parse((await stack('start')).stdout);
+  const before = allCalls(logPath).length;
+
+  const run = await stack('capture-press', 'Bench Press, Chest');
+
+  expect(run.status).toBe(0);
+  const output = JSON.parse(run.stdout);
+  expect(output).toMatchObject({
+    restWidth: 671,
+    pressedWidth: 651,
+    ratio: 0.97
+  });
+  const screenshots = join(root, '.device-stack', 'screenshots');
+  expect(readFileSync(output.rest, 'utf8')).toBe('png');
+  expect(readFileSync(output.pressed, 'utf8')).toBe('png');
+  expect([output.rest, output.pressed].map(path => dirname(path))).toEqual([
+    screenshots,
+    screenshots
+  ]);
+  const calls = allCalls(logPath).slice(before);
+  const remote = '/data/local/tmp/liftlog-capture-press.png';
+  expect(commands(calls.filter(call => call.name === 'adb'))).toEqual([
+    `adb -s ${SERIAL} shell screencap -p ${remote}`,
+    `adb -s ${SERIAL} pull ${remote} ${output.rest}`,
+    `adb -s ${SERIAL} shell input swipe 361 801 361 801 300 & sleep 0.22; screencap -p ${remote}; wait`,
+    `adb -s ${SERIAL} pull ${remote} ${output.pressed}`
+  ]);
+  expect(
+    calls
+      .filter(call => call.name === 'magick')
+      .map(call => call.args.slice(1, 3))
+  ).toEqual([
+    ['-crop', '671x115+25+743'],
+    ['-crop', '671x115+25+743']
+  ]);
+  expectTargeted(calls, session);
+
+  const refusedBefore = allCalls(logPath).length;
+
+  for (const [label, count] of [
+    ['Squat', 0],
+    ['Go back', 2]
+  ] as const) {
+    const refused = await stack('capture-press', label);
+
+    expect(refused.status).toBe(1);
+    expect(refused.stderr).toContain(
+      `REFUSED: capture-press needs exactly one control labeled "${label}", and the snapshot has ${count}`
+    );
+  }
+
+  // Without ImageMagick it fails before touching the device.
+  const noMagick = await stackIn(
+    root,
+    ['capture-press', 'Go back'],
+    undefined,
+    {
+      PATH: (env.PATH ?? '')
+        .split(delimiter)
+        .filter(entry => !existsSync(join(entry, 'magick')))
+        .join(delimiter)
+    }
+  );
+
+  expect(noMagick.status).toBe(1);
+  expect(noMagick.stderr).toContain('ImageMagick');
+  expect(
+    allCalls(logPath)
+      .slice(refusedBefore)
+      .filter(call => call.name !== 'agent-device')
+  ).toEqual([]);
 }, 30_000);
