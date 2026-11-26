@@ -159,8 +159,11 @@ if (name === 'emulator') {
       ? 'This is the developer menu.\\nContinue'
       : 'workout-start-screen')
 } else if (name === 'magick') {
-  // The width of the control in the screenshot it measures.
-  process.stdout.write(String(state.widths[args[0].endsWith('-pressed.png') ? 'pressed' : 'rest']))
+  // One pass over the rest and pressed screenshots: writes the stacked crop, prints the
+  // differing fraction of the crop with its size, then the control's width in each.
+  writeFileSync(args[args.indexOf('-write') + 1], 'png')
+  const [w, h] = args[args.indexOf('-crop') + 1].split('+')[0].split('x').map(Number)
+  process.stdout.write((state.diffPixels ?? 0) / (w * h) + ' ' + w + ' ' + h + '\\n' + state.widths.rest + '\\n' + state.widths.pressed + '\\n')
 } else if (name === 'pnpm' && args.includes('prebuild')) {
   const android = join(process.cwd(), 'android')
   mkdirSync(android, { recursive: true })
@@ -230,13 +233,15 @@ type FakeState = {
   // Boot completed checks that report a device still booting.
   bootChecks?: number;
   foreignMetro?: boolean;
-  // The nodes `snapshot -i --json` lists, and the widths the fake magick measures.
+  // The nodes `snapshot -i --json` lists, and the widths and differing pixels the fake
+  // magick measures.
   snapshotNodes?: {
     label?: string;
     hittable?: boolean | null;
     rect: { x: number; y: number; width: number; height: number };
   }[];
   widths?: { rest: number; pressed: number };
+  diffPixels?: number;
   listeners: Listener[];
 };
 type Lease = {

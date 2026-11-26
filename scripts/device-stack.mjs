@@ -1984,9 +1984,10 @@ async function motion(args) {
 }
 
 // `capture-press <label>` screenshots the one control with that accessibility label at rest
-// and while held, before the long press fires, and measures its width in both with
-// ImageMagick. The hold is shorter than the 500 ms long press and the screen is captured
-// after the press-in animation ends.
+// and while held, before the long press fires, then crops both to its rect with ImageMagick
+// to stack them, count the pixels that differ and measure its width in each. The hold is
+// shorter than the 500 ms long press and the screen is captured after the press-in
+// animation ends.
 const PRESS_HOLD_MS = 300;
 const PRESS_CAPTURE_S = '0.22';
 const DEVICE_SCREENSHOT = '/data/local/tmp/liftlog-capture-press.png';
@@ -2040,7 +2041,8 @@ async function capturePress(args) {
   const stamp = Date.now();
   const paths = {
     rest: join(SCREENSHOTS, `press-${name}-${stamp}-rest.png`),
-    pressed: join(SCREENSHOTS, `press-${name}-${stamp}-pressed.png`)
+    pressed: join(SCREENSHOTS, `press-${name}-${stamp}-pressed.png`),
+    stacked: join(SCREENSHOTS, `press-${name}-${stamp}-stacked.png`)
   };
 
   mkdirSync(SCREENSHOTS, { recursive: true });
@@ -2054,24 +2056,49 @@ async function capturePress(args) {
     `input swipe ${centerX} ${centerY} ${centerX} ${centerY} ${PRESS_HOLD_MS} & sleep ${PRESS_CAPTURE_S}; screencap -p ${DEVICE_SCREENSHOT}; wait`,
     paths.pressed
   );
-  // The control's rect cropped and trimmed of its background: the width of what it draws.
-  const measure = path =>
-    Number(
-      run(magick, [
-        path,
-        '-crop',
-        `${Math.round(width)}x${Math.round(height)}+${Math.round(x)}+${Math.round(y)}`,
-        '+repage',
-        '-fuzz',
-        '6%',
-        '-trim',
-        '-format',
-        '%w',
-        'info:'
-      ]).trim()
-    );
-  const restWidth = measure(paths.rest);
-  const pressedWidth = measure(paths.pressed);
+  // One pass decodes both screenshots once: their crops to the control's rect are stacked
+  // rest over pressed, compared at the trim's fuzz, then trimmed of their background to the
+  // width of what the control draws. AE distortion is the differing fraction of the crop.
+  const [comparison, restTrim, pressedTrim] = run(magick, [
+    paths.rest,
+    paths.pressed,
+    '-crop',
+    `${Math.round(width)}x${Math.round(height)}+${Math.round(x)}+${Math.round(y)}`,
+    '+repage',
+    '-fuzz',
+    '6%',
+    '(',
+    '-clone',
+    '0,1',
+    '-append',
+    '-write',
+    paths.stacked,
+    '+delete',
+    ')',
+    '(',
+    '-clone',
+    '0,1',
+    '-metric',
+    'AE',
+    '-compare',
+    '-format',
+    '%[distortion] %w %h\n',
+    '-write',
+    'info:',
+    '+delete',
+    ')',
+    '-trim',
+    '-format',
+    '%w\n',
+    'info:'
+  ])
+    .trim()
+    .split('\n');
+  const [distortion, cropWidth, cropHeight] = comparison.split(' ').map(Number);
+  const diffPixels = Math.round(distortion * cropWidth * cropHeight);
+  const restWidth = Number(restTrim);
+  const pressedWidth = Number(pressedTrim);
+  const ratio = Number((pressedWidth / restWidth).toFixed(3));
 
   process.stdout.write(
     `${JSON.stringify(
@@ -2079,9 +2106,13 @@ async function capturePress(args) {
         label,
         rest: paths.rest,
         pressed: paths.pressed,
+        stacked: paths.stacked,
         restWidth,
         pressedWidth,
-        ratio: Number((pressedWidth / restWidth).toFixed(3))
+        ratio,
+        diffPixels,
+        // Neither size nor pixels changed: the press may not have registered.
+        ...(ratio === 1 && diffPixels === 0 && { unchanged: true })
       },
       null,
       2

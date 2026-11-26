@@ -246,17 +246,19 @@ test('motion sets the three animation scales on the lease serial only and reopen
 }, 30_000);
 
 // A screenshot after a held press landed after the long press had navigated, so no check
-// could see or measure a pressed state.
-test('capture-press holds the one control with the label and captures it on the lease serial only', async () => {
+// could see or measure a pressed state. A dim without scale read ratio 1, the same as a press
+// that never registered, so the crops were stacked and compared by hand.
+test('capture-press holds the one control with the label, stacks and compares its crops, on the lease serial only', async () => {
   const rect = { x: 25, y: 743, width: 671, height: 115 };
-  const { stack, stackIn, root, env, logPath } = await harness({
+  const { stack, stackIn, root, env, logPath, editFake } = await harness({
     snapshotNodes: [
       { label: 'Bench Press, Chest', hittable: true, rect },
       { label: 'Bench Press, Chest', hittable: null, rect },
       { label: 'Go back', hittable: true, rect },
       { label: 'Go back', hittable: true, rect }
     ],
-    widths: { rest: 671, pressed: 651 }
+    widths: { rest: 671, pressed: 651 },
+    diffPixels: 3120
   });
   const { session } = JSON.parse((await stack('start')).stdout);
   const before = allCalls(logPath).length;
@@ -268,15 +270,16 @@ test('capture-press holds the one control with the label and captures it on the 
   expect(output).toMatchObject({
     restWidth: 671,
     pressedWidth: 651,
-    ratio: 0.97
+    ratio: 0.97,
+    diffPixels: 3120
   });
+  expect(output).not.toHaveProperty('unchanged');
   const screenshots = join(root, '.device-stack', 'screenshots');
-  expect(readFileSync(output.rest, 'utf8')).toBe('png');
-  expect(readFileSync(output.pressed, 'utf8')).toBe('png');
-  expect([output.rest, output.pressed].map(path => dirname(path))).toEqual([
-    screenshots,
-    screenshots
-  ]);
+  const images = [output.rest, output.pressed, output.stacked];
+  images.forEach(path => expect(readFileSync(path, 'utf8')).toBe('png'));
+  expect(images.map(path => dirname(path))).toEqual(
+    images.map(() => screenshots)
+  );
   const calls = allCalls(logPath).slice(before);
   const remote = '/data/local/tmp/liftlog-capture-press.png';
   expect(commands(calls.filter(call => call.name === 'adb'))).toEqual([
@@ -285,15 +288,31 @@ test('capture-press holds the one control with the label and captures it on the 
     `adb -s ${SERIAL} shell input swipe 361 801 361 801 300 & sleep 0.22; screencap -p ${remote}; wait`,
     `adb -s ${SERIAL} pull ${remote} ${output.pressed}`
   ]);
-  expect(
-    calls
-      .filter(call => call.name === 'magick')
-      .map(call => call.args.slice(1, 3))
-  ).toEqual([
-    ['-crop', '671x115+25+743'],
-    ['-crop', '671x115+25+743']
+  // One magick pass crops both screenshots to the control and writes the stacked crop.
+  const magick = calls.filter(call => call.name === 'magick');
+  expect(magick.map(call => call.args.slice(0, 4))).toEqual([
+    [output.rest, output.pressed, '-crop', '671x115+25+743']
   ]);
+  expect(magick[0].args).toContain(output.stacked);
   expectTargeted(calls, session);
+
+  // A dim without scale changes pixels only; nothing changed at all is flagged, still exit 0.
+  for (const [diffPixels, unchanged] of [
+    [412, undefined],
+    [0, true]
+  ] as const) {
+    editFake(state => {
+      state.widths = { rest: 671, pressed: 671 };
+      state.diffPixels = diffPixels;
+    });
+
+    const same = await stack('capture-press', 'Bench Press, Chest');
+
+    expect(same.status).toBe(0);
+    const sameOutput = JSON.parse(same.stdout);
+    expect(sameOutput).toMatchObject({ ratio: 1, diffPixels });
+    expect(sameOutput.unchanged).toBe(unchanged);
+  }
 
   const refusedBefore = allCalls(logPath).length;
 

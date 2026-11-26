@@ -152,8 +152,14 @@ coordinates read off a screenshot. In order:
    `pnpm run device:stack capture-press <label>`: it finds the one hittable control with
    that accessibility label in `device snapshot -i --json`, screenshots it at rest, holds
    it 300 ms (under the 500 ms long press) and screenshots it mid-press, all on the lease's
-   serial, then prints both paths under `.device-stack/screenshots/` with the control's
-   rest and pressed widths in px and their ratio. The hold ends as a tap, so the control's
+   serial. In one ImageMagick pass it crops both screenshots to the control's bounds and
+   prints, with both paths under `.device-stack/screenshots/`: `stacked`, the rest crop
+   over the pressed crop, attachable as evidence as is; the control's rest and pressed
+   widths in px and their `ratio`; and `diffPixels`, the pixels differing between the
+   crops at the width trim's 6% fuzz. A capture with `ratio` 1 and `diffPixels` 0 adds
+   `unchanged: true`, still exiting 0: neither size nor pixels changed, so the press may
+   not have registered. A dim without scale reads `ratio` 1 with nonzero `diffPixels`.
+   The hold ends as a tap, so the control's
    press action runs afterwards. It refuses a label matching no control or several, and
    fails without ImageMagick: install it on the host (`brew install imagemagick`) so
    `magick` is on PATH. Never call `adb` or `agent-device` directly; a sandboxed agent
