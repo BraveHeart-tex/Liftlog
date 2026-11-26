@@ -1,14 +1,9 @@
+import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { Text } from '@/src/components/ui/text';
 import type { ExerciseListItem } from '@/src/features/exercises/exercise.repository';
-import { usePressScale } from '@/src/lib/animations/use-press-scale.hook';
 import { cn } from '@/src/lib/utils/cn.utils';
 import type { ReactNode } from 'react';
-import {
-  Animated,
-  Pressable,
-  View,
-  type AccessibilityState
-} from 'react-native';
+import { View, type AccessibilityState } from 'react-native';
 
 interface ExerciseRowProps {
   exercise: ExerciseListItem;
@@ -31,34 +26,27 @@ export function ExerciseRow({
   titleClassName,
   rightAccessory
 }: ExerciseRowProps) {
-  const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale();
-
   return (
-    <Animated.View style={scaleStyle}>
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => !disabled && onPress(exercise)}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
-        disabled={disabled}
-        accessibilityState={accessibilityState}
-        className={cn(
-          'border-border flex-row items-center justify-between border-b py-4',
-          className,
-          pressed && !disabled && 'opacity-70'
-        )}
-      >
-        <View className="flex-1 pr-4">
-          <Text variant="bodyMedium" className={titleClassName}>
-            {exercise.name}
-          </Text>
-          <Text variant="small" tone="muted" className="mt-0.5">
-            {subtitle}
-          </Text>
-        </View>
+    <PressableSurface
+      onPress={() => onPress(exercise)}
+      disabled={disabled}
+      accessibilityState={accessibilityState}
+      className={cn(
+        'border-border flex-row items-center justify-between border-b py-4',
+        className
+      )}
+      pressedClassName="opacity-70"
+    >
+      <View className="flex-1 pr-4">
+        <Text variant="bodyMedium" className={titleClassName}>
+          {exercise.name}
+        </Text>
+        <Text variant="small" tone="muted" className="mt-0.5">
+          {subtitle}
+        </Text>
+      </View>
 
-        {rightAccessory}
-      </Pressable>
-    </Animated.View>
+      {rightAccessory}
+    </PressableSurface>
   );
 }

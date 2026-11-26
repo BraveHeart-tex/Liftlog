@@ -1,47 +1,80 @@
-import { usePressScale } from '@/src/lib/animations/use-press-scale.hook';
-import {
-  triggerHapticImpact,
-  triggerHapticSelection
-} from '@/src/lib/haptics/haptics';
+import { MOTION_DURATION_MS } from '@/src/lib/animations/motion.constants';
+import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
 import { cn } from '@/src/lib/utils/cn.utils';
-import { ImpactFeedbackStyle } from 'expo-haptics';
-import type { ComponentPropsWithoutRef, ReactNode } from 'react';
-import { Animated, Pressable, type GestureResponderEvent } from 'react-native';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ComponentPropsWithoutRef,
+  type ReactNode
+} from 'react';
+import {
+  Animated,
+  Easing,
+  Pressable,
+  type GestureResponderEvent
+} from 'react-native';
 
 type NativePressableProps = Omit<
   ComponentPropsWithoutRef<typeof Pressable>,
   'className' | 'children'
 >;
 
-export type HapticFeedback = 'selection' | 'light' | 'medium' | 'heavy';
-
 export interface PressableSurfaceProps extends NativePressableProps {
   children: ReactNode;
   containerClassName?: string;
   className?: string;
   pressedClassName?: string;
-  disabledClassName?: string;
-  hapticFeedback?: HapticFeedback;
   pressedScale?: number;
 }
 
-const impactFeedbackStyles: Record<
-  Exclude<HapticFeedback, 'selection'>,
-  ImpactFeedbackStyle
-> = {
-  light: ImpactFeedbackStyle.Light,
-  medium: ImpactFeedbackStyle.Medium,
-  heavy: ImpactFeedbackStyle.Heavy
-};
+const DEFAULT_PRESSED_SCALE = 0.97;
+const PRESS_EASING = Easing.bezier(0.23, 1, 0.32, 1);
 
-function triggerHapticFeedback(hapticFeedback: HapticFeedback) {
-  if (hapticFeedback === 'selection') {
-    triggerHapticSelection();
+function usePressScale(pressedScale: number) {
+  const reduceMotion = useReducedMotion();
+  const [pressed, setPressed] = useState(false);
+  const scale = useRef(new Animated.Value(1)).current;
 
-    return;
-  }
+  useEffect(() => {
+    if (reduceMotion) {
+      scale.stopAnimation();
+      scale.setValue(1);
+    }
 
-  triggerHapticImpact(impactFeedbackStyles[hapticFeedback]);
+    return () => scale.stopAnimation();
+  }, [reduceMotion, scale]);
+
+  const animateScale = (toValue: number, duration: number) => {
+    if (reduceMotion) {
+      scale.stopAnimation();
+      scale.setValue(1);
+
+      return;
+    }
+
+    Animated.timing(scale, {
+      toValue,
+      duration,
+      easing: PRESS_EASING,
+      useNativeDriver: true
+    }).start();
+  };
+
+  return {
+    pressed,
+    scaleStyle: {
+      transform: [{ scale }]
+    },
+    scaleIn: () => {
+      setPressed(true);
+      animateScale(pressedScale, MOTION_DURATION_MS.pressIn);
+    },
+    scaleOut: () => {
+      setPressed(false);
+      animateScale(1, MOTION_DURATION_MS.pressOut);
+    }
+  };
 }
 
 export function PressableSurface({
@@ -49,10 +82,8 @@ export function PressableSurface({
   containerClassName,
   className,
   pressedClassName = 'opacity-80',
-  disabledClassName = 'opacity-50',
   disabled = false,
-  hapticFeedback,
-  pressedScale,
+  pressedScale = DEFAULT_PRESSED_SCALE,
   accessibilityRole = 'button',
   accessibilityState,
   onPressIn,
@@ -60,20 +91,12 @@ export function PressableSurface({
   ...props
 }: PressableSurfaceProps) {
   const isDisabled = Boolean(disabled);
-  const {
-    pressed,
-    scaleStyle,
-    onPressIn: scaleIn,
-    onPressOut: scaleOut
-  } = usePressScale({ pressedScale });
+  const { pressed, scaleStyle, scaleIn, scaleOut } =
+    usePressScale(pressedScale);
 
   const handlePressIn = (event: GestureResponderEvent) => {
     if (isDisabled) {
       return;
-    }
-
-    if (hapticFeedback) {
-      triggerHapticFeedback(hapticFeedback);
     }
 
     scaleIn();
@@ -92,7 +115,7 @@ export function PressableSurface({
         accessibilityState={{ ...accessibilityState, disabled: isDisabled }}
         className={cn(
           className,
-          isDisabled && disabledClassName,
+          isDisabled && 'opacity-50',
           pressed && !isDisabled && pressedClassName
         )}
         disabled={isDisabled}

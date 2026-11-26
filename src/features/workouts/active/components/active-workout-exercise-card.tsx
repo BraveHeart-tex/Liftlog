@@ -1,14 +1,14 @@
 import { Icon } from '@/src/components/ui/icon';
+import { PressableSurface } from '@/src/components/ui/pressable-surface';
 import { resolveTrackingType } from '@/src/features/progress/tracking.domain';
 import type { WorkoutExerciseWithSets } from '@/src/features/workouts/shared/workout-components.types';
 import { WorkoutExerciseSummary } from '@/src/features/workouts/shared/components/workout-exercise-summary';
-import { usePressScale } from '@/src/lib/animations/use-press-scale.hook';
 import { cn } from '@/src/lib/utils/cn.utils';
 import type { WeightUnit } from '@/src/lib/utils/weight.utils';
 import { iconSizes } from '@/src/theme/sizes';
 import { router } from 'expo-router';
 import { ChevronRightIcon } from 'lucide-react-native';
-import { Animated, Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 interface ActiveWorkoutExerciseCardProps {
   item: WorkoutExerciseWithSets;
@@ -47,19 +47,10 @@ export function ActiveWorkoutExerciseCard({
   pressable = true
 }: ActiveWorkoutExerciseCardProps) {
   const isGrouped = variant === 'grouped';
-  const { pressed, scaleStyle, onPressIn, onPressOut } = usePressScale({
-    pressedScale: isGrouped ? 1 : undefined
-  });
-
   const completedSets = item.sets.filter(set => set.status === 'completed');
   const exerciseName = item.exercise?.name ?? 'Unknown exercise';
   const content = isGrouped ? (
-    <View
-      className={cn(
-        'flex-row items-center gap-3 py-3',
-        pressed && 'bg-secondary'
-      )}
-    >
+    <View className="flex-row items-center gap-3 py-3">
       <WorkoutExerciseSummary
         exerciseName={exerciseName}
         completedSets={completedSets}
@@ -71,7 +62,7 @@ export function ActiveWorkoutExerciseCard({
       <Icon as={ChevronRightIcon} size={iconSizes.md} tone="mutedForeground" />
     </View>
   ) : (
-    <View className={cn('bg-card', pressed && 'opacity-80')}>
+    <View className="bg-card">
       <WorkoutExerciseSummary
         exerciseName={exerciseName}
         completedSets={completedSets}
@@ -83,30 +74,27 @@ export function ActiveWorkoutExerciseCard({
     </View>
   );
 
+  const containerClassName = cn(
+    isGrouped
+      ? 'bg-transparent'
+      : 'border-border bg-card overflow-hidden rounded-lg border',
+    className
+  );
+
+  if (!pressable) {
+    return <View className={containerClassName}>{content}</View>;
+  }
+
   return (
-    <Animated.View
-      style={scaleStyle}
-      className={cn(
-        isGrouped
-          ? 'bg-transparent'
-          : 'border-border bg-card overflow-hidden rounded-lg border',
-        className
-      )}
+    <PressableSurface
+      containerClassName={containerClassName}
+      pressedClassName={isGrouped ? 'bg-secondary' : 'opacity-80'}
+      pressedScale={isGrouped ? 1 : undefined}
+      accessibilityLabel={exerciseName}
+      onPress={() => navigateToWorkoutExercise(item, mode)}
+      onLongPress={onLongPress}
     >
-      {pressable ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={exerciseName}
-          onPress={() => navigateToWorkoutExercise(item, mode)}
-          onPressIn={onPressIn}
-          onPressOut={onPressOut}
-          onLongPress={onLongPress}
-        >
-          {content}
-        </Pressable>
-      ) : (
-        content
-      )}
-    </Animated.View>
+      {content}
+    </PressableSurface>
   );
 }
