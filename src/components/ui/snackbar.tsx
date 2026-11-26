@@ -22,11 +22,11 @@ import {
 } from 'react-native';
 import Reanimated, {
   Easing as ReanimatedEasing,
-  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming
 } from 'react-native-reanimated';
+import { runOnJS } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
 
@@ -217,14 +217,13 @@ function resetSnackbarDrag(dragY: Animated.Value, reduceMotion: boolean) {
 
 export function SnackbarHost() {
   const insets = useSafeAreaInsets();
-  const reduceMotion = useReducedMotion() ?? false;
+  const reduceMotion = useReducedMotion();
   const message = useSnackbarStore(state => state.message);
   const dismissSnackbar = useSnackbarStore(state => state.dismissSnackbar);
   const dismissSnackbarForId = useSnackbarStore(
     state => state.dismissSnackbarForId
   );
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const [snackbarHeight, setSnackbarHeight] = useState(0);
   const [isActionPending, setIsActionPending] = useState(false);
   const [renderedMessage, setRenderedMessage] =
     useState<SnackbarMessage | null>(message);
@@ -335,7 +334,6 @@ export function SnackbarHost() {
         if (shouldDismiss) {
           const effectiveHeight = Math.max(
             snackbarHeightRef.current,
-            snackbarHeight,
             SNACKBAR_FALLBACK_HEIGHT
           );
 
@@ -545,10 +543,7 @@ export function SnackbarHost() {
           <Reanimated.View style={lifecycleAnimatedStyle}>
             <View
               onLayout={event => {
-                const height = event.nativeEvent.layout.height;
-
-                snackbarHeightRef.current = height;
-                setSnackbarHeight(height);
+                snackbarHeightRef.current = event.nativeEvent.layout.height;
               }}
               accessibilityLiveRegion={isUrgent ? 'assertive' : 'polite'}
               accessibilityRole={isUrgent ? 'alert' : undefined}

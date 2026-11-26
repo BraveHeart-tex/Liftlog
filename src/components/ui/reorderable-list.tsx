@@ -6,7 +6,7 @@ import {
   type ReactElement,
   type ReactNode
 } from 'react';
-import { runOnJS } from 'react-native-reanimated';
+import { runOnJS } from 'react-native-worklets';
 import ReorderableListBase, {
   reorderItems,
   useIsActive,
