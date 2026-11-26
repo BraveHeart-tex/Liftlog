@@ -221,12 +221,29 @@ coordinates read off a screenshot. In order:
    Set `T` to the visible text; the result includes `fontFamily`
    (`InstrumentSans_700Bold` for the Workout heading).
 
-4. **Read the logs** when an action has no visible effect or the app closes:
+4. **Prove accessibility facts** from two sources, since the snapshot lists views hidden
+   from screen readers. A role fact (heading, button) comes from
+   `pnpm run device:stack device snapshot --raw`, which reports it per node:
+   `"heading": true` on a sheet title, `kind` on a button. Hidden-ness
+   (`importantForAccessibility="no-hide-descendants"`) comes from a compressed
+   uiautomator dump, which leaves hidden views out. The dump is killed while an
+   agent-device session is open, so close the session first and reopen the app after:
+
+   ```sh
+   pnpm run device:stack device close
+   pnpm run device:stack adb shell 'uiautomator dump --compressed /sdcard/a11y.xml'
+   pnpm run device:stack adb exec-out cat /sdcard/a11y.xml
+   pnpm run device:stack device open com.borakaraca94.liftlog
+   ```
+
+   A hidden view's text is absent from the dump.
+
+5. **Read the logs** when an action has no visible effect or the app closes:
    `pnpm run device:stack logs [js|metro] [--lines N] [--grep re]` prints the last N
    matching lines (default 50, at most 500) of the lease's JS log, the default, or its
    Metro log. The JS log holds `ReactNativeJS` output and `AndroidRuntime` native crashes
    from `start` onward; each lease starts both logs empty.
-5. **Red proof on the base commit** for a new test, in a throwaway worktree so the
+6. **Red proof on the base commit** for a new test, in a throwaway worktree so the
    checkout stays untouched. The worktree has no `node_modules`; link the checkout's
    and skip pnpm's dependency check, which would otherwise try to reinstall:
 
@@ -241,7 +258,7 @@ coordinates read off a screenshot. In order:
 
    The test must fail there; `git status` in the checkout is unchanged afterwards.
 
-6. **Stop.** `pnpm run device:stack stop` closes the session and stops only what `start`
+7. **Stop.** `pnpm run device:stack stop` closes the session and stops only what `start`
    started and still passes its identity check; anything that fails it is listed as
    `untrusted` and left running.
 
