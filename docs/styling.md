@@ -12,6 +12,7 @@ Read this when changing NativeWind classes, theme tokens, typography, inputs, or
 - NativeWind is preview-versioned: use `styled(...)`; do not use `remapProps` or `cssInterop`.
 - Use NativeWind safe-area utilities for static padding. Use numeric insets only for calculations or native/third-party props that require numbers. Screen and bottom-sheet offsets are defined in [`layout.md`](layout.md) and [`bottom-sheet.md`](bottom-sheet.md).
 - Use raw theme tokens only for native or third-party props that cannot consume classes.
+- JavaScript theme colors are generated from the `.theme-light` and `.theme-dark` `--color-*` tokens in `global.css` into `src/theme/colors.generated.ts`. Change a color in `global.css` and run `pnpm run theme:generate`; never edit the generated file.
 - Keep line-height local to typography classes; React Native treats line height as layout height, so do not add global `lineHeight` tokens.
 
 ## Inputs

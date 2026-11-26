@@ -1,39 +1,8 @@
+import { themeColors } from '@/src/theme/colors.generated';
+
 export type AppColorScheme = 'light' | 'dark';
 
-const colorSchemes = {
-  light: {
-    background: '#F2EDE8',
-    foreground: '#1A1512',
-    card: '#FFFFFF',
-    primary: '#FF4D00',
-    primaryForeground: '#FFFFFF',
-    secondary: '#EDE8E2',
-    secondaryForeground: '#3A3330',
-    accent: '#FF4D00',
-    accentForeground: '#FFFFFF',
-    border: '#DDD8D2',
-    muted: '#EDE8E2',
-    mutedForeground: '#6B6460',
-    info: '#0070C0',
-    danger: '#C41535'
-  },
-  dark: {
-    background: '#1A1917',
-    foreground: '#F0ECE8',
-    card: '#252422',
-    primary: '#FF4D00',
-    primaryForeground: '#FFFFFF',
-    secondary: '#3D3B38',
-    secondaryForeground: '#C5BFB8',
-    accent: '#FF4D00',
-    accentForeground: '#FFFFFF',
-    border: '#3D3B38',
-    muted: '#3D3B38',
-    mutedForeground: '#8F8A85',
-    info: '#4DB8FF',
-    danger: '#F65170'
-  }
-} as const;
+const colorSchemes = themeColors;
 
 export type ThemeColors = (typeof colorSchemes)[AppColorScheme];
 
