@@ -12,6 +12,7 @@ Read this when changing a Gorhom bottom sheet, its keyboard behavior, local stat
 
 - Keep draft, search, filter, and pending state inside the sheet content. The parent controls visibility and receives committed values.
 - Keep `BottomSheetFlatList` as a direct sheet child; wrappers break scrolling. The shared primitive owns the required structure.
+- The shared `BottomSheet` counts open sheets; while any is open, `BottomSheetAccessibilityBoundary` in the common providers hides the app content from assistive technologies. Sheets, the snackbar and alert dialogs render outside it. Present sheets only through the shared wrapper.
 - Keep footers reachable while the keyboard is open. Use `BottomSheetSafeContent` for compact static content and `BottomSheetSafeFooter` for action rows.
 
 ## Safe-area spacing

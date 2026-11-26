@@ -2,6 +2,10 @@ import {
   StyledBottomSheetBackdrop,
   StyledBottomSheetScrollView
 } from '@/src/components/styled/bottom-sheet';
+import {
+  registerOpenSheet,
+  useIsAnySheetOpen
+} from '@/src/components/ui/bottom-sheet.store';
 import { Text } from '@/src/components/ui/text';
 import { cn } from '@/src/lib/utils/cn.utils';
 import { useReducedMotion } from '@/src/lib/animations/use-reduced-motion.hook';
@@ -154,6 +158,14 @@ export function BottomSheet({
   );
 
   useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    return registerOpenSheet();
+  }, [isOpen]);
+
+  useEffect(() => {
     if (isOpen) {
       sheetRef.current?.present();
 
@@ -201,6 +213,28 @@ export function BottomSheet({
         renderedChildren
       )}
     </BottomSheetModal>
+  );
+}
+
+// Gorhom has no modal flag: hide the app content behind any open sheet from
+// assistive technologies. Sheets portal outside this boundary.
+export function BottomSheetAccessibilityBoundary({
+  children
+}: {
+  children: ReactNode;
+}) {
+  const isAnySheetOpen = useIsAnySheetOpen();
+
+  return (
+    <View
+      className="flex-1"
+      accessibilityElementsHidden={isAnySheetOpen}
+      importantForAccessibility={
+        isAnySheetOpen ? 'no-hide-descendants' : 'auto'
+      }
+    >
+      {children}
+    </View>
   );
 }
 

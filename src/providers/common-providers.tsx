@@ -1,6 +1,7 @@
 import { DatabaseProvider } from '@/src/providers/database-provider';
 import { ScreenErrorBoundary } from '@/src/providers/screen-error-boundary';
 import { AlertDialogHost } from '@/src/components/ui/alert-dialog';
+import { BottomSheetAccessibilityBoundary } from '@/src/components/ui/bottom-sheet';
 import { SnackbarHost } from '@/src/components/ui/snackbar';
 import { SettingsProvider } from '@/src/features/settings/settings-provider';
 import { UpdateProvider } from '@/src/features/app-updates/update-provider';
@@ -42,7 +43,9 @@ export function CommonProviders({
               <UpdateProvider>
                 <RestTimerHost>
                   <BottomSheetModalProvider>
-                    {children}
+                    <BottomSheetAccessibilityBoundary>
+                      {children}
+                    </BottomSheetAccessibilityBoundary>
                     <UpdateAnnouncementHost />
                     <StepsSyncHost />
                     <SnackbarHost />
