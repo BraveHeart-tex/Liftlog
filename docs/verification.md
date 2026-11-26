@@ -141,9 +141,12 @@ coordinates read off a screenshot. In order:
    `exec-out` and `pull` on the lease's serial, and refuses device selection, install,
    root, reboot, port forwarding, `emu` and server commands, plus `reboot`, `su`,
    `setprop`, `svc power` and package install or uninstall inside `shell` and `exec-out`.
-   It is host-only. A check of press, transition or other motion runs
-   `pnpm run device:stack motion on` first: the template turns animations off, which
-   Reanimated reads as reduced motion. `motion on|off` sets the three animation scales to
+   It is host-only. `pnpm run device:stack sql "<query>"` pulls `workout.db`, its WAL
+   and shared-memory file from the lease's emulator into `.device-stack/db/`, runs the
+   query with `sqlite3 -readonly` there and prints the rows, including rows still in the
+   WAL; it is host-only and exits with `NO_LEASE` without a ready lease. A check of
+   press, transition or other motion runs `pnpm run device:stack motion on` first: the
+   template turns animations off, which Reanimated reads as reduced motion. `motion on|off` sets the three animation scales to
    `1` or `0` on the lease's emulator and reopens the app on the lease's Metro, so the app
    reads the new preference. A check of a pressed state runs
    `pnpm run device:stack capture-press <label>`: it finds the one hittable control with
@@ -325,9 +328,8 @@ snapshots slow.
 ### Route map
 
 Paths from `src/app`; groups such as `(tabs)` drop out of the URL. Read IDs from the
-app database:
-`pnpm run -s device:stack adb exec-out run-as com.borakaraca94.liftlog cat files/SQLite/<f> > <dir>/<f>`
-for `workout.db`, `workout.db-wal` and `workout.db-shm`, then `sqlite3 <dir>/workout.db`.
+lease's app database with `pnpm run -s device:stack sql "<query>"`, for example
+`sql "SELECT id, name FROM workout_templates"`.
 
 | Deep link path                                   | Screen                         | Needs                                                    |
 | ------------------------------------------------ | ------------------------------ | -------------------------------------------------------- |

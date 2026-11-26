@@ -43,9 +43,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 // recorded processes still pass their identity check; `stop` stops only what `start` started
 // and still passes that check, then releases the lease. `device <command> [args]` runs an
 // allowlisted agent-device command on this worktree's ready lease only; `open <path>` opens a
-// liftlog:// deep link there, `adb` runs an allowlisted adb subcommand on its serial and
-// `logs` prints a bounded tail of its JS or Metro log. `gc [--dry-run] [--idle <minutes>]`
-// reclaims leases whose owners are provably gone, and `list` shows every slot read-only.
+// liftlog:// deep link there, `adb` runs an allowlisted adb subcommand on its serial, `sql`
+// queries a read-only copy of its app database and `logs` prints a bounded tail of its JS or
+// Metro log. `gc [--dry-run] [--idle <minutes>]` reclaims leases whose owners are provably gone, and `list` shows every slot read-only.
 // `build-key` prints the dev build key of this checkout and the hash of each input behind it.
 // The lease pointer, run state, logs and operation lock live in .device-stack/ at the checkout
 // root (the working directory); the dev build cache lives in the git common dir; the lease
@@ -2534,6 +2534,70 @@ async function adbCommand(args) {
   process.exitCode = status ?? 1;
 }
 
+// `sql "<query>"` pulls the app database, its WAL and shared-memory file from the lease's
+// emulator into .device-stack/db/ and runs the query read-only there. It is host-only, like
+// `adb`. Only the files present are pulled: the app may have checkpointed the WAL away.
+const DB_FILES = ['workout.db', 'workout.db-wal', 'workout.db-shm'];
+
+async function sql(args) {
+  if (args.length !== 1 || !args[0].trim()) {
+    throw new Error('Usage: pnpm run device:stack sql "<query>"');
+  }
+
+  const state = await readyState();
+  const { serial } = state.lease;
+  const present = adb(
+    serial,
+    'shell',
+    'run-as',
+    PACKAGE,
+    'ls',
+    'files/SQLite'
+  ).split(/\s+/);
+  const dir = join(DIR, 'db');
+
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+
+  for (const file of DB_FILES.filter(name => present.includes(name))) {
+    assertLease();
+    writeFileSync(
+      join(dir, file),
+      execFileSync(
+        'adb',
+        [
+          '-s',
+          serial,
+          'exec-out',
+          'run-as',
+          PACKAGE,
+          'cat',
+          `files/SQLite/${file}`
+        ],
+        { maxBuffer: 256 << 20, stdio: ['ignore', 'pipe', 'pipe'] }
+      )
+    );
+  }
+
+  if (!existsSync(join(dir, DB_FILES[0]))) {
+    throw new Error(
+      `the lease's app has no ${DB_FILES[0]} yet; open the app and retry.`
+    );
+  }
+
+  const { status, error } = spawnSync(
+    'sqlite3',
+    ['-readonly', join(dir, DB_FILES[0]), args[0]],
+    { stdio: 'inherit' }
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  process.exitCode = status ?? 1;
+}
+
 // `logs [js|metro] [--lines N] [--grep re]` prints the last N matching lines of a lease log.
 function logs(args) {
   let name = 'js';
@@ -2962,6 +3026,8 @@ try {
     list();
   } else if (command === 'broker') {
     await broker();
+  } else if (command === 'sql') {
+    await sql(flags);
   } else if (command === 'logs') {
     logs(flags);
   } else if (command === 'motion') {
@@ -2972,7 +3038,7 @@ try {
     await buildWorker(flags[0]);
   } else {
     throw new Error(
-      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | open <path> | adb shell|exec-out|pull [args] | motion on|off | capture-press <label> | logs [js|metro] [--lines N] [--grep re] | gc [--dry-run] [--idle <minutes>] | list | broker | build-key | build'
+      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | open <path> | adb shell|exec-out|pull [args] | sql "<query>" | motion on|off | capture-press <label> | logs [js|metro] [--lines N] [--grep re] | gc [--dry-run] [--idle <minutes>] | list | broker | build-key | build'
     );
   }
 } catch (error) {

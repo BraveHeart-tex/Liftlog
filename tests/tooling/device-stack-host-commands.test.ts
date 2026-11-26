@@ -187,6 +187,19 @@ test('a new lease starts with empty JS and Metro logs', async () => {
   expect((await stack('logs', 'metro')).stdout).not.toContain('stale');
 });
 
+// The route map pulled the app database by hand, so a query could read another device's copy.
+test('sql without a ready lease exits with NO_LEASE and writes nothing', async () => {
+  const { stack, root, logPath } = await harness();
+  const before = allCalls(logPath).length;
+
+  const noLease = await stack('sql', 'SELECT id FROM workout_templates');
+
+  expect(noLease.status).toBe(1);
+  expect(noLease.stderr).toContain('NO_LEASE: ');
+  expect(existsSync(join(root, '.device-stack', 'db'))).toBe(false);
+  expect(allCalls(logPath).slice(before)).toEqual([]);
+});
+
 // The template boots with every animation scale at 0, which Reanimated reads as reduced
 // motion, so a check of press or transition motion never saw it.
 test('motion sets the three animation scales on the lease serial only and reopens the app on its Metro', async () => {
