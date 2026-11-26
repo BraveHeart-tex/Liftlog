@@ -2149,6 +2149,82 @@ async function capturePress(args) {
   );
 }
 
+// `swipe <@ref> up|down|left|right <percent>` swipes within the element a snapshot ref names
+// (docs/adr/0009-sandboxed-agents-reach-device-stacks-through-a-lease-broker.md#authorization).
+// The host reads the ref's element from the session's last snapshot and refuses when a fresh
+// snapshot no longer shows that element under the ref, so a stale ref runs no gesture. The
+// swipe is centered on the element and spans the percent of its height or width, so both
+// endpoints stay inside its bounds.
+const SWIPE_DIRECTIONS = /^(up|down|left|right)$/;
+const SWIPE_PERCENT = /^([1-9]|[1-8]\d|90)$/;
+
+async function swipeElement(args) {
+  const [ref, direction, percent] = args;
+
+  if (
+    args.length !== 3 ||
+    !REF.test(ref ?? '') ||
+    !SWIPE_DIRECTIONS.test(direction ?? '') ||
+    !SWIPE_PERCENT.test(percent ?? '')
+  ) {
+    throw refused(
+      'swipe takes an @ref, up|down|left|right and a percent from 1 to 90'
+    );
+  }
+
+  const state = await readyState();
+  const config = join(DIR, 'agent-device.json');
+
+  writeFileSync(config, '{}\n');
+  const lease = [
+    '--platform',
+    'android',
+    '--serial',
+    state.lease.serial,
+    '--session',
+    state.session,
+    '--config',
+    config
+  ];
+  const read = command => {
+    try {
+      return JSON.parse(run('agent-device', [...lease, ...command])).data;
+    } catch {
+      return null;
+    }
+  };
+
+  const seen = read(['get', 'attrs', ref, '--json'])?.node;
+  const current = read(['snapshot', '-i', '--json'])?.nodes?.find(
+    node => `@${node.ref}` === ref
+  );
+  const same = (a, b) =>
+    ['type', 'label', 'identifier'].every(key => a[key] === b[key]) &&
+    ['x', 'y', 'width', 'height'].every(key => a.rect?.[key] === b.rect?.[key]);
+
+  if (!seen?.rect || !current || !same(seen, current)) {
+    throw refused(
+      `${ref} does not name the same element in a fresh snapshot; run snapshot and use a current @ref`
+    );
+  }
+
+  const { x, y, width, height } = current.rect;
+  const centerX = Math.round(x + width / 2);
+  const centerY = Math.round(y + height / 2);
+  const vertical = direction === 'up' || direction === 'down';
+  const half = Math.round(
+    ((vertical ? height : width) * Number(percent)) / 200
+  );
+  const sign = direction === 'up' || direction === 'left' ? -1 : 1;
+  const [x1, y1, x2, y2] = vertical
+    ? [centerX, centerY - sign * half, centerX, centerY + sign * half]
+    : [centerX - sign * half, centerY, centerX + sign * half, centerY];
+
+  process.stdout.write(
+    run('agent-device', [...lease, 'swipe', ...[x1, y1, x2, y2].map(String)])
+  );
+}
+
 // What still runs, judged by identity checks rather than by the record alone.
 function observe(state) {
   const observed = {};
@@ -2792,6 +2868,10 @@ const BROKER_COMMANDS = {
     args: [/^(up|down|left|right)$/],
     argv: ([direction]) => ['device', 'scroll', direction]
   },
+  swipe: {
+    args: [REF, SWIPE_DIRECTIONS, SWIPE_PERCENT],
+    argv: ([ref, direction, percent]) => ['swipe', ref, direction, percent]
+  },
   'metro-reload': { args: [], argv: () => ['device', 'metro', 'reload'] },
   motion: { args: [/^(on|off)$/], argv: ([mode]) => ['motion', mode] },
   screenshot: {
@@ -3204,11 +3284,13 @@ try {
     await motion(flags);
   } else if (command === 'capture-press') {
     await capturePress(flags);
+  } else if (command === 'swipe') {
+    await swipeElement(flags);
   } else if (command === BUILD_WORKER) {
     await buildWorker(flags[0]);
   } else {
     throw new Error(
-      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | open <path> | adb shell|exec-out|pull [args] | sql "<query>" | motion on|off | capture-press <label> | logs [js|metro] [--lines N] [--grep re] | gc [--dry-run] [--idle <minutes>] | list | limit [<n>] | broker [--sandbox <name>] | build-key | build'
+      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | open <path> | adb shell|exec-out|pull [args] | sql "<query>" | motion on|off | capture-press <label> | swipe <@ref> up|down|left|right <percent> | logs [js|metro] [--lines N] [--grep re] | gc [--dry-run] [--idle <minutes>] | list | limit [<n>] | broker [--sandbox <name>] | build-key | build'
     );
   }
 } catch (error) {

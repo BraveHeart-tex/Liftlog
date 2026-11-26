@@ -154,7 +154,11 @@ if (name === 'emulator') {
   process.exit(1)
 } else if (name === 'agent-device' && args[0] === 'press' && args[1] === 'label="Close"') {
   update(s => { s.onboarding = false })
-} else if (name === 'agent-device' && args[0] === 'snapshot' && args.includes('--json')) {
+} else if (name === 'agent-device' && args.includes('attrs')) {
+  const node = (state.sessionNodes ?? state.snapshotNodes ?? []).find(n => '@' + n.ref === args[args.indexOf('attrs') + 1])
+  process.stdout.write(JSON.stringify(node ? { success: true, data: { ref: node.ref, node } } : { success: false }))
+  if (!node) process.exit(1)
+} else if (name === 'agent-device' && args.includes('snapshot') && args.includes('--json')) {
   process.stdout.write(JSON.stringify({ success: true, data: { nodes: state.snapshotNodes ?? [] } }))
 } else if (name === 'agent-device' && args[0] === 'snapshot') {
   process.stdout.write(state.redbox
@@ -241,14 +245,20 @@ type FakeState = {
   foreignMetro?: boolean;
   // The nodes `snapshot -i --json` lists, and the widths and differing pixels the fake
   // magick measures.
-  snapshotNodes?: {
-    label?: string;
-    hittable?: boolean | null;
-    rect: { x: number; y: number; width: number; height: number };
-  }[];
+  snapshotNodes?: SnapshotNode[];
+  // The nodes the session's last snapshot holds for `get attrs`, when they differ from a
+  // fresh snapshot's.
+  sessionNodes?: SnapshotNode[];
   widths?: { rest: number; pressed: number };
   diffPixels?: number;
   listeners: Listener[];
+};
+type SnapshotNode = {
+  ref?: string;
+  type?: string;
+  label?: string;
+  hittable?: boolean | null;
+  rect: { x: number; y: number; width: number; height: number };
 };
 type Lease = {
   id: string;

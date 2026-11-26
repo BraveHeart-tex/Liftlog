@@ -162,7 +162,12 @@ coordinates read off a screenshot. In order:
    The hold ends as a tap, so the control's
    press action runs afterwards. It refuses a label matching no control or several, and
    fails without ImageMagick: install it on the host (`brew install imagemagick`) so
-   `magick` is on PATH. Never call `adb` or `agent-device` directly; a sandboxed agent
+   `magick` is on PATH. A swipe inside one element, such as a picker wheel, runs
+   `pnpm run device:stack swipe <@ref> up|down|left|right <percent>`: it reads the ref's
+   bounds from the session's last snapshot, refuses with `REFUSED` when a fresh
+   `device snapshot -i --json` no longer shows the same element under that ref, and swipes
+   through the element's center over `<percent>` (1 to 90) of its height or width, so both
+   endpoints stay inside it. Never call `adb` or `agent-device` directly; a sandboxed agent
    follows [sandboxed agents](#sandboxed-agents) instead. `start`
    installs the dev build matching the checkout's dev build key from the dev build cache,
    only when the installed build differs; on a miss it builds it first from a freshly
@@ -329,6 +334,7 @@ A Docker Sandbox reaches its checkout's Android lease through the lease broker
 | `wait <text>`                  | `device wait text <text>`                                        |
 | `back`                         | `device back`                                                    |
 | `scroll up\|down\|left\|right` | `device scroll <direction>`                                      |
+| `swipe @ref <direction> <pct>` | `swipe @ref <direction> <pct>`, inside the ref's element         |
 | `metro-reload`                 | `device metro reload`                                            |
 | `motion on\|off`               | `motion on\|off`                                                 |
 | `screenshot <name>`            | `device screenshot .device-stack/screenshots/<name>.png`         |
@@ -337,7 +343,8 @@ A Docker Sandbox reaches its checkout's Android lease through the lease broker
 
 A `<text>` starts with a letter or digit and holds up to 100 letters, digits, spaces and
 `.,:!?'()+-`; a `<name>` starts with a lowercase letter or digit and holds up to 64 lowercase
-letters, digits and hyphens. Use a new name for each recording. The broker answers
+letters, digits and hyphens; a `<direction>` is `up`, `down`, `left` or `right` and a `<pct>` a whole
+number from 1 to 90. Use a new name for each recording. The broker answers
 `UNAUTHORIZED` to a missing or wrong credential, and `REFUSED` to any other command or to
 an argument that is a flag, names a serial or path, or fails its pattern; neither runs
 anything.

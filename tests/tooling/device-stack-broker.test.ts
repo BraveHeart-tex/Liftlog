@@ -49,8 +49,8 @@ const deviceCalls = (logPath: string, from: number) =>
     .slice(from)
     .filter(({ name }) => name === 'agent-device' || name === 'adb');
 
-async function brokerRunning() {
-  const stack = await harness();
+async function brokerRunning(fake: Parameters<typeof harness>[0] = {}) {
+  const stack = await harness(fake);
   const brokerPorts = [await freePort(), await freePort()];
 
   stack.writeConfig({ sandbox: SANDBOX, brokerPorts });
@@ -334,6 +334,91 @@ test('the broker runs motion on|off as the fixed device:stack motion argv and re
       'animator_duration_scale'
     ].map(scale => `-s ${SERIAL} shell settings put global ${scale} 1`)
   );
+  await end();
+});
+
+// A direction-only scroll moved neither Rest timer wheel (#202): a swipe must land inside the
+// element its snapshot ref names, with endpoints derived on the host.
+test('the broker swipes within the element a current ref names on its lease and refuses any other swipe', async () => {
+  const wheel = {
+    ref: 'e7',
+    type: 'android.widget.ScrollView',
+    label: 'Minutes',
+    rect: { x: 100, y: 400, width: 200, height: 300 }
+  };
+  const { root, send, client, logPath, recorded, editFake, end } =
+    await brokerRunning({ snapshotNodes: [wheel] });
+  const { session } = recorded();
+  const lease = [
+    '--platform',
+    'android',
+    '--serial',
+    SERIAL,
+    '--session',
+    session,
+    '--config',
+    join(root, '.device-stack', 'agent-device.json')
+  ];
+  const swipes = (from: number) =>
+    deviceCalls(logPath, from)
+      .filter(({ args }) => args.includes('swipe'))
+      .map(({ name, args }) => [name, ...args]);
+  let from = allCalls(logPath).length;
+
+  for (const args of [
+    ['@e7', 'up'],
+    ['e7', 'up', '50'],
+    ['@e7;reboot', 'up', '50'],
+    ['@e7', 'sideways', '50'],
+    ['@e7', 'UP', '50'],
+    ['@e7', 'up', '0'],
+    ['@e7', 'up', '91'],
+    ['@e7', 'up', '100'],
+    ['@e7', 'up', '50.5'],
+    ['@e7', 'up', '50', 'extra']
+  ]) {
+    const reply = await send({ command: 'swipe', args });
+
+    expect([args, reply.status]).toEqual([args, 403]);
+    expect(reply.body.error).toContain('REFUSED');
+  }
+
+  expect(deviceCalls(logPath, from)).toEqual([]);
+
+  // Centered on the element, spanning the percent of its height or width.
+  const up = await client('swipe', '@e7', 'up', '50');
+  expect([up.status, up.stderr]).toEqual([0, '']);
+  expect((await client('swipe', '@e7', 'right', '90')).status).toBe(0);
+  expect(swipes(from)).toEqual([
+    ['agent-device', ...lease, 'swipe', '200', '625', '200', '475'],
+    ['agent-device', ...lease, 'swipe', '110', '550', '290', '550']
+  ]);
+
+  // An unknown ref, or one whose element moved or changed since the session's last
+  // snapshot, runs no gesture.
+  for (const sessionNodes of [
+    [],
+    [{ ...wheel, rect: { ...wheel.rect, y: 380 } }],
+    [{ ...wheel, label: 'Seconds' }]
+  ]) {
+    editFake(state => {
+      state.sessionNodes = sessionNodes;
+    });
+    from = allCalls(logPath).length;
+    const stale = await client('swipe', '@e7', 'down', '50');
+
+    expect(stale.status).not.toBe(0);
+    expect(stale.stderr).toContain('REFUSED');
+    expect(swipes(from)).toEqual([]);
+  }
+
+  editFake(state => {
+    state.sessionNodes = [wheel];
+    state.snapshotNodes = [];
+  });
+  from = allCalls(logPath).length;
+  expect((await client('swipe', '@e7', 'down', '50')).status).not.toBe(0);
+  expect(swipes(from)).toEqual([]);
   await end();
 });
 
