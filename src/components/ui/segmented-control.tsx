@@ -36,7 +36,6 @@ export function SegmentedControl<T extends string>({
   accessibilityMode = 'tabs'
 }: SegmentedControlProps<T>) {
   const [width, setWidth] = useState(0);
-  const [pressedValue, setPressedValue] = useState<T | null>(null);
   const reduceMotion = useReducedMotion();
 
   const activeIndex = useMemo(
@@ -118,11 +117,9 @@ export function SegmentedControl<T extends string>({
             accessibilityRole={accessibilityMode === 'tabs' ? 'tab' : 'radio'}
             accessibilityState={{ selected: isActive }}
             onPress={() => handleOptionPress(option.value)}
-            onPressIn={() => setPressedValue(option.value)}
-            onPressOut={() => setPressedValue(null)}
             className={cn(
               'min-h-12 flex-1 items-center justify-center rounded-md px-4',
-              pressedValue === option.value && !isActive && 'opacity-70'
+              isActive ? 'active:opacity-100' : 'active:opacity-70'
             )}
           >
             <Text

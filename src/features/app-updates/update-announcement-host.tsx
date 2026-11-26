@@ -34,8 +34,7 @@ export function UpdateAnnouncementHost() {
         <PressableSurface
           accessibilityLabel={`View update details for version ${state.release!.versionName}`}
           containerClassName="min-w-0 flex-1"
-          className="min-h-12 w-full flex-row items-center gap-3 rounded-md px-2 py-2"
-          pressedClassName="bg-muted"
+          className="active:bg-muted min-h-12 w-full flex-row items-center gap-3 rounded-md px-2 py-2 active:opacity-100"
           onPress={() => router.navigate(UPDATE_DETAILS_ROUTE as Href)}
         >
           <View className="bg-primary/15 h-9 w-9 items-center justify-center rounded-full">

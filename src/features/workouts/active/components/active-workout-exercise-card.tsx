@@ -88,7 +88,11 @@ export function ActiveWorkoutExerciseCard({
   return (
     <PressableSurface
       containerClassName={containerClassName}
-      pressedClassName={isGrouped ? 'bg-secondary' : 'opacity-80'}
+      className={
+        isGrouped
+          ? 'active:bg-secondary active:opacity-100'
+          : 'active:opacity-80'
+      }
       pressedScale={isGrouped ? 1 : undefined}
       accessibilityLabel={exerciseName}
       onPress={() => navigateToWorkoutExercise(item, mode)}

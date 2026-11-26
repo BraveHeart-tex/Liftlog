@@ -18,8 +18,6 @@ export const Input = forwardRef<
     invalid = false,
     multiline,
     accessibilityState,
-    onBlur,
-    onFocus,
     placeholderClassName = 'text-muted-foreground',
     selectionClassName = 'text-primary',
     ...props
@@ -30,9 +28,7 @@ export const Input = forwardRef<
     accessibilityState,
     disabled,
     editable,
-    invalid,
-    onBlur,
-    onFocus
+    invalid
   });
 
   return (
@@ -42,7 +38,6 @@ export const Input = forwardRef<
       className={getInputClassName({
         className,
         disabled,
-        focused: behavior.focused,
         invalid,
         multiline
       })}
@@ -54,8 +49,6 @@ export const Input = forwardRef<
       textAlignVertical={multiline ? 'top' : 'center'}
       editable={behavior.editable}
       accessibilityState={behavior.accessibilityState}
-      onBlur={behavior.onBlur}
-      onFocus={behavior.onFocus}
       placeholderClassName={placeholderClassName}
       selectionClassName={selectionClassName}
     />

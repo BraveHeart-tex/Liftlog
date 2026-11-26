@@ -18,7 +18,7 @@ const buttonVariantConfig = cva(
         secondary: 'border-border bg-card disabled:border-transparent',
         ghost: 'border-transparent bg-transparent',
         destructive:
-          'border-danger/30 bg-danger/10 disabled:border-transparent disabled:bg-danger/5'
+          'border-danger/30 bg-danger/10 active:bg-danger/15 active:opacity-100 disabled:border-transparent disabled:bg-danger/5'
       },
       size: {
         sm: 'min-h-12 px-3 py-3',
@@ -108,7 +108,6 @@ export function Button({
   spinnerClassName,
   textStyle,
   children,
-  pressedClassName,
   ...pressableProps
 }: ButtonProps) {
   const isBlocked = disabled || loading;
@@ -130,10 +129,6 @@ export function Button({
       containerClassName={cn(fullWidth && 'w-full', containerClassName)}
       className={cn(buttonVariants({ variant, size }), className)}
       disabled={isBlocked}
-      pressedClassName={cn(
-        pressedClassName ??
-          (variant === 'destructive' ? 'bg-danger/15' : 'opacity-80')
-      )}
       {...pressableProps}
     >
       {loading ? (

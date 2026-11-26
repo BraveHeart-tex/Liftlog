@@ -150,12 +150,11 @@ export function StopwatchContent({
           accessibilityLabel={`${isRunning ? 'Pause' : 'Start'} stopwatch, ${formattedElapsedTime} elapsed`}
           accessibilityValue={{ text: accessibilityStatus }}
           className={cn(
-            'min-h-52 w-full items-center justify-center gap-5 rounded-2xl border-2 px-5 py-9',
+            'min-h-52 w-full items-center justify-center gap-5 rounded-2xl border-2 px-5 py-9 active:opacity-100',
             isRunning
-              ? 'border-accent/50 bg-accent/10'
-              : 'border-primary/40 bg-primary/10'
+              ? 'border-accent/50 bg-accent/10 active:bg-accent/15'
+              : 'border-primary/40 bg-primary/10 active:bg-primary/15'
           )}
-          pressedClassName={isRunning ? 'bg-accent/15' : 'bg-primary/15'}
           pressedScale={0.98}
           onPress={handlePrimaryPress}
         >

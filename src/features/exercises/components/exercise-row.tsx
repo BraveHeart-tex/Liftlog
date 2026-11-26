@@ -32,10 +32,9 @@ export function ExerciseRow({
       disabled={disabled}
       accessibilityState={accessibilityState}
       className={cn(
-        'border-border flex-row items-center justify-between border-b py-4',
+        'border-border flex-row items-center justify-between border-b py-4 active:opacity-70',
         className
       )}
-      pressedClassName="opacity-70"
     >
       <View className="flex-1 pr-4">
         <Text variant="bodyMedium" className={titleClassName}>

@@ -19,8 +19,6 @@ export const BottomSheetInput = forwardRef<
     invalid = false,
     multiline,
     accessibilityState,
-    onBlur,
-    onFocus,
     placeholderClassName = 'text-muted-foreground',
     selectionClassName = 'text-primary',
     ...props
@@ -31,9 +29,7 @@ export const BottomSheetInput = forwardRef<
     accessibilityState,
     disabled,
     editable,
-    invalid,
-    onBlur,
-    onFocus
+    invalid
   });
 
   return (
@@ -43,7 +39,6 @@ export const BottomSheetInput = forwardRef<
       className={getInputClassName({
         className,
         disabled,
-        focused: behavior.focused,
         invalid,
         multiline
       })}
@@ -55,8 +50,6 @@ export const BottomSheetInput = forwardRef<
       textAlignVertical={multiline ? 'top' : 'center'}
       editable={behavior.editable}
       accessibilityState={behavior.accessibilityState}
-      onBlur={behavior.onBlur}
-      onFocus={behavior.onFocus}
       placeholderClassName={placeholderClassName}
       selectionClassName={selectionClassName}
     />

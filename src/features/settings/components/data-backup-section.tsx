@@ -48,10 +48,9 @@ function BackupAction({
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={description}
       accessibilityState={{ busy: loading }}
-      className="border-t-border min-h-20 flex-row items-center border-t px-4 py-4"
+      className="border-t-border active:bg-muted min-h-20 flex-row items-center border-t px-4 py-4 active:opacity-100"
       disabled={disabled || loading}
       onPress={onPress}
-      pressedClassName="bg-muted"
     >
       <View className="w-8 items-center">
         {loading ? (

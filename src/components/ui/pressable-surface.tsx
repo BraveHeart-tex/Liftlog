@@ -4,7 +4,6 @@ import { cn } from '@/src/lib/utils/cn.utils';
 import {
   useEffect,
   useRef,
-  useState,
   type ComponentPropsWithoutRef,
   type ReactNode
 } from 'react';
@@ -24,7 +23,6 @@ export interface PressableSurfaceProps extends NativePressableProps {
   children: ReactNode;
   containerClassName?: string;
   className?: string;
-  pressedClassName?: string;
   pressedScale?: number;
 }
 
@@ -33,7 +31,6 @@ const PRESS_EASING = Easing.bezier(0.23, 1, 0.32, 1);
 
 function usePressScale(pressedScale: number) {
   const reduceMotion = useReducedMotion();
-  const [pressed, setPressed] = useState(false);
   const scale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -62,16 +59,13 @@ function usePressScale(pressedScale: number) {
   };
 
   return {
-    pressed,
     scaleStyle: {
       transform: [{ scale }]
     },
     scaleIn: () => {
-      setPressed(true);
       animateScale(pressedScale, MOTION_DURATION_MS.pressIn);
     },
     scaleOut: () => {
-      setPressed(false);
       animateScale(1, MOTION_DURATION_MS.pressOut);
     }
   };
@@ -81,7 +75,6 @@ export function PressableSurface({
   children,
   containerClassName,
   className,
-  pressedClassName = 'opacity-80',
   disabled = false,
   pressedScale = DEFAULT_PRESSED_SCALE,
   accessibilityRole = 'button',
@@ -91,8 +84,7 @@ export function PressableSurface({
   ...props
 }: PressableSurfaceProps) {
   const isDisabled = Boolean(disabled);
-  const { pressed, scaleStyle, scaleIn, scaleOut } =
-    usePressScale(pressedScale);
+  const { scaleStyle, scaleIn, scaleOut } = usePressScale(pressedScale);
 
   const handlePressIn = (event: GestureResponderEvent) => {
     if (isDisabled) {
@@ -114,9 +106,9 @@ export function PressableSurface({
         accessibilityRole={accessibilityRole}
         accessibilityState={{ ...accessibilityState, disabled: isDisabled }}
         className={cn(
+          'active:opacity-80',
           className,
-          isDisabled && 'opacity-50',
-          pressed && !isDisabled && pressedClassName
+          isDisabled && 'opacity-50'
         )}
         disabled={isDisabled}
         onPressIn={handlePressIn}

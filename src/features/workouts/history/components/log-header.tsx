@@ -15,9 +15,8 @@ export function LogHeader({ onOpenSteps }: LogHeaderProps) {
       <PressableSurface
         accessibilityLabel="Open steps"
         accessibilityRole="button"
-        className="min-h-11 -translate-y-0.5 flex-row items-center gap-1 rounded-md pl-3"
+        className="min-h-11 -translate-y-0.5 flex-row items-center gap-1 rounded-md pl-3 active:opacity-70"
         onPress={onOpenSteps}
-        pressedClassName="opacity-70"
       >
         <Text variant="bodyMedium" tone="secondaryForeground">
           Steps
