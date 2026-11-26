@@ -36,6 +36,14 @@ export const TEMPLATE = {
   version: '2026-11-25T00:00:00.000Z'
 };
 
+// The hardware lines `avdmanager --device pixel_7` writes to the AVD's config.ini.
+export const PIXEL_7_CONFIG =
+  'hw.lcd.density=420\nhw.lcd.height=2400\nhw.lcd.width=1080\nhw.ramSize=2G\n';
+
+// The AVD folder under the test HOME (the harness unsets ANDROID_AVD_HOME).
+export const avdConfigPath = (home: string, avd = AVD) =>
+  join(home, '.android', 'avd', `${avd}.avd`, 'config.ini');
+
 export const instanceBoot = (lease: string, port = 5556) =>
   `emulator -avd ${AVD} -port ${port} -read-only -snapshot liftlog_template -no-snapshot-save -no-boot-anim -gpu host -prop debug.liftlog.lease=${lease}`;
 
@@ -65,9 +73,13 @@ const update = edit => {
     renameSync(statePath + '.' + process.pid, statePath)
   } finally { rmdirSync(statePath + '.lock') }
 }
+// The AVD's config.ini under HOME; an emulator boot logs the config it boots with.
+const avdConfig = avd => join(require('node:os').homedir(), '.android', 'avd', avd + '.avd', 'config.ini')
+const bootAvd = args.includes('-avd') ? args[args.indexOf('-avd') + 1] : null
 appendFileSync(process.env.FAKE_LOG, JSON.stringify({
   name, args, at: Date.now(), ci: process.env.CI ?? null, cwd: process.cwd(),
   ...(name === 'gradlew' && { files: readdirSync('.') }),
+  ...(name === 'emulator' && bootAvd && existsSync(avdConfig(bootAvd)) && { avdConfig: readFileSync(avdConfig(bootAvd), 'utf8') }),
   ...(name === 'agent-device' && { env: Object.keys(process.env).filter(key => key.startsWith('AGENT_DEVICE_')) })
 }) + '\\n')
 const stayAlive = () => setInterval(() => {}, 1000)
@@ -82,7 +94,10 @@ if (name === 'emulator') {
     stayAlive()
   }
 } else if (name === 'avdmanager') {
-  update(s => { s.avds.push(args[args.indexOf('--name') + 1]) })
+  const avd = args[args.indexOf('--name') + 1]
+  mkdirSync(join(avdConfig(avd), '..'), { recursive: true })
+  writeFileSync(avdConfig(avd), ${JSON.stringify(PIXEL_7_CONFIG)})
+  update(s => { s.avds.push(avd) })
 } else if (name === 'adb') {
   const serial = args[0] === '-s' ? args[1] : null
   const rest = args[0] === '-s' ? args.slice(2) : args
@@ -228,6 +243,8 @@ type Call = {
   files?: string[];
   // AGENT_DEVICE_* variables an agent-device call received.
   env?: string[];
+  // The AVD config.ini an emulator boot started with.
+  avdConfig?: string;
 };
 
 export const pids: number[] = [];
@@ -462,6 +479,7 @@ export async function harness(
   }
 
   delete env.JAVA_HOME;
+  delete env.ANDROID_AVD_HOME;
 
   // Runs the script in a checkout; `onSpawn` receives the child, so a test can signal it.
   function stackIn(
@@ -575,6 +593,7 @@ export async function harness(
     worktree,
     buildLock,
     hostDir,
+    home,
     registry,
     editFake,
     runningMetro,

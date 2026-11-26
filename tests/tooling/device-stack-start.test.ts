@@ -1,23 +1,36 @@
-import { existsSync, mkdtempSync, readFileSync, realpathSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import {
-  PACKAGE,
-  AVD,
   AUDIT_AVD,
+  AVD,
+  PACKAGE,
+  PIXEL_7_CONFIG,
   SERIAL,
   TEMPLATE,
-  instanceBoot,
-  directories,
   alive,
-  harness,
-  commands,
   allCalls,
-  target,
+  avdConfigPath,
+  commands,
+  directories,
   expectTargeted,
+  harness,
+  instanceBoot,
   link,
+  target,
   waitUntil
 } from '@/tests/tooling/device-stack-harness';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  writeFileSync
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+
+// docs/adr/0008-device-stack-architecture.md "Emulator instances": the harness AVD's hardware.
+const HARNESS_HARDWARE =
+  'hw.lcd.density=280\nhw.lcd.height=1600\nhw.lcd.width=720\nhw.ramSize=4096\n';
 
 test('start boots the harness emulator beside a phone and a foreign emulator, opens the app on its Metro port and prints its state', async () => {
   const { root, port, stack, logPath } = await harness();
@@ -155,6 +168,11 @@ test('template creates the harness AVD and a clean template snapshot once', asyn
   expectTargeted(created.calls);
   expect(fakeState().avds).toEqual([AUDIT_AVD, AVD]);
   expect(
+    created.calls.find(
+      call => call.name === 'emulator' && call.args.includes('-wipe-data')
+    )?.avdConfig
+  ).toBe(HARNESS_HARDWARE);
+  expect(
     JSON.parse(readFileSync(join(hostDir, 'template.json'), 'utf8'))
   ).toEqual(output.template);
 
@@ -167,6 +185,34 @@ test('template creates the harness AVD and a clean template snapshot once', asyn
   expect(commands(again.calls.slice(created.calls.length))).toEqual([
     'emulator -list-avds'
   ]);
+});
+
+test('template --recreate applies the harness hardware to an existing AVD before saving the snapshot', async () => {
+  const { home, hostDir, stack, editFake } = await harness();
+  editFake(state => (state.installed = null));
+  const config = avdConfigPath(home);
+  mkdirSync(dirname(config), { recursive: true });
+  writeFileSync(
+    config,
+    `avd.ini.encoding=UTF-8\n${PIXEL_7_CONFIG}showDeviceFrame=yes\n`
+  );
+
+  const { status, calls } = await stack('template', '--recreate');
+
+  expect(status).toBe(0);
+  expect(commands(calls).some(call => call.startsWith('avdmanager'))).toBe(
+    false
+  );
+  const expected = `avd.ini.encoding=UTF-8\n${HARNESS_HARDWARE}showDeviceFrame=yes\n`;
+  expect(
+    calls.find(
+      call => call.name === 'emulator' && call.args.includes('-wipe-data')
+    )?.avdConfig
+  ).toBe(expected);
+  expect(readFileSync(config, 'utf8')).toBe(expected);
+  expect(
+    JSON.parse(readFileSync(join(hostDir, 'template.json'), 'utf8')).version
+  ).not.toBe(TEMPLATE.version);
 });
 
 test('template --recreate refuses while any lease is live', async () => {

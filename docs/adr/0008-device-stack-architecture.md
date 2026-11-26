@@ -133,6 +133,10 @@ build. `device:stack build-key` prints the key and its inputs.
 
 - `pnpm run device:stack template` creates the harness AVD, `liftlog_harness_34`, once
   from the Android 34 Google APIs image for the host ABI.
+- The harness AVD has 4 GB RAM and a 720x1600 screen at 280 dpi, about 411 dp wide.
+  `template` writes these settings to the AVD's `config.ini` (in `$ANDROID_AVD_HOME`,
+  else `~/.android/avd`) before it saves the snapshot, so `--recreate` applies them to an
+  existing AVD. A hand edit is overwritten, and a change needs `--recreate`.
 - The template snapshot is a clean boot with no app installed and animations off. Its
   version is recorded per lease; `--recreate` rebuilds it and refuses while any lease is
   live.

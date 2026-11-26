@@ -69,6 +69,14 @@ const HARNESS_AVD = 'liftlog_harness_34';
 // every leased instance boots from, and its version.
 const TEMPLATE_SNAPSHOT = 'liftlog_template';
 const TEMPLATE = join(HOST_DIR, 'template.json');
+// The harness AVD's hardware, written to its config.ini before the template boot: 4 GB RAM
+// and 720x1600 at 280 dpi, about 411 dp wide.
+const HARNESS_HARDWARE = {
+  'hw.ramSize': '4096',
+  'hw.lcd.width': '720',
+  'hw.lcd.height': '1600',
+  'hw.lcd.density': '280'
+};
 // Host GPU rendering on every boot. Left on auto, the emulator falls back to software
 // rendering under host memory pressure, and a snapshot saved in one mode fails to load in
 // the other, so the instance cold boots.
@@ -297,7 +305,47 @@ function createAvd() {
   return true;
 }
 
-// Boots the harness AVD writable from wiped data, turns animations off, checks no app is
+// Sets HARNESS_HARDWARE in the harness AVD's config.ini, replacing each key in place and
+// appending missing ones. A change invalidates any saved snapshot, so only `template` calls it.
+function applyHarnessHardware() {
+  const config = join(
+    process.env.ANDROID_AVD_HOME || join(homedir(), '.android', 'avd'),
+    `${HARNESS_AVD}.avd`,
+    'config.ini'
+  );
+
+  if (!existsSync(config)) {
+    throw new Error(
+      `${config} does not exist. Delete ${HARNESS_AVD} with \`avdmanager delete avd --name ${HARNESS_AVD}\`, then rerun.`
+    );
+  }
+
+  const lines = readFileSync(config, 'utf8').split('\n');
+  const missing = new Set(Object.keys(HARNESS_HARDWARE));
+  const updated = lines.map(line => {
+    const key = line.slice(0, line.indexOf('=')).trim();
+
+    if (!line.includes('=') || !(key in HARNESS_HARDWARE)) {
+      return line;
+    }
+
+    missing.delete(key);
+
+    return `${key}=${HARNESS_HARDWARE[key]}`;
+  });
+
+  if (updated.at(-1) === '') {
+    updated.pop();
+  }
+
+  for (const key of missing) {
+    updated.push(`${key}=${HARNESS_HARDWARE[key]}`);
+  }
+
+  writeFileSync(config, `${updated.join('\n')}\n`);
+}
+
+// Applies the harness hardware, boots the harness AVD writable from wiped data, turns animations off, checks no app is
 // installed and saves the template snapshot. It holds the registry lock throughout and
 // refuses while any lease is live, so no instance runs from the AVD meanwhile.
 async function template({ recreate }) {
@@ -324,6 +372,8 @@ async function template({ recreate }) {
           .join('; ')}.`
       );
     }
+
+    applyHarnessHardware();
 
     return snapshotTemplate();
   });
