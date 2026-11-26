@@ -34,6 +34,7 @@
     "test:native": "jest --selectProjects native",
     "test:tooling": "jest --selectProjects tooling",
     "ts-check": "tsc --noEmit true --project ./tsconfig.json",
+    "sandbox": "node scripts/sandbox-issue.mjs",
     "worktree": "node scripts/new-worktree.mjs",
     "validate:changed": "node scripts/validate-changed.mjs",
     "theme:check": "node scripts/generate-theme-colors.mjs --check",

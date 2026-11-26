@@ -285,20 +285,31 @@ coordinates read off a screenshot. In order:
 A Docker Sandbox reaches its checkout's Android lease through the lease broker
 ([ADR-0009](adr/0009-sandboxed-agents-reach-device-stacks-through-a-lease-broker.md)).
 
-1. **Host setup.** Create the harness template once using the [recipe](#recipe).
-   For an issue, create its linked worktree on the Mac and run
+Launch an issue from the main checkout on the Mac with `pnpm run sandbox <n>`
+(`--agent <agent>` picks the sandbox agent, default `codex`). Create the harness template
+once using the [recipe](#recipe) first. The launcher runs steps 1-3 in order and stays in
+the foreground with the broker. It prints `HANDOFF` only after the sandbox's own client
+reaches the broker's running lease for that checkout, then `sbx run liftlog-<n>` attaches
+the agent. A failed setup or broker startup, or a sandbox that reaches no lease or another
+lease, exits 1 without a handoff and stops the broker it started.
+
+1. **Host setup.** The launcher creates the linked worktree `../liftlog-<n>` with
+   `pnpm run worktree <n>`, or reuses one on `issue-<n>`, and runs
    `pnpm install --frozen-lockfile` there on the Mac. Each checkout needs its own
    macOS dependencies for host Metro.
-2. **Sandbox mount.** Create a dedicated sandbox with the worktree as a writable
-   workspace, for example `sbx create --name liftlog-123 codex /absolute/path/to/liftlog-123`.
+2. **Sandbox mount.** The launcher creates the dedicated sandbox `liftlog-<n>` with the
+   worktree as its writable workspace (`sbx create --name liftlog-<n> codex <worktree>`),
+   or reuses one that mounts it, and refuses one that mounts another path.
    The broker client needs only this mount and a Linux Node.js runtime. If the sandbox
-   image lacks Node.js, install the runtime in the sandbox outside the checkout.
+   image lacks Node.js, the launcher stops before the broker starts: install the runtime
+   in the sandbox outside the checkout, for example
+   `sbx exec -u root liftlog-<n> sh -c 'apt-get update && apt-get install -y nodejs'`.
    If the sandbox also needs Git, the linked
    worktree's `.git` file refers to the Git common directory at its host path. See
    [ADR-0009](adr/0009-sandboxed-agents-reach-device-stacks-through-a-lease-broker.md#context)
    for the implications of mounting it.
-3. **Start on the host.** From the linked worktree, run
-   `pnpm run device:stack broker --sandbox liftlog-123`. From main,
+3. **Start on the host.** The launcher runs
+   `pnpm run device:stack broker --sandbox liftlog-<n>` from the linked worktree. From main,
    `pnpm run device:stack broker` uses `"sandbox": "liftlog-dev"` in
    `~/.liftlog-device-stack/config.json`. The foreground broker starts the checkout's
    lease and Metro, listens on `127.0.0.1` at the slot's broker port (8092 or 8093, or
@@ -315,8 +326,8 @@ A Docker Sandbox reaches its checkout's Android lease through the lease broker
    Host Metro picks up edits in the mounted checkout. Use `metro-reload` to reload the
    app. Keep dependency installs, adb, agent-device, the emulator and `device:stack`
    on the host. A Linux install into the mount would replace Metro's macOS dependencies.
-5. **Stop.** Use `stop` through the client or Ctrl-C on the host. A host release
-   through `stop` or `gc` also ends the broker. Cleanup removes that broker's
+5. **Stop.** Use `stop` through the client or Ctrl-C on the host; either ends the
+   launcher too. A host release through `stop` or `gc` also ends the broker. Cleanup removes that broker's
    credential and network rule. The checkout retains its recordings and screenshots.
 
 | Command                        | Runs on the lease                                                |

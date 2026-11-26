@@ -49,10 +49,12 @@ per lease. The broker, not the network policy, is the security boundary.
 
 ### Access path
 
-- Each checkout uses a dedicated existing sandbox that mounts that checkout. On the Mac,
-  run `pnpm run device:stack broker --sandbox <name>` from the linked worktree. The
-  main checkout can run `pnpm run device:stack broker` with the sandbox named in
-  `~/.liftlog-device-stack/config.json`. The maintainer creates the sandbox separately.
+- Each checkout uses a dedicated sandbox that mounts that checkout. On the Mac,
+  `pnpm run sandbox <n>` prepares the issue's linked worktree, creates or reuses the
+  sandbox `liftlog-<n>` mounting it, runs `pnpm run device:stack broker --sandbox liftlog-<n>`
+  in the foreground from that worktree and hands off only once the sandbox reaches the
+  broker's running lease. The main checkout can run `pnpm run device:stack broker` with
+  the sandbox named in `~/.liftlog-device-stack/config.json`.
 - The foreground broker acquires the checkout's lease
   ([lease protocol](0008-device-stack-architecture.md#lease-protocol)). Stopping the
   broker releases its lease. Releasing the lease on the host ends the broker and removes
