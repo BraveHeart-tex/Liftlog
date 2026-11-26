@@ -10,12 +10,8 @@ import { fileURLToPath } from 'node:url';
 // `node scripts/lease-broker-client.mjs <command> [args]`. It sends the command with the lease
 // credential from the checkout's .device-stack/broker.json, prints the output the broker
 // returns and exits with its exit code. DEVICE_STACK_BROKER_HOST replaces the host.
-const CREDENTIAL = join(
-  dirname(fileURLToPath(import.meta.url)),
-  '..',
-  '.device-stack',
-  'broker.json'
-);
+const CHECKOUT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const CREDENTIAL = join(CHECKOUT, '.device-stack', 'broker.json');
 const HOST = process.env.DEVICE_STACK_BROKER_HOST || 'host.docker.internal';
 
 const fail = message => {
@@ -30,7 +26,7 @@ try {
   broker = JSON.parse(readFileSync(CREDENTIAL, 'utf8'));
 } catch {
   fail(
-    'NO_BROKER: no lease broker serves this checkout; ask the maintainer to run `pnpm run device:stack broker` on the host from this checkout (with --sandbox <name> for a linked worktree).'
+    `NO_CREDENTIAL: no lease credential at ${CREDENTIAL}, so no lease broker serves the checkout ${CHECKOUT}; ask the maintainer to run \`pnpm run device:stack broker\` on the host from this checkout (with --sandbox <name> for a linked worktree).`
   );
 }
 
@@ -74,7 +70,7 @@ const sent = request(
 
 sent.on('error', error =>
   fail(
-    `NO_BROKER: cannot reach the lease broker at ${HOST}:${broker.port} (${error.message}).`
+    `BROKER_UNREACHABLE: cannot reach the lease broker at ${HOST}:${broker.port} (${error.code ?? error.message}); check that the broker still runs on the host and that the sandbox's network policy allows localhost:${broker.port}.`
   )
 );
 sent.end(body);

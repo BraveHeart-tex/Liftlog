@@ -3,11 +3,15 @@ import {
   copyFileSync,
   existsSync,
   mkdirSync,
+  mkdtempSync,
   readFileSync,
+  realpathSync,
   statSync,
-  symlinkSync
+  symlinkSync,
+  writeFileSync
 } from 'node:fs';
 import { request } from 'node:http';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import {
   SERIAL,
@@ -152,6 +156,48 @@ test('broker refuses to start without a sandbox in the host config and leases no
   expect(run.stderr).toContain('NO_SANDBOX');
   expect(registry().leases).toEqual([]);
   expect(run.calls.filter(({ name }) => name === 'sbx')).toEqual([]);
+});
+
+// The client alone, in a checkout the broker does not serve.
+test('the client tells a missing credential, naming the checkout, from an unreachable broker, naming the endpoint', async () => {
+  const checkout = realpathSync(mkdtempSync(join(tmpdir(), 'broker-client-')));
+  const clientPath = join(checkout, 'scripts', 'lease-broker-client.mjs');
+  const run = () =>
+    new Promise<{ status: number | null; stderr: string }>(done => {
+      const child = spawn(process.execPath, [clientPath, 'status'], {
+        env: { ...process.env, DEVICE_STACK_BROKER_HOST: '127.0.0.1' }
+      });
+      let stderr = '';
+      child.stderr.on('data', chunk => (stderr += chunk));
+      child.on('close', status => done({ status, stderr }));
+    });
+
+  mkdirSync(join(checkout, 'scripts'));
+  copyFileSync(resolve('scripts/lease-broker-client.mjs'), clientPath);
+
+  const missing = await run();
+
+  expect(missing.status).toBe(1);
+  expect(missing.stderr).toContain('NO_CREDENTIAL');
+  expect(missing.stderr).toContain(checkout);
+  expect(missing.stderr).not.toContain('BROKER_UNREACHABLE');
+
+  const port = await freePort();
+  const credential = 'c'.repeat(64);
+
+  mkdirSync(join(checkout, '.device-stack'));
+  writeFileSync(
+    join(checkout, '.device-stack', 'broker.json'),
+    JSON.stringify({ port, credential })
+  );
+
+  const unreachable = await run();
+
+  expect(unreachable.status).toBe(1);
+  expect(unreachable.stderr).toContain('BROKER_UNREACHABLE');
+  expect(unreachable.stderr).toContain(`127.0.0.1:${port}`);
+  expect(unreachable.stderr).not.toContain('NO_CREDENTIAL');
+  expect(unreachable.stderr).not.toContain(credential);
 });
 
 test('the broker refuses a missing or wrong lease credential and runs nothing', async () => {

@@ -304,7 +304,9 @@ A Docker Sandbox reaches its checkout's Android lease through the lease broker
    need separate sandboxes and enough slots in the host's [capacity](#capacity).
 4. **Drive Android from the sandbox.** From the mounted checkout root, run
    `node scripts/lease-broker-client.mjs <command> [args]`. It prints the command's output
-   and exits with its code, or reports `NO_BROKER` when the broker is unavailable.
+   and exits with its code. Without the checkout's credential it exits 1 with
+   `NO_CREDENTIAL` naming the checkout; when the broker cannot be reached it exits 1
+   with `BROKER_UNREACHABLE` naming the host and port. Neither prints the credential.
    Host Metro picks up edits in the mounted checkout. Use `metro-reload` to reload the
    app. Keep dependency installs, adb, agent-device, the emulator and `device:stack`
    on the host. A Linux install into the mount would replace Metro's macOS dependencies.
