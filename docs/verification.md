@@ -167,7 +167,11 @@ coordinates read off a screenshot. In order:
    bounds from the session's last snapshot, refuses with `REFUSED` when a fresh
    `device snapshot -i --json` no longer shows the same element under that ref, and swipes
    through the element's center over `<percent>` (1 to 90) of its height or width, so both
-   endpoints stay inside it. Never call `adb` or `agent-device` directly; a sandboxed agent
+   endpoints stay inside it. The fresh snapshot is the stale-ref check because agent-device
+   (0.21.28) `get attrs @ref --json` answers with the element's `rect` from the session's
+   last snapshot, even after the UI changes. Refs stay stable across fresh
+   `snapshot -i --json` calls while the UI is unchanged, and an unknown ref fails with
+   `reason: ref_not_found`. Never call `adb` or `agent-device` directly; a sandboxed agent
    follows [sandboxed agents](#sandboxed-agents) instead. `start`
    installs the dev build matching the checkout's dev build key from the dev build cache,
    only when the installed build differs; on a miss it builds it first from a freshly

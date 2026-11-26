@@ -83,6 +83,10 @@ appendFileSync(process.env.FAKE_LOG, JSON.stringify({
   ...(name === 'agent-device' && { env: Object.keys(process.env).filter(key => key.startsWith('AGENT_DEVICE_')) })
 }) + '\\n')
 const stayAlive = () => setInterval(() => {}, 1000)
+// The agent-device command without the lease flags and their values, which device() and
+// swipe put first and the start helper last.
+const LEASE_FLAGS = ['--platform', '--serial', '--session', '--config']
+const device = args.filter((arg, i) => !LEASE_FLAGS.includes(arg) && !LEASE_FLAGS.includes(args[i - 1]))
 const state = read()
 const avdOf = serial =>
   serial === '${FOREIGN}' ? '${AUDIT_AVD}' : state.emulators[serial?.slice('emulator-'.length)]?.avd ?? null
@@ -148,19 +152,19 @@ if (name === 'emulator') {
     const listener = state.listeners.find(l => l.pid === pid)
     if (listener) process.stdout.write('p' + pid + '\\nfcwd\\nn' + listener.cwd + '\\n')
   }
-} else if (name === 'agent-device' && args[0] === 'open' && state.openTimeouts > 0) {
+} else if (name === 'agent-device' && device[0] === 'open' && state.openTimeouts > 0) {
   update(s => { s.openTimeouts -= 1 })
   process.stderr.write('Daemon request timed out\\n')
   process.exit(1)
-} else if (name === 'agent-device' && args[0] === 'press' && args[1] === 'label="Close"') {
+} else if (name === 'agent-device' && device[0] === 'press' && device[1] === 'label="Close"') {
   update(s => { s.onboarding = false })
-} else if (name === 'agent-device' && args.includes('attrs')) {
-  const node = (state.sessionNodes ?? state.snapshotNodes ?? []).find(n => '@' + n.ref === args[args.indexOf('attrs') + 1])
+} else if (name === 'agent-device' && device[0] === 'get' && device[1] === 'attrs') {
+  const node = (state.sessionNodes ?? state.snapshotNodes ?? []).find(n => '@' + n.ref === device[2])
   process.stdout.write(JSON.stringify(node ? { success: true, data: { ref: node.ref, node } } : { success: false }))
   if (!node) process.exit(1)
-} else if (name === 'agent-device' && args.includes('snapshot') && args.includes('--json')) {
+} else if (name === 'agent-device' && device[0] === 'snapshot' && device.includes('--json')) {
   process.stdout.write(JSON.stringify({ success: true, data: { nodes: state.snapshotNodes ?? [] } }))
-} else if (name === 'agent-device' && args[0] === 'snapshot') {
+} else if (name === 'agent-device' && device[0] === 'snapshot') {
   process.stdout.write(state.redbox
     ? 'Render Error\\nThis error is located at:'
     : state.onboarding

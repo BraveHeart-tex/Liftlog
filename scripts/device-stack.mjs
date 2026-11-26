@@ -2154,7 +2154,8 @@ async function capturePress(args) {
 // The host reads the ref's element from the session's last snapshot and refuses when a fresh
 // snapshot no longer shows that element under the ref, so a stale ref runs no gesture. The
 // swipe is centered on the element and spans the percent of its height or width, so both
-// endpoints stay inside its bounds.
+// endpoints stay inside its bounds. The agent-device ref facts this relies on are in the
+// device-check recipe (docs/verification.md#recipe).
 const SWIPE_DIRECTIONS = /^(up|down|left|right)$/;
 const SWIPE_PERCENT = /^([1-9]|[1-8]\d|90)$/;
 
