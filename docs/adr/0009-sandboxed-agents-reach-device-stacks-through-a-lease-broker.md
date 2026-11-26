@@ -49,8 +49,9 @@ per lease. The broker, not the network policy, is the security boundary.
 
 ### Access path
 
-- Host-side `device:stack` runs from the main checkout, never from the sandbox's
-  worktree, acquires the lease ([lease protocol](0008-device-stack-architecture.md#lease-protocol))
+- The sandbox is the existing sandbox named in the host config, whose workspace is the
+  main checkout. It holds at most one lease; `device:stack` creates no sandbox.
+- Host-side `device:stack` runs from the main checkout, acquires the lease ([lease protocol](0008-device-stack-architecture.md#lease-protocol))
   and starts the broker in the foreground of that host process. Stopping the broker
   releases the lease.
 - The broker binds `127.0.0.1` on a port fixed by the lease's slot. The sandbox gets one
@@ -63,8 +64,8 @@ per lease. The broker, not the network policy, is the security boundary.
 
 - Each lease gets a fresh 256-bit lease credential. The broker compares it in constant
   time on every request and refuses a missing or wrong one.
-- The credential reaches the sandbox only through its own worktree's `.device-stack/`
-  (owner-only permissions), never through the shared git common dir.
+- The credential reaches the sandbox only through the main checkout's `.device-stack/`
+  (owner-only permissions).
 - Each allowlisted command maps to a fixed agent-device or `device:stack` argv with the
   lease's serial, session and Metro port filled in by the broker. Arguments are validated
   against per-command patterns (`@ref`, a `liftlog:///` route path, a screenshot name)
@@ -74,26 +75,21 @@ per lease. The broker, not the network policy, is the security boundary.
 
 ### Workspace mounts
 
-A sandboxed worktree mounts:
-
-- the worktree, read-write;
-- the git common dir, read-write;
-- `<git common dir>/hooks` and `<git common dir>/config`, read-only, over it.
-
-Host tooling treats a sandbox's worktree as untrusted: host git runs in it only with
-hooks disabled (`-c core.hooksPath=/dev/null`), and the host never runs its package
-scripts or config. Metro for a sandboxed lease therefore runs inside the sandbox, with
-its port published to the host (`sbx port`), and the broker points the emulator at it;
-a host Metro on the worktree is not used.
+The sandbox mounts the main checkout read-write, so it can change the scripts, hooks and
+config the host runs, the broker included. The sandbox is trusted for code: the broker
+confines its device access to the lease, not what the host executes. Metro for the
+lease is the lease's host Metro on the main checkout
+([per-lease Metro](../verification.md#device-checks)), which picks up edits made inside
+the sandbox.
 
 ## Consequences
 
 - One broker process and one policy rule per lease; the integration issue adds the broker
-  to `device:stack`, the policy rule lifecycle and the in-sandbox Metro.
-- In-sandbox Metro, its published port and its `node_modules` install were not measured
-  in #168; the integration issue proves them before sandboxed device checks are relied on.
-- A sandbox with the git common dir mounted read-write can move any local ref, including
+  to `device:stack` and the policy rule lifecycle.
+- The sandbox can change any file in the main checkout, move any local ref, including
   `main`, and write objects. Pushes still go through the remote's rules.
+- Host and sandbox share the main checkout's `node_modules`; host Metro needs its macOS
+  native packages, so an install inside the sandbox must not replace them.
 - `agent-device proxy` is not used for sandboxes: its token controls every device the
   host daemon sees.
 - Host agents keep using `device:stack` directly
