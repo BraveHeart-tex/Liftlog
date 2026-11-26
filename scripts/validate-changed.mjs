@@ -1,29 +1,51 @@
-import { execFileSync, spawnSync } from 'node:child_process';
-import { closeSync, existsSync, mkdtempSync, openSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { closeSync, mkdtempSync, openSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+
+// eslint-disable-next-line no-restricted-imports
+import {
+  changedPaths,
+  changes,
+  git,
+  validationRecord,
+  workingTree
+} from './validation-state.mjs';
 
 // The done gate: runs every validation stage on the files changed since a base (default
 // HEAD), committed or not, plus untracked files. Changes under scripts/ or tests/tooling/
 // add the tooling Jest project. Each stage's output goes to its own log,
 // so the agent reads one line per stage instead of raw tool output.
-const git = (...args) =>
-  execFileSync('git', args, { encoding: 'utf8' }).split('\n').filter(Boolean);
-
 const baseFlag = process.argv.indexOf('--base');
 const base = baseFlag === -1 ? 'HEAD' : process.argv[baseFlag + 1];
-const files = [
-  ...new Set([
-    ...git('diff', '--name-only', '--diff-filter=d', base),
-    ...git('ls-files', '--others', '--exclude-standard')
-  ])
-]
-  .filter(file => existsSync(file))
-  .sort();
+const baseCommit = git('rev-parse', '--verify', `${base}^{commit}`);
+const tree = workingTree();
+const files = changedPaths(baseCommit, tree, '--diff-filter=d').sort();
+
+function recordSuccess() {
+  if (workingTree() !== tree) {
+    process.stderr.write(
+      'Files changed during validation. Run validate:changed again.\n'
+    );
+
+    return 1;
+  }
+
+  writeFileSync(
+    validationRecord(),
+    JSON.stringify({
+      base: baseCommit,
+      paths: changedPaths(baseCommit, tree),
+      changes: changes(baseCommit, tree)
+    })
+  );
+
+  return 0;
+}
 
 if (files.length === 0) {
   process.stdout.write(`No changed files since ${base}.\n`);
-  process.exit(0);
+  process.exit(recordSuccess());
 }
 
 const code = files.filter(file => /\.(ts|tsx|js|mjs|cjs)$/.test(file));
@@ -65,6 +87,10 @@ for (const [name, args] of stages) {
     results.push(`${name} FAIL (exit ${status})`);
     failure = status;
   }
+}
+
+if (!failure) {
+  failure = recordSuccess();
 }
 
 process.stdout.write(

@@ -219,3 +219,80 @@ test.each([
   assert.equal(calls.at(-1)?.join(' ') === toolingTests.join(' '), tooling);
   assert.equal(/^START tooling$/m.test(stdout), tooling);
 });
+
+function rebasedIssue(upstreamFile: string) {
+  const setup = repo();
+  const base = setup.git('rev-parse', 'HEAD');
+  const remote = join(setup.dir, 'remote.git');
+  execFileSync('git', ['init', '--bare', '-q', remote]);
+  setup.git('remote', 'add', 'origin', remote);
+  setup.git('push', '-q', 'origin', 'HEAD:main');
+  setup.git('switch', '-qc', 'upstream');
+  setup.write(upstreamFile, 'upstream\n');
+  setup.git('add', '.');
+  setup.git('commit', '-qm', 'upstream');
+  setup.git('push', '-q', 'origin', 'HEAD:main');
+  setup.git('switch', '-qc', 'issue', base);
+  setup.write('a.ts', 'issue\n');
+  expect(validate(setup, ['--base', base]).status).toBe(0);
+  setup.git('add', '.');
+  setup.git('commit', '-qm', 'issue');
+  setup.git('rebase', '-q', '-X', 'theirs', 'origin/main');
+
+  const pushLog = join(setup.work, '.git', 'push.log');
+  const hook = join(setup.work, '.git', 'hooks', 'pre-push');
+  setup.git('config', 'core.hooksPath', join(setup.work, '.git', 'hooks'));
+  writeFileSync(hook, '#!/bin/sh\ntouch .git/push.log\n', { mode: 0o755 });
+  const ship = () =>
+    spawnSync(process.execPath, [resolve('scripts/ship-issue.mjs')], {
+      cwd: setup.work,
+      encoding: 'utf8'
+    });
+
+  return { ...setup, ship, pushLog };
+}
+
+test('shipping an overlapping rebase lists the paths and never attempts a push', () => {
+  const setup = rebasedIssue('a.ts');
+  const result = setup.ship();
+
+  expect(result.status).toBe(1);
+  expect(result.stderr).toMatch(/overlap/i);
+  expect(result.stderr).toContain('a.ts');
+  expect(existsSync(setup.pushLog)).toBe(false);
+});
+
+test('shipping a disjoint rebase reuses the last successful validation', () => {
+  const setup = rebasedIssue('b.md');
+  const result = setup.ship();
+
+  expect({ status: result.status, stderr: result.stderr }).toEqual({
+    status: 0,
+    stderr: expect.any(String)
+  });
+  expect(existsSync(setup.pushLog)).toBe(true);
+  expect(setup.git('rev-parse', 'origin/main')).toBe(
+    setup.git('rev-parse', 'HEAD')
+  );
+});
+
+test('shipping an overlapping rebase succeeds after validation on the new base', () => {
+  const setup = rebasedIssue('a.ts');
+  expect(setup.ship().status).toBe(1);
+
+  const base = setup.git('rev-parse', 'origin/main');
+  expect(validate(setup, ['--base', base], 'eslint:3').status).toBe(3);
+  expect(setup.ship().status).toBe(1);
+  expect(existsSync(setup.pushLog)).toBe(false);
+
+  expect(validate(setup, ['--base', base]).status).toBe(0);
+  const result = setup.ship();
+  expect({ status: result.status, stderr: result.stderr }).toEqual({
+    status: 0,
+    stderr: expect.any(String)
+  });
+  expect(existsSync(setup.pushLog)).toBe(true);
+  expect(setup.git('rev-parse', 'origin/main')).toBe(
+    setup.git('rev-parse', 'HEAD')
+  );
+});

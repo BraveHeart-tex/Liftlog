@@ -99,7 +99,10 @@ Work **lean** throughout:
    _Done when_ the required final checks exit 0 on the final code or docs.
 
 8. **Ship.** Commit per [commits](../../../docs/commits.md) with scope `#<n>` and
-   push to main. Write the [evidence](../../../docs/verification.md#evidence) to a file
+   run `node scripts/ship-issue.mjs`. If main advanced, rebase onto `origin/main` and
+   run the ship command again. If it requires fresh validation, run
+   `pnpm run validate:changed --base <base>` with the base it prints, then retry shipping.
+   Write the [evidence](../../../docs/verification.md#evidence) to a file
    citing the pushed commit, then close per [tickets](../../../docs/tickets.md#closing)
    with `node scripts/finish-issue.mjs <n> --evidence <file>`, adding `--attach <png>`
    per reviewed screenshot when device checks are evidence. It ticks every box, posts the

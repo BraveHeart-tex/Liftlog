@@ -10,7 +10,7 @@ Mobile Expo/React Native app: native-compatible code only, no DOM or browser API
 
 ## Done
 
-Done means: `pnpm run validate:changed --base <base>` and every other applicable [validation](#validation) check pass on the final code, every acceptance criterion's box is ticked, the change is pushed straight to `main` with the issue as commit scope (the "Bypassed rule violations" notice from the maintainer's ruleset bypass is expected), and the [evidence comment](docs/verification.md#evidence) is in the issue. Then [close it](docs/tickets.md#closing). Progress and verification live in GitHub Issues; docs hold durable rules.
+Done means: `pnpm run validate:changed --base <base>` and every other applicable [validation](#validation) check pass on the final code, every acceptance criterion's box is ticked, the change is committed with the issue as scope and shipped straight to `main` through `node scripts/ship-issue.mjs` (the "Bypassed rule violations" notice from the maintainer's ruleset bypass is expected), and the [evidence comment](docs/verification.md#evidence) is in the issue. Then [close it](docs/tickets.md#closing). Progress and verification live in GitHub Issues; docs hold durable rules.
 
 ## Docs
 
