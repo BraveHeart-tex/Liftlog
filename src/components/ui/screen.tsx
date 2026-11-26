@@ -96,7 +96,7 @@ export function Screen({
 
   const scrollContentClassName = cn(
     'flex-grow',
-    withPadding && (hasFooter ? 'px-4 pt-6 pb-6' : 'px-4 py-6'),
+    withPadding && 'px-4 py-6',
     sharedContentClassName
   );
 
@@ -104,15 +104,6 @@ export function Screen({
     <View className={cn('min-h-0 flex-1', sharedContentClassName)}>
       {children}
     </View>
-  ) : footer ? (
-    <StyledScrollView
-      ref={scrollRef}
-      className="flex-1"
-      contentContainerClassName={scrollContentClassName}
-      keyboardShouldPersistTaps={keyboardShouldPersistTaps}
-    >
-      {children}
-    </StyledScrollView>
   ) : (
     <StyledScrollView
       ref={scrollRef}

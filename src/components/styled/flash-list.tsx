@@ -5,7 +5,6 @@ import type { ReactNode } from 'react';
 interface FlashListClassNameProps {
   className?: string;
   contentContainerClassName?: string;
-  ListEmptyComponentClassName?: string;
   ListHeaderComponentClassName?: string;
   ListFooterComponentClassName?: string;
 }
