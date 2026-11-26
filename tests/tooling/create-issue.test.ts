@@ -29,7 +29,8 @@ afterEach(() =>
 
 // A fake `gh` first on PATH that keeps issue, relationship and Project state in a JSON file,
 // so creation, partial failure and resume run end to end without touching GitHub.
-const fake = `#!/usr/bin/env node
+// Runs this Node directly, without an env lookup on each of the file's hundreds of calls.
+const fake = `#!${process.execPath}
 const fs = require('node:fs')
 const a = process.argv.slice(2)
 const path = process.env.FAKE_STATE

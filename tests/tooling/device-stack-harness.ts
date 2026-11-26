@@ -7,6 +7,8 @@ import {
   mkdtempSync,
   readFileSync,
   realpathSync,
+  renameSync,
+  rmdirSync,
   rmSync,
   writeFileSync
 } from 'node:fs';
@@ -413,6 +415,29 @@ export async function harness(
   };
   const fakeState = (): FakeState =>
     JSON.parse(readFileSync(statePath, 'utf8'));
+
+  // Edits the fake state under the fakes' directory lock and replaces it whole, so a
+  // fake still running from an earlier command cannot overwrite the edit.
+  function editFake(edit: (state: FakeState) => void) {
+    for (;;) {
+      try {
+        mkdirSync(`${statePath}.lock`);
+        break;
+      } catch {
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5);
+      }
+    }
+
+    try {
+      const state = fakeState();
+      edit(state);
+      writeFileSync(`${statePath}.harness`, JSON.stringify(state));
+      renameSync(`${statePath}.harness`, statePath);
+    } finally {
+      rmdirSync(`${statePath}.lock`);
+    }
+  }
+
   const recorded = () => {
     const path = join(root, '.device-stack', 'state.json');
 
@@ -431,9 +456,7 @@ export async function harness(
     });
     pids.push(child.pid!);
     await new Promise(done => child.stdout!.once('data', done));
-    const state = fakeState();
-    state.listeners.push({ pid: child.pid!, cwd, port: on });
-    writeFileSync(statePath, JSON.stringify(state));
+    editFake(state => state.listeners.push({ pid: child.pid!, cwd, port: on }));
 
     return child.pid!;
   }
@@ -529,16 +552,10 @@ export async function harness(
       rmSync(join(root, '.device-stack'), { recursive: true });
     }
 
-    const state = fakeState();
-    state.installed = seeded.content;
-    writeFileSync(statePath, JSON.stringify(state));
+    editFake(state => {
+      state.installed = seeded!.content;
+    });
   }
-
-  const editFake = (edit: (state: FakeState) => void) => {
-    const state = fakeState();
-    edit(state);
-    writeFileSync(statePath, JSON.stringify(state));
-  };
 
   const editRecorded = (edit: (state: Record<string, any>) => void) => {
     const path = join(root, '.device-stack', 'state.json');

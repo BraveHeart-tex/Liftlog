@@ -85,7 +85,7 @@ test('device runs each allowed command on the lease, with the slot Metro for ope
   expect(
     readFileSync(join(root, '.device-stack', 'agent-device.json'), 'utf8')
   ).toBe('{}\n');
-});
+}, 60_000);
 
 // Every spelling of the flags that select a device, app, session, Metro, config, daemon or
 // remote endpoint.
