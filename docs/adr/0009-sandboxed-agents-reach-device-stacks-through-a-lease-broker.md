@@ -84,8 +84,8 @@ the sandbox.
 
 ## Consequences
 
-- One broker process and one policy rule per lease; the integration issue adds the broker
-  to `device:stack` and the policy rule lifecycle.
+- One broker process and one policy rule per lease, both run by `device:stack broker`
+  ([sandboxed agents](../verification.md#sandboxed-agents)).
 - The sandbox can change any file in the main checkout, move any local ref, including
   `main`, and write objects. Pushes still go through the remote's rules.
 - Host and sandbox share the main checkout's `node_modules`; host Metro needs its macOS

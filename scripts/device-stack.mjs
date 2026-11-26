@@ -1,6 +1,12 @@
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { createHash, randomUUID } from 'node:crypto';
 import {
+  createHash,
+  randomBytes,
+  randomUUID,
+  timingSafeEqual
+} from 'node:crypto';
+import {
+  chmodSync,
   closeSync,
   copyFileSync,
   existsSync,
@@ -16,6 +22,7 @@ import {
   utimesSync,
   writeFileSync
 } from 'node:fs';
+import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { delimiter, join } from 'node:path';
@@ -58,7 +65,8 @@ const OPERATION_LOCK = join(DIR, 'operation.lock');
 const REGISTRY = join(HOST_DIR, 'registry.json');
 const REGISTRY_LOCK = join(HOST_DIR, 'registry.lock');
 // `{ "limit": 2 }` raises the emulator limit up to MAX_LIMIT; DEVICE_STACK_LIMIT can only lower
-// it. `metroPorts` replaces the Metro port of each slot.
+// it. `metroPorts` and `brokerPorts` replace the Metro and lease broker port of each slot, and
+// `sandbox` names the Docker Sandbox a lease broker serves.
 const HOST_CONFIG = join(HOST_DIR, 'config.json');
 const DEFAULT_LIMIT = 1;
 const MAX_LIMIT = 2;
@@ -98,6 +106,8 @@ const BUILD_ENV = ['EXPO_USE_COMMUNITY_AUTOLINKING'];
 // Slot n fixes the emulator console port 5556 + 2n and the adb port above it, and its Metro
 // port; 5554 and 8081 stay free for the maintainer's emulator and Metro.
 const DEFAULT_METRO_PORTS = [8090, 8091];
+// The lease broker port of each slot, on host 127.0.0.1.
+const DEFAULT_BROKER_PORTS = [8092, 8093];
 const slotPorts = slot => ({
   consolePort: 5556 + slot * 2,
   adbPort: 5557 + slot * 2,
@@ -743,8 +753,8 @@ function emulatorLimit() {
   return Math.min(configured, Number(lowered));
 }
 
-function metroPorts() {
-  const ports = readJson(HOST_CONFIG)?.metroPorts ?? DEFAULT_METRO_PORTS;
+function slotPortList(key, defaults) {
+  const ports = readJson(HOST_CONFIG)?.[key] ?? defaults;
 
   if (
     !Array.isArray(ports) ||
@@ -753,12 +763,15 @@ function metroPorts() {
     !ports.every(port => Number.isInteger(port) && port > 1023 && port < 65536)
   ) {
     throw new Error(
-      `${HOST_CONFIG}: metroPorts must list ${MAX_LIMIT} distinct ports from 1024 to 65535.`
+      `${HOST_CONFIG}: ${key} must list ${MAX_LIMIT} distinct ports from 1024 to 65535.`
     );
   }
 
   return ports;
 }
+
+const metroPorts = () => slotPortList('metroPorts', DEFAULT_METRO_PORTS);
+const brokerPorts = () => slotPortList('brokerPorts', DEFAULT_BROKER_PORTS);
 
 const readRegistry = () => readJson(REGISTRY) ?? { leases: [] };
 
@@ -2428,6 +2441,358 @@ function logs(args) {
   }
 }
 
+// docs/adr/0009-sandboxed-agents-reach-device-stacks-through-a-lease-broker.md: `broker` serves
+// one lease to the sandbox the host config names. The lease credential and the broker port
+// reach the sandbox only through this file; the broker records its own identity in it too.
+const BROKER = join(DIR, 'broker.json');
+const MAX_REQUEST_BYTES = 16_384;
+// Per-command argument patterns. No pattern admits a leading `-`, so no argument is a flag.
+const REF = /^@e\d{1,5}$/;
+const ROUTE =
+  /^[a-z][a-z0-9-]*(\/[A-Za-z0-9_-]+)*(\?[A-Za-z]+=[A-Za-z0-9_-]+)?$/;
+const TEXT = /^[\p{L}\p{N}][\p{L}\p{N} .,:!?'()+-]{0,99}$/u;
+const SCREENSHOT_NAME = /^[a-z0-9][a-z0-9-]{0,63}$/;
+const SCREENSHOTS = join(DIR, 'screenshots');
+// Every broker command and the fixed device:stack argv it runs; `min` is the number of
+// required arguments when some are optional.
+const BROKER_COMMANDS = {
+  start: { args: [], argv: () => ['start'] },
+  fresh: { args: [], argv: () => ['start', '--fresh'] },
+  stop: { args: [], argv: () => ['stop'] },
+  status: { args: [], argv: () => ['status'] },
+  logs: {
+    args: [/^(js|metro)$/, /^[1-9]\d{0,2}$/],
+    min: 0,
+    argv: ([name = 'js', lines = String(DEFAULT_LOG_LINES)]) => [
+      'logs',
+      name,
+      '--lines',
+      lines
+    ]
+  },
+  open: { args: [ROUTE], argv: ([path]) => ['open', path] },
+  snapshot: { args: [], argv: () => ['device', 'snapshot', '-i'] },
+  press: { args: [REF], argv: ([ref]) => ['device', 'press', ref] },
+  longpress: { args: [REF], argv: ([ref]) => ['device', 'longpress', ref] },
+  fill: {
+    args: [REF, TEXT],
+    argv: ([ref, text]) => ['device', 'fill', ref, text]
+  },
+  type: { args: [TEXT], argv: ([text]) => ['device', 'type', text] },
+  wait: { args: [TEXT], argv: ([text]) => ['device', 'wait', 'text', text] },
+  back: { args: [], argv: () => ['device', 'back'] },
+  scroll: {
+    args: [/^(up|down|left|right)$/],
+    argv: ([direction]) => ['device', 'scroll', direction]
+  },
+  'metro-reload': { args: [], argv: () => ['device', 'metro', 'reload'] },
+  screenshot: {
+    args: [SCREENSHOT_NAME],
+    argv: ([name]) => ['device', 'screenshot', join(SCREENSHOTS, `${name}.png`)]
+  }
+};
+
+// The device:stack argv for a broker request, or a refusal. A request names a command and
+// arguments only; the lease, serial, session, Metro and every path come from the broker.
+function brokerArgv(command, args) {
+  const spec = Object.hasOwn(BROKER_COMMANDS, command)
+    ? BROKER_COMMANDS[command]
+    : null;
+
+  if (!spec) {
+    throw refused(
+      `${JSON.stringify(command)} is not a broker command; the broker commands are ${Object.keys(BROKER_COMMANDS).join(', ')}`
+    );
+  }
+
+  if (
+    !Array.isArray(args) ||
+    args.length < (spec.min ?? spec.args.length) ||
+    args.length > spec.args.length
+  ) {
+    throw refused(
+      `${command} takes ${spec.args.length} argument${spec.args.length === 1 ? '' : 's'}`
+    );
+  }
+
+  args.forEach((arg, index) => {
+    if (typeof arg !== 'string' || arg.startsWith('-')) {
+      throw refused(`${JSON.stringify(arg)} is a flag or not a string`);
+    }
+
+    if (/emulator-\d+/.test(arg)) {
+      throw refused(`${JSON.stringify(arg)} names a serial`);
+    }
+
+    if (/^[/~]|\.\.|\\/.test(arg)) {
+      throw refused(`${JSON.stringify(arg)} names a path`);
+    }
+
+    if (!spec.args[index].test(arg)) {
+      throw refused(
+        `${JSON.stringify(arg)} does not match ${spec.args[index]} for ${command}`
+      );
+    }
+  });
+
+  return spec.argv(args);
+}
+
+// Runs device:stack in this checkout as a child, so each request gets the CLI's own checks,
+// locks and exit code.
+function runScript(argv) {
+  return new Promise(done => {
+    const child = spawn(process.execPath, [SCRIPT, ...argv], {
+      cwd: ROOT,
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.on('data', chunk => (stdout += chunk));
+    child.stderr.on('data', chunk => (stderr += chunk));
+    child.on('close', status => done({ status: status ?? 1, stdout, stderr }));
+  });
+}
+
+function hostSandbox() {
+  const sandbox = readJson(HOST_CONFIG)?.sandbox;
+
+  if (typeof sandbox !== 'string' || !/^[A-Za-z0-9][\w.-]*$/.test(sandbox)) {
+    throw new Error(
+      `NO_SANDBOX: ${HOST_CONFIG} must name the sandbox the broker serves, as "sandbox": "<name>".`
+    );
+  }
+
+  return sandbox;
+}
+
+const allowRule = (sandbox, port) => [
+  'policy',
+  'allow',
+  'network',
+  '--no-input',
+  '--sandbox',
+  sandbox,
+  `localhost:${port}`
+];
+const removeRule = (sandbox, port) => [
+  'policy',
+  'rm',
+  'network',
+  '--no-input',
+  // Without a terminal, rm refuses to remove a rule unless forced.
+  '--force',
+  '--sandbox',
+  sandbox,
+  '--resource',
+  `localhost:${port}`
+];
+
+async function broker() {
+  const sandbox = hostSandbox();
+  const commonDir = tryRun('git', [
+    'rev-parse',
+    '--path-format=absolute',
+    '--git-common-dir'
+  ]).trim();
+
+  if (realOrSame(commonDir) !== join(ROOT, '.git')) {
+    throw new Error(
+      `NOT_MAIN_CHECKOUT: run the broker from the main checkout, the workspace of sandbox ${sandbox}.`
+    );
+  }
+
+  const previous = readJson(BROKER);
+
+  if (previous && isSameProcess(previous.process)) {
+    throw new Error(
+      `BROKER_RUNNING: pid ${previous.process.pid} already runs this checkout's lease broker.`
+    );
+  }
+
+  if (previous) {
+    // A broker that died left its credential and maybe its policy rule.
+    tryRun('sbx', removeRule(previous.sandbox, previous.port));
+    rmSync(BROKER, { force: true });
+  }
+
+  const started = spawnSync(process.execPath, [SCRIPT, 'start'], {
+    cwd: ROOT,
+    stdio: 'inherit'
+  });
+
+  if (started.status !== 0) {
+    throw new Error('the lease did not start, so no broker runs.');
+  }
+
+  const { id, slot } = readState().lease;
+  const port = brokerPorts()[slot];
+  const credential = randomBytes(32).toString('hex');
+  const digest = value => createHash('sha256').update(value).digest();
+  const expected = digest(credential);
+  // Both sides are hashed to one length, so the comparison takes constant time.
+  const authorized = header =>
+    typeof header === 'string' &&
+    header.startsWith('Bearer ') &&
+    timingSafeEqual(digest(header.slice('Bearer '.length)), expected);
+  let queue = Promise.resolve();
+  let closing = false;
+  let watch;
+
+  const server = createServer((request, response) => {
+    const reply = (code, body) => {
+      // Each request is one command, so no connection outlives its reply.
+      response.writeHead(code, {
+        'content-type': 'application/json',
+        connection: 'close'
+      });
+      response.end(`${JSON.stringify(body)}\n`);
+    };
+
+    if (!authorized(request.headers.authorization)) {
+      request.resume();
+      reply(401, {
+        error:
+          'UNAUTHORIZED: missing or wrong lease credential; nothing was run.'
+      });
+
+      return;
+    }
+
+    if (request.method !== 'POST' || request.url !== '/command') {
+      request.resume();
+      reply(404, { error: 'NOT_FOUND: the broker serves POST /command only.' });
+
+      return;
+    }
+
+    let body = '';
+
+    request.setEncoding('utf8');
+    request.on('data', chunk => {
+      body += chunk;
+
+      if (body.length > MAX_REQUEST_BYTES) {
+        request.destroy();
+      }
+    });
+    request.on('end', () => {
+      let command;
+      let argv;
+
+      try {
+        ({ command, args: argv } = JSON.parse(body));
+        argv = brokerArgv(command, argv ?? []);
+      } catch (error) {
+        reply(403, { error: error.message });
+
+        return;
+      }
+
+      // One command runs at a time, in arrival order.
+      queue = queue.then(async () => {
+        if (closing) {
+          reply(503, { error: 'STOPPING: the lease broker is stopping.' });
+
+          return;
+        }
+
+        if (command === 'screenshot') {
+          mkdirSync(SCREENSHOTS, { recursive: true });
+        }
+
+        reply(200, await runScript(argv));
+
+        if (command === 'stop') {
+          shutdown();
+        }
+      });
+    });
+  });
+
+  // Stops serving and removes the credential and the policy rule; the lease is released
+  // already, or `releaseThenShutdown` releases it first.
+  function shutdown() {
+    if (closing) {
+      return;
+    }
+
+    closing = true;
+    clearInterval(watch);
+    rmSync(BROKER, { force: true });
+
+    try {
+      run('sbx', removeRule(sandbox, port));
+      log(`removed the policy rule for localhost:${port} from ${sandbox}`);
+    } catch (error) {
+      log(error.message);
+      process.exitCode = 1;
+    }
+
+    server.close(() => process.exit());
+    server.closeIdleConnections();
+  }
+
+  const releaseThenShutdown = () => {
+    queue = queue.then(async () => {
+      if (!closing) {
+        const stopped = await runScript(['stop']);
+
+        process.stderr.write(stopped.stderr);
+        shutdown();
+      }
+    });
+  };
+
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(port, '127.0.0.1', resolve);
+  }).catch(error => {
+    spawnSync(process.execPath, [SCRIPT, 'stop'], {
+      cwd: ROOT,
+      stdio: 'inherit'
+    });
+
+    throw new Error(
+      `the broker cannot listen on 127.0.0.1:${port} (${error.message}); the lease was stopped.`
+    );
+  });
+
+  try {
+    run('sbx', allowRule(sandbox, port));
+  } catch (error) {
+    server.close();
+    spawnSync(process.execPath, [SCRIPT, 'stop'], {
+      cwd: ROOT,
+      stdio: 'inherit'
+    });
+
+    throw new Error(`${error.message}; the lease was stopped.`);
+  }
+
+  chmodSync(DIR, 0o700);
+  writeFileSync(
+    BROKER,
+    `${JSON.stringify({ sandbox, port, credential, lease: id, process: self() }, null, 2)}\n`,
+    { mode: 0o600 }
+  );
+
+  process.on('SIGINT', releaseThenShutdown);
+  process.on('SIGTERM', releaseThenShutdown);
+  // A lease released another way, by `stop` on the host or by `gc`, stops the broker too.
+  watch = setInterval(() => {
+    if (!closing && !findLease(readRegistry(), id)) {
+      log(`lease ${id} was released`);
+      shutdown();
+    }
+  }, POLL_MS);
+
+  log(
+    `the lease broker serves lease ${id} to sandbox ${sandbox} on 127.0.0.1:${port}; in the sandbox run \`node scripts/lease-broker-client.mjs <command> [args]\`. Ctrl-C stops it and releases the lease.`
+  );
+}
+
 const [command, ...flags] = process.argv.slice(2);
 
 try {
@@ -2456,13 +2821,15 @@ try {
     await gc(flags);
   } else if (command === 'list') {
     list();
+  } else if (command === 'broker') {
+    await broker();
   } else if (command === 'logs') {
     logs(flags);
   } else if (command === BUILD_WORKER) {
     await buildWorker(flags[0]);
   } else {
     throw new Error(
-      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | open <path> | adb shell|exec-out|pull [args] | logs [js|metro] [--lines N] [--grep re] | gc [--dry-run] [--idle <minutes>] | list | build-key | build'
+      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | open <path> | adb shell|exec-out|pull [args] | logs [js|metro] [--lines N] [--grep re] | gc [--dry-run] [--idle <minutes>] | list | broker | build-key | build'
     );
   }
 } catch (error) {

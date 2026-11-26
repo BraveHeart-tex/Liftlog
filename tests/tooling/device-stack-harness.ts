@@ -48,7 +48,7 @@ export const instanceBoot = (lease: string, port = 5556) =>
   `emulator -avd ${AVD} -port ${port} -read-only -snapshot liftlog_template -no-snapshot-save -no-boot-anim -gpu host -prop debug.liftlog.lease=${lease}`;
 
 // One fake implementation behind every binary the script calls (`adb`, `emulator`, `lsof`,
-// `agent-device`, `pnpm`, `avdmanager`, and the `gradlew` the fake prebuild links). Each call
+// `agent-device`, `pnpm`, `avdmanager`, `sbx`, and the `gradlew` the fake prebuild links). Each call
 // is logged with its time, agent-device with the AGENT_DEVICE_* variables it received; device and listener state lives in a JSON file the test seeds. Long-running fakes
 // (emulator, logcat, Metro) stay alive like the real ones so `stop` has something to end.
 // Gradle logs the android/ entries it builds from, waits while \`gradleHold\` names a missing
@@ -251,7 +251,7 @@ export const pids: number[] = [];
 
 export const directories: string[] = [];
 
-function freePort() {
+export function freePort() {
   return new Promise<number>(done => {
     const server = createServer().listen(0, () => {
       const { port } = server.address() as { port: number };
@@ -324,9 +324,15 @@ function sharedFakes() {
 
   // Node itself runs each fake, so a process's argv never changes after it starts.
   for (const path of [
-    ...['adb', 'emulator', 'lsof', 'agent-device', 'pnpm', 'avdmanager'].map(
-      name => join(bin, name)
-    ),
+    ...[
+      'adb',
+      'emulator',
+      'lsof',
+      'agent-device',
+      'pnpm',
+      'avdmanager',
+      'sbx'
+    ].map(name => join(bin, name)),
     join(fakes, 'gradle', 'gradlew')
   ]) {
     writeFileSync(
@@ -381,7 +387,9 @@ export async function harness(
   writeFileSync(join(dir, 'metro.js'), fakeMetro);
   const hostDir = join(home, '.liftlog-device-stack');
 
-  const writeConfig = (config: { limit?: number } = {}) =>
+  const writeConfig = (
+    config: { limit?: number; sandbox?: string; brokerPorts?: number[] } = {}
+  ) =>
     writeFileSync(
       join(hostDir, 'config.json'),
       JSON.stringify({ metroPorts: ports, ...config })

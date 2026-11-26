@@ -141,7 +141,8 @@ coordinates read off a screenshot. In order:
    `exec-out` and `pull` on the lease's serial, and refuses device selection, install,
    root, reboot, port forwarding, `emu` and server commands, plus `reboot`, `su`,
    `setprop`, `svc power` and package install or uninstall inside `shell` and `exec-out`.
-   It is host-only. Never call `adb` or `agent-device` directly. `start`
+   It is host-only. Never call `adb` or `agent-device` directly; a sandboxed agent
+   follows [sandboxed agents](#sandboxed-agents) instead. `start`
    installs the dev build matching the checkout's dev build key from the dev build cache,
    only when the installed build differs; on a miss it builds it first from a freshly
    regenerated `android/` (log: `.device-stack/build.log`), so native changes need no
@@ -226,6 +227,54 @@ coordinates read off a screenshot. In order:
 6. **Stop.** `pnpm run device:stack stop` closes the session and stops only what `start`
    started and still passes its identity check; anything that fails it is listed as
    `untrusted` and left running.
+
+### Sandboxed agents
+
+An agent in the Docker Sandbox the host config names (`"sandbox": "liftlog-dev"` in
+`~/.liftlog-device-stack/config.json`, whose workspace is the main checkout) reaches its
+lease only through the lease broker
+([ADR-0009](adr/0009-sandboxed-agents-reach-device-stacks-through-a-lease-broker.md)).
+Inside the sandbox, never run `pnpm`, `adb`, `agent-device`, the emulator or
+`device:stack`, and never install dependencies: host Metro needs the macOS native
+packages in the checkout's `node_modules`.
+
+1. **Host.** The maintainer runs `pnpm run device:stack broker` in the main checkout. It
+   starts the lease as `start` does, listens on `127.0.0.1` at the slot's broker port
+   (8092 for slot 0 and 8093 for slot 1, or `brokerPorts` in the host config), adds the
+   sandbox's one policy rule `localhost:<broker port>`, writes a fresh lease credential
+   to `.device-stack/broker.json` (owner-only) and stays in the foreground. Ctrl-C,
+   `stop` from the sandbox, or a release on the host (`stop`, `gc`) stops the broker and
+   removes the credential and the rule. Without `sandbox` in the host config it exits
+   with `NO_SANDBOX`; outside the main checkout with `NOT_MAIN_CHECKOUT`; beside a
+   running broker with `BROKER_RUNNING`.
+2. **Sandbox.** From the checkout root, run
+   `node scripts/lease-broker-client.mjs <command> [args]`. It prints the command's output
+   and exits with its code; without a broker it exits with `NO_BROKER`. The lease's
+   host Metro serves edits made in the sandbox; `metro-reload` reloads the app.
+
+| Command                        | Runs on the lease                                        |
+| ------------------------------ | -------------------------------------------------------- |
+| `start`                        | `start`: the running lease, or a repair                  |
+| `fresh`                        | `start --fresh`                                          |
+| `status`                       | `status`                                                 |
+| `stop`                         | `stop`, then the broker exits                            |
+| `logs [js\|metro] [N]`         | `logs` with `--lines N` (default 50)                     |
+| `open <path>`                  | `open <path>`, a [route map](#route-map) path            |
+| `snapshot`                     | `device snapshot -i`                                     |
+| `press @ref`, `longpress @ref` | `device press @ref`, `device longpress @ref`             |
+| `fill @ref <text>`             | `device fill @ref <text>`                                |
+| `type <text>`                  | `device type <text>`                                     |
+| `wait <text>`                  | `device wait text <text>`                                |
+| `back`                         | `device back`                                            |
+| `scroll up\|down\|left\|right` | `device scroll <direction>`                              |
+| `metro-reload`                 | `device metro reload`                                    |
+| `screenshot <name>`            | `device screenshot .device-stack/screenshots/<name>.png` |
+
+A `<text>` starts with a letter or digit and holds up to 100 letters, digits, spaces and
+`.,:!?'()+-`; a `<name>` is lowercase letters, digits and `-`. The broker answers
+`UNAUTHORIZED` to a missing or wrong credential, and `REFUSED` to any other command or to
+an argument that is a flag, names a serial or path, or fails its pattern; neither runs
+anything.
 
 ### Capacity
 
