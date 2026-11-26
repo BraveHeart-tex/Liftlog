@@ -245,8 +245,22 @@ function stopGroup(pid) {
   }
 }
 
-const readState = () =>
-  existsSync(STATE) ? JSON.parse(readFileSync(STATE, 'utf8')) : null;
+function readState() {
+  const state = existsSync(STATE)
+    ? JSON.parse(readFileSync(STATE, 'utf8'))
+    : null;
+  const expected = process.env.DEVICE_STACK_BROKER_LEASE;
+
+  if (expected && state?.lease?.id !== expected) {
+    throw leaseLost(
+      expected,
+      "this worktree no longer holds the broker's lease"
+    );
+  }
+
+  return state;
+}
+
 const saveState = state =>
   writeFileSync(STATE, `${JSON.stringify(state, null, 2)}\n`);
 
@@ -2719,7 +2733,7 @@ function logs(args) {
 }
 
 // docs/adr/0009-sandboxed-agents-reach-device-stacks-through-a-lease-broker.md: `broker` serves
-// one lease to the sandbox the host config names. The lease credential and the broker port
+// one lease to the sandbox selected by the maintainer. The lease credential and the broker port
 // reach the sandbox only through this file; the broker records its own identity in it too.
 const BROKER = join(DIR, 'broker.json');
 const MAX_REQUEST_BYTES = 16_384;
@@ -2728,8 +2742,9 @@ const REF = /^@e\d{1,5}$/;
 const ROUTE =
   /^[a-z][a-z0-9-]*(\/[A-Za-z0-9_-]+)*(\?[A-Za-z]+=[A-Za-z0-9_-]+)?$/;
 const TEXT = /^[\p{L}\p{N}][\p{L}\p{N} .,:!?'()+-]{0,99}$/u;
-const SCREENSHOT_NAME = /^[a-z0-9][a-z0-9-]{0,63}$/;
+const ARTIFACT_NAME = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const SCREENSHOTS = join(DIR, 'screenshots');
+const RECORDINGS = join(DIR, 'recordings');
 // Every broker command and the fixed device:stack argv it runs; `min` is the number of
 // required arguments when some are optional.
 const BROKER_COMMANDS = {
@@ -2765,9 +2780,19 @@ const BROKER_COMMANDS = {
   'metro-reload': { args: [], argv: () => ['device', 'metro', 'reload'] },
   motion: { args: [/^(on|off)$/], argv: ([mode]) => ['motion', mode] },
   screenshot: {
-    args: [SCREENSHOT_NAME],
+    args: [ARTIFACT_NAME],
     argv: ([name]) => ['device', 'screenshot', join(SCREENSHOTS, `${name}.png`)]
-  }
+  },
+  'record-start': {
+    args: [ARTIFACT_NAME],
+    argv: ([name]) => [
+      'device',
+      'record',
+      'start',
+      join(RECORDINGS, name, `${name}.mp4`)
+    ]
+  },
+  'record-stop': { args: [], argv: () => ['device', 'record', 'stop'] }
 };
 
 // The device:stack argv for a broker request, or a refusal. A request names a command and
@@ -2818,10 +2843,11 @@ function brokerArgv(command, args) {
 
 // Runs device:stack in this checkout as a child, so each request gets the CLI's own checks,
 // locks and exit code.
-function runScript(argv) {
-  return new Promise(done => {
+function runScript(argv, lease) {
+  return new Promise((done, fail) => {
     const child = spawn(process.execPath, [SCRIPT, ...argv], {
       cwd: ROOT,
+      env: { ...process.env, DEVICE_STACK_BROKER_LEASE: lease },
       stdio: ['ignore', 'pipe', 'pipe']
     });
     let stdout = '';
@@ -2829,20 +2855,49 @@ function runScript(argv) {
 
     child.stdout.on('data', chunk => (stdout += chunk));
     child.stderr.on('data', chunk => (stderr += chunk));
+    child.on('error', fail);
     child.on('close', status => done({ status: status ?? 1, stdout, stderr }));
   });
 }
 
-function hostSandbox() {
+function brokerSandbox(flags) {
+  if (flags.length) {
+    if (
+      flags.length !== 2 ||
+      flags[0] !== '--sandbox' ||
+      !validSandbox(flags[1])
+    ) {
+      throw new Error('Usage: pnpm run device:stack broker [--sandbox <name>]');
+    }
+
+    return flags[1];
+  }
+
+  const commonDir = tryRun('git', [
+    'rev-parse',
+    '--path-format=absolute',
+    '--git-common-dir'
+  ]).trim();
+
+  if (realOrSame(commonDir) !== join(ROOT, '.git')) {
+    throw new Error(
+      'NO_SANDBOX: pass --sandbox <name> for this linked worktree.'
+    );
+  }
+
   const sandbox = readJson(HOST_CONFIG)?.sandbox;
 
-  if (typeof sandbox !== 'string' || !/^[A-Za-z0-9][\w.-]*$/.test(sandbox)) {
+  if (!validSandbox(sandbox)) {
     throw new Error(
       `NO_SANDBOX: ${HOST_CONFIG} must name the sandbox the broker serves, as "sandbox": "<name>".`
     );
   }
 
   return sandbox;
+}
+
+function validSandbox(name) {
+  return typeof name === 'string' && /^[A-Za-z0-9][\w.-]*$/.test(name);
 }
 
 const allowRule = (sandbox, port) => [
@@ -2867,20 +2922,23 @@ const removeRule = (sandbox, port) => [
   `localhost:${port}`
 ];
 
-async function broker() {
-  const sandbox = hostSandbox();
-  const commonDir = tryRun('git', [
-    'rev-parse',
-    '--path-format=absolute',
-    '--git-common-dir'
-  ]).trim();
+async function broker(flags) {
+  const sandbox = brokerSandbox(flags);
+  mkdirSync(DIR, { recursive: true });
+  const lock = join(DIR, 'broker.lock');
+  const generation = await acquireLock(
+    lock,
+    'broker startup lock of this worktree'
+  );
 
-  if (realOrSame(commonDir) !== join(ROOT, '.git')) {
-    throw new Error(
-      `NOT_MAIN_CHECKOUT: run the broker from the main checkout, the workspace of sandbox ${sandbox}.`
-    );
+  try {
+    await startBroker(sandbox);
+  } finally {
+    releaseLock(lock, generation);
   }
+}
 
+async function startBroker(sandbox) {
   const previous = readJson(BROKER);
 
   if (previous && isSameProcess(previous.process)) {
@@ -2957,11 +3015,12 @@ async function broker() {
     });
     request.on('end', () => {
       let command;
+      let args;
       let argv;
 
       try {
-        ({ command, args: argv } = JSON.parse(body));
-        argv = brokerArgv(command, argv ?? []);
+        ({ command, args } = JSON.parse(body));
+        argv = brokerArgv(command, args ?? []);
       } catch (error) {
         reply(403, { error: error.message });
 
@@ -2976,13 +3035,34 @@ async function broker() {
           return;
         }
 
-        if (command === 'screenshot') {
-          mkdirSync(SCREENSHOTS, { recursive: true });
+        let result;
+
+        try {
+          if (command === 'screenshot') {
+            mkdirSync(SCREENSHOTS, { recursive: true });
+          } else if (command === 'record-start') {
+            if (
+              realOrSame(DIR) !== DIR ||
+              realOrSame(RECORDINGS) !== RECORDINGS
+            ) {
+              throw refused('recordings must be inside this checkout');
+            }
+
+            mkdirSync(RECORDINGS, { recursive: true });
+            // Reserve a new directory for this name and any extra Android video chunks.
+            mkdirSync(join(RECORDINGS, args[0]));
+          }
+
+          result = await runScript(argv, id);
+        } catch (error) {
+          reply(403, { error: error.message });
+
+          return;
         }
 
-        reply(200, await runScript(argv));
+        reply(200, result);
 
-        if (command === 'stop') {
+        if (command === 'stop' && result.status === 0) {
           shutdown();
         }
       });
@@ -2998,7 +3078,6 @@ async function broker() {
 
     closing = true;
     clearInterval(watch);
-    rmSync(BROKER, { force: true });
 
     try {
       run('sbx', removeRule(sandbox, port));
@@ -3008,6 +3087,7 @@ async function broker() {
       process.exitCode = 1;
     }
 
+    rmSync(BROKER, { force: true });
     server.close(() => process.exit());
     server.closeIdleConnections();
   }
@@ -3015,7 +3095,7 @@ async function broker() {
   const releaseThenShutdown = () => {
     queue = queue.then(async () => {
       if (!closing) {
-        const stopped = await runScript(['stop']);
+        const stopped = await runScript(['stop'], id);
 
         process.stderr.write(stopped.stderr);
         shutdown();
@@ -3023,38 +3103,36 @@ async function broker() {
     });
   };
 
-  await new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(port, '127.0.0.1', resolve);
-  }).catch(error => {
-    spawnSync(process.execPath, [SCRIPT, 'stop'], {
-      cwd: ROOT,
-      stdio: 'inherit'
-    });
-
-    throw new Error(
-      `the broker cannot listen on 127.0.0.1:${port} (${error.message}); the lease was stopped.`
-    );
-  });
+  let ruleAdded = false;
 
   try {
+    await new Promise((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(port, '127.0.0.1', resolve);
+    });
     run('sbx', allowRule(sandbox, port));
+    ruleAdded = true;
+    chmodSync(DIR, 0o700);
+    writeFileSync(
+      BROKER,
+      `${JSON.stringify({ sandbox, port, credential, lease: id, process: self() }, null, 2)}\n`,
+      { mode: 0o600, flag: 'wx' }
+    );
   } catch (error) {
     server.close();
+
+    if (ruleAdded) {
+      tryRun('sbx', removeRule(sandbox, port));
+    }
+
     spawnSync(process.execPath, [SCRIPT, 'stop'], {
       cwd: ROOT,
+      env: { ...process.env, DEVICE_STACK_BROKER_LEASE: id },
       stdio: 'inherit'
     });
 
-    throw new Error(`${error.message}; the lease was stopped.`);
+    throw error;
   }
-
-  chmodSync(DIR, 0o700);
-  writeFileSync(
-    BROKER,
-    `${JSON.stringify({ sandbox, port, credential, lease: id, process: self() }, null, 2)}\n`,
-    { mode: 0o600 }
-  );
 
   process.on('SIGINT', releaseThenShutdown);
   process.on('SIGTERM', releaseThenShutdown);
@@ -3102,7 +3180,7 @@ try {
   } else if (command === 'limit') {
     limit(flags);
   } else if (command === 'broker') {
-    await broker();
+    await broker(flags);
   } else if (command === 'sql') {
     await sql(flags);
   } else if (command === 'logs') {
@@ -3115,13 +3193,13 @@ try {
     await buildWorker(flags[0]);
   } else {
     throw new Error(
-      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | open <path> | adb shell|exec-out|pull [args] | sql "<query>" | motion on|off | capture-press <label> | logs [js|metro] [--lines N] [--grep re] | gc [--dry-run] [--idle <minutes>] | list | limit [<n>] | broker | build-key | build'
+      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | open <path> | adb shell|exec-out|pull [args] | sql "<query>" | motion on|off | capture-press <label> | logs [js|metro] [--lines N] [--grep re] | gc [--dry-run] [--idle <minutes>] | list | limit [<n>] | broker [--sandbox <name>] | build-key | build'
     );
   }
 } catch (error) {
   process.stderr.write(`device-stack: ${error.message}\n`);
 
-  if (command === 'start' && readState()) {
+  if (command === 'start' && existsSync(STATE)) {
     process.stderr.write(
       'device-stack: run `pnpm run device:stack stop` to stop what was started.\n'
     );

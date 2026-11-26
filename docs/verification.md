@@ -270,49 +270,65 @@ coordinates read off a screenshot. In order:
 
 ### Sandboxed agents
 
-An agent in the Docker Sandbox the host config names (`"sandbox": "liftlog-dev"` in
-`~/.liftlog-device-stack/config.json`, whose workspace is the main checkout) reaches its
-lease only through the lease broker
+A Docker Sandbox reaches its checkout's Android lease through the lease broker
 ([ADR-0009](adr/0009-sandboxed-agents-reach-device-stacks-through-a-lease-broker.md)).
-Inside the sandbox, never run `pnpm`, `adb`, `agent-device`, the emulator or
-`device:stack`, and never install dependencies: host Metro needs the macOS native
-packages in the checkout's `node_modules`.
 
-1. **Host.** The maintainer runs `pnpm run device:stack broker` in the main checkout. It
-   starts the lease as `start` does, listens on `127.0.0.1` at the slot's broker port
-   (8092 for slot 0 and 8093 for slot 1, or `brokerPorts` in the host config), adds the
-   sandbox's one policy rule `localhost:<broker port>`, writes a fresh lease credential
-   to `.device-stack/broker.json` (owner-only) and stays in the foreground. Ctrl-C,
-   `stop` from the sandbox, or a release on the host (`stop`, `gc`) stops the broker and
-   removes the credential and the rule. Without `sandbox` in the host config it exits
-   with `NO_SANDBOX`; outside the main checkout with `NOT_MAIN_CHECKOUT`; beside a
-   running broker with `BROKER_RUNNING`.
-2. **Sandbox.** From the checkout root, run
+1. **Host setup.** Create the harness template once using the [recipe](#recipe).
+   For an issue, create its linked worktree on the Mac and run
+   `pnpm install --frozen-lockfile` there on the Mac. Each checkout needs its own
+   macOS dependencies for host Metro.
+2. **Sandbox mount.** Create a dedicated sandbox with the worktree as a writable
+   workspace, for example `sbx create --name liftlog-123 codex /absolute/path/to/liftlog-123`.
+   The broker client needs only this mount and a Linux Node.js runtime. If the sandbox
+   image lacks Node.js, install the runtime in the sandbox outside the checkout.
+   If the sandbox also needs Git, the linked
+   worktree's `.git` file refers to the Git common directory at its host path. See
+   [ADR-0009](adr/0009-sandboxed-agents-reach-device-stacks-through-a-lease-broker.md#context)
+   for the implications of mounting it.
+3. **Start on the host.** From the linked worktree, run
+   `pnpm run device:stack broker --sandbox liftlog-123`. From main,
+   `pnpm run device:stack broker` uses `"sandbox": "liftlog-dev"` in
+   `~/.liftlog-device-stack/config.json`. The foreground broker starts the checkout's
+   lease and Metro, listens on `127.0.0.1` at the slot's broker port (8092 or 8093, or
+   `brokerPorts` in the host config), adds `localhost:<broker port>` to the selected
+   sandbox's network policy, and writes an owner-only credential to the checkout's
+   `.device-stack/broker.json`. A linked checkout requires `--sandbox`, and a second
+   broker for the same checkout exits with `BROKER_RUNNING`. Concurrent checkouts
+   need separate sandboxes and enough slots in the host's [capacity](#capacity).
+4. **Drive Android from the sandbox.** From the mounted checkout root, run
    `node scripts/lease-broker-client.mjs <command> [args]`. It prints the command's output
-   and exits with its code; without a broker it exits with `NO_BROKER`. The lease's
-   host Metro serves edits made in the sandbox; `metro-reload` reloads the app.
+   and exits with its code, or reports `NO_BROKER` when the broker is unavailable.
+   Host Metro picks up edits in the mounted checkout. Use `metro-reload` to reload the
+   app. Keep dependency installs, adb, agent-device, the emulator and `device:stack`
+   on the host. A Linux install into the mount would replace Metro's macOS dependencies.
+5. **Stop.** Use `stop` through the client or Ctrl-C on the host. A host release
+   through `stop` or `gc` also ends the broker. Cleanup removes that broker's
+   credential and network rule. The checkout retains its recordings and screenshots.
 
-| Command                        | Runs on the lease                                        |
-| ------------------------------ | -------------------------------------------------------- |
-| `start`                        | `start`: the running lease, or a repair                  |
-| `fresh`                        | `start --fresh`                                          |
-| `status`                       | `status`                                                 |
-| `stop`                         | `stop`, then the broker exits                            |
-| `logs [js\|metro] [N]`         | `logs` with `--lines N` (default 50)                     |
-| `open <path>`                  | `open <path>`, a [route map](#route-map) path            |
-| `snapshot`                     | `device snapshot -i`                                     |
-| `press @ref`, `longpress @ref` | `device press @ref`, `device longpress @ref`             |
-| `fill @ref <text>`             | `device fill @ref <text>`                                |
-| `type <text>`                  | `device type <text>`                                     |
-| `wait <text>`                  | `device wait text <text>`                                |
-| `back`                         | `device back`                                            |
-| `scroll up\|down\|left\|right` | `device scroll <direction>`                              |
-| `metro-reload`                 | `device metro reload`                                    |
-| `motion on\|off`               | `motion on\|off`                                         |
-| `screenshot <name>`            | `device screenshot .device-stack/screenshots/<name>.png` |
+| Command                        | Runs on the lease                                                |
+| ------------------------------ | ---------------------------------------------------------------- |
+| `start`                        | `start`: the running lease, or a repair                          |
+| `fresh`                        | `start --fresh`                                                  |
+| `status`                       | `status`                                                         |
+| `stop`                         | `stop`, then the broker exits                                    |
+| `logs [js\|metro] [N]`         | `logs` with `--lines N` (default 50)                             |
+| `open <path>`                  | `open <path>`, a [route map](#route-map) path                    |
+| `snapshot`                     | `device snapshot -i`                                             |
+| `press @ref`, `longpress @ref` | `device press @ref`, `device longpress @ref`                     |
+| `fill @ref <text>`             | `device fill @ref <text>`                                        |
+| `type <text>`                  | `device type <text>`                                             |
+| `wait <text>`                  | `device wait text <text>`                                        |
+| `back`                         | `device back`                                                    |
+| `scroll up\|down\|left\|right` | `device scroll <direction>`                                      |
+| `metro-reload`                 | `device metro reload`                                            |
+| `motion on\|off`               | `motion on\|off`                                                 |
+| `screenshot <name>`            | `device screenshot .device-stack/screenshots/<name>.png`         |
+| `record-start <name>`          | Starts recording at `.device-stack/recordings/<name>/<name>.mp4` |
+| `record-stop`                  | Stops and exports the active recording                           |
 
 A `<text>` starts with a letter or digit and holds up to 100 letters, digits, spaces and
-`.,:!?'()+-`; a `<name>` is lowercase letters, digits and `-`. The broker answers
+`.,:!?'()+-`; a `<name>` starts with a lowercase letter or digit and holds up to 64 lowercase
+letters, digits and hyphens. Use a new name for each recording. The broker answers
 `UNAUTHORIZED` to a missing or wrong credential, and `REFUSED` to any other command or to
 an argument that is a flag, names a serial or path, or fails its pattern; neither runs
 anything.

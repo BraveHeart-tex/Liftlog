@@ -49,11 +49,14 @@ per lease. The broker, not the network policy, is the security boundary.
 
 ### Access path
 
-- The sandbox is the existing sandbox named in the host config, whose workspace is the
-  main checkout. It holds at most one lease; `device:stack` creates no sandbox.
-- Host-side `device:stack` runs from the main checkout, acquires the lease ([lease protocol](0008-device-stack-architecture.md#lease-protocol))
-  and starts the broker in the foreground of that host process. Stopping the broker
-  releases the lease.
+- Each checkout uses a dedicated existing sandbox that mounts that checkout. On the Mac,
+  run `pnpm run device:stack broker --sandbox <name>` from the linked worktree. The
+  main checkout can run `pnpm run device:stack broker` with the sandbox named in
+  `~/.liftlog-device-stack/config.json`. The maintainer creates the sandbox separately.
+- The foreground broker acquires the checkout's lease
+  ([lease protocol](0008-device-stack-architecture.md#lease-protocol)). Stopping the
+  broker releases its lease. Releasing the lease on the host ends the broker and removes
+  its credential and policy rule.
 - The broker binds `127.0.0.1` on a port fixed by the lease's slot. The sandbox gets one
   rule, `sbx policy allow network --sandbox <name> localhost:<broker port>`, added with
   the lease and removed with it. No other host port is allowed.
@@ -64,32 +67,36 @@ per lease. The broker, not the network policy, is the security boundary.
 
 - Each lease gets a fresh 256-bit lease credential. The broker compares it in constant
   time on every request and refuses a missing or wrong one.
-- The credential reaches the sandbox only through the main checkout's `.device-stack/`
+- The credential reaches the sandbox only through the leased checkout's `.device-stack/broker.json`
   (owner-only permissions).
 - Each allowlisted command maps to a fixed agent-device or `device:stack` argv with the
   lease's serial, session and Metro port filled in by the broker. Arguments are validated
-  against per-command patterns (`@ref`, a `liftlog:///` route path, a screenshot name)
+  against per-command patterns (`@ref`, a `liftlog:///` route path, an artifact name)
   and never passed through, so a request cannot name a flag, serial or file.
 - The broker offers no generic command execution, no adb, no `shell`, no install from a
   path and no artifact path outside the lease's `.device-stack/`.
 
 ### Workspace mounts
 
-The sandbox mounts the main checkout read-write, so it can change the scripts, hooks and
-config the host runs, the broker included. The sandbox is trusted for code: the broker
-confines its device access to the lease, not what the host executes. Metro for the
-lease is the lease's host Metro on the main checkout
-([per-lease Metro](../verification.md#device-checks)), which picks up edits made inside
-the sandbox.
+Create the linked worktree on the Mac and mount it as the sandbox's writable workspace.
+Run `pnpm install --frozen-lockfile` on the Mac in that checkout so its Metro can use
+macOS native dependencies. Keep those dependencies intact when working from Linux.
+The broker client works with only the checkout mounted. A Git common directory mount
+at its original path is optional for device checks and gives the sandbox the Git access
+described in [Context](#context).
+
+Host Metro serves the leased checkout and picks up edits from the sandbox. The sandbox
+is trusted for code because it can change the scripts, hooks, Metro configuration and
+dependencies the host executes. The broker scopes device access to the lease.
+A validated recording name selects a fresh directory under `.device-stack/recordings/`
+in that checkout. The broker supplies the recording path and the lease's Android session.
 
 ## Consequences
 
 - One broker process and one policy rule per lease, both run by `device:stack broker`
   ([sandboxed agents](../verification.md#sandboxed-agents)).
-- The sandbox can change any file in the main checkout, move any local ref, including
-  `main`, and write objects. Pushes still go through the remote's rules.
-- Host and sandbox share the main checkout's `node_modules`; host Metro needs its macOS
-  native packages, so an install inside the sandbox must not replace them.
+- The sandbox can change files in its writable checkout. With a writable Git common
+  directory mount it can also move local refs and write objects.
 - `agent-device proxy` is not used for sandboxes: its token controls every device the
   host daemon sees.
 - Host agents keep using `device:stack` directly

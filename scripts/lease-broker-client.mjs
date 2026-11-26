@@ -30,7 +30,7 @@ try {
   broker = JSON.parse(readFileSync(CREDENTIAL, 'utf8'));
 } catch {
   fail(
-    'NO_BROKER: no lease broker serves this checkout; ask the maintainer to run `pnpm run device:stack broker` on the host.'
+    'NO_BROKER: no lease broker serves this checkout; ask the maintainer to run `pnpm run device:stack broker` on the host from this checkout (with --sandbox <name> for a linked worktree).'
   );
 }
 

@@ -4,7 +4,8 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
-  statSync
+  statSync,
+  symlinkSync
 } from 'node:fs';
 import { request } from 'node:http';
 import { join, resolve } from 'node:path';
@@ -44,20 +45,29 @@ const deviceCalls = (logPath: string, from: number) =>
     .slice(from)
     .filter(({ name }) => name === 'agent-device' || name === 'adb');
 
-// Runs `broker` in the harness checkout, which is a main checkout, and waits for its lease
-// credential. The client runs from the checkout's scripts/, as it does in the sandbox.
 async function brokerRunning() {
   const stack = await harness();
   const brokerPorts = [await freePort(), await freePort()];
-  const credentialPath = join(stack.root, '.device-stack', 'broker.json');
 
   stack.writeConfig({ sandbox: SANDBOX, brokerPorts });
-  mkdirSync(join(stack.root, 'scripts'));
+
+  return { ...stack, brokerPorts, ...(await startBroker(stack, stack.root)) };
+}
+
+// The client runs from the checkout's scripts/, as it does in the sandbox.
+async function startBroker(
+  stack: Awaited<ReturnType<typeof harness>>,
+  root: string,
+  ...flags: string[]
+) {
+  const credentialPath = join(root, '.device-stack', 'broker.json');
+
+  mkdirSync(join(root, 'scripts'));
   copyFileSync(
     resolve('scripts/lease-broker-client.mjs'),
-    join(stack.root, 'scripts', 'lease-broker-client.mjs')
+    join(root, 'scripts', 'lease-broker-client.mjs')
   );
-  const exited = stack.stackIn(stack.root, ['broker'], child =>
+  const exited = stack.stackIn(root, ['broker', ...flags], child =>
     pids.push(child.pid!)
   );
   let broker: { port: number; credential: string } | undefined;
@@ -77,7 +87,7 @@ async function brokerRunning() {
       done => {
         const child = spawn(
           process.execPath,
-          [join(stack.root, 'scripts', 'lease-broker-client.mjs'), ...args],
+          [join(root, 'scripts', 'lease-broker-client.mjs'), ...args],
           { env: { ...stack.env, DEVICE_STACK_BROKER_HOST: '127.0.0.1' } }
         );
         let stdout = '';
@@ -99,10 +109,9 @@ async function brokerRunning() {
   };
 
   return {
-    ...stack,
     end,
     brokerPort: broker!.port,
-    brokerPorts,
+    credential: broker!.credential,
     credentialPath,
     exited,
     client,
@@ -111,14 +120,14 @@ async function brokerRunning() {
 }
 
 // The policy rule the broker adds with the lease and removes with it.
-const ruleCalls = (port: number) => [
+const ruleCalls = (port: number, sandbox = SANDBOX) => [
   [
     'policy',
     'allow',
     'network',
     '--no-input',
     '--sandbox',
-    SANDBOX,
+    sandbox,
     `localhost:${port}`
   ],
   [
@@ -128,7 +137,7 @@ const ruleCalls = (port: number) => [
     '--no-input',
     '--force',
     '--sandbox',
-    SANDBOX,
+    sandbox,
     '--resource',
     `localhost:${port}`
   ]
@@ -310,4 +319,105 @@ test('releasing the lease on the host stops the broker and removes its sandbox p
   expect(
     run.calls.filter(({ name }) => name === 'sbx').map(({ args }) => args)
   ).toEqual(ruleCalls(brokerPort));
+});
+
+test('a linked worktree has its own broker, Android target, recording artifacts and cleanup', async () => {
+  const stack = await harness({}, { limit: 2 });
+  const linked = stack.worktree();
+  const sandbox = 'linked-sandbox';
+  const brokerPorts = [await freePort(), await freePort()];
+  stack.writeConfig({ limit: 2, sandbox: SANDBOX, brokerPorts });
+
+  expect((await stack.stackIn(linked, ['broker'])).stderr).toContain(
+    'NO_SANDBOX'
+  );
+  expect(
+    (await stack.stackIn(linked, ['broker', '--sandbox', '--bad'])).status
+  ).toBe(1);
+  expect(stack.registry().leases).toEqual([]);
+
+  const main = await startBroker(stack, stack.root);
+  const issue = await startBroker(stack, linked, '--sandbox', sandbox);
+  const state = JSON.parse((await issue.client('status')).stdout);
+  const mainState = JSON.parse((await main.client('status')).stdout);
+
+  expect(state).toMatchObject({ root: linked, running: true });
+  expect(state.lease.serial).not.toBe(mainState.lease.serial);
+  expect(state.port).not.toBe(mainState.port);
+  expect(issue.brokerPort).toBe(brokerPorts[state.lease.slot]);
+  expect(issue.brokerPort).not.toBe(main.brokerPort);
+  expect(
+    (
+      await post(issue.brokerPort, '{"command":"status"}', {
+        authorization: `Bearer ${main.credential}`
+      })
+    ).status
+  ).toBe(401);
+
+  const from = allCalls(stack.logPath).length;
+
+  for (const args of [
+    [],
+    ['../outside'],
+    ['/tmp/outside'],
+    ['sub/clip'],
+    ['--help'],
+    ['clip.mp4'],
+    ['clip', 'extra']
+  ]) {
+    expect((await issue.send({ command: 'record-start', args })).status).toBe(
+      403
+    );
+  }
+
+  expect(
+    (await issue.send({ command: 'record-stop', args: ['clip'] })).status
+  ).toBe(403);
+
+  const artifacts = join(linked, '.device-stack', 'recordings');
+  mkdirSync(artifacts);
+  symlinkSync(stack.root, join(artifacts, 'redirect'));
+  expect(
+    (await issue.send({ command: 'record-start', args: ['redirect'] })).status
+  ).toBe(403);
+  expect(deviceCalls(stack.logPath, from)).toEqual([]);
+
+  expect((await issue.client('record-start', 'clip')).status).toBe(0);
+  expect((await issue.client('record-stop')).status).toBe(0);
+  expect(
+    deviceCalls(stack.logPath, from)
+      .filter(({ name }) => name === 'agent-device')
+      .map(({ args }) => args)
+  ).toEqual(
+    [['start', join(artifacts, 'clip', 'clip.mp4')], ['stop']].map(command => [
+      '--platform',
+      'android',
+      '--serial',
+      state.lease.serial,
+      '--session',
+      state.session,
+      '--config',
+      join(linked, '.device-stack', 'agent-device.json'),
+      'record',
+      ...command
+    ])
+  );
+
+  await issue.end();
+  expect(existsSync(issue.credentialPath)).toBe(false);
+  expect(existsSync(main.credentialPath)).toBe(true);
+  expect(stack.registry().leases.map(({ id }) => id)).toEqual([
+    mainState.lease.id
+  ]);
+  expect(JSON.parse((await main.client('status')).stdout).running).toBe(true);
+  const policy = () =>
+    allCalls(stack.logPath)
+      .filter(({ name }) => name === 'sbx')
+      .map(({ args }) => args);
+  expect(policy()).toEqual([
+    ruleCalls(main.brokerPort)[0],
+    ...ruleCalls(issue.brokerPort, sandbox)
+  ]);
+  await main.end();
+  expect(policy().at(-1)).toEqual(ruleCalls(main.brokerPort)[1]);
 });
