@@ -60,7 +60,7 @@ export function Badge({
 }: BadgeProps) {
   return (
     <View {...props} className={cn(badgeVariants({ variant }), className)}>
-      {typeof children === 'string' ? (
+      {typeof children === 'string' || typeof children === 'number' ? (
         <Text
           variant="caption"
           weight="medium"

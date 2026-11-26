@@ -206,7 +206,7 @@ export function BottomSheet({
       enableContentPanningGesture={enableContentPanningGesture}
     >
       {enableDynamicSizing && wrapDynamicContent ? (
-        <BottomSheetView style={undefined} className={className}>
+        <BottomSheetView className={className}>
           {renderedChildren}
         </BottomSheetView>
       ) : (
@@ -250,7 +250,7 @@ export function BottomSheetTitle({
   className
 }: BottomSheetSectionProps) {
   return (
-    <Text variant="h3" accessibilityRole="header" className={className}>
+    <Text variant="h3" className={className}>
       {children}
     </Text>
   );
