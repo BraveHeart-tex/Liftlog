@@ -1,4 +1,5 @@
 import { useAppTheme } from '@/src/theme/app-theme-provider';
+import { appFonts } from '@/src/theme/fonts';
 import {
   DrumPicker,
   type DrumPickerProps,
@@ -15,6 +16,8 @@ const WheelPickerBase = forwardRef<DrumPickerRef, DrumPickerProps<unknown>>(
     {
       textColor,
       selectedTextColor,
+      fontFamily = appFonts.faces.regular,
+      selectedFontFamily = appFonts.faces.bold,
       showSelectionIndicator = false,
       backgroundColor = 'transparent',
       itemBackgroundColor = 'transparent',
@@ -31,6 +34,8 @@ const WheelPickerBase = forwardRef<DrumPickerRef, DrumPickerProps<unknown>>(
         ref={ref}
         textColor={textColor ?? colors.mutedForeground}
         selectedTextColor={selectedTextColor ?? colors.foreground}
+        fontFamily={fontFamily}
+        selectedFontFamily={selectedFontFamily}
         showSelectionIndicator={showSelectionIndicator}
         backgroundColor={backgroundColor}
         itemBackgroundColor={itemBackgroundColor}
