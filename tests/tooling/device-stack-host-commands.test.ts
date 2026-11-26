@@ -317,7 +317,7 @@ test('capture-press holds the one control with the label and captures it on the 
     {
       PATH: (env.PATH ?? '')
         .split(delimiter)
-        .filter(entry => !existsSync(join(entry, 'magick')))
+        .filter((entry: string) => !existsSync(join(entry, 'magick')))
         .join(delimiter)
     }
   );

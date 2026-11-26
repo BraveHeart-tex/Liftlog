@@ -726,9 +726,10 @@ function releaseLock(dir, generation) {
 }
 
 // The limit is one emulator unless the host config raises it, at most to MAX_LIMIT; the
-// environment can only lower it.
-function emulatorLimit() {
-  const configured = readJson(HOST_CONFIG)?.limit ?? DEFAULT_LIMIT;
+// environment can only lower it. `source` names what set the effective limit.
+function effectiveLimit() {
+  const set = readJson(HOST_CONFIG)?.limit;
+  const configured = set ?? DEFAULT_LIMIT;
 
   if (
     !Number.isInteger(configured) ||
@@ -740,17 +741,60 @@ function emulatorLimit() {
     );
   }
 
+  const source = set === undefined ? 'default' : 'host config';
   const lowered = process.env.DEVICE_STACK_LIMIT;
 
   if (!lowered) {
-    return configured;
+    return { limit: configured, source };
   }
 
   if (!/^[1-9]\d*$/.test(lowered)) {
     throw new Error('DEVICE_STACK_LIMIT must be a positive integer.');
   }
 
-  return Math.min(configured, Number(lowered));
+  return Number(lowered) < configured
+    ? { limit: Number(lowered), source: 'DEVICE_STACK_LIMIT' }
+    : { limit: configured, source };
+}
+
+const emulatorLimit = () => effectiveLimit().limit;
+
+// `limit <n>` merges the limit into the host config, replaced whole and keeping every other
+// key; `limit` alone prints the effective limit and its source.
+function limit(args) {
+  if (args.length === 0) {
+    process.stdout.write(`${JSON.stringify(effectiveLimit(), null, 2)}\n`);
+
+    return;
+  }
+
+  const [value] = args;
+
+  if (
+    args.length > 1 ||
+    !/^[1-9]\d*$/.test(value) ||
+    Number(value) > MAX_LIMIT
+  ) {
+    throw new Error(
+      `Usage: pnpm run device:stack limit [<n>], n an integer from 1 to ${MAX_LIMIT}`
+    );
+  }
+
+  const config = existsSync(HOST_CONFIG) ? readJson(HOST_CONFIG) : {};
+
+  if (config === null || typeof config !== 'object' || Array.isArray(config)) {
+    throw new Error(`${HOST_CONFIG} is not a JSON object; fix it by hand.`);
+  }
+
+  mkdirSync(HOST_DIR, { recursive: true });
+  const partial = `${HOST_CONFIG}.${process.pid}`;
+
+  writeFileSync(
+    partial,
+    `${JSON.stringify({ ...config, limit: Number(value) }, null, 2)}\n`
+  );
+  renameSync(partial, HOST_CONFIG);
+  process.stdout.write(`${JSON.stringify(effectiveLimit(), null, 2)}\n`);
 }
 
 function slotPortList(key, defaults) {
@@ -3024,6 +3068,8 @@ try {
     await gc(flags);
   } else if (command === 'list') {
     list();
+  } else if (command === 'limit') {
+    limit(flags);
   } else if (command === 'broker') {
     await broker();
   } else if (command === 'sql') {
@@ -3038,7 +3084,7 @@ try {
     await buildWorker(flags[0]);
   } else {
     throw new Error(
-      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | open <path> | adb shell|exec-out|pull [args] | sql "<query>" | motion on|off | capture-press <label> | logs [js|metro] [--lines N] [--grep re] | gc [--dry-run] [--idle <minutes>] | list | broker | build-key | build'
+      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | open <path> | adb shell|exec-out|pull [args] | sql "<query>" | motion on|off | capture-press <label> | logs [js|metro] [--lines N] [--grep re] | gc [--dry-run] [--idle <minutes>] | list | limit [<n>] | broker | build-key | build'
     );
   }
 } catch (error) {

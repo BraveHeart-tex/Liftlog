@@ -169,8 +169,10 @@ coordinates read off a screenshot. In order:
    recorded process `running` only while its PID, start time and argv still match
    ([ownership evidence](adr/0008-device-stack-architecture.md#ownership-evidence)).
    `start` leases an emulator slot first and fails with `CAPACITY`, naming the holders,
-   when every slot is taken; the limit is one unless `~/.liftlog-device-stack/config.json`
-   sets `{ "limit": 2 }`, and `DEVICE_STACK_LIMIT` can only lower it; the
+   when every slot is taken; the limit is one unless
+   `pnpm run device:stack limit 2` raises it in `~/.liftlog-device-stack/config.json`
+   (keeping the file's other keys), and `DEVICE_STACK_LIMIT` can only lower it;
+   `limit` alone prints the effective limit and its source. The
    [capacity rule](#capacity) decides the default. Repeating `start`
    returns the running lease. After a failed or killed `start`, the next `start` repairs
    the lease and `stop` releases it; `LEASE_LOST` means another holder took the slot, so
@@ -322,8 +324,8 @@ for [#177](https://github.com/BraveHeart-tex/Liftlog/issues/177):
 
 Two leases with a build fail the swap (2562 MB) and latency (8.54 s against 1.46 s)
 thresholds, so the default stays at one. Two leases alone fit within the thresholds, so
-`{ "limit": 2 }` suits sessions that run no native build; a build makes even one lease's
-snapshots slow.
+`pnpm run device:stack limit 2` suits sessions that run no native build, and
+`limit 1` restores the default; a build makes even one lease's snapshots slow.
 
 ### Route map
 
