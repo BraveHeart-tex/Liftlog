@@ -22,9 +22,7 @@ import {
 } from 'react';
 import { View } from 'react-native';
 
-export type ExercisePickerFilter =
-  | ExercisePickerPrimaryFilter
-  | ExerciseCategory;
+type ExercisePickerFilter = ExercisePickerPrimaryFilter | ExerciseCategory;
 
 interface ExercisePickerFilterOption {
   label: string;

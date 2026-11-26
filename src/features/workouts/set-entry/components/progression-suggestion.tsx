@@ -39,7 +39,7 @@ export function useProgressionSuggestionContext() {
   return context;
 }
 
-export function ProgressionSuggestionSkeleton() {
+function ProgressionSuggestionSkeleton() {
   return (
     <View
       accessible
@@ -62,7 +62,7 @@ export function ProgressionSuggestionSkeleton() {
   );
 }
 
-export function ProgressionSuggestion({
+function ProgressionSuggestion({
   workoutExerciseId
 }: ProgressionSuggestionProps) {
   const { historyPreview, progressionSuggestion: suggestion } =

@@ -9,7 +9,7 @@ interface ProgressionHistoryEntry {
   sets: Set[];
 }
 
-export interface ProgressionSuggestionData {
+interface ProgressionSuggestionData {
   kind: 'increase-weight' | 'repeat-last';
   estimated1rmKg: number;
   estimated1rmDeltaKg: number | null;

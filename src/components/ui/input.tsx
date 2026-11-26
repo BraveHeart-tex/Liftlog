@@ -7,8 +7,6 @@ import { StyledTextInput } from '@/src/components/styled/text-input';
 import { appFonts } from '@/src/theme/fonts';
 import { forwardRef, type ComponentRef } from 'react';
 
-export type { InputProps } from '@/src/components/ui/input.shared';
-
 export const Input = forwardRef<
   ComponentRef<typeof StyledTextInput>,
   InputProps

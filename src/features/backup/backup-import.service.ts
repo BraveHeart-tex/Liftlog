@@ -9,7 +9,7 @@ import {
 } from '@/src/features/backup/backup-preview';
 import { File } from 'expo-file-system';
 
-export type BackupPickResult =
+type BackupPickResult =
   | { status: 'cancelled' }
   | { status: 'preview'; backup: LiftLogBackupV2; preview: BackupPreview };
 

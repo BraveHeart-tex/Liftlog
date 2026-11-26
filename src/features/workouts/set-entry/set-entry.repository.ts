@@ -3,7 +3,5 @@
 export {
   createCompletedSet,
   deleteCompletedSet,
-  getSetsByWorkoutExerciseIdQuery,
-  getSetsForWorkoutQuery,
   updateCompletedSet
 } from '@/src/features/workouts/shared/workout.repository';

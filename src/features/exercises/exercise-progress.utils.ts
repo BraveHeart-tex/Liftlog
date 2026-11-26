@@ -7,7 +7,7 @@ import {
 import type { Set, Workout } from '@/src/db/schema';
 import type { WeightUnit } from '@/src/lib/utils/weight.utils';
 
-export interface ExerciseHistoryProgressEntry {
+interface ExerciseHistoryProgressEntry {
   workout: Workout;
   sets: Set[];
 }

@@ -15,7 +15,7 @@ function createSupersetId(): string {
   return generateUuid();
 }
 
-export function formatSupersetLetter(index: number): string {
+function formatSupersetLetter(index: number): string {
   let value = index + 1;
   let label = '';
 

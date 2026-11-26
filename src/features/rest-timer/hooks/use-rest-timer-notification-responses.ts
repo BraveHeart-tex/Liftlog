@@ -21,7 +21,7 @@ interface UseRestTimerNotificationResponsesParams {
 const ROUTER_READY_RETRY_DELAY_MS = 50;
 const ROUTER_READY_MAX_RETRIES = 20;
 
-export function getRestTimerNotificationDestination(input: {
+function getRestTimerNotificationDestination(input: {
   activeWorkout: boolean;
   workoutExerciseId?: string;
 }): Href {

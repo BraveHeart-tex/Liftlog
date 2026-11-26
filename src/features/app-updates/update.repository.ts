@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 import type { UpdatePersistence } from './update-coordinator';
 import type { UpdateCache } from './update.types';
 
-export const UPDATE_CACHE_KEY = 'app_updates.discovery_cache_v1';
+const UPDATE_CACHE_KEY = 'app_updates.discovery_cache_v1';
 
 function parseCache(value: string | undefined): UpdateCache | undefined {
   if (!value) {

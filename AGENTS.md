@@ -41,6 +41,7 @@ The final check is `pnpm run validate:changed [--base <sha>]`: on files changed 
 
 - Types: `pnpm run ts-check`
 - Lint and format: `pnpm run lint .` and `pnpm run prettier:check` for broad changes
+- Unused files, exports and dependencies: `pnpm run knip` (whole project, so not in `validate:changed`)
 - Logic or behavior (Jest app project): `pnpm run test`; narrow with `pnpm run test <path>` or `pnpm run test -t <name>`
 - Config plugins, release signing, Android release scripts (`tests/native`): `pnpm run test:native`
 - GitHub ticket tooling (`tests/tooling`): `pnpm run test:tooling`

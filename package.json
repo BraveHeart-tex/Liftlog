@@ -17,6 +17,7 @@
     "device:stack": "node scripts/device-stack.mjs",
     "format": "pnpm run prettier:fix",
     "ios": "expo run:ios",
+    "knip": "knip",
     "lint:fix": "eslint --fix .",
     "lint": "eslint",
     "postinstall": "husky",

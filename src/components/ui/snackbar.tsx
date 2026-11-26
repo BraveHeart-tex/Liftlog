@@ -73,9 +73,9 @@ function getSnackbarKeyboardEasing(easing?: string) {
   }
 }
 
-export type SnackbarVariant = 'success' | 'info' | 'warning' | 'danger';
+type SnackbarVariant = 'success' | 'info' | 'warning' | 'danger';
 
-export interface SnackbarOptions {
+interface SnackbarOptions {
   key?: string;
   message: string;
   actionLabel?: string;

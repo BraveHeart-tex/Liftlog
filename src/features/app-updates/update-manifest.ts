@@ -19,7 +19,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
-export function parseUpdateManifest(value: unknown): UpdateManifestV1 {
+function parseUpdateManifest(value: unknown): UpdateManifestV1 {
   if (!isRecord(value) || value.schemaVersion !== 1) {
     throw new UpdateManifestError('Unsupported update manifest schema.');
   }

@@ -68,17 +68,6 @@ function readSetting(db: DrizzleDb, key: string): string | undefined {
   return db.select().from(appMeta).where(eq(appMeta.key, key)).get()?.value;
 }
 
-export function getSetting(db: DrizzleDb, key: string): string | undefined {
-  return withDatabaseSpan(
-    {
-      operation: 'settings.getSetting',
-      feature: 'settings',
-      access: 'read'
-    },
-    () => readSetting(db, key)
-  );
-}
-
 export function getSettingsQuery(db: DrizzleDb) {
   return db
     .select({ key: appMeta.key, value: appMeta.value })
@@ -91,21 +80,6 @@ function setSetting(db: DrizzleDb, key: string, value: string): void {
     .values({ key, value })
     .onConflictDoUpdate({ target: appMeta.key, set: { value } })
     .run();
-}
-
-export function getWeightUnit(db: DrizzleDb): WeightUnit {
-  return withDatabaseSpan(
-    {
-      operation: 'settings.getWeightUnit',
-      feature: 'settings',
-      access: 'read'
-    },
-    () => {
-      const value = readSetting(db, SETTINGS_KEYS.weightUnit);
-
-      return value === 'lb' ? 'lb' : 'kg';
-    }
-  );
 }
 
 export function setWeightUnit(db: DrizzleDb, unit: WeightUnit): void {

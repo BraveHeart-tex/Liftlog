@@ -18,7 +18,6 @@ export {
   getWorkoutExercisesWithExercisesQuery,
   saveActiveWorkoutExerciseDraft,
   updateWorkoutExerciseOrderAndSupersets,
-  updateWorkoutExerciseSupersets,
   updateWorkoutName,
   type ActiveWorkoutExerciseDraftBaselineRow,
   type ActiveWorkoutExerciseDraftRow,

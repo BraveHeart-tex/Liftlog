@@ -6,7 +6,7 @@ export const CALENDAR_COLUMNS = 7;
 
 export const CALENDAR_ROWS = 6;
 
-export const CALENDAR_TOOLBAR_HEIGHT = 48;
+const CALENDAR_TOOLBAR_HEIGHT = 48;
 
 export const CALENDAR_GRID_HEIGHT = 296;
 

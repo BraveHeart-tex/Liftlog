@@ -6,7 +6,7 @@ type GroupViewProps = ComponentPropsWithoutRef<typeof View> & {
   className?: string;
 };
 
-export type InputGroupProps = GroupViewProps & {
+type InputGroupProps = GroupViewProps & {
   invalid?: boolean;
   disabled?: boolean;
 };

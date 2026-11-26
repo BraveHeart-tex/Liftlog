@@ -10,7 +10,7 @@ export { MAX_REST_TIMER_SECONDS, MIN_REST_TIMER_SECONDS };
 
 export type RestTimerStatus = 'idle' | 'running' | 'paused';
 
-export interface RestTimerClock {
+interface RestTimerClock {
   now(): number;
 }
 

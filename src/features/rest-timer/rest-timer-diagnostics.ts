@@ -1,6 +1,6 @@
 import type { RestTimerAppState } from './rest-timer.coordinator';
 
-export type RestTimerDiagnosticOperation =
+type RestTimerDiagnosticOperation =
   | 'schedule'
   | 'cancel'
   | 'complete'
@@ -9,7 +9,7 @@ export type RestTimerDiagnosticOperation =
   | 'persist'
   | 'restore';
 
-export type RestTimerDiagnosticReason =
+type RestTimerDiagnosticReason =
   | 'native_failure'
   | 'persistence_failure'
   | 'invalid_snapshot';

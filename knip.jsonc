@@ -1,0 +1,34 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "tags": ["-lintignore"],
+  "ignoreBinaries": ["scripts/build-android-release-single-arch.sh"],
+  "workspaces": {
+    ".": {
+      "entry": [
+        // Local config plugins, loaded by path from app.json `plugins`.
+        "plugins/*.js",
+        // Read by `expo-fingerprint` at build time.
+        "fingerprint.config.js",
+        // CLIs run as `node scripts/<name>.mjs` from docs, skills and other scripts.
+        "scripts/*.mjs",
+        // Type declarations for `scripts/ticket-lint.mjs`, resolved by tsc only.
+        "scripts/*.d.mts",
+        // Compile-only type fixtures checked by `pnpm run ts-check`.
+        "tests/types/**/*.{ts,tsx}"
+      ],
+      "ignoreDependencies": [
+        // Loaded by Expo CLI through `EXPO_UNSTABLE_ATLAS=true` in `android:device`, never imported.
+        "expo-atlas",
+        // Knip's Expo plugin assumes it unless `updates.enabled` is false; Liftlog ships its own updater module instead.
+        "expo-updates",
+        // Referenced only by a JSDoc type annotation in fingerprint.config.js; installed transitively by Expo.
+        "@expo/fingerprint"
+      ],
+      "babel": { "config": ["babel.config.js"] },
+      "expo": {
+        "config": ["app.json", "app.config.{ts,js}"],
+        "entry": ["app/**/*.{js,jsx,ts,tsx}", "src/app/**/*.{js,jsx,ts,tsx}"]
+      }
+    }
+  }
+}

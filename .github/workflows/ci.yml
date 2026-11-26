@@ -51,8 +51,7 @@ jobs:
         run: pnpm run prettier:check
 
       - name: Knip
-        run: pnpm exec knip
-        continue-on-error: true
+        run: pnpm run knip
 
   tests:
     name: Tests

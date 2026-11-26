@@ -105,7 +105,7 @@ async function getGrantedStepPermissionState(): Promise<StepPermissionState> {
   return toStepPermissionState(permissions);
 }
 
-export async function getHealthConnectAvailability(): Promise<HealthConnectAvailability> {
+async function getHealthConnectAvailability(): Promise<HealthConnectAvailability> {
   try {
     return await initializeHealthConnect();
   } catch (error) {
@@ -113,19 +113,6 @@ export async function getHealthConnectAvailability(): Promise<HealthConnectAvail
 
     return 'unavailable';
   }
-}
-
-export async function getStepPermissionState(): Promise<StepPermissionState> {
-  const availability = await initializeHealthConnect();
-
-  if (availability !== 'available') {
-    return {
-      canReadSteps: false,
-      canReadHistory: false
-    };
-  }
-
-  return getGrantedStepPermissionState();
 }
 
 export async function getStepHealthConnectStatus(): Promise<StepHealthConnectStatus> {

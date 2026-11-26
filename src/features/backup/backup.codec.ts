@@ -6,11 +6,11 @@ import {
 } from '@/src/features/settings/settings.repository';
 import type { LiftLogBackupV2 } from '@/src/features/backup/backup.types';
 
-export const BACKUP_FORMAT = 'liftlog-backup';
+const BACKUP_FORMAT = 'liftlog-backup';
 
-export const BACKUP_SCHEMA_VERSION = 2;
+const BACKUP_SCHEMA_VERSION = 2;
 
-export const LEGACY_BACKUP_SCHEMA_VERSION = 1;
+const LEGACY_BACKUP_SCHEMA_VERSION = 1;
 type SupportedBackupSchemaVersion =
   | typeof LEGACY_BACKUP_SCHEMA_VERSION
   | typeof BACKUP_SCHEMA_VERSION;
@@ -39,7 +39,7 @@ export class BackupValidationError extends Error {
   }
 }
 
-export type ParsedSupportedBackup = {
+type ParsedSupportedBackup = {
   schemaVersion: SupportedBackupSchemaVersion;
   backup: Record<string, unknown>;
 };

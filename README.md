@@ -74,10 +74,10 @@ pnpm run ts-check         # TypeScript
 pnpm test                 # Jest app test suite
 pnpm run lint             # ESLint
 pnpm run prettier:check   # Formatting
-pnpm exec knip            # Unused files and exports (advisory in CI)
+pnpm run knip             # Unused files, exports and dependencies
 ```
 
-`pnpm run format` applies Prettier, while `pnpm run lint:fix` applies ESLint fixes. Pull requests and pushes to `main` run type checking, tests, linting, and formatting in GitHub Actions.
+`pnpm run format` applies Prettier, while `pnpm run lint:fix` applies ESLint fixes. Pull requests and pushes to `main` run type checking, tests, linting, formatting and knip in GitHub Actions.
 
 ## Project structure
 

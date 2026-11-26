@@ -8,8 +8,6 @@ import { appFonts } from '@/src/theme/fonts';
 import { forwardRef, type ComponentRef } from 'react';
 import type { TextInputProps } from 'react-native';
 
-export type { InputProps } from '@/src/components/ui/input.shared';
-
 export const BottomSheetInput = forwardRef<
   ComponentRef<typeof StyledBottomSheetTextInput>,
   InputProps

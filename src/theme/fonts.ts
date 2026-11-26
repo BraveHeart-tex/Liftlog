@@ -15,8 +15,6 @@ export const appFonts = {
   }
 } as const;
 
-export type AppFontFace = (typeof appFonts.faces)[keyof typeof appFonts.faces];
-
 export const appFontAssets = {
   [appFonts.faces.regular]: InstrumentSans_400Regular,
   [appFonts.faces.medium]: InstrumentSans_500Medium,

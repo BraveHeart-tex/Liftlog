@@ -30,14 +30,6 @@ export function FieldLabel({ children, className }: FieldTextProps) {
   );
 }
 
-export function FieldDescription({ children, className }: FieldTextProps) {
-  return (
-    <Text variant="caption" tone="muted" className={cn('mt-2', className)}>
-      {children}
-    </Text>
-  );
-}
-
 export function FieldError({ children, className }: FieldTextProps) {
   const previousMessage = useRef<string | undefined>(undefined);
   const message = Children.toArray(children)
