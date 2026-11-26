@@ -154,7 +154,8 @@ coordinates read off a screenshot. In order:
    ([ownership evidence](adr/0008-device-stack-architecture.md#ownership-evidence)).
    `start` leases an emulator slot first and fails with `CAPACITY`, naming the holders,
    when every slot is taken; the limit is one unless `~/.liftlog-device-stack/config.json`
-   sets `{ "limit": 2 }`, and `DEVICE_STACK_LIMIT` can only lower it. Repeating `start`
+   sets `{ "limit": 2 }`, and `DEVICE_STACK_LIMIT` can only lower it; the
+   [capacity rule](#capacity) decides the default. Repeating `start`
    returns the running lease. After a failed or killed `start`, the next `start` repairs
    the lease and `stop` releases it; `LEASE_LOST` means another holder took the slot, so
    run `stop` to clear the worktree's record. Before failing with `CAPACITY`, `start`
@@ -225,6 +226,39 @@ coordinates read off a screenshot. In order:
 6. **Stop.** `pnpm run device:stack stop` closes the session and stops only what `start`
    started and still passes its identity check; anything that fails it is listed as
    `untrusted` and left running.
+
+### Capacity
+
+The default emulator limit is one. It rises to two only when every threshold holds with
+two leases and a native build running together, and only with maintainer approval:
+
+- memory pressure (`kern.memorystatus_vm_pressure_level`) never reaches critical
+- swap used grows by less than 512 MB during the run
+- `device snapshot -i` p95 stays within 1.5x the one-lease p95
+
+Measure four scenarios on the host, one at a time from no leases: one lease, one lease
+with a native build, two leases, and two leases with a native build. Each scenario
+times `start --no-build` per lease from a warm dev build cache, then starts the build
+(`gradlew app:assembleDebug --rerun-tasks --no-build-cache` from a prebuilt `android/`
+in a separate worktree, so no lease's dev build key changes), while an agent per lease
+alternates `open <route>` with a timed `device snapshot -i` until the build exits, at
+least 30 times. A sampler records memory pressure, swap used, swapouts and per-process
+RSS every 2 s.
+
+Results on the maintainer's 16 GB M1 MacBook Air (harness AVD with 4 GB RAM), measured
+for [#177](https://github.com/BraveHeart-tex/Liftlog/issues/177):
+
+| Scenario          | Peak pressure | Swap growth | Swapouts | Snapshot median / p95 | `start`    |
+| ----------------- | ------------- | ----------- | -------- | --------------------- | ---------- |
+| One lease         | normal        | 0 MB        | 0        | 0.57 s / 0.97 s       | 57 s       |
+| One lease, build  | warn          | 0 MB        | 0        | 2.79 s / 10.88 s      | 53 s       |
+| Two leases        | warn          | 0 MB        | 0        | 0.89 s / 1.43 s       | 52 s, 67 s |
+| Two leases, build | warn          | 2562 MB     | 246805   | 2.86 s / 8.54 s       | 46 s, 55 s |
+
+Two leases with a build fail the swap (2562 MB) and latency (8.54 s against 1.46 s)
+thresholds, so the default stays at one. Two leases alone fit within the thresholds, so
+`{ "limit": 2 }` suits sessions that run no native build; a build makes even one lease's
+snapshots slow.
 
 ### Route map
 
