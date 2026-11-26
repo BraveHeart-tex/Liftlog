@@ -36,6 +36,8 @@ const weightUtilityPattern = new RegExp(
   `(?:^|[\\s'"\`:])font-(?:${weightNames.join('|')}|\\[\\d+\\])(?=$|[\\s'"\`])`
 );
 
+const inlineWeightPattern = /\bfontWeight\b/;
+
 function resolveFrom(id: string, base: string) {
   return id.startsWith('.')
     ? resolve(base, id)
@@ -106,13 +108,20 @@ test('weight utilities are not generated', async () => {
   }
 });
 
-test('no source file uses a weight utility class', () => {
-  const offenders = sourceFiles(join(projectRoot, 'src')).flatMap(file =>
+function sourceLinesMatching(pattern: RegExp) {
+  return sourceFiles(join(projectRoot, 'src')).flatMap(file =>
     readFileSync(file, 'utf8')
       .split('\n')
       .flatMap((line, index) =>
-        weightUtilityPattern.test(line) ? [`${file}:${index + 1}`] : []
+        pattern.test(line) ? [`${file}:${index + 1}`] : []
       )
   );
-  assert.deepEqual(offenders, []);
+}
+
+test('no source file uses a weight utility class', () => {
+  assert.deepEqual(sourceLinesMatching(weightUtilityPattern), []);
+});
+
+test('no source file sets an inline font weight', () => {
+  assert.deepEqual(sourceLinesMatching(inlineWeightPattern), []);
 });

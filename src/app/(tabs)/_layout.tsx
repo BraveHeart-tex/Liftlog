@@ -299,7 +299,6 @@ const styles = StyleSheet.create({
   tabLabel: {
     fontFamily: appFonts.faces.semiBold,
     fontSize: nativeFontSizes.tabLabel,
-    fontWeight: '600',
     marginTop: 2
   }
 });
