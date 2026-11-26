@@ -210,7 +210,10 @@ coordinates read off a screenshot. In order:
    and waits for its activity. It spaces consecutive links at least 3 s apart, since
    rapid links drop the app to the dev launcher, and refuses full URLs, dev-client links,
    quotes and spaces. The route renders shortly after the activity, so confirm the screen
-   with `pnpm run device:stack device wait text <title>` or `device snapshot -i`.
+   with `pnpm run device:stack device wait text <title>` or `device snapshot -i`. When
+   Android `device fill <target> <text>` fails its verification, focus the field with
+   `device click @<ref>`, using the `text-field` ref from `device snapshot -i` (a label
+   can also match the field's caption), and enter the text with `device type <text>`.
 3. **Prove style facts** through the React DevTools hook. A reviewed screenshot stays
    the evidence; this read backs it up wherever a style fact is the claim.
    `react-devtools get component` shows props but dehydrates nested `style` (`"{…}"`),
@@ -248,7 +251,9 @@ coordinates read off a screenshot. In order:
    `pnpm run device:stack logs [js|metro] [--lines N] [--grep re]` prints the last N
    matching lines (default 50, at most 500) of the lease's JS log, the default, or its
    Metro log. The JS log holds `ReactNativeJS` output and `AndroidRuntime` native crashes
-   from `start` onward; each lease starts both logs empty.
+   from `start` onward; each lease starts both logs empty. Fast Refresh after a debug edit
+   may reset sheet state: reopen the sheet from its entry point before retrying the
+   reproduction.
 6. **Red proof on the base commit** for a new test, in a throwaway worktree so the
    checkout stays untouched. The worktree has no `node_modules`; link the checkout's
    and skip pnpm's dependency check, which would otherwise try to reinstall:
@@ -370,7 +375,8 @@ thresholds, so the default stays at one. Two leases alone fit within the thresho
 
 Paths from `src/app`; groups such as `(tabs)` drop out of the URL. Read IDs from the
 lease's app database with `pnpm run -s device:stack sql "<query>"`, for example
-`sql "SELECT id, name FROM workout_templates"`.
+`sql "SELECT id, name FROM workout_templates"`. Read settings from `app_meta` with
+`pnpm run device:stack sql "SELECT key, value FROM app_meta WHERE key LIKE 'settings.%'"`.
 
 | Deep link path                                   | Screen                         | Needs                                                    |
 | ------------------------------------------------ | ------------------------------ | -------------------------------------------------------- |
