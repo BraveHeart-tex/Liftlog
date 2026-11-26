@@ -99,13 +99,12 @@ Work **lean** throughout:
    _Done when_ the required final checks exit 0 on the final code or docs.
 
 8. **Ship.** Commit per [commits](../../../docs/commits.md) with scope `#<n>` and
-   push to main. Tick each criterion box in the issue body
-   (`gh issue edit <n> --body-file`), post the
-   [evidence](../../../docs/verification.md#evidence) comment, read both back, then close
-   per [tickets](../../../docs/tickets.md#closing). Attach reviewed
-   screenshots with `gh issue comment --attach` when device checks are evidence, and
-   read back their links. If this run started a lease, release it with
-   `pnpm run device:stack stop`.
+   push to main. Write the [evidence](../../../docs/verification.md#evidence) to a file
+   citing the pushed commit, then close per [tickets](../../../docs/tickets.md#closing)
+   with `node scripts/finish-issue.mjs <n> --evidence <file>`, adding `--attach <png>`
+   per reviewed screenshot when device checks are evidence. It ticks every box, posts the
+   comment, closes the issue, sets Status Done and reads each back. If this run started a
+   lease, release it with `pnpm run device:stack stop`.
    _Done when_ the read-back shows every box ticked, the evidence comment cites the
    pushed commit and includes any required screenshots, the issue is closed, and
    `stop` has released any lease this run started.

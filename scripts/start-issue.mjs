@@ -1,31 +1,11 @@
-import { execFileSync } from 'node:child_process';
+// Plain Node runs this script, so the @/ alias cannot resolve here.
+// eslint-disable-next-line no-restricted-imports
+import { run, setStatus } from './project-status.mjs';
 
 // Starts work on an issue (docs/tickets.md "Selecting work"): reads the issue and its
 // relations, refuses a closed issue or an open blocker, then sets the issue's LiftLog Project
-// Status to In progress, adding it to the Project first. Project, field and option IDs are
-// looked up by name. Prints { issue, parent, subIssues, blockedBy, base } as JSON.
-const OWNER = 'BraveHeart-tex';
-const SCOPE_HINT =
-  'Run `gh auth refresh -s project` to grant the project scope.';
-
-function run(command, args) {
-  try {
-    return execFileSync(command, args, {
-      encoding: 'utf8',
-      maxBuffer: 64 << 20,
-      stdio: ['ignore', 'pipe', 'pipe']
-    });
-  } catch (error) {
-    const stderr = String(error.stderr ?? '').trim();
-    const scope =
-      args[0] === 'project' && /scope/i.test(stderr) ? `\n${SCOPE_HINT}` : '';
-
-    throw new Error(
-      `${command} ${args.slice(0, 2).join(' ')} failed: ${stderr}${scope}`
-    );
-  }
-}
-
+// Status to In progress through project-status.mjs. Prints
+// { issue, parent, subIssues, blockedBy, base } as JSON.
 const gh = (...args) => JSON.parse(run('gh', args));
 
 function refusal(issue) {
@@ -38,68 +18,6 @@ function refusal(issue) {
   if (open.length) {
     return `#${issue.number} has open blockers: ${open.map(b => `#${b.number}`).join(', ')}.`;
   }
-}
-
-function setInProgress(issue) {
-  const { projects } = gh(
-    'project',
-    'list',
-    '--owner',
-    OWNER,
-    '--format',
-    'json'
-  );
-  const project = projects.find(p => p.title === 'LiftLog');
-
-  if (!project) {
-    throw new Error(`LiftLog Project not found for ${OWNER}.\n${SCOPE_HINT}`);
-  }
-
-  const number = String(project.number);
-  const { fields } = gh(
-    'project',
-    'field-list',
-    number,
-    '--owner',
-    OWNER,
-    '--format',
-    'json'
-  );
-  const status = fields.find(field => field.name === 'Status');
-  const option = status?.options?.find(o => o.name === 'In progress');
-
-  if (!option) {
-    throw new Error('LiftLog Project has no Status option named In progress.');
-  }
-
-  const { items } = gh(
-    'project',
-    'item-list',
-    number,
-    '--owner',
-    OWNER,
-    '--format',
-    'json',
-    '--limit',
-    '1000'
-  );
-  const item =
-    items.find(i => i.content?.url === issue.url) ??
-    gh(
-      'project',
-      'item-add',
-      number,
-      '--owner',
-      OWNER,
-      '--url',
-      issue.url,
-      '--format',
-      'json'
-    );
-  run('gh', [
-    ...['project', 'item-edit', '--id', item.id, '--project-id', project.id],
-    ...['--field-id', status.id, '--single-select-option-id', option.id]
-  ]);
 }
 
 const ref = process.argv[2];
@@ -132,7 +50,7 @@ try {
   }
 
   const base = run('git', ['rev-parse', 'HEAD']).trim();
-  setInProgress(issue);
+  setStatus(issue.url, 'In progress');
   const { number, title, url, body } = issue;
   const comments = raw.comments.map(c => ({
     author: c.author?.login ?? null,

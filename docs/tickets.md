@@ -266,8 +266,13 @@ description in the same change, then comments on both tickets.
 
 ## Closing
 
-Close a ticket once it is [done](../AGENTS.md#done). Post the
-[evidence](verification.md#evidence) with `gh issue comment <n> --body-file <file>`,
-read it back, then `gh issue close <n> --reason completed`. For any criterion that will
-not be finished, create a follow-up ticket with a single owner, link it from this
-ticket, and remove the item here.
+Close a ticket once it is [done](../AGENTS.md#done) with
+`node scripts/finish-issue.mjs <n> --evidence <file> [--attach <png>...]`, where `<file>`
+holds the [evidence](verification.md#evidence). It refuses a closed issue, and an evidence
+file citing no commit on `origin/main` after `git fetch origin main`, writing nothing. It
+then ticks every criterion box, posts the evidence comment with its attachments, closes
+the issue as completed and sets Project Status to Done. The read-back is mandatory and the
+script performs it: every box ticked, the comment present with one uploaded link per
+`--attach`, the issue closed and Status Done; a failed read-back exits non-zero. For any
+criterion that will not be finished, create a follow-up ticket with a single owner, link
+it from this ticket, and remove the item here before running the script.
