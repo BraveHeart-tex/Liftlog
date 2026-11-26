@@ -1,4 +1,6 @@
 import { appMeta } from '@/src/db/schema';
+import type { refreshLiveQueries as RefreshLiveQueries } from '@/src/lib/db/live-query-refresh';
+import type { useLiveWithFallback as UseLiveWithFallback } from '@/src/lib/db/use-live-with-fallback.hook';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { like } from 'drizzle-orm';
 import { sqliteTable, text } from 'drizzle-orm/sqlite-core';
@@ -25,35 +27,33 @@ const missingTable = sqliteTable('missing_table', {
   id: text('id').primaryKey()
 });
 
-async function setup() {
-  const { db } = await createMigratedTestDatabase();
-  const { useLiveWithFallback } =
-    await import('@/src/lib/db/use-live-with-fallback.hook');
-  const { refreshLiveQueries } =
-    await import('@/src/lib/db/live-query-refresh');
-  const probeRows = () =>
-    db.select().from(appMeta).where(like(appMeta.key, 'probe.%'));
-  const insertProbe = (key: string) =>
-    db
-      .insert(appMeta)
-      .values({ key: `probe.${key}`, value: key })
-      .run();
-  const emitChange = (tableName: string) =>
-    act(async () => {
-      for (const listener of changeListeners) {
-        listener({ tableName });
-      }
-    });
+let db: Awaited<ReturnType<typeof createMigratedTestDatabase>>['db'];
+let useLiveWithFallback: typeof UseLiveWithFallback;
+let refreshLiveQueries: typeof RefreshLiveQueries;
 
-  return {
-    db,
-    useLiveWithFallback,
-    refreshLiveQueries,
-    probeRows,
-    insertProbe,
-    emitChange
-  };
-}
+beforeAll(async () => {
+  ({ useLiveWithFallback } =
+    await import('@/src/lib/db/use-live-with-fallback.hook'));
+  ({ refreshLiveQueries } = await import('@/src/lib/db/live-query-refresh'));
+});
+
+beforeEach(async () => {
+  ({ db } = await createMigratedTestDatabase());
+});
+
+const probeRows = () =>
+  db.select().from(appMeta).where(like(appMeta.key, 'probe.%'));
+const insertProbe = (key: string) =>
+  db
+    .insert(appMeta)
+    .values({ key: `probe.${key}`, value: key })
+    .run();
+const emitChange = (tableName: string) =>
+  act(async () => {
+    for (const listener of changeListeners) {
+      listener({ tableName });
+    }
+  });
 
 afterEach(() => {
   changeListeners.clear();
@@ -61,7 +61,6 @@ afterEach(() => {
 });
 
 test('returns fallback rows until the first read, then live rows', async () => {
-  const { useLiveWithFallback, probeRows, insertProbe } = await setup();
   const fallbackData = [{ key: 'fallback', value: 'fallback' }];
 
   insertProbe('a');
@@ -88,8 +87,6 @@ test('returns fallback rows until the first read, then live rows', async () => {
 });
 
 test('rereads only when a change event names a table the query uses', async () => {
-  const { useLiveWithFallback, probeRows, insertProbe, emitChange } =
-    await setup();
   const { result } = renderHook(() => useLiveWithFallback(probeRows(), []));
 
   await waitFor(() => expect(result.current.isLive).toBe(true));
@@ -106,8 +103,6 @@ test('rereads only when a change event names a table the query uses', async () =
 });
 
 test('a live query refresh rereads the query', async () => {
-  const { useLiveWithFallback, refreshLiveQueries, probeRows, insertProbe } =
-    await setup();
   const { result } = renderHook(() =>
     useLiveWithFallback(probeRows(), [], { deferInitialRead: true })
   );
@@ -125,8 +120,6 @@ test('a live query refresh rereads the query', async () => {
 });
 
 test('stays idle on fallback rows while disabled', async () => {
-  const { useLiveWithFallback, probeRows, insertProbe, emitChange } =
-    await setup();
   const fallbackData = [{ key: 'fallback', value: 'fallback' }];
 
   insertProbe('a');
@@ -148,7 +141,6 @@ test('stays idle on fallback rows while disabled', async () => {
 });
 
 test('a failing query surfaces its error', async () => {
-  const { db, useLiveWithFallback } = await setup();
   const { result } = renderHook(() =>
     useLiveWithFallback(db.select().from(missingTable), [], {
       deferInitialRead: true
