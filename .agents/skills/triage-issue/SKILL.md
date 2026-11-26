@@ -64,8 +64,14 @@ reparent an issue, or commit/push docs, without approval of the exact write plan
    [parent ticket](../../../docs/tickets.md#parents) and assign each criterion,
    owner, dependency and test to exactly one slice; preserve cross-slice invariants.
    Use the [tickets template](../../../docs/tickets.md#template).
+   **Ground every proof in the code** ([evidence](../../../docs/tickets.md#evidence)):
+   for each device-check criterion, search from the component under change to the
+   routes that render it, and flag a named screen that does not render it (or the
+   variant under change). For each "Only X uses Y" criterion, search for Y and list
+   every current user in the issue; flag a criterion that names fewer.
    _Done when_ every slice passes `node scripts/ticket-lint.mjs <body-file>` with no
-   orphaned criteria.
+   orphaned criteria, and every device-check screen and "Only X uses Y" user list
+   matches its code search.
 
 5. **Prepare the smallest write plan.** If the issue is already ready and needs
    no changes, report **ready as-is** and stop without GitHub writes. Otherwise

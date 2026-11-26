@@ -103,6 +103,10 @@ Migrations 0 · New screens 1 · Native modules 0 · Proofs 3
   [device check](verification.md#device-checks). Never a test per criterion by default.
 - Evidence is an assertion, not a record: "the repository test asserts the draft is
   discarded", not "check that drafts work".
+- A device check names a screen that renders the component under change, confirmed by
+  a code search from the component to its routes.
+- A criterion that limits who uses something ("Only X uses Y") rests on a code search
+  for Y; every current user it finds is named in the issue, so each has an owner.
 
 ## Size
 
