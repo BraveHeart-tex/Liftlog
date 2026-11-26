@@ -264,6 +264,44 @@ test('a new lease starts from the template without clearing data, and start --fr
   await stack('stop');
 });
 
+// Regression: #129's `start --fresh` timed out on its reopen and left the lease NO_LEASE.
+test.each([
+  { timeouts: 1, status: 0 },
+  { timeouts: 2, status: 1 }
+])(
+  'start --fresh on a ready lease retries a timed-out app reopen once and keeps the lease ready ($timeouts timeouts)',
+  async ({ timeouts, status }) => {
+    const { stack, editFake, registry, logPath } = await harness();
+    const { lease, session, port } = JSON.parse((await stack('start')).stdout);
+    editFake(state => (state.openTimeouts = timeouts));
+    const before = allCalls(logPath).length;
+
+    const fresh = await stack('start', '--fresh');
+
+    expect(fresh.status).toBe(status);
+    const order = commands(allCalls(logPath).slice(before));
+    const open = `agent-device open ${PACKAGE} ${link(port)} --relaunch --metro-port ${port} ${target(session)}`;
+    expect(
+      order.filter(
+        call => call === `adb -s ${SERIAL} shell pm clear ${PACKAGE}`
+      )
+    ).toHaveLength(1);
+    expect(order.filter(call => call === open)).toHaveLength(2);
+
+    if (status === 0) {
+      expect(JSON.parse(fresh.stdout).lease).toEqual(lease);
+    } else {
+      expect(fresh.stderr).toContain('Daemon request timed out');
+    }
+
+    const snapshot = await stack('device', 'snapshot');
+    expect(snapshot.status).toBe(0);
+    expect(snapshot.stderr).not.toContain('NO_LEASE');
+    expect(registry().leases.map(({ id }) => id)).toEqual([lease.id]);
+    await stack('stop');
+  }
+);
+
 test('start --fresh dismisses dev-client onboarding before waiting for Workout', async () => {
   const { stack, logPath } = await harness({ onboarding: true });
 

@@ -1953,16 +1953,31 @@ async function openApp(state) {
   });
 }
 
-// `start --fresh` on a running lease clears its app data and opens the app again.
+// `start --fresh` on a running lease clears its app data and opens the app again, retrying
+// once an open that times out on the agent-device daemon. The lease stays ready either way.
 async function freshen(state) {
   await claimOperation(state.lease.id, 'repair');
   activeLease = state.lease.id;
-  log(`clearing app data for ${PACKAGE}`);
-  await onOwnedEmulator(state, 'clear data', () =>
-    adb(state.emulator.serial, 'shell', 'pm', 'clear', PACKAGE)
-  );
-  await openApp(state);
-  await finishOperation(state);
+
+  try {
+    log(`clearing app data for ${PACKAGE}`);
+    await onOwnedEmulator(state, 'clear data', () =>
+      adb(state.emulator.serial, 'shell', 'pm', 'clear', PACKAGE)
+    );
+
+    try {
+      await openApp(state);
+    } catch (error) {
+      if (!error.message.includes('Daemon request timed out')) {
+        throw error;
+      }
+
+      log('the app reopen timed out; retrying once');
+      await openApp(state);
+    }
+  } finally {
+    await finishOperation(state);
+  }
 }
 
 // `motion on|off` sets the animation scales on the lease's emulator and reopens the app on its

@@ -148,6 +148,10 @@ if (name === 'emulator') {
     const listener = state.listeners.find(l => l.pid === pid)
     if (listener) process.stdout.write('p' + pid + '\\nfcwd\\nn' + listener.cwd + '\\n')
   }
+} else if (name === 'agent-device' && args[0] === 'open' && state.openTimeouts > 0) {
+  update(s => { s.openTimeouts -= 1 })
+  process.stderr.write('Daemon request timed out\\n')
+  process.exit(1)
 } else if (name === 'agent-device' && args[0] === 'press' && args[1] === 'label="Close"') {
   update(s => { s.onboarding = false })
 } else if (name === 'agent-device' && args[0] === 'snapshot' && args.includes('--json')) {
@@ -228,6 +232,8 @@ type FakeState = {
   gradleFails?: boolean;
   gradleHold?: string;
   onboarding?: boolean;
+  // agent-device `open` calls that fail with a daemon timeout before one succeeds.
+  openTimeouts?: number;
   redbox?: boolean;
   bundlingError?: boolean;
   // Boot completed checks that report a device still booting.

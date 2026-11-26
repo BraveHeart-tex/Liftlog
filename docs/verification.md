@@ -171,7 +171,9 @@ coordinates read off a screenshot. In order:
    `--no-build` fails a miss with `BUILD_MISSING`, and a failed build exits with
    `BUILD_FAILED` and the log path. Never install with `pnpm run android`: it targets the
    first listed device and starts its own Metro. `--fresh` on a running lease clears its
-   app data and reopens the app, so the dev seed runs again (new random IDs). `status` reports each
+   app data and reopens the app, so the dev seed runs again (new random IDs); it retries a
+   reopen that times out on the agent-device daemon once, and the lease stays ready when
+   the reopen fails. `status` reports each
    recorded process `running` only while its PID, start time and argv still match
    ([ownership evidence](adr/0008-device-stack-architecture.md#ownership-evidence)).
    `start` leases an emulator slot first and fails with `CAPACITY`, naming the holders,
