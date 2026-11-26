@@ -251,6 +251,37 @@ test('the broker refuses commands outside its allowlist and arguments naming a f
   await end();
 });
 
+test('the broker runs motion on|off as the fixed device:stack motion argv and refuses any other argument', async () => {
+  const { send, client, logPath, end } = await brokerRunning();
+  const from = allCalls(logPath).length;
+
+  for (const args of [[], ['sideways'], ['--on'], ['on', 'off'], ['1']]) {
+    const reply = await send({ command: 'motion', args });
+
+    expect([args, reply.status]).toEqual([args, 403]);
+    expect(reply.body.error).toContain('REFUSED');
+  }
+
+  expect(deviceCalls(logPath, from)).toEqual([]);
+
+  const on = await client('motion', 'on');
+
+  expect(on.status).toBe(0);
+  expect(
+    deviceCalls(logPath, from)
+      .filter(({ name }) => name === 'adb')
+      .map(({ args }) => args.join(' '))
+      .filter(line => line.includes(' settings put '))
+  ).toEqual(
+    [
+      'window_animation_scale',
+      'transition_animation_scale',
+      'animator_duration_scale'
+    ].map(scale => `-s ${SERIAL} shell settings put global ${scale} 1`)
+  );
+  await end();
+});
+
 test('stop through the broker releases the lease, stops the broker and removes its sandbox policy rule', async () => {
   const { brokerPort, client, exited, registry, credentialPath } =
     await brokerRunning();

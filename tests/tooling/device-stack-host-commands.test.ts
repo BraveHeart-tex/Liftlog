@@ -4,7 +4,11 @@ import {
   FOREIGN,
   SERIAL,
   harness,
-  allCalls
+  allCalls,
+  commands,
+  expectTargeted,
+  link,
+  target
 } from '@/tests/tooling/device-stack-harness';
 
 // The script's OPEN_INTERVAL_MS.
@@ -176,3 +180,48 @@ test('a new lease starts with empty JS and Metro logs', async () => {
   expect((await stack('logs')).stdout).not.toContain('stale');
   expect((await stack('logs', 'metro')).stdout).not.toContain('stale');
 });
+
+// The template boots with every animation scale at 0, which Reanimated reads as reduced
+// motion, so a check of press or transition motion never saw it.
+test('motion sets the three animation scales on the lease serial only and reopens the app on its Metro', async () => {
+  const { stack, logPath } = await harness();
+  const noLease = await stack('motion', 'on');
+  expect(noLease.status).toBe(1);
+  expect(noLease.stderr).toContain('NO_LEASE: ');
+  const { session, port } = JSON.parse((await stack('start')).stdout);
+  const scales = (value: string) =>
+    [
+      'window_animation_scale',
+      'transition_animation_scale',
+      'animator_duration_scale'
+    ].map(
+      scale => `adb -s ${SERIAL} shell settings put global ${scale} ${value}`
+    );
+
+  for (const [mode, value] of [
+    ['on', '1'],
+    ['off', '0']
+  ]) {
+    const before = allCalls(logPath).length;
+
+    const run = await stack('motion', mode);
+
+    expect(run.status).toBe(0);
+    const calls = allCalls(logPath).slice(before);
+    expect(
+      commands(calls).filter(call => call.includes(' settings put '))
+    ).toEqual(scales(value));
+    expect(commands(calls)).toContain(
+      `agent-device open ${PACKAGE} ${link(port)} --relaunch --metro-port ${port} ${target(session)}`
+    );
+    expectTargeted(calls, session);
+  }
+
+  const before = allCalls(logPath).length;
+  const refused = [[], ['sideways'], ['--on'], ['on', 'off']];
+
+  const runs = await Promise.all(refused.map(args => stack('motion', ...args)));
+
+  runs.forEach(run => expect(run.status).toBe(1));
+  expect(allCalls(logPath).slice(before)).toEqual([]);
+}, 30_000);

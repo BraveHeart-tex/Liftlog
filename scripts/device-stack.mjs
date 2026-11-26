@@ -1907,6 +1907,38 @@ async function freshen(state) {
   await finishOperation(state);
 }
 
+// `motion on|off` sets the animation scales on the lease's emulator and reopens the app on its
+// Metro: Reanimated reads a scale of 0 as reduced motion and reads it again only on restart.
+async function motion(args) {
+  const [mode] = args;
+
+  if (args.length !== 1 || !['on', 'off'].includes(mode)) {
+    throw new Error('Usage: pnpm run device:stack motion on|off');
+  }
+
+  const state = await readyState();
+  const value = mode === 'on' ? '1' : '0';
+
+  await claimOperation(state.lease.id, 'motion');
+  activeLease = state.lease.id;
+  log(`setting the animation scales to ${value}`);
+  await onOwnedEmulator(state, 'set animation scales', () => {
+    for (const scale of ANIMATION_SCALES) {
+      adb(
+        state.emulator.serial,
+        'shell',
+        'settings',
+        'put',
+        'global',
+        scale,
+        value
+      );
+    }
+  });
+  await openApp(state);
+  await finishOperation(state);
+}
+
 // What still runs, judged by identity checks rather than by the record alone.
 function observe(state) {
   const observed = {};
@@ -2486,6 +2518,7 @@ const BROKER_COMMANDS = {
     argv: ([direction]) => ['device', 'scroll', direction]
   },
   'metro-reload': { args: [], argv: () => ['device', 'metro', 'reload'] },
+  motion: { args: [/^(on|off)$/], argv: ([mode]) => ['motion', mode] },
   screenshot: {
     args: [SCREENSHOT_NAME],
     argv: ([name]) => ['device', 'screenshot', join(SCREENSHOTS, `${name}.png`)]
@@ -2825,11 +2858,13 @@ try {
     await broker();
   } else if (command === 'logs') {
     logs(flags);
+  } else if (command === 'motion') {
+    await motion(flags);
   } else if (command === BUILD_WORKER) {
     await buildWorker(flags[0]);
   } else {
     throw new Error(
-      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | open <path> | adb shell|exec-out|pull [args] | logs [js|metro] [--lines N] [--grep re] | gc [--dry-run] [--idle <minutes>] | list | broker | build-key | build'
+      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | open <path> | adb shell|exec-out|pull [args] | motion on|off | logs [js|metro] [--lines N] [--grep re] | gc [--dry-run] [--idle <minutes>] | list | broker | build-key | build'
     );
   }
 } catch (error) {

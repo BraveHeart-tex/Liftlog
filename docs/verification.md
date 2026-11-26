@@ -141,7 +141,11 @@ coordinates read off a screenshot. In order:
    `exec-out` and `pull` on the lease's serial, and refuses device selection, install,
    root, reboot, port forwarding, `emu` and server commands, plus `reboot`, `su`,
    `setprop`, `svc power` and package install or uninstall inside `shell` and `exec-out`.
-   It is host-only. Never call `adb` or `agent-device` directly; a sandboxed agent
+   It is host-only. A check of press, transition or other motion runs
+   `pnpm run device:stack motion on` first: the template turns animations off, which
+   Reanimated reads as reduced motion. `motion on|off` sets the three animation scales to
+   `1` or `0` on the lease's emulator and reopens the app on the lease's Metro, so the app
+   reads the new preference. Never call `adb` or `agent-device` directly; a sandboxed agent
    follows [sandboxed agents](#sandboxed-agents) instead. `start`
    installs the dev build matching the checkout's dev build key from the dev build cache,
    only when the installed build differs; on a miss it builds it first from a freshly
@@ -268,6 +272,7 @@ packages in the checkout's `node_modules`.
 | `back`                         | `device back`                                            |
 | `scroll up\|down\|left\|right` | `device scroll <direction>`                              |
 | `metro-reload`                 | `device metro reload`                                    |
+| `motion on\|off`               | `motion on\|off`                                         |
 | `screenshot <name>`            | `device screenshot .device-stack/screenshots/<name>.png` |
 
 A `<text>` starts with a letter or digit and holds up to 100 letters, digits, spaces and
