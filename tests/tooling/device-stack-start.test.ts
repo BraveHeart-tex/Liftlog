@@ -140,7 +140,7 @@ test('template creates the harness AVD and a clean template snapshot once', asyn
   );
   expect(order).toEqual(
     expect.arrayContaining([
-      `emulator -avd ${AVD} -port 5556 -wipe-data -no-snapshot-load -no-boot-anim`,
+      `emulator -avd ${AVD} -port 5556 -wipe-data -no-snapshot-load -no-boot-anim -gpu host`,
       `adb -s ${SERIAL} shell settings put global window_animation_scale 0`,
       `adb -s ${SERIAL} shell settings put global transition_animation_scale 0`,
       `adb -s ${SERIAL} shell settings put global animator_duration_scale 0`,

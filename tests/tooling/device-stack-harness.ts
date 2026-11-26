@@ -37,7 +37,7 @@ export const TEMPLATE = {
 };
 
 export const instanceBoot = (lease: string, port = 5556) =>
-  `emulator -avd ${AVD} -port ${port} -read-only -snapshot liftlog_template -no-snapshot-save -no-boot-anim -prop debug.liftlog.lease=${lease}`;
+  `emulator -avd ${AVD} -port ${port} -read-only -snapshot liftlog_template -no-snapshot-save -no-boot-anim -gpu host -prop debug.liftlog.lease=${lease}`;
 
 // One fake implementation behind every binary the script calls (`adb`, `emulator`, `lsof`,
 // `agent-device`, `pnpm`, `avdmanager`, and the `gradlew` the fake prebuild links). Each call

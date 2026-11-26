@@ -37,8 +37,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 // and still passes that check, then releases the lease. `device <command> [args]` runs an
 // allowlisted agent-device command on this worktree's ready lease only; `open <path>` opens a
 // liftlog:// deep link there, `adb` runs an allowlisted adb subcommand on its serial and
-// `logs` prints a bounded tail of its JS or Metro log. `build-key` prints
-// the dev build key of this checkout and the hash of each input behind it.
+// `logs` prints a bounded tail of its JS or Metro log. `gc [--dry-run] [--idle <minutes>]`
+// reclaims leases whose owners are provably gone, and `list` shows every slot read-only.
+// `build-key` prints the dev build key of this checkout and the hash of each input behind it.
 // The lease pointer, run state, logs and operation lock live in .device-stack/ at the checkout
 // root (the working directory); the dev build cache lives in the git common dir; the lease
 // registry, its lock, the host config and the build lock live in the host directory.
@@ -68,6 +69,10 @@ const HARNESS_AVD = 'liftlog_harness_34';
 // every leased instance boots from, and its version.
 const TEMPLATE_SNAPSHOT = 'liftlog_template';
 const TEMPLATE = join(HOST_DIR, 'template.json');
+// Host GPU rendering on every boot. Left on auto, the emulator falls back to software
+// rendering under host memory pressure, and a snapshot saved in one mode fails to load in
+// the other, so the instance cold boots.
+const GPU_ARGS = ['-gpu', 'host'];
 // Device property and argv marker carrying a leased instance's lease ID. `-prop` values are
 // lost on snapshot boot, so the property is set with `setprop` once the device connects.
 const LEASE_PROP = 'debug.liftlog.lease';
@@ -104,6 +109,9 @@ const START_SCREEN_ID = 'workout-start-screen';
 const BOOT_TIMEOUT_MS = 180_000;
 const METRO_TIMEOUT_MS = 120_000;
 const OPEN_TIMEOUT_MS = 180_000;
+// How long a reclaim waits for the processes it signalled to exit.
+const RECLAIM_TIMEOUT_MS = 30_000;
+const COMPONENTS = ['emulator', 'metro', 'jsLogs'];
 // Gap between retried checks in `waitFor` and the build lock wait; tooling tests shorten it.
 const POLL_MS = Number(process.env.DEVICE_STACK_POLL_MS) || 500;
 
@@ -343,7 +351,8 @@ async function snapshotTemplate() {
     String(consolePort),
     '-wipe-data',
     '-no-snapshot-load',
-    '-no-boot-anim'
+    '-no-boot-anim',
+    ...GPU_ARGS
   ];
 
   log(`booting ${HARNESS_AVD} writable as ${serial} to snapshot the template`);
@@ -778,66 +787,367 @@ const claimOperation = (id, kind) =>
     lease.operation = operation(kind);
   });
 
+// A full registry first reaps the leases whose owners are provably gone, then fails with
+// CAPACITY only if no slot came free.
 async function acquireLease(id) {
   const limit = emulatorLimit();
+  const gitCommonDir =
+    tryRun('git', [
+      'rev-parse',
+      '--path-format=absolute',
+      '--git-common-dir'
+    ]).trim() || null;
 
   await hook('beforeAcquire', { root: ROOT });
 
-  return withRegistry(registry => {
-    const holders = registry.leases.map(
-      lease => `slot ${lease.slot} by lease ${lease.id} from ${lease.root}`
-    );
+  return withRegistry(async registry => {
+    try {
+      return allocateSlot(registry, id, limit, gitCommonDir);
+    } catch (error) {
+      if (!error.message.startsWith('CAPACITY')) {
+        throw error;
+      }
 
-    if (registry.leases.length >= limit) {
-      throw new Error(
-        `CAPACITY: the emulator limit is ${limit} and every slot is leased: ${holders.join('; ')}.`
+      const decisions = await reap(registry);
+
+      if (!decisions.some(({ decision }) => decision === 'reclaim')) {
+        throw error;
+      }
+
+      return allocateSlot(registry, id, limit, gitCommonDir);
+    }
+  });
+}
+
+function allocateSlot(registry, id, limit, gitCommonDir) {
+  const holders = registry.leases.map(
+    lease => `slot ${lease.slot} by lease ${lease.id} from ${lease.root}`
+  );
+
+  if (registry.leases.length >= limit) {
+    throw new Error(
+      `CAPACITY: the emulator limit is ${limit} and every slot is leased: ${holders.join('; ')}.`
+    );
+  }
+
+  const blocked = [];
+
+  for (let slot = 0; slot < MAX_LIMIT; slot += 1) {
+    if (registry.leases.some(lease => lease.slot === slot)) {
+      continue;
+    }
+
+    const ports = slotPorts(slot);
+    // A server this lease did not start blocks the slot and is left alone.
+    const listeners = [
+      ...new Set([
+        ...listeningPids(ports.consolePort),
+        ...listeningPids(ports.adbPort),
+        ...listeningPids(ports.metroPort)
+      ])
+    ];
+
+    if (listeners.length) {
+      blocked.push(
+        `slot ${slot} ports ${ports.consolePort}/${ports.adbPort}/${ports.metroPort} are held by pid ${listeners.join(', ')}`
+      );
+      continue;
+    }
+
+    const lease = {
+      id,
+      slot,
+      ...ports,
+      serial: `emulator-${ports.consolePort}`,
+      root: ROOT,
+      gitCommonDir,
+      acquiredAt: new Date().toISOString(),
+      operation: operation('acquire')
+    };
+
+    registry.leases.push(lease);
+    writeRegistry(registry);
+
+    return lease;
+  }
+
+  throw new Error(
+    `CAPACITY: no emulator slot is free: ${[...holders, ...blocked].join('; ')}.`
+  );
+}
+
+// docs/adr/0008-device-stack-architecture.md "Reclaiming leases".
+const realOrSame = path => {
+  try {
+    return realpathSync(path);
+  } catch {
+    return path;
+  }
+};
+
+// Whether the lease's worktree is on disk and in its repository's worktree list; `listed` is
+// null when the list cannot be read.
+function worktreeEvidence(lease) {
+  const exists = existsSync(lease.root);
+  const list =
+    lease.gitCommonDir && existsSync(lease.gitCommonDir)
+      ? tryRun('git', [
+          '--git-dir',
+          lease.gitCommonDir,
+          'worktree',
+          'list',
+          '--porcelain'
+        ])
+      : '';
+  const listed = list
+    ? list
+        .split('\n')
+        .filter(line => line.startsWith('worktree '))
+        .some(line => realOrSame(line.slice('worktree '.length)) === lease.root)
+    : lease.gitCommonDir
+      ? false
+      : null;
+
+  return { path: lease.root, exists, listed };
+}
+
+const recordedProcesses = lease =>
+  Object.fromEntries(
+    COMPONENTS.filter(name => lease.processes?.[name]).map(name => [
+      name,
+      isSameProcess(lease.processes[name]) ? 'running' : 'stopped'
+    ])
+  );
+
+const operationEvidence = ({ operation: current }) =>
+  current && {
+    kind: current.kind,
+    pid: current.process?.pid ?? null,
+    running: isSameProcess(current.process)
+  };
+
+// Decides one lease from evidence alone: keep, reclaim, or conflict when its ownership
+// cannot be established.
+function judgeLease(lease, idleMinutes) {
+  const evidence = { operation: operationEvidence(lease) };
+  const keep = reason => ({ decision: 'keep', reason, evidence });
+
+  if (evidence.operation?.running) {
+    return keep(
+      `its ${evidence.operation.kind} is still running in pid ${evidence.operation.pid}`
+    );
+  }
+
+  evidence.worktree = worktreeEvidence(lease);
+  evidence.processes = recordedProcesses(lease);
+  const usedAt = lease.usedAt ?? lease.acquiredAt;
+  evidence.idleMinutes = Math.floor((Date.now() - Date.parse(usedAt)) / 60_000);
+  const { exists, listed } = evidence.worktree;
+  let reason;
+
+  if (!exists) {
+    reason = `its worktree ${lease.root} is missing from disk`;
+  } else if (listed === false) {
+    reason = `its worktree ${lease.root} is not in its repository's worktree list`;
+  } else if (!Object.values(evidence.processes).includes('running')) {
+    reason = 'none of its processes is alive';
+  } else if (idleMinutes !== null && evidence.idleMinutes >= idleMinutes) {
+    reason = `it has been idle for ${evidence.idleMinutes} minutes`;
+  } else {
+    return keep('its worktree exists and a verified process is alive');
+  }
+
+  // Every listener on the slot's ports and the device must be provably this lease's.
+  const verified = COMPONENTS.filter(
+    name => evidence.processes[name] === 'running'
+  ).map(name => lease.processes[name].pid);
+  const conflicts = [];
+
+  evidence.listeners = [lease.consolePort, lease.adbPort, lease.metroPort]
+    .flatMap(port => listeningPids(port).map(pid => ({ port, pid })))
+    .map(listener => ({
+      ...listener,
+      owned:
+        verified.includes(listener.pid) ||
+        verified.includes(processGroup(listener.pid))
+    }));
+
+  for (const { port, pid, owned } of evidence.listeners) {
+    if (!owned) {
+      conflicts.push(
+        `pid ${pid} on port ${port} is not a verified process of this lease`
+      );
+    }
+  }
+
+  if (evidence.processes.emulator === 'running') {
+    const device = {
+      serial: lease.serial,
+      avd: avdName(lease.serial),
+      token: leaseToken(lease.serial)
+    };
+
+    evidence.device = device;
+
+    // An empty token is a start that died before setting it; its verified process is ours.
+    if (
+      device.token &&
+      (device.token !== lease.id || device.avd !== HARNESS_AVD)
+    ) {
+      conflicts.push(
+        `${lease.serial} reports AVD ${JSON.stringify(device.avd)} and lease token ${JSON.stringify(device.token)}`
+      );
+    }
+  }
+
+  return conflicts.length
+    ? {
+        decision: 'conflict',
+        reason: `${reason}, but ${conflicts.join('; ')}`,
+        evidence
+      }
+    : { decision: 'reclaim', reason, evidence };
+}
+
+// Stops the lease's verified processes, rechecking each identity just before its signal, and
+// waits for them to exit.
+async function reclaimProcesses(lease, evidence) {
+  const stopped = [];
+
+  for (const name of ['jsLogs', 'metro']) {
+    if (
+      evidence.processes[name] === 'running' &&
+      isSameProcess(lease.processes[name])
+    ) {
+      stopGroup(lease.processes[name].pid);
+      stopped.push(name);
+    }
+  }
+
+  const emulator = lease.processes?.emulator;
+
+  if (evidence.processes.emulator === 'running' && isSameProcess(emulator)) {
+    if (evidence.device.token === lease.id) {
+      tryRun('agent-device', [
+        'close',
+        '--serial',
+        lease.serial,
+        '--session',
+        `liftlog-${lease.id}`
+      ]);
+      tryRun('adb', ['-s', lease.serial, 'emu', 'kill']);
+    } else {
+      stopGroup(emulator.pid);
+    }
+
+    stopped.push('emulator');
+  }
+
+  await waitFor('the reclaimed processes to exit', RECLAIM_TIMEOUT_MS, () =>
+    stopped.every(name => !isSameProcess(lease.processes[name]))
+  );
+
+  return stopped;
+}
+
+// Judges every lease of a registry held under its lock and, unless a dry run, reclaims the
+// reclaimable ones; conflicts are reported and left untouched.
+async function reap(registry, { idleMinutes = null, dryRun = false } = {}) {
+  const decisions = [];
+
+  for (const lease of [...registry.leases]) {
+    const judged = judgeLease(lease, idleMinutes);
+    const decision = {
+      lease: lease.id,
+      slot: lease.slot,
+      root: lease.root,
+      ...judged
+    };
+
+    if (judged.decision !== 'keep') {
+      log(
+        `${dryRun ? 'would ' : ''}${judged.decision} lease ${lease.id}: ${judged.reason}`
       );
     }
 
-    const blocked = [];
-
-    for (let slot = 0; slot < MAX_LIMIT; slot += 1) {
-      if (registry.leases.some(lease => lease.slot === slot)) {
-        continue;
-      }
-
-      const ports = slotPorts(slot);
-      // A server this lease did not start blocks the slot and is left alone.
-      const listeners = [
-        ...new Set([
-          ...listeningPids(ports.consolePort),
-          ...listeningPids(ports.adbPort),
-          ...listeningPids(ports.metroPort)
-        ])
-      ];
-
-      if (listeners.length) {
-        blocked.push(
-          `slot ${slot} ports ${ports.consolePort}/${ports.adbPort}/${ports.metroPort} are held by pid ${listeners.join(', ')}`
-        );
-        continue;
-      }
-
-      const lease = {
-        id,
-        slot,
-        ...ports,
-        serial: `emulator-${ports.consolePort}`,
-        root: ROOT,
-        acquiredAt: new Date().toISOString(),
-        operation: operation('acquire')
-      };
-
-      registry.leases.push(lease);
+    if (judged.decision === 'reclaim' && !dryRun) {
+      decision.stopped = await reclaimProcesses(lease, judged.evidence);
+      registry.leases = registry.leases.filter(entry => entry.id !== lease.id);
       writeRegistry(registry);
-
-      return lease;
     }
 
-    throw new Error(
-      `CAPACITY: no emulator slot is free: ${[...holders, ...blocked].join('; ')}.`
-    );
+    decisions.push(decision);
+  }
+
+  return decisions;
+}
+
+async function gc(flags) {
+  let idleMinutes = null;
+  let dryRun = false;
+
+  for (let index = 0; index < flags.length; index += 1) {
+    if (flags[index] === '--dry-run') {
+      dryRun = true;
+    } else if (
+      flags[index] === '--idle' &&
+      /^\d+$/.test(flags[index + 1] ?? '')
+    ) {
+      idleMinutes = Number(flags[(index += 1)]);
+    } else {
+      throw new Error(
+        'Usage: pnpm run device:stack gc [--dry-run] [--idle <minutes>]'
+      );
+    }
+  }
+
+  await hook('beforeGc', { registry: REGISTRY });
+  // A dry run reads the registry, replaced whole, without the lock and changes nothing.
+  const decisions = dryRun
+    ? await reap(readRegistry(), { idleMinutes, dryRun })
+    : await withRegistry(registry => reap(registry, { idleMinutes }));
+
+  process.stdout.write(`${JSON.stringify({ dryRun, decisions }, null, 2)}\n`);
+}
+
+function list() {
+  const registry = readRegistry();
+  const slots = Array.from({ length: MAX_LIMIT }, (_, slot) => {
+    const lease = registry.leases.find(entry => entry.slot === slot);
+
+    if (!lease) {
+      return { slot, ...slotPorts(slot), free: true };
+    }
+
+    const {
+      id,
+      root,
+      serial,
+      consolePort,
+      adbPort,
+      metroPort,
+      acquiredAt,
+      usedAt
+    } = lease;
+
+    return {
+      slot,
+      consolePort,
+      adbPort,
+      metroPort,
+      lease: id,
+      root,
+      serial,
+      acquiredAt,
+      usedAt: usedAt ?? null,
+      operation: operationEvidence(lease),
+      processes: recordedProcesses(lease)
+    };
   });
+
+  process.stdout.write(
+    `${JSON.stringify({ limit: emulatorLimit(), slots }, null, 2)}\n`
+  );
 }
 
 // Frees the slot; only the lease's own operation may.
@@ -1075,6 +1385,7 @@ async function bootEmulator(state) {
     TEMPLATE_SNAPSHOT,
     '-no-snapshot-save',
     '-no-boot-anim',
+    ...GPU_ARGS,
     '-prop',
     marker
   ];
@@ -1095,6 +1406,7 @@ async function bootEmulator(state) {
     ])
   };
   saveState(state);
+  await recordProcess(state, 'emulator');
   await hook('emulatorSpawned', { lease: state.lease.id, registry: REGISTRY });
   await waitFor('the emulator to connect', BOOT_TIMEOUT_MS, () => {
     if (!isSameProcess(state.emulator.process)) {
@@ -1221,7 +1533,7 @@ async function ownMetroReady(pid, port) {
 }
 
 // Each lease runs its own Metro, with a fresh log, on its slot's Metro port.
-function startMetro(state) {
+async function startMetro(state) {
   const { port } = state;
   const metroLog = join(DIR, 'metro.log');
 
@@ -1249,6 +1561,7 @@ function startMetro(state) {
     process: processIdentity(pid, args)
   };
   saveState(state);
+  await recordProcess(state, 'metro');
 
   return waitFor('Metro to start', METRO_TIMEOUT_MS, () =>
     ownMetroReady(pid, port)
@@ -1349,6 +1662,7 @@ async function startLease({ fresh, noBuild }) {
 
     try {
       lease = await acquireLease(id);
+      await hook('leaseAcquired', { lease: id });
     } catch (error) {
       rmSync(STATE, { force: true });
 
@@ -1429,6 +1743,7 @@ async function bringUp(state, { noBuild }) {
     process: processIdentity(logPid, logArgs)
   };
   saveState(state);
+  await recordProcess(state, 'jsLogs');
 
   await openApp(state);
   await finishOperation(state);
@@ -1445,6 +1760,14 @@ const finishOperation = state =>
     }
 
     lease.operation = null;
+    lease.usedAt = new Date().toISOString();
+  });
+
+// The registry keeps the identity of every process a lease spawned, so `gc` can verify and
+// stop it after the worktree and its state are gone.
+const recordProcess = (state, name) =>
+  updateLease(state.lease.id, lease => {
+    lease.processes = { ...lease.processes, [name]: state[name].process };
   });
 
 // Opens the app on the lease's Metro through the dev-client link, dismisses the dev-client
@@ -1837,7 +2160,8 @@ function checkDeviceCommand(command, args) {
   }
 }
 
-function readyState() {
+// The ready lease of this worktree, marked as just used for `gc --idle`.
+async function readyState() {
   const state = readState();
   const held = state?.lease && findLease(readRegistry(), state.lease.id);
 
@@ -1847,12 +2171,16 @@ function readyState() {
     );
   }
 
+  await updateLease(state.lease.id, lease => {
+    lease.usedAt = new Date().toISOString();
+  });
+
   return state;
 }
 
-function device(command, args) {
+async function device(command, args) {
   checkDeviceCommand(command, args);
-  const state = readyState();
+  const state = await readyState();
 
   // An explicit empty config, so neither the user nor the project config applies.
   const config = join(DIR, 'agent-device.json');
@@ -1918,7 +2246,7 @@ async function openLink(args) {
     );
   }
 
-  const state = readyState();
+  const state = await readyState();
   const link = `${expo.scheme}:///${path.replace(/^\/+/, '')}`;
   const last = Number(existsSync(LAST_OPEN) && readFileSync(LAST_OPEN, 'utf8'));
   const wait = last + OPEN_INTERVAL_MS - Date.now();
@@ -1989,9 +2317,9 @@ function checkAdb(args) {
   }
 }
 
-function adbCommand(args) {
+async function adbCommand(args) {
   checkAdb(args);
-  const state = readyState();
+  const state = await readyState();
   const { status, error } = spawnSync(
     'adb',
     ['-s', state.lease.serial, ...args],
@@ -2069,18 +2397,22 @@ try {
   } else if (command === 'build') {
     await build();
   } else if (command === 'device') {
-    device(flags[0], flags.slice(1));
+    await device(flags[0], flags.slice(1));
   } else if (command === 'open') {
     await openLink(flags);
   } else if (command === 'adb') {
-    adbCommand(flags);
+    await adbCommand(flags);
+  } else if (command === 'gc') {
+    await gc(flags);
+  } else if (command === 'list') {
+    list();
   } else if (command === 'logs') {
     logs(flags);
   } else if (command === BUILD_WORKER) {
     await buildWorker(flags[0]);
   } else {
     throw new Error(
-      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | open <path> | adb shell|exec-out|pull [args] | logs [js|metro] [--lines N] [--grep re] | build-key | build'
+      'Usage: pnpm run device:stack template [--recreate] | start [--fresh] [--no-build] | status | stop | device <command> [args] | open <path> | adb shell|exec-out|pull [args] | logs [js|metro] [--lines N] [--grep re] | gc [--dry-run] [--idle <minutes>] | list | build-key | build'
     );
   }
 } catch (error) {

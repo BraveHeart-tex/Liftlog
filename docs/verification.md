@@ -157,11 +157,18 @@ coordinates read off a screenshot. In order:
    sets `{ "limit": 2 }`, and `DEVICE_STACK_LIMIT` can only lower it. Repeating `start`
    returns the running lease. After a failed or killed `start`, the next `start` repairs
    the lease and `stop` releases it; `LEASE_LOST` means another holder took the slot, so
-   run `stop` to clear the worktree's record.
+   run `stop` to clear the worktree's record. Before failing with `CAPACITY`, `start`
+   reaps leases whose owners are provably gone. `pnpm run device:stack list` shows every
+   slot read-only; `gc` reclaims abandoned leases, `gc --dry-run` prints each decision
+   with its evidence and changes nothing, and `gc --idle <minutes>` also reclaims live
+   leases idle that long. A lease whose ownership cannot be proven is reported as a
+   conflict and left untouched
+   ([reclaiming leases](adr/0008-device-stack-architecture.md#reclaiming-leases)).
    - Coordination between worktrees follows
      [ADR-0008](adr/0008-device-stack-architecture.md):
      [coordination scopes](adr/0008-device-stack-architecture.md#coordination-scopes),
      [lease protocol](adr/0008-device-stack-architecture.md#lease-protocol),
+     [reclaiming leases](adr/0008-device-stack-architecture.md#reclaiming-leases),
      [dev build key](adr/0008-device-stack-architecture.md#dev-build-key),
      [dev build cache](adr/0008-device-stack-architecture.md#dev-build-cache) and
      [emulator instances](adr/0008-device-stack-architecture.md#emulator-instances).

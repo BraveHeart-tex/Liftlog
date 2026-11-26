@@ -46,6 +46,24 @@ harness AVD, and touches a resource only with evidence that it owns it.
 - The limit is one emulator by default and can be raised to two in the host config. An
   environment variable can only lower it.
 
+### Reclaiming leases
+
+- The registry records each lease's worktree, its repository's git common dir, its last
+  use and the identity of every process it spawned, so a lease is judged after its
+  worktree and `.device-stack/` are gone.
+- A lease whose acquire, repair or release still runs in a live process is never
+  reclaimed. Otherwise it is reclaimable when its worktree is missing from disk or from
+  its repository's worktree list, or when none of its processes passes its identity
+  check. A live lease in an existing worktree is reclaimed only by `gc --idle <minutes>`.
+- Reclaiming needs every listener on the slot's ports to be, or belong to the process
+  group of, a verified process of the lease, and a live emulator to report the harness
+  AVD and the lease's token (or no token yet). It stops only processes that still pass
+  their identity check, waits for them to exit, then frees the slot.
+- Failed ownership evidence makes the lease a conflict: it is reported and nothing of it
+  is touched. `gc` judges and reclaims under one registry lock hold, so concurrent runs
+  reclaim a lease once, and a lease acquired meanwhile has a live operation.
+- `start` reaps reclaimable leases before it fails with `CAPACITY`.
+
 ### Ownership evidence
 
 The stack acts on a resource only while its evidence holds:
@@ -120,6 +138,9 @@ build. `device:stack build-key` prints the key and its inputs.
   live.
 - Leased emulators boot as `-read-only` instances of the harness AVD on the slot's ports,
   so leases never share writable data. A new lease starts with fresh app data.
+- The template boot and every lease boot pass `-gpu host`. On auto the emulator drops to
+  software rendering under host memory pressure, and a snapshot saved in one renderer
+  fails to load in the other, so the lease cold boots.
 - Until leases exist, the harness boots its AVD writable, one instance at a time.
 
 ## Consequences
