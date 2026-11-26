@@ -52,8 +52,6 @@ export function RestTimerIdleContent({
     null
   );
   const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const minutesRef = useRef(durationDraft.minutes);
-  const secondsRef = useRef(durationDraft.seconds);
   const totalSeconds = minutes * 60 + seconds;
   const canStart = totalSeconds >= MIN_REST_TIMER_SECONDS;
 
@@ -65,43 +63,16 @@ export function RestTimerIdleContent({
     lastOpenTokenRef.current = openToken;
     const nextDraft = getDurationDraft(defaultDuration);
 
-    minutesRef.current = nextDraft.minutes;
-    secondsRef.current = nextDraft.seconds;
     setMinutes(nextDraft.minutes);
     setSeconds(nextDraft.seconds);
   }, [defaultDuration, openToken]);
 
-  const handleMinutesChanging = useCallback((value: number) => {
-    minutesRef.current = value;
-  }, []);
-
-  const handleMinutesChange = useCallback((value: number) => {
-    minutesRef.current = value;
-    setMinutes(value);
-  }, []);
-
-  const handleSecondsChanging = useCallback((value: number) => {
-    secondsRef.current = value;
-  }, []);
-
-  const handleSecondsChange = useCallback((value: number) => {
-    secondsRef.current = value;
-    setSeconds(value);
-  }, []);
-
   const handleStart = () => {
-    const liveTotalSeconds = minutesRef.current * 60 + secondsRef.current;
-    const draftTotalSeconds = minutes * 60 + seconds;
-    const selectedTotalSeconds =
-      liveTotalSeconds >= MIN_REST_TIMER_SECONDS
-        ? liveTotalSeconds
-        : draftTotalSeconds;
-
-    if (selectedTotalSeconds < MIN_REST_TIMER_SECONDS) {
+    if (!canStart) {
       return;
     }
 
-    if (startTimer(selectedTotalSeconds, context)) {
+    if (startTimer(totalSeconds, context)) {
       triggerHapticLight('rest timer start');
     }
   };
@@ -109,8 +80,6 @@ export function RestTimerIdleContent({
   const setDurationDraft = useCallback((nextDurationSeconds: number) => {
     const nextDraft = getDurationDraft(nextDurationSeconds);
 
-    minutesRef.current = nextDraft.minutes;
-    secondsRef.current = nextDraft.seconds;
     setMinutes(nextDraft.minutes);
     setSeconds(nextDraft.seconds);
   }, []);
@@ -209,10 +178,8 @@ export function RestTimerIdleContent({
         <RestTimerDurationPicker
           minutes={minutes}
           seconds={seconds}
-          onMinutesChanging={handleMinutesChanging}
-          onMinutesChange={handleMinutesChange}
-          onSecondsChanging={handleSecondsChanging}
-          onSecondsChange={handleSecondsChange}
+          onMinutesChange={setMinutes}
+          onSecondsChange={setSeconds}
         />
       </View>
 
