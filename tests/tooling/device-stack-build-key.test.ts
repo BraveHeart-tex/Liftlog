@@ -20,10 +20,34 @@ import { delimiter, dirname, join, resolve } from 'node:path';
 // `device:stack build-key` on temporary copies of this checkout: tracked and untracked
 // files, node_modules linked, a fake `java` on PATH and a private Gradle user home. Every
 // case starts in beforeAll on its own clone of the copy, a few at a time, and its test
-// awaits the result.
+// awaits the result. Cases that change only inputs outside the fingerprint reuse the
+// baseline fingerprint.
 const script = resolve('scripts/device-stack.mjs');
 const fakeJava = `#!/bin/sh
 echo "openjdk version \\"\${FAKE_JAVA_VERSION:-17.0.12}\\"" >&2
+`;
+// Preloaded into every build-key run: with REUSE_FINGERPRINT set, @expo/fingerprint
+// returns that hash without running; otherwise each real run appends its checkout to
+// FINGERPRINT_RUNS.
+const fingerprintHook = `const Module = require('node:module');
+const { appendFileSync } = require('node:fs');
+const load = Module._load;
+Module._load = function (request, ...rest) {
+  if (request !== '@expo/fingerprint') {
+    return load.call(this, request, ...rest);
+  }
+  const reuse = process.env.REUSE_FINGERPRINT;
+  if (reuse) {
+    return { createFingerprintAsync: async () => ({ hash: reuse }) };
+  }
+  const fingerprint = load.call(this, request, ...rest);
+  return {
+    createFingerprintAsync: (...args) => {
+      appendFileSync(process.env.FINGERPRINT_RUNS, process.cwd() + '\\n');
+      return fingerprint.createFingerprintAsync(...args);
+    }
+  };
+};
 `;
 const concurrency = 2;
 
@@ -31,6 +55,7 @@ let dir: string;
 let template: string;
 let gradleHome: string;
 let baseline: BuildKey;
+let baselineRun: Promise<BuildKey>;
 
 type BuildKey = { key: string; inputs: Record<string, string> };
 
@@ -40,19 +65,28 @@ function buildKey(root: string, extraEnv: Record<string, string> = {}) {
       ...process.env,
       PATH: `${join(dir, 'bin')}${delimiter}${process.env.PATH}`,
       GRADLE_USER_HOME: gradleHome,
+      FINGERPRINT_RUNS: join(dir, 'fingerprint-runs'),
       ...extraEnv
     };
 
     delete env.JAVA_HOME;
 
+    if (!('REUSE_FINGERPRINT' in extraEnv)) {
+      delete env.REUSE_FINGERPRINT;
+    }
+
     if (!('EXPO_USE_COMMUNITY_AUTOLINKING' in extraEnv)) {
       delete env.EXPO_USE_COMMUNITY_AUTOLINKING;
     }
 
-    const child = spawn(process.execPath, [script, 'build-key'], {
-      cwd: root,
-      env
-    });
+    const child = spawn(
+      process.execPath,
+      ['--require', join(dir, 'fingerprint-hook.cjs'), script, 'build-key'],
+      {
+        cwd: root,
+        env
+      }
+    );
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', chunk => (stdout += chunk));
@@ -138,18 +172,38 @@ const changed: [string, string, (contents: string) => string][] = [
   ]
 ];
 
+// A build-key run on the copied checkout that reuses the baseline fingerprint, for cases
+// that change only inputs outside the fingerprint.
+async function reusingBaseline(extraEnv: Record<string, string>) {
+  const { inputs } = await baselineRun;
+
+  return limited(() =>
+    buildKey(template, { ...extraEnv, REUSE_FINGERPRINT: inputs.fingerprint })
+  );
+}
+
+// Checkouts of the runs that compute a real fingerprint.
+const realRuns: string[] = [];
+
+function real(root: string) {
+  realRuns.push(root);
+
+  return buildKey(root);
+}
+
 function startCases() {
   const cases: [string, () => Promise<BuildKey>][] = [
     ...changed.map(
       ([name, path, change], index): [string, () => Promise<BuildKey>] => [
         name,
-        () => buildKey(checkout(`changed-${index}`, edit(path, change)))
+        () =>
+          limited(() => real(checkout(`changed-${index}`, edit(path, change))))
       ]
     ),
-    ['jdk', () => buildKey(template, { FAKE_JAVA_VERSION: '21.0.4' })],
+    ['jdk', () => reusingBaseline({ FAKE_JAVA_VERSION: '21.0.4' })],
     [
       'autolinking',
-      () => buildKey(template, { EXPO_USE_COMMUNITY_AUTOLINKING: '1' })
+      () => reusingBaseline({ EXPO_USE_COMMUNITY_AUTOLINKING: '1' })
     ],
     [
       'gradle properties',
@@ -161,52 +215,58 @@ function startCases() {
           'org.gradle.jvmargs=-Xmx4g\n'
         );
 
-        return buildKey(template, { GRADLE_USER_HOME: home });
+        return reusingBaseline({ GRADLE_USER_HOME: home });
       }
     ],
     [
       'src',
       () =>
-        buildKey(
-          checkout('src', edit('src/app/(tabs)/_layout.tsx', appendLine))
+        limited(() =>
+          real(checkout('src', edit('src/app/(tabs)/_layout.tsx', appendLine)))
         )
     ],
     [
       'package.json scripts',
       () =>
-        buildKey(
-          checkout(
-            'scripts',
-            edit('package.json', contents => {
-              const pkg = JSON.parse(contents);
-              pkg.scripts.extra = 'echo changed';
+        limited(() =>
+          real(
+            checkout(
+              'scripts',
+              edit('package.json', contents => {
+                const pkg = JSON.parse(contents);
+                pkg.scripts.extra = 'echo changed';
 
-              return JSON.stringify(pkg, null, 2);
-            })
+                return JSON.stringify(pkg, null, 2);
+              })
+            )
           )
         )
     ],
     [
       'android',
       () =>
-        buildKey(
-          checkout('android', root => {
-            mkdirSync(join(root, 'android', 'app'), { recursive: true });
-            writeFileSync(
-              join(root, 'android', 'settings.gradle'),
-              "rootProject.name = 'Liftlog'\n"
-            );
-            writeFileSync(
-              join(root, 'android', 'app', 'build.gradle'),
-              'android {}\n'
-            );
-          })
+        limited(() =>
+          real(
+            checkout('android', root => {
+              mkdirSync(join(root, 'android', 'app'), { recursive: true });
+              writeFileSync(
+                join(root, 'android', 'settings.gradle'),
+                "rootProject.name = 'Liftlog'\n"
+              );
+              writeFileSync(
+                join(root, 'android', 'app', 'build.gradle'),
+                'android {}\n'
+              );
+            })
+          )
         )
     ]
   ];
 
   for (const [name, run] of cases) {
-    const key = limited(run).then(output => output.key);
+    const key = Promise.resolve()
+      .then(run)
+      .then(output => output.key);
     // A failed case fails its own test, not the whole file.
     key.catch(() => {});
     keys.set(name, key);
@@ -230,6 +290,8 @@ beforeAll(async () => {
   mkdirSync(join(dir, 'bin'), { recursive: true });
   mkdirSync(gradleHome);
   writeFileSync(join(dir, 'bin', 'java'), fakeJava);
+  writeFileSync(join(dir, 'fingerprint-hook.cjs'), fingerprintHook);
+  writeFileSync(join(dir, 'fingerprint-runs'), '');
   chmodSync(join(dir, 'bin', 'java'), 0o755);
 
   const files = execFileSync(
@@ -255,9 +317,9 @@ beforeAll(async () => {
 
   symlinkSync(resolve('node_modules'), join(template, 'node_modules'));
 
-  const output = limited(() => buildKey(template));
+  baselineRun = limited(() => real(template));
   startCases();
-  baseline = await output;
+  baseline = await baselineRun;
 });
 
 afterAll(async () => {
@@ -301,6 +363,17 @@ test('a different JDK, user Gradle properties or autolinking setting changes the
 test('changes under src/ or to package.json scripts leave the key unchanged', async () => {
   expect(await keyOf('src')).toBe(baseline.key);
   expect(await keyOf('package.json scripts')).toBe(baseline.key);
+});
+
+test('only cases that change a fingerprint source run a real fingerprint', async () => {
+  await Promise.allSettled(keys.values());
+
+  const runs = readFileSync(join(dir, 'fingerprint-runs'), 'utf8')
+    .split('\n')
+    .filter(Boolean);
+
+  expect(realRuns).toHaveLength(8);
+  expect(runs.sort()).toEqual([...realRuns].sort());
 });
 
 test('a generated android/ directory leaves the key unchanged', async () => {
