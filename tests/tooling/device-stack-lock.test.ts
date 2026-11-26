@@ -14,6 +14,20 @@ import {
   deadHolder
 } from '@/tests/tooling/device-stack-harness';
 
+// The stand-in lock holder of the replaced-lock case. The harness afterEach, registered on
+// import and so run first, ends it because its argv names the case's harness directory.
+let standIn: number | undefined;
+
+afterEach(async () => {
+  if (standIn === undefined) {
+    return;
+  }
+
+  const pid = standIn;
+  standIn = undefined;
+  await waitUntil(() => !alive(pid));
+});
+
 test('every guarded signal and kill runs while its own process holds the registry lock it took for the ownership check', async () => {
   const { dir, root, stack, stackIn } = await harness({}, { hooks: testHooks });
   await stack('start');
@@ -140,10 +154,11 @@ export function lockChecked({ lock, generation, stale }) {
   // A live device stack process that broke the stale lock first and now holds it.
   const replacer = spawn(
     process.execPath,
-    ['-e', 'setInterval(() => {}, 1000)', 'device-stack.mjs'],
+    ['-e', 'setInterval(() => {}, 1000)', 'device-stack.mjs', dir],
     { stdio: 'ignore' }
   );
   pids.push(replacer.pid!);
+  standIn = replacer.pid!;
   const replacement = {
     pid: replacer.pid,
     startTime: execFileSync(
