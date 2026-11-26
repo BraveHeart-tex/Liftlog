@@ -600,7 +600,9 @@ export async function harness(
     fakeState,
     recorded,
     editRecorded,
-    logPath
+    logPath,
+    env,
+    fakes
   };
 }
 
@@ -662,8 +664,34 @@ function ours(pid: number) {
   );
 }
 
-afterEach(() => {
-  for (const pid of [...new Set(pids.splice(0))].filter(ours)) {
+type Ended = { pid: number; command: string };
+
+// Ends every process still running this file's fakes or harness files: the recorded PIDs with
+// their process groups, then any other one, such as a detached child the harness never
+// recorded. Returns those others, each by PID and command line.
+export function endFakeProcesses(): Ended[] {
+  const recorded = new Set([...new Set(pids.splice(0))].filter(ours));
+  const paths = [fakes, ...directories].filter(Boolean) as string[];
+  const leaked = execFileSync('ps', ['-axo', 'pid=,pgid=,command='], {
+    encoding: 'utf8'
+  })
+    .split('\n')
+    .map(line => line.trim().match(/^(\d+)\s+(\d+)\s+(.*)$/))
+    .filter(match => match !== null)
+    .map(([, pid, pgid, command]) => ({
+      pid: Number(pid),
+      pgid: Number(pgid),
+      command
+    }))
+    .filter(
+      ({ pid, pgid, command }) =>
+        pid !== process.pid &&
+        !recorded.has(pid) &&
+        !recorded.has(pgid) &&
+        paths.some(path => command.includes(path))
+    );
+
+  for (const pid of [...recorded, ...leaked.map(({ pid }) => pid)]) {
     for (const target of [-pid, pid]) {
       try {
         process.kill(target, 'SIGKILL');
@@ -671,10 +699,25 @@ afterEach(() => {
     }
   }
 
+  return leaked.map(({ pid, command }) => ({ pid, command }));
+}
+
+const reportLeaks = (ended: Ended[]) => {
+  if (ended.length) {
+    console.warn(
+      `Ended processes the test did not record:\n${ended.map(({ pid, command }) => `${pid} ${command}`).join('\n')}`
+    );
+  }
+};
+
+afterEach(() => {
+  reportLeaks(endFakeProcesses());
   directories.splice(0).forEach(dir => rmSync(dir, { recursive: true }));
 });
 
 afterAll(() => {
+  reportLeaks(endFakeProcesses());
+
   if (fakes) {
     rmSync(fakes, { recursive: true });
     fakes = undefined;
