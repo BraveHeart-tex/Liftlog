@@ -52,6 +52,6 @@ The final check is `pnpm run validate:changed [--base <sha>]`: on files changed 
 
 - Run builds, tests, Expo/native commands and anything spawning workers or daemons with inherited stdout/stderr, keeping the original exit code.
 - No result after a reasonable wait: run the equivalent direct command with live output; never repeat the same invocation.
-- New worktree: `pnpm run worktree <n>` creates `../liftlog-<n>` on `issue-<n>` off `origin/main` and installs dependencies.
+- New worktree: `pnpm run worktree <n>` creates `../liftlog-<n>` on `issue-<n>` off `origin/main` and installs dependencies. `pnpm run worktree --prune-closed` removes every `issue-<n>` worktree whose issue is closed, whose branch is in `origin/main`, which is clean and holds no device stack lease, deletes its branch, and prints each keep or remove reason.
 - Quote paths with parentheses, spaces or globs (Expo Router).
 - Agent hooks set a host timeout and fail open.
