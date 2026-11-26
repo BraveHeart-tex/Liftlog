@@ -11,6 +11,11 @@ type WheelPickerComponent = <ItemT = string>(
   props: DrumPickerProps<ItemT> & RefAttributes<DrumPickerRef>
 ) => ReactElement | null;
 
+/**
+ * Themed `DrumPicker`. Save and submit from `onChange`, the settled index: on Android,
+ * `onValueChanging` reports index 0 shortly after the first layout, after the starting
+ * `selectedIndex` is set, with no `onChange` to follow (#129).
+ */
 const WheelPickerBase = forwardRef<DrumPickerRef, DrumPickerProps<unknown>>(
   function WheelPicker(
     {

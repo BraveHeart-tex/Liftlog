@@ -9,6 +9,7 @@ Read this when changing workout logging interactions, audio feedback, or compact
 - Keep labels concise and numeric formatting readable; avoid verbose or crowded metrics.
 - Use `Pressable` for touch interactions with at least practical `p-3` touch padding.
 - Keep one clear touch target per action. Avoid nested touchables, tiny hit areas, hidden actions, and overloaded gestures.
+- Save and submit wheel picker values from their settled `onChange` state, the same state that enables the action. `onValueChanging` reports index 0 after the wheel's first layout ([`WheelPicker`](../src/components/ui/wheel-picker.tsx)).
 
 ## Audio feedback
 
