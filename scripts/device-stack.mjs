@@ -261,8 +261,13 @@ function readState() {
   return state;
 }
 
-const saveState = state =>
-  writeFileSync(STATE, `${JSON.stringify(state, null, 2)}\n`);
+// Replaced whole, so a reader without the lock sees one complete version.
+function saveState(state) {
+  const partial = `${STATE}.${process.pid}`;
+
+  writeFileSync(partial, `${JSON.stringify(state, null, 2)}\n`);
+  renameSync(partial, STATE);
+}
 
 const adb = (serial, ...args) => {
   assertLease();
